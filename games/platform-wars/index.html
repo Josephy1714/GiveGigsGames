@@ -49,7 +49,16 @@ main>header h1{font-size:clamp(1.4rem,5vw,2.5rem)!important;margin:8px 0!importa
 #banner{flex:0 0 auto!important;margin:6px!important}
 #touchHint{display:none!important}
 @media(max-width:480px){.touch{padding:8px!important;gap:4px!important}.pad-cluster{gap:4px!important}.touch button{width:48px!important;height:48px!important}}
-</style></head>
+</style>  <script>
+    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vercelAnalyticsScript = document.createElement("script");
+      vercelAnalyticsScript.defer = true;
+      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+      document.head.appendChild(vercelAnalyticsScript);
+    }
+  </script>
+</head>
 <body><main><header><a href="../index.html">← Games</a><h1>PLATFORM <i>WARS</i></h1><p>PHONE <b>VS</b> DESKTOP</p></header><section id="lobby" class="panel"><h2>Cross-platform arena</h2><p id="device"></p><label class="savepick">Save file <select id="slot"><option value="0">Save 0 (cheat-proof)</option><option value="1">Save 1</option><option value="2">Save 2</option><option value="3">Save 3</option></select></label><div class="mode"><button id="quick">⚡ Quick Match</button><button id="practice">Practice arena</button></div><div class="mode"><select id="lobbyVisibility" aria-label="Lobby visibility"><option value="public">Public</option><option value="friends">Friends</option><option value="private">Private invite</option></select><button id="createLobby">Create lobby</button></div><p id="lobbyInfo" class="fine"><a href="https://givegigs.com/lobbies/">Browse All Open Lobbies</a> · Quick Match pairs Phone with Desktop players.</p></section><section id="game" hidden><div class="hud"><span id="role"></span><strong id="timer">01:30</strong><span>PHONE <b id="phoneScore">0</b> · <b id="desktopScore">0</b> DESKTOP</span><button id="leave">Leave</button><button id="fw-fs-btn" class="fw-fs-btn" type="button" title="Toggle fullscreen (F)" aria-label="Toggle fullscreen">⛶</button></div><div id="cheatWatermark" hidden>CHEAT MODE</div><canvas id="arena" width="960" height="540" aria-label="Platform Wars arena"></canvas><div id="banner"></div><div class="touch" id="touchPad" aria-label="Twin-thumb platformer pad + dash double-tap"><div class="pad-cluster pad-left"><button data-key="left" aria-label="Move left">◀</button><button data-key="right" aria-label="Move right">▶</button></div><div class="pad-cluster pad-right"><button data-key="jump" aria-label="Jump">▲<small>JUMP</small></button><button data-key="dash" data-fire="1" aria-label="Fire / dash">🔥<small>FIRE</small></button></div></div><p id="touchHint" class="touch-hint">Twin-thumb pad · double-tap ◀/▶ to dash · tap a platform to ping</p></section></main><script>
 /* Single-deploy auth transport (same-origin /api/*, session cookies).
  * Replaces the legacy /auth/config.js + /auth/auth-server.js pair: on one

@@ -25,6 +25,8 @@ No Node.js, build step, account, or cloud save is needed just to play a local st
 
 Read the [Terms of Use](terms.html) and [Privacy Policy](privacy.html) for information about game licenses, browser-local progress, and possible game-specific third-party connections. Hosting request logs depend on the provider used for deployment.
 
+Vercel Web Analytics is wired into the HTML pages. To collect data, enable **Analytics** for the Vercel project, then redeploy; local files and `localhost` sessions are excluded.
+
 If a browser blocks local workers, storage, or file access, run a tiny local web server from the extracted repo folder:
 
 ```sh

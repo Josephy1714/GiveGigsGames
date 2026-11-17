@@ -86,7 +86,16 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
 [class*="game-overlay"]::-webkit-scrollbar{width:8px}
 [class*="game-overlay"]::-webkit-scrollbar-track{background:transparent}
 [class*="game-overlay"]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
-</style><script src="/games/html/giggles-help-draft.js"></script></head>
+</style><script src="/games/html/giggles-help-draft.js"></script>  <script>
+    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vercelAnalyticsScript = document.createElement("script");
+      vercelAnalyticsScript.defer = true;
+      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+      document.head.appendChild(vercelAnalyticsScript);
+    }
+  </script>
+</head>
 <body class="TEMPLATE-4weird-game-page">
     <div class="game-wrapper">
         <!-- Main Game Screen (HUD + Canvas) -->

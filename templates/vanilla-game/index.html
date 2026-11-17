@@ -6,6 +6,15 @@
     <meta name="description" content="A small, offline-friendly browser game starter.">
     <title>New GiveGigsGame</title>
     <link rel="stylesheet" href="./game.css">
+    <script>
+      if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+        var vercelAnalyticsScript = document.createElement("script");
+        vercelAnalyticsScript.defer = true;
+        vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+        document.head.appendChild(vercelAnalyticsScript);
+      }
+    </script>
   </head>
   <body>
     <main class="game-shell">

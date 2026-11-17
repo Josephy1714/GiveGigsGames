@@ -26,6 +26,15 @@
     
     <!-- Game Metadata -->
     <script src="game.json" type="application/json" id="game-metadata"></script>
+  <script>
+    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vercelAnalyticsScript = document.createElement("script");
+      vercelAnalyticsScript.defer = true;
+      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+      document.head.appendChild(vercelAnalyticsScript);
+    }
+  </script>
 </head>
 <body class="TEMPLATE-4weird-game-page">
     <!-- Background Canvas -->

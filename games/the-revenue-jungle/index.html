@@ -60,7 +60,16 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
 
 
-</style></head>
+</style>  <script>
+    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vercelAnalyticsScript = document.createElement("script");
+      vercelAnalyticsScript.defer = true;
+      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+      document.head.appendChild(vercelAnalyticsScript);
+    }
+  </script>
+</head>
 <body class="TEMPLATE-4weird-game-page">
     
     <!-- Game Header Bar -->

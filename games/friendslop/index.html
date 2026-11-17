@@ -62,7 +62,16 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
 
 .TEMPLATE-4weird-fullscreen-btn,#neon-fs-breaker,#fourweird-fullscreen-exit{display:none!important}
-</style></head>
+</style>  <script>
+    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+      var vercelAnalyticsScript = document.createElement("script");
+      vercelAnalyticsScript.defer = true;
+      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
+      document.head.appendChild(vercelAnalyticsScript);
+    }
+  </script>
+</head>
 <body class="friendslop-4weird-game-page"><span id="fourweird-hud-shims" hidden><span id="friendslop-4weird-game-title"></span><span id="friendslop-4weird-maker-name"></span><span id="friendslop-4weird-high-score"></span><span id="friendslop-4weird-daily-seed"></span></span>
     <!-- Background -->
     <!-- Game Header Bar -->
