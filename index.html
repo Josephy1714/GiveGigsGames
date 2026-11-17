@@ -32,7 +32,7 @@
         </div>
         <div class="catalog-tools">
           <label class="catalog-search"><span class="sr-only">Search titles, genres, and tags</span><input id="catalog-search" type="search" placeholder="Search games, genres, tags…" autocomplete="off"></label>
-          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
+          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="size-desc">File size · largest first</option><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
           <div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div>
         </div>
         <div class="catalog-tools">
@@ -62,6 +62,10 @@
         </div>
         <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button></div><div id="tag-options" class="tag-options"></div></details>
         <div id="game-grid" class="game-grid list-view"></div>
+        <div id="catalog-pagination" class="catalog-pagination" hidden>
+          <p id="catalog-pagination-status" role="status" aria-live="polite"></p>
+          <div><button id="show-more-games" type="button">Show 10 more</button><button id="show-all-games" type="button">Show all</button></div>
+        </div>
         <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
       </section>
 

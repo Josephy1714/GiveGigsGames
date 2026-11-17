@@ -17,6 +17,59 @@
   color: #07111d;
 }
 
+.play-label {
+  margin-top: 0;
+  min-width: 82px;
+  min-height: 36px;
+  justify-content: center;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid #82f2c3;
+  border-radius: 9px;
+  background: #82f2c3;
+  color: #07111d;
+  transition: transform .15s ease, background .15s ease;
+}
+.play-label:hover {
+  background: #a4ffd7;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid #293f53;
+  border-radius: 12px;
+  background: #0b1825;
+}
+.catalog-pagination p { margin: 0; color: #a1b3c5; font-size: 12px; }
+.catalog-pagination>div { display: flex; gap: 8px; }
+.catalog-pagination button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid #82f2c35c;
+  border-radius: 9px;
+  background: #123228;
+  color: #aaffd5;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.catalog-pagination button:hover { background: #194638; }
+@media(max-width:500px) {
+  .catalog-pagination { align-items: flex-start; flex-direction: column; }
+  .catalog-pagination>div { width: 100%; }
+  .catalog-pagination button { flex: 1; }
+}
+@media(max-width:680px) {
+  .game-grid.list-view .game-card-actions { flex-wrap: wrap; }
+}
+
 #restore-dialog {
   width: min(620px, calc(100% - 24px));
   border: 1px solid #31495f;

@@ -4,6 +4,10 @@
   const error = document.getElementById("catalog-error");
   const search = document.getElementById("catalog-search");
   const sort = document.getElementById("catalog-sort");
+  const pagination = document.getElementById("catalog-pagination");
+  const paginationStatus = document.getElementById("catalog-pagination-status");
+  const showMore = document.getElementById("show-more-games");
+  const showAll = document.getElementById("show-all-games");
   const tagSearch = document.getElementById("tag-search");
   const tagOptions = document.getElementById("tag-options");
   const tagMatch = document.getElementById("tag-match");
@@ -20,6 +24,7 @@
   let favorites = new Set();
   let recent = [];
   let savedView;
+  let visibleLimit = 10;
   try {
     favorites = new Set(JSON.parse(localStorage.getItem("arcade:favorites") || "[]"));
     recent = JSON.parse(localStorage.getItem("arcade:recent") || "[]");
@@ -31,6 +36,7 @@
     try {
       localStorage.setItem("arcade:recent", JSON.stringify(recent));
       sessionStorage.setItem("arcade:catalog", JSON.stringify({
+        version: 2,
         search: search.value, sort: sort.value, tagMatch: tagMatch.value,
         tags: [...selectedTags], collection: collection.value, input: input.value, mode: gameMode.value,
         view: grid.classList.contains("grid-view") ? "grid" : "list",
@@ -244,6 +250,7 @@
   function sortGames(list) {
     const mode = sort.value;
     return list.sort((a, b) => {
+      if (mode === "size-desc") return (Number(b.packageBytes) || 0) - (Number(a.packageBytes) || 0) || compare(a.title, b.title);
       if (mode === "genre") return compare(a.genre || "", b.genre || "") || compare(a.title, b.title);
       if (mode === "tag") return compare(normalizedTags(a).sort(compare)[0] || "", normalizedTags(b).sort(compare)[0] || "") || compare(a.title, b.title);
       if (mode === "tags-desc") return normalizedTags(b).length - normalizedTags(a).length || compare(a.title, b.title);
@@ -252,7 +259,8 @@
     });
   }
 
-  function render() {
+  function render(resetLimit = true) {
+    if (resetLimit) visibleLimit = 10;
     const query = search.value.trim().toLowerCase();
     const rank = (game) => {
       const title = game.title.toLowerCase();
@@ -281,14 +289,15 @@
     const sorted = sortGames(filtered);
     if (collection.value === "recent") sorted.sort((a, b) => recent.indexOf(a.slug) - recent.indexOf(b.slug));
     if (query) sorted.sort((a, b) => rank(a) - rank(b));
-    count.textContent = `${sorted.length} of ${games.length} games · tags can match any or all`;
+    const displayCount = Math.min(visibleLimit, sorted.length);
+    count.textContent = `Showing ${displayCount} of ${sorted.length} matching games · ${games.length} total`;
     grid.replaceChildren();
     if (!sorted.length) {
       const empty = document.createElement("p");
       empty.textContent = "No games match. Try changing your search, collection, or selected tags.";
       grid.append(empty);
     }
-    for (const game of sorted) {
+    for (const game of sorted.slice(0, visibleLimit)) {
       const card = document.createElement("article");
       card.className = "game-card";
       const head = document.createElement("div");
@@ -316,7 +325,8 @@
       const availability = document.createElement("span");
       availability.className = "genre";
       const status = game.status ? `${game.status[0].toUpperCase()}${game.status.slice(1)} · ` : "";
-      availability.textContent = status + (game.runtimeType === "external" ? "Internet required" : "Browser build");
+      const size = Number(game.packageBytes) > 0 ? ` · ${formatPackageSize(game.packageBytes)}` : "";
+      availability.textContent = status + (game.runtimeType === "external" ? "Internet required" : "Browser build") + size;
       const tags = document.createElement("div");
       tags.className = "game-tags";
       for (const tag of normalizedTags(game)) {
@@ -332,6 +342,8 @@
       play.id = `launch-${game.slug}`;
       play.className = "play-label";
       play.href = `/ggg/play/${encodeURIComponent(game.slug)}`;
+      play.textContent = "Play";
+      play.setAttribute("aria-label", `Play ${game.title}`);
       play.addEventListener("click", () => rememberLaunch(game));
       const test = document.createElement("a");
       test.className = "test-link";
@@ -365,6 +377,16 @@
       card.append(head, body, actions);
       grid.append(card);
     }
+    const hasMore = sorted.length > visibleLimit;
+    pagination.hidden = !hasMore;
+    paginationStatus.textContent = hasMore ? `Showing ${displayCount} of ${sorted.length} matching games` : "";
+    showMore.hidden = !hasMore;
+    showAll.hidden = !hasMore;
+  }
+
+  function formatPackageSize(bytes) {
+    const value = Number(bytes) || 0;
+    return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(2)} MB` : `${Math.max(1, Math.round(value / 1_000))} KB`;
   }
 
   try {
@@ -373,7 +395,7 @@
     games = catalog.games;
     if (savedView && location.hash === "#all-games") {
       search.value = savedView.search;
-      sort.value = savedView.sort;
+      if (savedView.version >= 2 && savedView.sort) sort.value = savedView.sort;
       tagMatch.value = savedView.tagMatch;
       collection.value = savedView.collection;
       input.value = savedView.input || "";
@@ -397,6 +419,14 @@
   input.addEventListener("change", render);
   gameMode.addEventListener("change", render);
   sort.addEventListener("change", render);
+  showMore.addEventListener("click", () => {
+    visibleLimit += 10;
+    render(false);
+  });
+  showAll.addEventListener("click", () => {
+    visibleLimit = Number.MAX_SAFE_INTEGER;
+    render(false);
+  });
   tagSearch.addEventListener("input", renderTagOptions);
   tagMatch.addEventListener("change", render);
   document.getElementById("clear-tags").addEventListener("click", () => {

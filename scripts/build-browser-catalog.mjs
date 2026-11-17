@@ -1,9 +1,22 @@
 #!/usr/bin/env node
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { lstat, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const catalogUrl = new URL("../games/catalog.json", import.meta.url);
 const outputUrl = new URL("../games/catalog-data.js", import.meta.url);
 const catalog = JSON.parse(await readFile(catalogUrl, "utf8"));
+async function folderSize(folder) {
+  let total = 0;
+  for (const entry of await readdir(folder, { withFileTypes: true })) {
+    const fullPath = path.join(folder, entry.name);
+    const info = await lstat(fullPath);
+    if (info.isSymbolicLink()) throw new Error(`Symlinks are not allowed in game packages: ${fullPath}`);
+    if (entry.isDirectory()) total += await folderSize(fullPath);
+    else if (entry.isFile()) total += info.size;
+  }
+  return total;
+}
 const slugs = new Set();
 for (const game of catalog.games) {
   const fail = (message) => { throw new Error(`${game.slug || "(missing slug)"}: ${message}`); };
@@ -27,6 +40,8 @@ for (const game of catalog.games) {
     if (!/^(?:[\w-]+\/)+[\w-]+\.html$/.test(game.entrypoint || "")) fail("Use a relative HTML entrypoint inside games/.");
     const file = await stat(new URL(game.entrypoint, catalogUrl)).catch(() => null);
     if (!file?.isFile()) fail(`Create the missing entrypoint ${game.entrypoint}.`);
+    const entrypointPath = fileURLToPath(new URL(game.entrypoint, catalogUrl));
+    game.packageBytes = await folderSize(path.dirname(entrypointPath));
     if (game.guideEntrypoint !== undefined) {
       if (!/^(?:[\w-]+\/)+[\w-]+\.html$/.test(game.guideEntrypoint)) fail("Use a relative HTML guide path inside games/.");
       const guide = await stat(new URL(game.guideEntrypoint, catalogUrl)).catch(() => null);

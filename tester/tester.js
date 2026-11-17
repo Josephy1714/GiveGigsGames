@@ -172,7 +172,8 @@
     player.hidden = true;
     library.hidden = false;
     selected = null;
-    try { history.replaceState(null, "", location.pathname); } catch {}
+    const gameTestRoute = /^\/ggg\/test\/[^/]+\/?$/i.test(location.pathname);
+    try { history.replaceState(null, "", gameTestRoute ? "/tester/" : location.pathname); } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -284,7 +285,10 @@
       }
       renderTagOptions();
       render();
-      const slug = new URLSearchParams(location.search).get("game");
+      const routeMatch = location.pathname.match(/^\/ggg\/test\/([^/]+)\/?$/i);
+      let pathSlug = null;
+      try { pathSlug = routeMatch ? decodeURIComponent(routeMatch[1]) : null; } catch {}
+      const slug = new URLSearchParams(location.search).get("game") || pathSlug;
       const requested = games.find((game) => game.slug.toLowerCase() === (slug || "").toLowerCase());
       if (requested) openGame(requested);
   } catch (error) {
