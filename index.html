@@ -22,36 +22,43 @@
           <h1>Every game has<br><span>a place to play.</span></h1>
           <p class="lede">The complete GiveGigsGames testing arcade lives here: released titles, previews, experiments, and games still being built. Pick a title to launch its current browser build.</p>
           <div class="hero-actions">
-            <a class="button primary" href="#all-games">Browse all games <span aria-hidden="true">↓</span></a>
-            <a class="button secondary" href="https://givegigs.com/games/">GiveGigs public games ↗</a>
-            <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Contribute a game ↗</a>
+            <a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Contribute on GitHub ↗</a>
+            <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/compare">Submit a game or fix ↗</a>
+            <a class="button secondary" href="#all-games">Browse all games <span aria-hidden="true">↓</span></a>
           </div>
         </div>
         <aside class="release-note">
           <p class="note-icon" aria-hidden="true">◈</p>
           <h2>Testing environment · no cloud saves</h2>
           <p>This public site includes games that are not ready for the curated GiveGigs catalog. Builds may be incomplete or change without notice. Progress stays in this browser's local storage; there are no cloud saves or cross-device sync here.</p>
-          <a href="./tester/">Open the all-games tester <span aria-hidden="true">→</span></a>
+          <a href="https://github.com/mattyjacks/GiveGigsGames">Open the repo, pick a game, and make it yours ↗</a>
         </aside>
         <div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
       </section>
 
       <section class="quickstart" aria-labelledby="quickstart-title">
-        <div><p class="eyebrow">NO INSTALL REQUIRED</p><h2 id="quickstart-title">Take the arcade with you</h2><p>Download the GitHub ZIP, extract it on a desktop or phone, then open this <code>index.html</code>. Local static games can run offline; cloud saves are not available.</p></div>
-        <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip">Download repository ZIP ↓</a>
+        <div><p class="eyebrow">PLAY · EDIT · SHARE</p><h2 id="quickstart-title">Your next game can be in this arcade</h2><p>Fork the repo, copy the tiny HTML starter, and build a game anyone can remix. Keep each game under 10 MB, then send a pull request. The whole arcade also fits on your phone or desktop: download the ZIP, extract it, and open <code>index.html</code>—even offline.</p></div>
+        <div class="quickstart-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Fork GiveGigsGames ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Read the contributor guide ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip">Download ZIP ↓</a></div>
       </section>
 
       <section id="all-games" class="catalog-section">
         <div class="section-heading">
-          <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Choose a game</h2></div>
+          <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Browse every game</h2></div>
           <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
         </div>
-        <div id="game-grid" class="game-grid" aria-live="polite"></div>
+        <div class="catalog-tools">
+          <label class="catalog-search"><span class="sr-only">Search titles, genres, and tags</span><input id="catalog-search" type="search" placeholder="Search games, genres, tags…" autocomplete="off"></label>
+          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
+          <div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div>
+        </div>
+        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button></div><div id="tag-options" class="tag-options"></div></details>
+        <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
         <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
       </section>
     </main>
 
-    <footer class="footer"><a class="brand footer-brand" href="./"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="./tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="./terms.html">Terms of Use</a><a href="./privacy.html">Privacy Policy</a></footer>
+    <section class="contribute-strip" aria-label="Contribute to GiveGigsGames"><div><p class="eyebrow">OPEN SOURCE · UNDER 10 MB PER GAME</p><h2>Don't just play the arcade. Help build it.</h2><p>New games, fixes, art, sound, and ideas are welcome. Fork the repo, make something playable, and share it with the next contributor.</p></div><div class="contribute-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Start contributing on GitHub ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/issues/new/choose">Pitch an idea or report a bug ↗</a></div></section>
+    <footer class="footer"><a class="brand footer-brand" href="./"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="https://github.com/mattyjacks/GiveGigsGames">Contribute ↗</a><a href="./tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="./terms.html">Terms of Use</a><a href="./privacy.html">Privacy Policy</a></footer>
     <script src="./games/catalog-data.js" defer></script>
     <script src="./index.js" defer></script>
   </body>

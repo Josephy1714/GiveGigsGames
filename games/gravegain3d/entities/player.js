@@ -58,6 +58,7 @@
             this.platVy = 0;
             this.doubleJumpsLeft = 0;
             this.abilityCooldown = 0;
+            this.crouching = false;
         }
 
         update(dt, input, physics, tilemap) {
@@ -107,7 +108,8 @@
             let currentSpeed = this.speed;
             if (this.hasPerk('swift')) currentSpeed *= 1.25;
 
-            const isRunning = (input.keys['ShiftLeft'] || input.keys['ShiftRight']) && this.stamina > 5;
+            this.crouching = !!(input.keys['ControlLeft'] || input.keys['ControlRight'] || input.keys['KeyC']);
+            const isRunning = !this.crouching && (input.keys['ShiftLeft'] || input.keys['ShiftRight']) && this.stamina > 5;
             if (isRunning) {
                 currentSpeed *= 1.4;
                 const cost = this.hasPerk('swift') ? 12 : 20;
@@ -115,6 +117,8 @@
             } else {
                 this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
             }
+
+            if (this.crouching) currentSpeed *= 0.58;
 
             if (this.isBlocking) {
                 currentSpeed *= 0.55;

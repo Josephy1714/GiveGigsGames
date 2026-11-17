@@ -14,6 +14,11 @@
     const BotanySeeds = GameData.BotanySeeds;
     const ArmoryUpgrades = GameData.ArmoryUpgrades;
     const RoguelikePerks = GameData.RoguelikePerks;
+    const FPS_WEAPONS = [
+        { id: 'rifle', name: 'M4 CARBINE', magazine: 30, reserve: 120, damage: 24, fireRate: 0.105, reload: 1.65, range: 850, pellets: 1, automatic: true },
+        { id: 'sidearm', name: 'SERVICE PISTOL', magazine: 12, reserve: 60, damage: 31, fireRate: 0.26, reload: 1.25, range: 650, pellets: 1, automatic: false },
+        { id: 'scattergun', name: 'BREACH SHOTGUN', magazine: 6, reserve: 36, damage: 9, fireRate: 0.72, reload: 1.9, range: 360, pellets: 7, automatic: false }
+    ];
 
     // Pointer lock is optional (and commonly unavailable inside embedded game
     // players). Never let a rejected lock request break the rest of the game.
@@ -189,6 +194,12 @@
             // In-run Entities
             this.player = null;
             this.weaponGroup = null;
+            this.weaponInventory = [];
+            this.activeWeaponIndex = 0;
+            this.weaponCooldown = 0;
+            this.weaponReloadTimer = 0;
+            this.weaponRecoil = 0;
+            this.ads = false;
             this.enemies = [];
             this.props = [];
             this.loot = [];
@@ -377,6 +388,12 @@
 
         initRun(race, classType) {
             this.player = new PlayerEntity(race, classType, this.armoryRanks);
+            this.weaponInventory = FPS_WEAPONS.map(weapon => ({ ...weapon, ammo: weapon.magazine, reserveAmmo: weapon.reserve }));
+            this.activeWeaponIndex = 0;
+            this.weaponCooldown = 0;
+            this.weaponReloadTimer = 0;
+            this.weaponRecoil = 0;
+            this.ads = false;
             this.gigglesHelpUses = 3;
             this.gigglesHelpUsed = false;
             try { if (window.GigglesHelpDraft) setTimeout(() => window.GigglesHelpDraft.present('gravegain3dA', this, () => this.updateHUD(), true), 0); } catch (_) {}
@@ -392,11 +409,10 @@
             this.setControlMode(this.controlMode || 'realtime');
 
             // Attach 3D First-Person Weapon
-            if (this.weaponGroup) {
-                this.camera3d.remove(this.weaponGroup);
-            }
-            this.weaponGroup = WeaponFactory.buildWeapon(classType);
+            this.disposeWeaponViewmodel();
+            this.weaponGroup = WeaponFactory.buildWeapon(classType, this.weaponInventory[this.activeWeaponIndex].id);
             this.camera3d.add(this.weaponGroup);
+            this.updateWeaponHUD();
 
             this.audio.startAmbientMusic();
 
@@ -893,6 +909,112 @@
             this.projectiles.push(p);
         }
 
+        handleGameplayKey(code) {
+            if (!this.player || this.player.isDead || this.isPaused || this.controlMode === 'turnbased') return;
+            if (code === 'KeyR') this.reloadWeapon();
+            else if (code === 'Digit1') this.selectWeapon(0);
+            else if (code === 'Digit2') this.selectWeapon(1);
+            else if (code === 'Digit3') this.selectWeapon(2);
+        }
+
+        disposeWeaponViewmodel() {
+            if (!this.weaponGroup) return;
+            this.camera3d.remove(this.weaponGroup);
+            this.weaponGroup.traverse(object => {
+                if (object.geometry) object.geometry.dispose();
+                if (Array.isArray(object.material)) object.material.forEach(material => material.dispose());
+                else if (object.material) object.material.dispose();
+            });
+            this.weaponGroup = null;
+        }
+
+        selectWeapon(index) {
+            if (!this.weaponInventory.length || this.weaponReloadTimer > 0) return;
+            const next = (index + this.weaponInventory.length) % this.weaponInventory.length;
+            if (next === this.activeWeaponIndex) return;
+            this.activeWeaponIndex = next;
+            this.disposeWeaponViewmodel();
+            this.weaponGroup = WeaponFactory.buildWeapon(this.player?.classType, this.weaponInventory[next].id);
+            this.camera3d.add(this.weaponGroup);
+            this.weaponReloadTimer = 0;
+            this.swingTime = Math.max(this.swingTime, 0.12);
+            this.updateWeaponHUD();
+        }
+
+        cycleWeapon(direction = 1) {
+            this.selectWeapon(this.activeWeaponIndex + direction);
+        }
+
+        reloadWeapon() {
+            const weapon = this.weaponInventory[this.activeWeaponIndex];
+            if (!weapon || this.weaponReloadTimer > 0 || weapon.ammo >= weapon.magazine || weapon.reserveAmmo <= 0) return;
+            this.weaponReloadTimer = weapon.reload;
+            this.audio.playSfx('reload', 0.75);
+            const readout = document.getElementById('hudWeaponStatus');
+            if (readout) readout.textContent = 'RELOADING';
+        }
+
+        updateWeaponHUD() {
+            const weapon = this.weaponInventory[this.activeWeaponIndex];
+            if (!weapon) return;
+            const name = document.getElementById('hudWeaponName');
+            const ammo = document.getElementById('hudWeaponAmmo');
+            const status = document.getElementById('hudWeaponStatus');
+            const crosshair = document.getElementById('hudCrosshair');
+            if (name) name.textContent = `${weapon.name}  ·  ${this.activeWeaponIndex + 1}/3`;
+            if (ammo) ammo.textContent = `${weapon.ammo} / ${weapon.reserveAmmo}`;
+            if (status) status.textContent = this.weaponReloadTimer > 0 ? 'RELOADING' : (this.ads ? 'AIMING' : 'READY');
+            if (crosshair) crosshair.classList.toggle('aiming', this.ads);
+        }
+
+        fireWeapon() {
+            if (!this.player || this.player.isDead || this.weaponReloadTimer > 0 || this.weaponCooldown > 0) return false;
+            const weapon = this.weaponInventory[this.activeWeaponIndex];
+            if (!weapon) return false;
+            if (weapon.ammo <= 0) {
+                this.reloadWeapon();
+                return false;
+            }
+
+            weapon.ammo--;
+            this.weaponCooldown = weapon.fireRate;
+            const cData = ClassData[this.player.classType];
+            const classScale = cData ? cData.baseDmg / 20 : 1;
+            const moving = Math.hypot(this.player.vx, this.player.vy) > this.player.speed * 0.45;
+            const spread = this.ads ? (moving ? 0.006 : 0.002) : (moving ? 0.024 : 0.012);
+            const raycaster = new THREE.Raycaster();
+            raycaster.far = weapon.range;
+            const hits = new Map();
+            for (let pellet = 0; pellet < weapon.pellets; pellet++) {
+                raycaster.setFromCamera({ x: (Math.random() - 0.5) * spread, y: (Math.random() - 0.5) * spread }, this.camera3d);
+                const targets = this.mapMeshes[0] ? [this.mapMeshes[0]] : [];
+                this.enemies.forEach(enemy => { if (enemy && !enemy.isDead && enemy.group3d) targets.push(enemy.group3d); });
+                this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
+                const intersections = raycaster.intersectObjects(targets, true);
+                if (!intersections.length) continue;
+                let object = intersections[0].object;
+                let enemy = null;
+                let prop = null;
+                while (object && !enemy && !prop) {
+                    enemy = this.enemies.find(candidate => candidate.group3d === object) || null;
+                    prop = this.props.find(candidate => candidate.group3d === object) || null;
+                    object = object.parent;
+                }
+                if (enemy) hits.set(enemy, (hits.get(enemy) || 0) + 1);
+                else if (prop) this.breakProp(prop);
+            }
+
+            const forward = new THREE.Vector3();
+            this.camera3d.getWorldDirection(forward);
+            hits.forEach((pelletCount, enemy) => this.applyHitToEnemy(enemy, weapon.damage * classScale * pelletCount, forward));
+            this.cameraController.applyPunch(this.ads ? 0.018 : 0.035, (Math.random() - 0.5) * 0.018);
+            this.audio.playSfx('gunshot', weapon.id === 'scattergun' ? 0.75 : (weapon.id === 'sidearm' ? 1.25 : 1));
+            this.weaponRecoil = 0.7;
+            this.updateWeaponHUD();
+            if (weapon.ammo === 0 && weapon.reserveAmmo > 0) this.reloadWeapon();
+            return true;
+        }
+
         triggerMeleeAttack() {
             if (this.swingTime > 0 || !this.player) return;
 
@@ -1197,7 +1319,7 @@
                 if (mmpSpeeds) mmpSpeeds.style.display = 'flex';
                 if (mmhModeBadge) mmhModeBadge.textContent = '⚡ RT';
                 if (mobileStatusBar) mobileStatusBar.classList.add('hidden');
-                if (controlsHint) controlsHint.textContent = 'Controls: WASD Move | Mouse Look | Left-Click Attack | Right-Click Block | F Ability | Space Jump | Q Potion';
+                if (controlsHint) controlsHint.textContent = 'Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | B Block | R Reload | 1–3 / Wheel Swap | Shift Sprint | C/Ctrl Crouch | Space Jump | F Ability | Q Potion';
             } else if (mode === 'chrono') {
                 if (speedGroup) speedGroup.classList.add('hidden');
                 if (turnGroup) turnGroup.classList.add('hidden');
@@ -1209,7 +1331,7 @@
                     mobileStatusBar.classList.remove('hidden');
                     if (mobileStatusText) mobileStatusText.textContent = 'TIME FROZEN';
                 }
-                if (controlsHint) controlsHint.textContent = 'Chrono-Lock: Time moves ONLY when you move, look, or attack! Freeze still to dodge.';
+                if (controlsHint) controlsHint.textContent = 'Chrono-Lock: Time moves when active. LMB Fire | RMB Aim | R Reload | 1–3 / Wheel Swap | Freeze still to dodge.';
             } else if (mode === 'turnbased') {
                 if (speedGroup) speedGroup.classList.add('hidden');
                 if (turnGroup) turnGroup.classList.remove('hidden');
@@ -1483,7 +1605,7 @@
                                         this.input.keys['Space']);
                 const isJoyMoving = this.input.joystick.active && Math.hypot(this.input.joystick.x, this.input.joystick.y) > 0.08;
                 const isLooking = (this.input.lastLookDelta || 0) > 0.8;
-                const isAttacking = this.swingTime > 0 || this.input.mouse.click || this.input.mouse.isBlocking;
+                const isAttacking = this.swingTime > 0 || this.input.mouse.click || this.input.mouse.fireDown || this.input.mouse.aiming || this.input.mouse.isBlocking || this.weaponReloadTimer > 0;
                 const isAbilOrPot = !!(this.input.keys['KeyF'] || this.input.keys['KeyQ']);
 
                 const hasActivity = isMovingKeys || isJoyMoving || isLooking || isAttacking || isAbilOrPot;
@@ -1554,14 +1676,29 @@
                 }
             }
 
+            this.weaponCooldown = Math.max(0, this.weaponCooldown - effectiveDt);
+            if (this.weaponReloadTimer > 0) {
+                this.weaponReloadTimer = Math.max(0, this.weaponReloadTimer - effectiveDt);
+                if (this.weaponReloadTimer === 0) {
+                    const weapon = this.weaponInventory[this.activeWeaponIndex];
+                    if (weapon) {
+                        const amount = Math.min(weapon.magazine - weapon.ammo, weapon.reserveAmmo);
+                        weapon.ammo += amount;
+                        weapon.reserveAmmo -= amount;
+                    }
+                    this.updateWeaponHUD();
+                }
+            }
+            this.ads = !!this.input.mouse.aiming;
+
             // 2. Realtime/Chrono updates
             if (this.controlMode !== 'turnbased') {
-                this.player.isBlocking = this.input.mouse.isBlocking;
+                this.player.isBlocking = this.input.mouse.isBlocking || !!this.input.keys['KeyB'];
 
                 // Handle primary attack
-                if (this.input.mouse.click) {
-                    this.triggerMeleeAttack();
-                    this.input.mouse.click = false;
+                const activeWeapon = this.weaponInventory[this.activeWeaponIndex];
+                if (this.input.mouse.click || (activeWeapon?.automatic && this.input.mouse.fireDown)) {
+                    if (this.fireWeapon()) this.input.mouse.click = false;
                 }
 
                 // Handle ability
@@ -1679,6 +1816,10 @@
             // Update weapon viewmodel animation
             if (this.weaponGroup) {
                 const animDt = effectiveDt > 0 ? effectiveDt : dt * 1.5;
+                this.weaponRecoil = THREE.MathUtils.lerp(this.weaponRecoil, 0, Math.min(1, animDt * 14));
+                if (this.weaponGroup.mainHand && this.weaponGroup.weaponId) {
+                    this.weaponGroup.mainHand.position.z = -6.2 + this.weaponRecoil;
+                }
                 if (this.swingTime > 0) {
                     this.swingTime -= animDt;
                     const progress = (this.swingDuration - this.swingTime) / this.swingDuration;
@@ -1738,7 +1879,11 @@
                 shakeOffset.set((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
             }
 
-            this.camera3d.position.set(this.player.x, this.player.yElevation + 20, this.player.y).add(shakeOffset);
+            const targetFov = this.ads ? 48 : 68;
+            this.camera3d.fov = THREE.MathUtils.lerp(this.camera3d.fov, targetFov, Math.min(1, dt * 12));
+            this.camera3d.updateProjectionMatrix();
+            const eyeHeight = this.player.crouching ? 13 : 20;
+            this.camera3d.position.set(this.player.x, this.player.yElevation + eyeHeight, this.player.y).add(shakeOffset);
 
             // Synchronize player lantern and flashlight
             this.playerLantern.position.copy(this.camera3d.position);
@@ -1750,6 +1895,7 @@
 
             this.vfx.update(effectiveDt > 0 ? effectiveDt : dt * 0.1);
             this.updateHUD();
+            this.updateWeaponHUD();
             this.drawMinimap();
         }
 

@@ -14,7 +14,7 @@
 class InputManager {
     constructor() {
         this.keys = {};
-        this.mouse = { click: false, rightClick: false, isBlocking: false };
+        this.mouse = { click: false, fireDown: false, rightClick: false, isBlocking: false, aiming: false };
         this.lookSensitivity = 0.0022;
         this.invertY = false;
         this.lastLookDelta = 0;
@@ -49,6 +49,9 @@ class InputManager {
     setupDesktopControls() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
+            if (!e.repeat && window.GraveGainGame && window.GraveGainGame.handleGameplayKey) {
+                window.GraveGainGame.handleGameplayKey(e.code);
+            }
             if (e.code === 'KeyP' || e.code === 'Escape') {
                 if (window.GraveGainGame) window.GraveGainGame.togglePause();
             }
@@ -65,6 +68,12 @@ class InputManager {
         if (!container) return;
 
         container.addEventListener('contextmenu', (e) => e.preventDefault());
+        container.addEventListener('wheel', (e) => {
+            const game = window.GraveGainGame;
+            if (!game || !game.player || game.controlMode === 'turnbased') return;
+            e.preventDefault();
+            game.cycleWeapon(e.deltaY > 0 ? 1 : -1);
+        }, { passive: false });
 
         container.addEventListener('mousedown', (e) => {
             // Bot/synthetic presses (virtual mouse, autoplay, playtests) must
@@ -78,8 +87,9 @@ class InputManager {
             } else {
                 if (e.button === 0) {
                     this.mouse.click = true;
+                    this.mouse.fireDown = true;
                 } else if (e.button === 2) {
-                    this.mouse.isBlocking = true;
+                    this.mouse.aiming = true;
                     this.mouse.rightClick = true;
                 }
             }
@@ -115,9 +125,15 @@ class InputManager {
         };
 
         window.addEventListener('mouseup', (e) => {
+            if (e.button === 0) this.mouse.fireDown = false;
             if (e.button === 2) {
-                this.mouse.isBlocking = false;
+                this.mouse.aiming = false;
             }
+        });
+        window.addEventListener('blur', () => {
+            this.mouse.fireDown = false;
+            this.mouse.aiming = false;
+            this.mouse.isBlocking = false;
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -253,6 +269,9 @@ class InputManager {
         const abilityBtn = document.getElementById('mobileAbilityBtn');
         const jumpBtn = document.getElementById('mobileJumpBtn');
         const potionBtn = document.getElementById('mobilePotionBtn');
+        const reloadBtn = document.getElementById('mobileReloadBtn');
+        const weaponPrevBtn = document.getElementById('mobileWeaponPrevBtn');
+        const weaponNextBtn = document.getElementById('mobileWeaponNextBtn');
         const waitBtn = document.getElementById('mobileWaitBtn');
 
         if (attackBtn) {
@@ -262,6 +281,35 @@ class InputManager {
             });
             attackBtn.addEventListener('click', (e) => {
                 if (e.detail === 0) this.mouse.click = true;
+            });
+        }
+
+        if (reloadBtn) {
+            reloadBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.reloadWeapon();
+            });
+            reloadBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.reloadWeapon();
+            });
+        }
+
+        if (weaponPrevBtn) {
+            weaponPrevBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.cycleWeapon(-1);
+            });
+            weaponPrevBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.cycleWeapon(-1);
+            });
+        }
+        if (weaponNextBtn) {
+            weaponNextBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.cycleWeapon(1);
+            });
+            weaponNextBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.cycleWeapon(1);
             });
         }
 

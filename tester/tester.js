@@ -6,11 +6,47 @@
   const search = byId("game-search");
   const genre = byId("genre-filter");
   const count = byId("game-count");
+  const sort = byId("game-sort");
+  const tagSearch = byId("tag-search");
+  const tagOptions = byId("tag-options");
+  const tagMatch = byId("tag-match");
+  const selectedTagCount = byId("selected-tag-count");
   const frame = byId("game-frame");
   const frameWrap = byId("frame-wrap");
   const externalPanel = byId("external-runtime");
+  const devConsole = byId("dev-console");
   let games = [];
   let selected = null;
+  const selectedTags = new Set();
+
+  const tagsFor = (game) => [...new Set((game.tags || []).map((tag) => String(tag).trim()).filter(Boolean))];
+  const compare = (a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
+
+  function renderTagOptions() {
+    const query = tagSearch.value.trim().toLowerCase();
+    tagOptions.replaceChildren();
+    [...new Set(games.flatMap(tagsFor))].sort(compare).filter((tag) => tag.toLowerCase().includes(query)).forEach((tag) => {
+      const label = document.createElement("label");
+      label.className = "tag-option";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = tag;
+      checkbox.checked = selectedTags.has(tag);
+      checkbox.addEventListener("change", () => {
+        checkbox.checked ? selectedTags.add(tag) : selectedTags.delete(tag);
+        updateTagCount();
+        render();
+      });
+      const text = document.createElement("span");
+      text.textContent = tag;
+      label.append(checkbox, text);
+      tagOptions.append(label);
+    });
+  }
+
+  function updateTagCount() {
+    selectedTagCount.textContent = selectedTags.size ? `${selectedTags.size} selected` : "All tags";
+  }
 
   const safePath = (game) => {
     if (game.runtimeType === "external") return game.externalUrl;
@@ -22,8 +58,19 @@
     const query = search.value.trim().toLowerCase();
     const selectedGenre = genre.value;
     const filtered = games.filter((game) => {
-      const haystack = `${game.title} ${game.genre} ${game.description} ${(game.tags || []).join(" ")}`.toLowerCase();
-      return (!query || haystack.includes(query)) && (!selectedGenre || game.genre === selectedGenre);
+      const tags = tagsFor(game);
+      const haystack = `${game.title} ${game.genre} ${game.description} ${tags.join(" ")}`.toLowerCase();
+      const matches = [...selectedTags].map((tag) => tags.includes(tag));
+      const matchesTags = !matches.length || (tagMatch.value === "all" ? matches.every(Boolean) : matches.some(Boolean));
+      return (!query || haystack.includes(query)) && (!selectedGenre || game.genre === selectedGenre) && matchesTags;
+    });
+    const mode = sort.value;
+    filtered.sort((a, b) => {
+      if (mode === "genre") return compare(a.genre || "", b.genre || "") || compare(a.title, b.title);
+      if (mode === "tag") return compare(tagsFor(a).sort(compare)[0] || "", tagsFor(b).sort(compare)[0] || "") || compare(a.title, b.title);
+      if (mode === "tags-desc") return tagsFor(b).length - tagsFor(a).length || compare(a.title, b.title);
+      if (mode === "tags-asc") return tagsFor(a).length - tagsFor(b).length || compare(a.title, b.title);
+      return compare(a.title, b.title);
     });
     count.textContent = `${filtered.length} game${filtered.length === 1 ? "" : "s"}`;
     grid.replaceChildren();
@@ -52,10 +99,18 @@
       category.textContent = game.genre;
       const description = document.createElement("p");
       description.textContent = game.description;
+      const tags = document.createElement("div");
+      tags.className = "game-tags";
+      for (const tag of tagsFor(game)) {
+        const chip = document.createElement("span");
+        chip.className = "game-tag";
+        chip.textContent = tag;
+        tags.append(chip);
+      }
       const play = document.createElement("span");
       play.className = "play-link";
       play.textContent = "Launch game →";
-      card.append(top, title, category, description, play);
+      card.append(top, title, category, description, tags, play);
       card.addEventListener("click", () => openGame(game));
       grid.append(card);
     }
@@ -75,7 +130,8 @@
     frameWrap.hidden = external;
     externalPanel.hidden = !external;
     byId("open-external").href = external ? source : "#";
-    frame.src = external ? "about:blank" : source;
+    frame.src = external ? "about:blank" : `${source}${source.includes("?") ? "&" : "?"}ggTester=1`;
+    devConsole.hidden = game.slug.toLowerCase() !== "gravegain2da";
     library.hidden = true;
     player.hidden = false;
     try { history.replaceState(null, "", `?game=${encodeURIComponent(game.slug)}`); } catch {}
@@ -93,9 +149,84 @@
 
   search.addEventListener("input", render);
   genre.addEventListener("change", render);
+  sort.addEventListener("change", render);
+  tagSearch.addEventListener("input", renderTagOptions);
+  tagMatch.addEventListener("change", render);
+  byId("clear-tags").addEventListener("click", () => {
+    selectedTags.clear();
+    renderTagOptions();
+    updateTagCount();
+    render();
+  });
+  document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => {
+    const listView = button.dataset.view === "list";
+    grid.classList.toggle("list-view", listView);
+    grid.classList.toggle("grid-view", !listView);
+    document.querySelectorAll("[data-view]").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
+  }));
   byId("back-button").addEventListener("click", closeGame);
   byId("reload-game").addEventListener("click", () => {
-    if (selected) frame.src = safePath(selected);
+    if (selected) frame.src = `${safePath(selected)}?ggTester=1`;
+  });
+
+  function runGameCommand(raw) {
+    const output = byId("console-output");
+    const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return;
+    if (tokens[0] === "help") {
+      output.textContent = "Commands: god on/off, heal, gold [amount], win, lose, status. Cheats use GraveGain's existing gameDebug hooks.";
+      return;
+    }
+    try {
+      const debug = frame.contentWindow.gameDebug;
+      if (!debug) throw new Error("Game is still loading. Try again in a moment.");
+      const game = frame.contentWindow.GraveGainGame;
+      switch (tokens[0]) {
+        case "god": {
+          if (tokens[1] !== "on" && tokens[1] !== "off") throw new Error("Use: god on or god off");
+          debug.godMode = tokens[1] === "on";
+          output.textContent = `God mode ${debug.godMode ? "ON" : "OFF"}.`;
+          break;
+        }
+        case "heal":
+          if (!game?.player) throw new Error("Start a run before healing.");
+          debug.setHealth(game.player.maxHp);
+          game.updateHUD?.();
+          output.textContent = `HP restored to ${game.player.maxHp}.`;
+          break;
+        case "gold": {
+          if (!game) throw new Error("Game is still loading.");
+          const amount = Math.max(0, Math.min(1000000, Math.floor(Number(tokens[1] || 1000))));
+          if (!Number.isFinite(amount)) throw new Error("Use: gold [amount], from 0 to 1000000.");
+          debug.setScore(amount);
+          game.updateHUD?.();
+          output.textContent = `Gold set to ${amount}.`;
+          break;
+        }
+        case "win": debug.win(); output.textContent = "Win state triggered."; break;
+        case "lose": debug.lose(); output.textContent = "Lose state triggered."; break;
+        case "status":
+          output.textContent = game ? `Gold ${debug.getScore()} · HP ${debug.getHealth()} · God mode ${debug.godMode ? "ON" : "OFF"}` : "Game is still loading.";
+          break;
+        default: throw new Error(`Unknown command: ${tokens[0]}. Type help for commands.`);
+      }
+    } catch (error) {
+      output.textContent = error.message || "Command could not run.";
+    }
+  }
+
+  byId("console-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = byId("console-input");
+    runGameCommand(input.value);
+    input.select();
+  });
+  document.querySelectorAll("[data-command]").forEach((button) => {
+    button.addEventListener("click", () => runGameCommand(button.dataset.command));
   });
   byId("fullscreen-game").addEventListener("click", async () => {
     try {
@@ -116,6 +247,7 @@
         option.textContent = item;
         genre.append(option);
       }
+      renderTagOptions();
       render();
       const slug = new URLSearchParams(location.search).get("game");
       const requested = games.find((game) => game.slug.toLowerCase() === (slug || "").toLowerCase());

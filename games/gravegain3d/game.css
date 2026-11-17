@@ -1244,6 +1244,74 @@ body.touch-enabled .mobile-action-buttons {
     box-shadow: 0 0 12px #f59e0b;
 }
 
+.hud-crosshair.aiming {
+    width: 4px;
+    height: 4px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 7px rgba(255, 255, 255, 0.8);
+}
+
+.hud-weapon-readout {
+    position: absolute;
+    z-index: 20;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    gap: 2px 12px;
+    min-width: 190px;
+    padding: 8px 13px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 8px;
+    color: #e2e8f0;
+    background: rgba(3, 7, 18, 0.72);
+    font: 700 11px/1.25 system-ui, sans-serif;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+}
+
+.hud-weapon-readout strong {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: #f8fafc;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+}
+
+.hud-weapon-readout > span:last-child {
+    color: #94a3b8;
+    font-size: 9px;
+}
+
+.mobile-action-btn.btn-reload {
+    top: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+    color: #f8fafc;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #334155, #64748b);
+    border-color: rgba(203, 213, 225, 0.8);
+}
+
+.mobile-action-btn.btn-weapon-prev,
+.mobile-action-btn.btn-weapon-next {
+    top: 12px;
+    width: 34px;
+    height: 34px;
+    color: #f8fafc;
+    font-size: 0.85rem;
+    background: linear-gradient(135deg, #1e293b, #475569);
+    border-color: rgba(203, 213, 225, 0.65);
+}
+
+.mobile-action-btn.btn-weapon-prev { right: 62px; }
+.mobile-action-btn.btn-weapon-next { right: 104px; }
+
 .canvas-container.paused .hud-crosshair {
     display: none;
 }

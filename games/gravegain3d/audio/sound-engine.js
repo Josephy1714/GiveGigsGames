@@ -64,6 +64,30 @@ class SoundEngine {
 
             noise.start(now);
             noise.stop(now + 0.15);
+        } else if (type === 'gunshot') {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(115 * pitchMod, now);
+            osc.frequency.exponentialRampToValueAtTime(36, now + 0.09);
+            gain.gain.setValueAtTime(0.42 * mainVol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'reload') {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(460, now);
+            osc.frequency.exponentialRampToValueAtTime(720, now + 0.07);
+            gain.gain.setValueAtTime(0.08 * mainVol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.11);
         } else if (type === 'hit') {
             // Crunchy impact with low punch
             const osc = this.ctx.createOscillator();

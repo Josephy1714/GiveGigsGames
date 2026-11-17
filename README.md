@@ -2,6 +2,8 @@
 
 An open browser-game framework and full public test library for GiveGigs. The repository root is the site intended for **games.givegigs.com**. It includes every catalog title, including experiments, previews, and games not ready for the curated public catalog at [givegigs.com/games](https://givegigs.com/games/).
 
+> **Build the next game in the arcade.** [Fork GiveGigsGames](https://github.com/mattyjacks/GiveGigsGames), start with the [contributor quick start](CONTRIBUTING.md), and send a pull request. Games must stay under **10 MB** each. New games, fixes, art, music, and ideas are welcome.
+
 ## Quick start — play without installing anything
 
 ### Desktop
@@ -43,6 +45,7 @@ Contribute a game: [open a pull request](https://github.com/mattyjacks/GiveGigsG
 
 - `games/catalog.json` is the source catalog.
 - `games/catalog-data.js` is generated from it so the root page works from `file://` without `fetch`.
+- The main library and tester default to a compact list, with a grid toggle, tag search, multi-tag any/all filters, and sorting by title, genre, first tag, or tag count.
 - `games/<slug>/` contains game files; `games/html/` and `games/shared/` contain centrally maintained support assets.
 - `tester/` is the searchable, iframe-based developer view.
 - `backup/mjgames1/` is a local ignored source snapshot and is not published.

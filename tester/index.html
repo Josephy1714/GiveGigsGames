@@ -11,21 +11,24 @@
     <header class="topbar">
       <a class="brand" href="../" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
       <span class="dev-badge">FULL CATALOG</span>
-      <a class="repo-link" href="https://givegigs.com/games/" target="_blank" rel="noreferrer">Curated GiveGigs catalog ↗</a>
+      <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames">Contribute a game ↗</a>
     </header>
     <main class="shell">
       <section id="library-view" class="library-view">
         <div class="intro">
           <p class="eyebrow">FULL LIBRARY · TEST & PREVIEW BUILDS</p>
           <h1>Play a build.<br><span>Check how it behaves.</span></h1>
-          <p class="intro-copy">This public testing environment includes released titles, previews, experiments, and development builds. Launch the current game files directly; no Next.js app or game build step is required. Cloud saves are not available.</p>
+          <p class="intro-copy">Play releases, previews, experiments, and development builds. This is the full HTML arcade: no Next.js app or game build step required, and no cloud saves. Find a bug or want to improve a game? The repo is open for your pull request.</p>
+          <div class="tester-cta"><a href="https://github.com/mattyjacks/GiveGigsGames">Fork the game library on GitHub ↗</a><a href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Start with the quick-start guide</a></div>
         </div>
         <div class="library-tools">
           <label class="search-wrap"><span class="sr-only">Search games</span><span aria-hidden="true">⌕</span><input id="game-search" type="search" placeholder="Find a game…" autocomplete="off"></label>
           <label class="filter-wrap"><span class="sr-only">Filter by genre</span><select id="genre-filter"><option value="">All genres</option></select></label>
+          <label class="filter-wrap sort-wrap"><span class="sr-only">Sort games</span><select id="game-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
           <span id="game-count" class="game-count" aria-live="polite"></span>
         </div>
-        <div id="game-grid" class="game-grid" aria-live="polite"></div>
+        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button><div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div></div><div id="tag-options" class="tag-options"></div></details>
+        <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
         <p id="load-error" class="load-error" hidden></p>
         <footer class="library-footer">Some titles are works in progress. For local development, serve the repository over HTTP so storage, workers, and relative assets behave like a hosted game. <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></footer>
       </section>
@@ -41,9 +44,15 @@
           </div>
         </div>
         <p id="player-description" class="player-description"></p>
+        <section id="dev-console" class="dev-console" hidden aria-label="GraveGain2DA tester console">
+          <div class="dev-console-heading"><div><span class="dev-console-badge">DEVELOPER TEST MODE</span><h2>GraveGain2DA control console</h2><p>Same game files as the public build, with local test cheats. Changes may affect this browser's saved progress.</p></div><a href="https://github.com/mattyjacks/GiveGigsGames">Improve this game ↗</a></div>
+          <div class="cheat-buttons"><button type="button" data-command="help">Help</button><button type="button" data-command="god on">God mode</button><button type="button" data-command="heal">Restore HP</button><button type="button" data-command="gold 1000">+1,000 gold</button><button type="button" data-command="win">Win run</button><button type="button" data-command="lose">End run</button></div>
+          <form id="console-form" class="console-form"><label class="sr-only" for="console-input">Enter a GraveGain tester command</label><span aria-hidden="true">&gt;</span><input id="console-input" autocomplete="off" spellcheck="false" placeholder="help · god on/off · heal · gold 1000 · win · lose"><button type="submit">Run</button></form>
+          <output id="console-output" class="console-output" aria-live="polite">Console ready. Select a command or type help.</output>
+        </section>
         <div id="frame-wrap" class="frame-wrap"><iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe></div>
         <div id="external-runtime" class="external-runtime" hidden><p>This game is still hosted by MattyJacks. It blocks embedding from another site, so open it in a separate tab.</p><a id="open-external" class="tool-button primary" target="_blank" rel="noreferrer">Open game ↗</a></div>
-        <p class="player-note">Testing environment: cloud saves and cross-device sync are not available. Any progress a game saves stays in this browser's local storage. Click inside the game to send it keyboard or mouse input.</p>
+        <p class="player-note">Testing environment: cloud saves and cross-device sync are not available. Any progress a game saves stays in this browser's local storage. Click inside the game to send it keyboard or mouse input. <a href="https://github.com/mattyjacks/GiveGigsGames">Found a problem? Fix it and send a pull request ↗</a></p>
       </section>
     </main>
     <script src="../games/catalog-data.js" defer></script>

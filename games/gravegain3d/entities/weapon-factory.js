@@ -2,7 +2,7 @@
     'use strict';
 
     class WeaponFactory {
-        static buildWeapon(classType) {
+        static buildWeapon(classType, weaponId = 'legacy') {
             const ClassType = window.GraveGainGameData?.ClassType || {
                 WARRIOR: 'warrior',
                 TANK: 'tank',
@@ -10,6 +10,44 @@
                 MAGE: 'mage'
             };
             const group = new THREE.Group();
+
+            if (weaponId !== 'legacy') {
+                const palette = {
+                    rifle: { body: 0x263244, accent: 0x64748b, barrel: 10 },
+                    sidearm: { body: 0x3f3f46, accent: 0x94a3b8, barrel: 6 },
+                    scattergun: { body: 0x4a3325, accent: 0xb08a55, barrel: 12 }
+                }[weaponId] || { body: 0x263244, accent: 0x64748b, barrel: 10 };
+                const metal = new THREE.MeshStandardMaterial({ color: palette.body, metalness: 0.68, roughness: 0.34 });
+                const trim = new THREE.MeshStandardMaterial({ color: palette.accent, metalness: 0.78, roughness: 0.28 });
+                const receiver = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.4, weaponId === 'sidearm' ? 5.2 : 7.5), metal);
+                receiver.position.set(2.25, -2.7, -6.2);
+                group.add(receiver);
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, palette.barrel, 10), trim);
+                barrel.rotation.x = Math.PI / 2;
+                barrel.position.set(2.25, -2.2, -10.2);
+                group.add(barrel);
+                const grip = new THREE.Mesh(new THREE.BoxGeometry(1.25, 3.1, 1.55), metal);
+                grip.position.set(2.25, -4.9, -4.8);
+                grip.rotation.x = -0.18;
+                group.add(grip);
+                if (weaponId !== 'sidearm') {
+                    const stock = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.7, 3.2), metal);
+                    stock.position.set(2.25, -2.6, -2.0);
+                    group.add(stock);
+                    const sight = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.0, 1.4), trim);
+                    sight.position.set(2.25, -1.35, -6.5);
+                    group.add(sight);
+                }
+                if (weaponId === 'scattergun') {
+                    const secondBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.48, 11, 10), trim);
+                    secondBarrel.rotation.x = Math.PI / 2;
+                    secondBarrel.position.set(3.25, -2.2, -10.0);
+                    group.add(secondBarrel);
+                }
+                group.mainHand = receiver;
+                group.weaponId = weaponId;
+                return group;
+            }
 
             if (classType === ClassType.WARRIOR) {
                 // Steel Longsword
