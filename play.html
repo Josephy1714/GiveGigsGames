@@ -8,13 +8,14 @@
     <link rel="stylesheet" href="/play.css">
     <link rel="stylesheet" href="/play-layout.css">
     <script src="/games/catalog-data.js" defer></script>
+    <script src="/game-route.js" defer></script>
     <script src="/play.js" defer></script>
   </head>
   <body>
     <header class="player-bar">
       <a class="back-link" href="/ggg/" aria-label="Back to game select">← <span>Back to game select</span></a>
       <h1 id="game-title">Loading game…</h1>
-      <a class="home-link" id="direct-link" hidden>Open directly</a>
+      <div class="player-links"><a class="home-link" id="play-roadmap" hidden>Roadmap</a><a class="home-link" id="direct-link" hidden>Open directly</a></div>
     </header>
     <main class="player-content">
       <p id="player-error" role="alert" hidden></p>

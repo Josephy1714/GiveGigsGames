@@ -358,6 +358,10 @@
       guide.className = "test-link";
       guide.href = `/ggg/guide/${encodeURIComponent(game.slug)}`;
       guide.textContent = "Walkthrough";
+      const roadmap = document.createElement("a");
+      roadmap.className = "test-link";
+      roadmap.href = `/ggg/roadmap/${encodeURIComponent(game.slug)}`;
+      roadmap.textContent = "Roadmap";
       const favorite = document.createElement("button");
       favorite.type = "button";
       favorite.className = "save-download-button";
@@ -373,7 +377,7 @@
           collection.focus();
         }
       });
-      actions.append(play, test, details, guide, favorite);
+      actions.append(play, test, details, guide, roadmap, favorite);
       card.append(head, body, actions);
       grid.append(card);
     }

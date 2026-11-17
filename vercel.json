@@ -8,6 +8,7 @@
     { "source": "/ggg/test/:game", "destination": "/tester/index.html?game=:game" },
     { "source": "/ggg/play/:game", "destination": "/play.html?game=:game" },
     { "source": "/ggg/info/:game", "destination": "/game.html?game=:game" },
-    { "source": "/ggg/guide/:game", "destination": "/ggg-guide.html" }
+    { "source": "/ggg/guide/:game", "destination": "/ggg-guide.html" },
+    { "source": "/ggg/roadmap/:game", "destination": "/roadmap.html" }
   ]
 }

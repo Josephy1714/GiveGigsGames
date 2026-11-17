@@ -41,7 +41,7 @@ python -m http.server 4173
 
 Then open <http://localhost:4173/>. The searchable tester is at <http://localhost:4173/tester/>.
 
-## Five views of the game library
+## Game pages
 
 The hosted Vercel site exposes five clear routes for each title. The root-level legacy pages remain available for local development and downloads.
 
@@ -50,8 +50,9 @@ The hosted Vercel site exposes five clear routes for each title. The root-level 
 - `https://games.givegigs.com/ggg/test/<slug>` — tester view with viewport controls.
 - `https://games.givegigs.com/ggg/info/<slug>` — concise game information and links to the other views.
 - `https://games.givegigs.com/ggg/guide/<slug>` — walkthrough view, using the game's authored guide when available.
+- `https://games.givegigs.com/ggg/roadmap/<slug>` — game-specific improvement ideas and future roadmap suggestions.
 
-For example, `platform-wars` is available under each route at `/ggg/play/platform-wars`, `/ggg/test/platform-wars`, `/ggg/info/platform-wars`, and `/ggg/guide/platform-wars`. Routes are configured in `vercel.json` and use the existing catalog slugs.
+For example, `platform-wars` is available under each route at `/ggg/play/platform-wars`, `/ggg/test/platform-wars`, `/ggg/info/platform-wars`, `/ggg/guide/platform-wars`, and `/ggg/roadmap/platform-wars`. Routes are configured in `vercel.json` and use the existing catalog slugs.
 
 ## Contribute a game
 

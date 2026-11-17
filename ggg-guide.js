@@ -1,6 +1,5 @@
 (() => {
-  const slug = decodeURIComponent(location.pathname.split("/").filter(Boolean).at(-1) || "");
-  const game = window.GIVEGIGSGAMES_CATALOG?.games?.find((entry) => entry.slug.toLowerCase() === slug.toLowerCase());
+  const game = window.GGGGameRoute?.resolve("guide", window.GIVEGIGSGAMES_CATALOG?.games);
   const title = document.getElementById("guide-title");
   if (!game) {
     title.textContent = "Game guide unavailable";
@@ -22,7 +21,8 @@
     "play-link": `/ggg/play/${encodeURIComponent(game.slug)}`,
     "test-link": `/ggg/test/${encodeURIComponent(game.slug)}`,
     "play-action": `/ggg/play/${encodeURIComponent(game.slug)}`,
-    "test-action": `/ggg/test/${encodeURIComponent(game.slug)}`
+    "test-action": `/ggg/test/${encodeURIComponent(game.slug)}`,
+    "roadmap-link": `/ggg/roadmap/${encodeURIComponent(game.slug)}`
   };
   for (const [id, href] of Object.entries(links)) document.getElementById(id).href = href;
 

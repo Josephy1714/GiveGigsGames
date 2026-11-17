@@ -153,6 +153,7 @@
     byId("open-game").href = source;
     byId("view-info").href = `/ggg/info/${encodeURIComponent(game.slug)}`;
     byId("view-guide").href = `/ggg/guide/${encodeURIComponent(game.slug)}`;
+    byId("view-roadmap").href = `/ggg/roadmap/${encodeURIComponent(game.slug)}`;
     byId("view-play").href = game.runtimeType === "external" ? source : `/ggg/play/${encodeURIComponent(game.slug)}`;
     frame.title = `${game.title} game`;
     const external = game.runtimeType === "external";
@@ -285,11 +286,7 @@
       }
       renderTagOptions();
       render();
-      const routeMatch = location.pathname.match(/^\/ggg\/test\/([^/]+)\/?$/i);
-      let pathSlug = null;
-      try { pathSlug = routeMatch ? decodeURIComponent(routeMatch[1]) : null; } catch {}
-      const slug = new URLSearchParams(location.search).get("game") || pathSlug;
-      const requested = games.find((game) => game.slug.toLowerCase() === (slug || "").toLowerCase());
+      const requested = window.GGGGameRoute?.resolve("test", games);
       if (requested) openGame(requested);
   } catch (error) {
     byId("load-error").hidden = false;

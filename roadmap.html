@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08131f">
+    <title>Game roadmap · GiveGigsGames</title>
+    <link rel="stylesheet" href="/index.css">
+    <link rel="stylesheet" href="/roadmap.css">
+    <script src="/games/catalog-data.js" defer></script>
+    <script src="/game-route.js" defer></script>
+    <script src="/roadmap.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/ggg/">GiveGigs<span class="brand-light">Games</span></a>
+      <nav class="roadmap-nav" aria-label="Game pages">
+        <a href="/ggg/">Library</a><a id="roadmap-play">Play</a><a id="roadmap-test">Test</a>
+        <a id="roadmap-info">Details</a><a id="roadmap-guide">Guide</a>
+      </nav>
+    </header>
+    <main class="roadmap-shell">
+      <p class="eyebrow">GAME ROADMAP · SUGGESTED NEXT STEPS</p>
+      <h1 id="roadmap-title">Loading roadmap…</h1>
+      <p id="roadmap-description" class="roadmap-lede"></p>
+      <div class="roadmap-note"><strong>How to read this:</strong> these are proposed improvements based on the game’s current catalog profile, not scheduled or guaranteed releases. Maintainers can replace suggestions with confirmed milestones as plans evolve.</div>
+      <section class="roadmap-profile" aria-labelledby="profile-title">
+        <h2 id="profile-title">Current game profile</h2>
+        <div id="roadmap-profile" class="profile-tags"></div>
+      </section>
+      <section class="roadmap-section" aria-labelledby="future-title">
+        <div class="roadmap-section-heading"><div><p class="eyebrow">OPEN IDEAS</p><h2 id="future-title">What could come next</h2></div><span id="roadmap-count" class="roadmap-count"></span></div>
+        <div id="roadmap-items" class="roadmap-items"></div>
+      </section>
+      <p id="roadmap-error" class="roadmap-error" hidden>This game’s roadmap could not be found. Return to the library and choose a title.</p>
+    </main>
+    <footer class="footer"><a class="brand footer-brand" href="/ggg/">GiveGigs<span class="brand-light">Games</span></a><p>Roadmaps are living proposals for each game.</p><a href="https://github.com/mattyjacks/GiveGigsGames">Suggest an improvement ↗</a></footer>
+  </body>
+</html>

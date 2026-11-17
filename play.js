@@ -2,8 +2,7 @@
   const title = document.getElementById("game-title");
   const frame = document.getElementById("game-frame");
   const error = document.getElementById("player-error");
-  const slug = new URLSearchParams(location.search).get("game");
-  const game = window.GIVEGIGSGAMES_CATALOG?.games?.find((item) => item.slug === slug);
+  const game = window.GGGGameRoute?.resolve("play", window.GIVEGIGSGAMES_CATALOG?.games);
 
   if (!game) {
     title.textContent = "Game unavailable";
@@ -15,6 +14,9 @@
 
   title.textContent = game.title;
   document.title = `${game.title} · GiveGigsGames`;
+  const roadmapLink = document.getElementById("play-roadmap");
+  roadmapLink.href = `/ggg/roadmap/${encodeURIComponent(game.slug)}`;
+  roadmapLink.hidden = false;
   if (game.runtimeType === "external") {
     frame.hidden = true;
     const direct = document.getElementById("direct-link");
@@ -68,6 +70,7 @@
   });
   try {
     const recent = JSON.parse(localStorage.getItem("arcade:recent") || "[]");
+    const slug = game.slug;
     localStorage.setItem("arcade:recent", JSON.stringify([slug, ...recent.filter((item) => item !== slug)].slice(0, 20)));
   } catch {}
   launch();
