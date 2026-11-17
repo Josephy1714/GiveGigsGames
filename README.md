@@ -23,6 +23,8 @@ The static games are designed to run from the downloaded folder and can be teste
 
 No Node.js, build step, account, or cloud save is needed just to play a local static game. Progress is stored in the current browser when supported. **games.givegigs.com is a testing environment: it has no cloud saves or cross-device sync.**
 
+On the hosted library (or when serving the repo from one local web origin), use **Back up or restore game saves** on the home page to download browser `localStorage` entries as individual structured `.txt` files or upload them later. Restoring replaces an entry with the same storage key; reload the game afterward. Saves are scoped to the browser origin, so this tool only sees saves from games running on that same origin.
+
 Read the [Terms of Use](terms.html) and [Privacy Policy](privacy.html) for information about game licenses, browser-local progress, and possible game-specific third-party connections. Hosting request logs depend on the provider used for deployment.
 
 Vercel Web Analytics is wired into the HTML pages. To collect data, enable **Analytics** for the Vercel project, then redeploy; local files and `localhost` sessions are excluded.

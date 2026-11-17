@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>GraveGain2DC - GiveGigsGames</title>
+    <meta name="description" content="A 2.5D dark fantasy action roguelite with three combat tempos, hidden vaults, guarded treasure caches, a 10-mission campaign, endless procedural floors, and the LuckyStarShip hub.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="campaign/css/10-campaign.css">
+    <link rel="stylesheet" href="aaa/css/10-film.css">
+    <link rel="stylesheet" href="aaa/css/20-titlecard.css">
+    <link rel="stylesheet" href="aaa/css/30-announcer-combo.css">
+    <link rel="stylesheet" href="aaa/css/40-boss.css">
+    <link rel="stylesheet" href="aaa/css/50-hud.css">
+    <link rel="stylesheet" href="aaa/css/60-menu.css">
+</head>
+<body class="TEMPLATE-4weird-game-page">
+    <canvas id="TEMPLATE-4weird-starfield"></canvas>
+    <div id="TEMPLATE-4weird-nav-placeholder"></div>
+
+    <div class="game-wrapper">
+        <!-- Main Game Screen (HUD + Canvas) -->
+        <div class="game-main hidden" id="gameMain">
+            <!-- HUD -->
+            <div class="game-hud glass-panel">
+                <div class="hud-group">
+                    <div class="hud-stat" id="hudHpStat">
+                        <span class="hud-label" id="hudHpLabel">❤️ HP</span>
+                        <span class="hud-adrenaline hidden" id="hudAdrenaline" title="At or below 30% health: +20% attack damage and movement speed">ADRENALINE · +20%</span>
+                        <div class="hud-bar-container">
+                            <div class="hud-bar bar-hp" id="hudHpBar"></div>
+                        </div>
+                        <span class="hud-value" id="hudHpText">100/100</span>
+                    </div>
+                    <div class="hud-stat" id="hudStaminaStat" title="Stamina under 20%: dodge and sprint recharge is limited until you recover">
+                        <span class="hud-label">⚡ Stamina</span>
+                        <div class="hud-bar-container">
+                            <div class="hud-bar bar-stamina" id="hudStaminaBar"></div>
+                        </div>
+                        <span class="hud-value" id="hudStaminaText">100/100</span>
+                    </div>
+                    <div class="hud-stat" id="hudResourceStat">
+                        <span class="hud-label" id="hudResourceLabel">🔮 Resource</span>
+                        <div class="hud-bar-container">
+                            <div class="hud-bar bar-resource" id="hudResourceBar"></div>
+                        </div>
+                        <span class="hud-value" id="hudResourceText">0/100</span>
+                    </div>
+                    <div class="hud-stat hidden" id="hudChargeStat" title="Hold V or Melee to charge a heavy swing">
+                        <span class="hud-label">⚔️ Charge</span>
+                        <div class="hud-bar-container"><div class="hud-bar bar-resource" id="hudChargeBar"></div></div>
+                        <span class="hud-value" id="hudChargeText">0%</span>
+                    </div>
+                    <div class="hud-stat" title="Damage per second over a rolling five-second window">
+                        <span class="hud-label">⚔ DPS · 5s</span>
+                        <span class="hud-value highlight-cyan" id="hudDpsText">0</span>
+                    </div>
+                </div>
+
+                <div class="hud-group">
+                    <div class="hud-stat" id="hudGoldStat">
+                        <span class="hud-label">🪙 Gold</span>
+                        <span class="hud-value gold-display" id="hudGoldText">0</span>
+                        <span class="gold-popup hidden" id="hudGoldPopup" aria-hidden="true"></span>
+                    </div>
+                    <div class="hud-stat">
+                        <span class="hud-label">💵 $UUSD</span>
+                        <span class="hud-value uusd-display" id="hudUusdText">0</span>
+                    </div>
+                    <div class="hud-stat hidden" id="hudRevivalStat" aria-live="polite" title="Phoenix Protocol: one revival each run">
+                        <span class="hud-label">🔥 Phoenix</span>
+                        <span class="hud-value" id="hudRevivalText">READY</span>
+                    </div>
+                    <div class="hud-stat" title="Once each run, crossing below 10% health restores 25% max health">
+                        <span class="hud-label">🌬️ Second Wind</span>
+                        <span class="hud-value" id="hudSecondWindText">READY</span>
+                    </div>
+                    <div class="hud-stat" title="Kills build up to five Bloodlust stacks. Each stack increases weapon and melee attack speed by 10% for six seconds.">
+                        <span class="hud-label">🩸 Bloodlust</span>
+                        <span class="hud-value" id="hudBloodlustText">0 STACKS</span>
+                    </div>
+                    <div class="hud-stat">
+                        <span class="hud-label">🏢 Floor / Level</span>
+                        <span class="hud-value highlight-cyan" id="hudFloorText">Layer 1</span>
+                        <span class="hud-xp" id="hudXpText">0 / 50 XP</span>
+                        <span class="hud-xp" id="hudCritText">5% CRIT · 1.50×</span>
+                        <span class="hud-xp" id="hudGrowthText">WARD +0% · HEAL +0%</span>
+                    </div>
+                </div>
+                <div class="hud-effect-strip hidden" id="hudEffectStrip" aria-label="Active buffs and debuffs"></div>
+            </div>
+
+            <div class="control-modes-bar glass-panel" id="controlModesBar" aria-label="Game tempo controls">
+                <div class="mode-selector-group">
+                    <span class="mode-label">🕹️ MODE</span>
+                    <button class="btn-mode active" data-mode="realtime" aria-pressed="true">⚡ Realtime</button>
+                    <button class="btn-mode" data-mode="chrono" aria-pressed="false">⏳ Chrono-Lock</button>
+                    <button class="btn-mode" data-mode="turnbased" aria-pressed="false">🎲 Turn-Based</button>
+                    <button class="btn-sound-toggle" id="btnMute" type="button" aria-label="Mute audio" aria-pressed="false">🔊 Sound · M</button>
+                </div>
+                <div class="speed-selector-group" id="speedSelectorGroup">
+                    <span class="mode-label">SPEED</span>
+                    <button class="btn-speed" data-speed="0.5">0.5x</button>
+                    <button class="btn-speed active" data-speed="1">1x</button>
+                    <button class="btn-speed" data-speed="1.5">1.5x</button>
+                    <button class="btn-speed" data-speed="2">2x</button>
+                </div>
+                <div class="chrono-display-group hidden" id="chronoDisplayGroup"><span class="chrono-badge" id="chronoStatusBadge">TIME FROZEN</span><span>Act to advance time</span></div>
+                <div class="turn-display-group hidden" id="turnDisplayGroup"><span id="hudTurnCounter">Turn 1</span><button class="btn-game btn-wait-turn" id="btnWaitTurn">⏳ Wait</button><span id="hudTurnPhase">YOUR TURN</span></div>
+            </div>
+            <div id="gamepadStatus" class="gamepad-status hidden" role="status" aria-live="polite"></div>
+            <div class="mission-tracker hidden" id="missionTracker" aria-live="polite">
+                <span>📜 CAMPAIGN</span><span id="missionObjectiveText">Objective</span>
+            </div>
+            <div class="speedrun-hud hidden" id="speedrunHud" aria-live="polite">
+                <span>⏱ SPEEDRUN</span><strong id="speedrunTimerText">00:00.00</strong><small id="speedrunSplitText">ROOM SPLITS · WAITING</small>
+            </div>
+            <div class="armament-bar glass-panel" aria-label="Equipped weapon">
+                <div><span class="armament-label">CURRENT ARMAMENT</span><strong id="hudWeaponText">🔫 Relic Bolt</strong><small id="hudWeaponMeta">Common · 22 DMG · 1/20</small></div>
+                <button class="btn-game" type="button" id="btnCycleWeapon" aria-label="Switch weapons with Q">⟳ SWITCH <kbd>Q</kbd></button>
+            </div>
+            <details class="grave-controls-guide glass-panel">
+                <summary>⌨ Controls &amp; combat tips</summary>
+                <div class="grave-controls-grid">
+                    <span>Focus the arena before using keyboard controls</span>
+                    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move · <kbd>Mouse</kbd> Aim · <kbd>Left-click</kbd> Fire · Hold/release <kbd>V</kbd> to charge melee (tap for a quick swing)</span>
+                    <span><kbd>Shift</kbd> Sprint / <kbd>K</kbd> Shove (Realtime / Chrono)</span>
+                    <span><kbd>Space</kbd> Dodge (Realtime / Chrono) · Wait (Turn-Based)</span>
+                    <span><kbd>Arrows</kbd> Directional dodge (Realtime / Chrono) · Move (Turn-Based)</span>
+                    <span><kbd>Right-click</kbd> Block · swing <kbd>V</kbd> during the guard flash to Shield Bash · <kbd>E</kbd> Interact / loot (Turn-Based: press <kbd>E</kbd> or tap <kbd>B</kbd>)</span>
+                    <span><kbd>F</kbd> Race ability · <kbd>Q</kbd> Switch weapon · <kbd>1</kbd>–<kbd>3</kbd> Change time mode</span>
+                    <span><kbd>G</kbd> Explosive lob (Realtime / Chrono)</span>
+                    <span><kbd>P</kbd> or <kbd>Esc</kbd> Pause</span>
+                    <span><kbd>M</kbd> Mute / unmute audio</span>
+                    <span>Elites and bosses can drop power-up shards: healing, shield, speed, damage, Gold, or XP. Orcs can also find Rage Draughts; active boosts count down in the effect strip.</span>
+                    <span class="grave-touch-tip">Touch: drag the left stick to move (one tile per gesture in Turn-Based); tap or drag the right side to aim. Quick taps also move you in other modes when Tap-to-Move is enabled. Hold Melee to charge a stronger swing; sprint into a quick swing to lunge, or swing during a dodge for bonus damage. Use Wait to pass a Turn-Based enemy turn.</span>
+                </div>
+            </details>
+            <div id="runLootNotice" class="run-loot-notice hidden" role="status" aria-live="polite"></div>
+
+            <!-- 3D WebGL Viewport (#gameCanvas) + hidden 2D lighting canvas kept for legacy safety -->
+            <div class="canvas-container" id="canvasContainer" role="region" tabindex="0" aria-label="GraveGain arena. Focus here to use keyboard controls.">
+                <button class="TEMPLATE-4weird-fullscreen-btn" id="gravegain-fullscreen-btn" title="Toggle Fullscreen" style="position: absolute; top: 15px; right: 15px; z-index: 100; background: rgba(10, 10, 15, 0.75); border: 1px solid var(--grave-border); color: var(--grave-text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.8rem; transition: all 0.2s ease;">📺 Fullscreen</button>
+                <canvas id="gameCanvas" width="1000" height="600"></canvas>
+                <canvas id="lightingCanvas" width="1000" height="600" style="display: none;"></canvas>
+
+                <!-- Mobile controls overlays: Floating crypt-stick + A/B runes + tap-to-loot -->
+                <div class="mobile-joystick-container" id="mobileJoystick" aria-hidden="true">
+                    <div class="mobile-joystick-knob"></div>
+                </div>
+                <div class="crypt-stick-layer" id="cryptStickLayer" aria-hidden="true">
+                    <div class="crypt-stick-base" id="cryptStickBase">
+                        <div class="crypt-stick-knob" id="cryptStickKnob"></div>
+                    </div>
+                    <div class="crypt-tap-marker" id="cryptTapMarker" aria-hidden="true">👆</div>
+                </div>
+                <div class="rune-cluster" id="runeCluster" aria-label="Touch combat controls">
+                    <button class="rune-btn rune-a" id="runeBtnA" aria-label="Fire weapon">🔫<span>FIRE</span></button>
+                    <button class="rune-btn rune-b" id="runeBtnB" aria-label="B: Interact and loot">✋<span>B</span></button>
+                    <button class="rune-btn rune-small mobile-melee-button" id="mobileMeleeBtn" aria-label="Hold to charge melee, release to swing. Sprint for a lunge; dodge for bonus damage." title="Hold to charge · Sprint + quick melee = lunge · Dodge + melee = +35% damage">⚔️<span>MELEE</span></button>
+                    <button class="rune-btn rune-small mobile-dodge-button" id="mobileDodgeBtn" aria-label="Dodge (Realtime / Chrono)">💨</button>
+                    <button class="rune-btn rune-small mobile-block-button" id="mobileBlockBtn" aria-label="Block">🛡️</button>
+                    <button class="rune-btn rune-small mobile-ability-button" id="mobileAbilityBtn" aria-label="Use class ability">✦</button>
+                    <button class="rune-btn rune-small mobile-wait-button" id="mobileWaitBtn" aria-label="Wait turn">⏳</button>
+                </div>
+                <div class="thumb-tabs" id="thumbTabs" role="tablist" aria-label="Inventory and assist tabs">
+                    <button class="thumb-tab" id="thumbBagBtn" role="tab" aria-label="Open bag">🎒<span>Bag</span></button>
+                    <button class="thumb-tab" id="thumbCraftBtn" role="tab" aria-label="Open craft and botany">🌱<span>Grow</span></button>
+                    <button class="thumb-tab thumb-toggle" id="thumbTargetBtn" role="tab" aria-pressed="false" aria-label="Toggle auto-target nearest enemy">🎯<span>Target:OFF</span></button>
+                    <button class="thumb-tab thumb-toggle" id="thumbTapBtn" role="tab" aria-pressed="true" aria-label="Toggle tap to move">👆<span>Tap:ON</span></button>
+                </div>
+                <div class="mobile-drawer hidden" id="mobileDrawer" role="dialog" aria-label="Mobile bag and craft panel">
+                    <div class="mobile-drawer-tabs" role="tablist">
+                        <button class="thumb-tab active" data-drawer="bag" role="tab">🎒 Bag</button>
+                        <button class="thumb-tab" data-drawer="craft" role="tab">🌱 Grow / Craft</button>
+                        <button class="thumb-tab drawer-close" id="mobileDrawerClose" aria-label="Close panel">✖</button>
+                    </div>
+                    <div class="mobile-drawer-body">
+                        <div class="mobile-drawer-pane active" id="drawerBag"></div>
+                        <div class="mobile-drawer-pane" id="drawerCraft"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom action row -->
+            <div class="bottom-action-row">
+                <button class="btn-game" id="btnPause">⏸️ Pause</button>
+                <button class="btn-game btn-primary" id="btnReturnToHub">🚀 Return to Starship</button>
+            </div>
+        </div>
+
+        <!-- 1. MAIN MENU SCREEN -->
+        <div class="screen-overlay" id="mainMenuScreen" role="dialog" aria-modal="true" aria-labelledby="mainMenuTitle">
+            <div class="menu-content glass-panel">
+                <h1 class="menu-title" id="mainMenuTitle">GRAVEGAIN2DA</h1>
+                <p class="menu-subtitle">Dark Fantasy Action RPG</p>
+                <p class="menu-relic-pitch">Descend into a living dungeon. Find new weapons, draft powerful relics, and build a different legend every run.</p>
+
+                <!-- Daily Challenges Panel -->
+                <div class="daily-challenges-container">
+                    <h3 style="margin-top: 0; font-family: 'Orbitron'; font-size: 1rem; color: var(--grave-gold);">📅 Daily Mission Logs</h3>
+                    <div id="dailyChallengesList">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+                <section class="gold-interest-panel" aria-labelledby="goldInterestTitle">
+                    <div class="gold-interest-heading"><h3 id="goldInterestTitle">🏦 Crypt Bank</h3><strong id="goldInterestBalance">0 Gold</strong></div>
+                    <p>Earn 1% compound interest every 30 seconds while you play. Your next yield arrives in <b id="goldInterestCountdown">00:30</b>.</p>
+                    <div class="gold-interest-track" role="progressbar" aria-label="Progress to next gold interest payout" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="goldInterestProgress"></i></div>
+                    <small id="goldInterestYield">Current balance · 1% per cycle</small>
+                </section>
+
+                <div class="btn-group">
+                    <button class="btn-game btn-primary" id="btnStoryMode" style="background: linear-gradient(135deg, #a855f7, #6366f1); border-color: #c084fc;">📜 10-Mission Campaign</button>
+                    <button class="btn-game" id="btnPlay">⚔️ Endless Dungeon Run</button>
+                    <button class="btn-game" id="btnDungeonDuel">⚔️ Find Dungeon Duel</button>
+                    <p id="dungeonDuelStatus" role="status" aria-live="polite" class="dungeon-duel-status"></p>
+                    <button class="btn-game" id="btnEnterHub">🚀 Visit LuckyStarShip</button>
+                    <button class="btn-game" id="btnOpenCareerArchive">🏆 Achievements</button>
+                    <button class="btn-game" id="btnOpenAscendantTalents">✨ Ascendant Talents</button>
+                    <button class="btn-game" id="btnOpenSettings">⚙️ Engine Configurations</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen-overlay hidden" id="careerArchiveScreen" role="dialog" aria-modal="true" aria-labelledby="careerArchiveTitle">
+            <div class="menu-content glass-panel career-archive-panel">
+                <div class="career-archive-kicker">LEGENDS OF THE CATACOMBS · ACHIEVEMENT VAULT</div>
+                <h2 class="menu-title" id="careerArchiveTitle">Achievements</h2>
+                <p class="menu-subtitle" id="careerArchiveSummary">0 / 27 ACHIEVEMENTS · 0 AP</p>
+                <div class="career-milestone-list" id="careerMilestoneList"></div>
+                <button class="btn-game btn-primary" id="btnCloseCareerArchive">Return to Main Menu</button>
+            </div>
+        </div>
+
+        <div class="screen-overlay hidden" id="ascendantTalentsScreen" role="dialog" aria-modal="true" aria-labelledby="ascendantTalentsTitle">
+            <div class="menu-content glass-panel career-talent-panel">
+                <div class="career-archive-kicker">THE DUNGEON REMEMBERS</div>
+                <h2 class="menu-title" id="ascendantTalentsTitle">Ascendant Talents</h2>
+                <p class="menu-subtitle" id="careerTalentSummary">ASCENDANT LEVEL 1 · 0 TALENT POINTS</p>
+                <p class="career-talent-intro">Every dungeon reward teaches you something that survives the run. Spend talent points on permanent advantages.</p>
+                <section class="prestige-panel" aria-labelledby="prestigeTitle">
+                    <div class="prestige-heading"><h3 id="prestigeTitle">🌟 Prestige Circuit</h3><strong id="prestigeStatus">PRESTIGE 0 / 5 · +0% DAMAGE · +0% XP · +0% GOLD</strong></div>
+                    <p>Reach Ascendant Level 100 to reset your level and spent talents. Your career archive and weapon mastery stay. Each of five ranks grants permanent +5% damage, +10% XP, and +10% Gold.</p>
+                    <button type="button" class="btn-game" id="btnPrestige" disabled>Unlocks at Ascendant Level 100</button>
+                </section>
+                <section class="weapon-mastery-panel" aria-labelledby="weaponMasteryTitle">
+                    <h3 id="weaponMasteryTitle">⚔️ Weapon Mastery</h3>
+                    <p>Earn kills with melee, ranged weapons, and race abilities. Every mastery level adds 5% damage on future runs.</p>
+                    <div class="weapon-mastery-grid" id="weaponMasteryList"></div>
+                </section>
+                <div class="career-talent-list" id="careerTalentList"></div>
+                <button class="btn-game btn-primary" id="btnCloseAscendantTalents">Return to Main Menu</button>
+            </div>
+        </div>
+
+        <!-- 1B. STORY MISSION SELECT SCREEN -->
+        <div class="screen-overlay hidden" id="storyMissionScreen" role="dialog" aria-modal="true" aria-labelledby="storyMissionTitle">
+            <div class="menu-content glass-panel" style="max-width: 900px; text-align: left;">
+                <h2 class="menu-title" id="storyMissionTitle" tabindex="-1" style="font-size: 2rem; margin-bottom: 5px;">📜 Story Campaign (10 Missions)</h2>
+                <p class="menu-subtitle" style="text-align: left; margin-bottom: 15px;">MoonRock Colonial Defense - Shared 2D & 3D Progress</p>
+                <div id="campProgress">CAMPAIGN - 0/10 COMPLETE · ★0 STARS</div>
+                <div class="story-missions-grid" id="storyMissionsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 8px;">
+                    <!-- Filled dynamically by JS -->
+                </div>
+                <div id="campBriefing"><div class="camp-brief-empty">Select a mission above to view its briefing.</div></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                    <button class="btn-game" id="btnStoryBack">← Main Menu</button>
+                    <button class="btn-game btn-primary" id="btnStartStoryMission" disabled>⚔️ Launch Selected Mission</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STORY DIALOGUE CUTSCENE MODAL -->
+        <div class="screen-overlay hidden" id="storyDialogueScreen" role="dialog" aria-modal="true" aria-labelledby="dialogueSpeaker" aria-describedby="dialogueText" style="background: rgba(0,0,0,0.85); z-index: 9999;">
+            <div class="menu-content glass-panel" style="max-width: 700px; border: 2px solid var(--grave-gold);">
+                <div style="display: flex; gap: 20px; align-items: center; text-align: left;">
+                    <div id="dialoguePortrait" style="font-size: 3.5rem; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 12px; border: 1px solid var(--grave-border);">🤖</div>
+                    <div style="flex: 1;">
+                        <h3 id="dialogueSpeaker" style="margin: 0 0 5px 0; color: var(--grave-gold); font-family: 'Orbitron'; font-size: 1.2rem;">Speaker Name</h3>
+                        <p id="dialogueText" style="font-size: 1rem; line-height: 1.5; color: white; margin: 0; min-height: 60px;">Dialogue message text goes here...</p>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn-game btn-primary" id="btnNextDialogue">Continue ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CHARACTER SELECT SCREEN -->
+        <div class="screen-overlay hidden" id="charSelectScreen" role="dialog" aria-modal="true" aria-labelledby="characterFlowTitle">
+            <div class="menu-content glass-panel character-flow" style="max-width: 800px;">
+                <div class="character-flow-progress" id="characterFlowTitle" tabindex="-1" aria-live="polite">STEP 1 OF 3 · CHOOSE YOUR RACE</div>
+
+                <section class="character-step" id="raceStep">
+                    <h2 class="menu-title" style="font-size: 2rem;">Choose Your Race</h2>
+                    <p class="menu-subtitle">Start with the lineage that fits your play style.</p>
+                    <div class="char-grid" id="raceGrid" aria-label="Choose a race"></div>
+                    <div class="character-step-actions">
+                        <button class="btn-game" id="btnRaceBack">← Main Menu</button>
+                        <button class="btn-game btn-primary" id="btnRaceNext">Choose Class →</button>
+                    </div>
+                </section>
+
+                <section class="character-step hidden" id="classStep">
+                    <h2 class="menu-title" style="font-size: 2rem;">Choose Your Class</h2>
+                    <p class="menu-subtitle" id="selectedRaceSummary">Choose a role for your lineage.</p>
+                    <div class="class-select" id="classGrid" aria-label="Choose a class"></div>
+                    <div class="character-step-actions">
+                        <button class="btn-game" id="btnClassBack">← Change Race</button>
+                        <button class="btn-game btn-primary" id="btnClassNext">Set Simulation →</button>
+                    </div>
+                </section>
+
+                <section class="character-step hidden" id="modeStep">
+                    <h2 class="menu-title" style="font-size: 2rem;">Set Your Simulation</h2>
+                    <p class="menu-subtitle" id="selectedBuildSummary">Your class changes your health, damage, healing, or race-ability power.</p>
+                    <div class="run-mode-select" aria-label="Choose simulation mode">
+                    <div class="run-mode-label">TEMPORAL SIMULATION MODE</div>
+                    <div class="mode-card-grid" id="charModeSelectGrid">
+                        <button class="char-mode-card selected" data-mode="realtime" aria-pressed="true"><span>⚡</span><strong>Realtime</strong><small>Fluid action with adjustable speed.</small></button>
+                        <button class="char-mode-card" data-mode="chrono" aria-pressed="false"><span>⏳</span><strong>Chrono-Lock</strong><small>Time freezes until you act.</small></button>
+                        <button class="char-mode-card" data-mode="turnbased" aria-pressed="false"><span>🎲</span><strong>Turn-Based</strong><small>Move, shoot, guard, interact, cast, or wait—one action per turn.</small></button>
+                    </div>
+                    </div>
+                    <label class="loadout-select-wrap" for="startingWeaponSelect">
+                        <span class="run-mode-label">FOUNDRY LOADOUT · DISCOVERED WEAPONS</span>
+                        <select id="startingWeaponSelect" class="loadout-select" aria-describedby="startingWeaponHint"></select>
+                        <div id="startingWeaponPreview" class="loadout-preview" role="status" aria-live="polite"></div>
+                        <small id="startingWeaponHint">Choose one discovered weapon to carry into your next run. New weapons still drop as you explore.</small>
+                    </label>
+                    <div class="build-presets">
+                        <label for="buildPresetSelect"><span class="run-mode-label">SAVED BUILDS</span><select id="buildPresetSelect" class="loadout-select"><option value="">No saved builds</option></select></label>
+                        <div class="build-preset-actions">
+                            <button type="button" class="btn-game" id="btnSaveBuildPreset">＋ Save This Build</button>
+                            <button type="button" class="btn-game" id="btnLoadBuildPreset">↻ Load Build</button>
+                            <button type="button" class="btn-game" id="btnDeleteBuildPreset">✕ Delete</button>
+                        </div>
+                        <small id="buildPresetStatus" aria-live="polite">Save up to 8 race, class, time mode, and weapon combinations.</small>
+                    </div>
+                    <div class="character-step-actions">
+                        <button class="btn-game" id="btnModeBack">← Change Class</button>
+                        <button class="btn-game btn-primary" id="btnCharSelectStart">🚀 Deploy to Dungeon</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 3. LUCKYSTARSHIP HUB SCREEN -->
+        <div class="screen-overlay hidden" id="hubScreen" role="dialog" aria-modal="true" aria-labelledby="hubTitle">
+            <div class="menu-content glass-panel" style="max-width: 850px; text-align: left;">
+                <div class="hub-header">
+                    <div>
+                        <h2 class="menu-title" id="hubTitle" tabindex="-1" style="font-size: 2rem; margin: 0;">LuckyStarShip Hub</h2>
+                        <p style="margin: 5px 0 0 0; color: var(--grave-text-muted); font-size: 0.85rem;">Universal Operations Deck</p>
+                    </div>
+                    <div class="hub-tabs">
+                        <button class="hub-tab-btn active" data-tab="quarters">🏠 Quarters</button>
+                        <button class="hub-tab-btn" data-tab="botany">🌱 Botany Station</button>
+                        <button class="hub-tab-btn" data-tab="repair">🔧 Repair Station</button>
+                        <button class="hub-tab-btn" data-tab="exchange">🪙 Exchange</button>
+                        <button class="hub-tab-btn" data-tab="stash">🧳 Stash & Refinery</button>
+                        <button class="hub-tab-btn" data-tab="lore">📖 Lore Codex</button>
+                    </div>
+                </div>
+
+                <!-- Quarters Tab -->
+                <div class="hub-pane active" id="tab-quarters">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Crew Quarters Upgrades</h3>
+                    <p style="font-size: 0.9rem;">Level up your quarters size to expand crop capacity bounds and repair efficiency.</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid var(--grave-border);">
+                        <div class="stat-row"><span>Current Quarters Level:</span> <strong id="hubQuartersLevel">Level 1</strong></div>
+                        <div class="stat-row"><span>Dimensions:</span> <strong id="hubQuartersSize">400x300 px</strong></div>
+                        <div class="stat-row"><span>Crop Capacity:</span> <strong id="hubQuartersCapacity">100 Space</strong></div>
+                        <div class="stat-row"><span>Next Level Upgrade Cost:</span> <strong class="highlight-cyan" id="hubQuartersCost">250 $UUSD</strong></div>
+                    </div>
+                    <button class="btn-game btn-primary" id="btnUpgradeQuarters" style="margin-top: 15px;">🔧 Purchase Expansion Upgrade</button>
+                </div>
+
+                <!-- Botany Station Tab -->
+                <div class="hub-pane" id="tab-botany">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Offline Botany Incubators</h3>
+                    <p style="font-size: 0.9rem;">Grow exotic plants that synthesize Gold or $UUSD. Crops grow in real-time even offline!</p>
+                    <div class="botany-capacity" id="botanyCapacityText">Incubator capacity loading…</div>
+                    <div class="botany-grid" id="botanyGrid">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Repair Station Tab -->
+                <div class="hub-pane" id="tab-repair">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Microcircuit Restoration Mini-game</h3>
+                    <p style="font-size: 0.9rem;">Drag broken circuit modules (violet nodes) back onto target terminals (gold dotted outline) to restore component integrity.</p>
+                    <div class="repair-circuit-area" id="repairCircuitArea">
+                        <!-- Draggables loaded dynamically -->
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span id="repairStatus" style="font-size: 0.85rem; color: var(--grave-text-muted);">Status: Ready for calibration</span>
+                        <button class="btn-game" id="btnGenerateCircuit">⚡ New Circuit Calibration</button>
+                    </div>
+                </div>
+
+                <!-- Exchange Tab -->
+                <div class="hub-pane" id="tab-exchange">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Universal Bank Exchange</h3>
+                    <p style="font-size: 0.9rem;">Convert raw dungeon Gold into Starship $UUSD or vice-versa.</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid var(--grave-border); display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <div class="stat-row"><span>Dungeon Gold Balance:</span> <strong class="highlight-gold" id="exchangeGoldBalance">0 Gold</strong></div>
+                        <div class="stat-row"><span>Starship $UUSD Balance:</span> <strong class="highlight-cyan" id="exchangeUusdBalance">0 $UUSD</strong></div>
+                        <div class="stat-row"><span>Rates:</span> <span>1 Gold = 10 $UUSD  |  1 $UUSD = 0.1 Gold</span></div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <button class="btn-game btn-primary" id="btnBuyUusd" style="flex: 1;">🪙 Sell 10 Gold for 100 $UUSD</button>
+                        <button class="btn-game" id="btnBuyGold" style="flex: 1;">💵 Exchange 100 $UUSD for 10 Gold</button>
+                    </div>
+                </div>
+
+                <!-- Account Stash Tab -->
+                <div class="hub-pane" id="tab-stash">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Account Stash & Sparkite Refinery</h3>
+                    <p style="font-size: 0.9rem; line-height: 1.6;">Campaign power crystals are permanently banked when collected, even if a run ends early. Refine Sparkite into Starship $UUSD for quarters, botany, and repairs.</p>
+                    <div class="stash-material-card">
+                        <div class="stash-material-icon" aria-hidden="true">💠</div>
+                        <div class="stash-material-copy"><strong>Sparkite Power Crystal</strong><small>Recovered from campaign caches and stored in your account inventory.</small></div>
+                        <strong class="stash-material-count"><span id="stashSparkiteCount">0</span> ×</strong>
+                    </div>
+                    <div class="stash-material-card stash-shard-card">
+                        <div class="stash-material-icon" aria-hidden="true">🔷</div>
+                        <div class="stash-material-copy"><strong>Rift Shard</strong><small>Bosses leave a fragment of their power. Spend one during a relic draft to replace all three choices.</small></div>
+                        <strong class="stash-material-count"><span id="stashRiftShardCount">0</span> ×</strong>
+                    </div>
+                    <div class="stash-refinery-row">
+                        <span>Refine 1 Sparkite → 100 $UUSD</span>
+                        <button class="btn-game btn-primary" id="btnRefineSparkite" disabled>⚗️ Refine Sparkite</button>
+                    </div>
+                    <p id="stashRefineryStatus" class="stash-status" role="status" aria-live="polite">Account stash · 0 stored record(s)</p>
+                </div>
+
+                <!-- Lore Codex Tab -->
+                <div class="hub-pane" id="tab-lore">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">LuckyStarShip Lore Archives</h3>
+                    <p style="font-size: 0.9rem; margin-bottom: 10px;">Select a log from the ship's retrieved databanks to decode and read.</p>
+                    <div style="display: flex; gap: 20px; height: 350px;">
+                        <div id="loreList" style="width: 250px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--grave-border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div id="loreReader" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--grave-border); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            <h4 id="loreTitle" style="margin: 0; color: var(--grave-gold); font-family: 'Orbitron'; font-size: 1.1rem;">Select an entry</h4>
+                            <div id="loreCategory" style="font-size: 0.75rem; text-transform: uppercase; color: var(--grave-text-muted);">Category</div>
+                            <div id="loreContent" style="font-size: 0.85rem; line-height: 1.6; white-space: pre-line;">Select an entry from the list on the left to read its contents.</div>
+                            <button class="btn-game" id="btnSpeakLore" style="margin-top: auto; font-size: 0.8rem; padding: 6px 12px; align-self: flex-start;">🔊 Synthesize Audio Log</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: flex; justify-content: flex-end;">
+                    <button class="btn-game" id="btnLeaveHub">← Exit to Deck Hub</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. ENGINE CONFIGURATIONS (SETTINGS) SCREEN -->
+        <div class="screen-overlay hidden" id="settingsScreen" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <div class="menu-content glass-panel" style="max-width: 600px; text-align: left;">
+                <h2 class="menu-title" id="settingsTitle" tabindex="-1" style="font-size: 2rem;">Engine Settings</h2>
+                <p class="menu-subtitle">Configurations Manager</p>
+
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; max-height: 350px; overflow-y: auto; padding-right: 10px;">
+                    <div>
+                        <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Difficulty Multiplier</label>
+                        <select id="settingsDifficulty" style="width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid var(--grave-border); color:white; border-radius:5px;">
+                            <option value="easy">Easy (HP 0.6x, DMG 0.5x, Speed 0.8x, XP 0.75x, Loot 1.5x)</option>
+                            <option value="normal" selected>Normal (all 1x)</option>
+                            <option value="hard">Hard (HP 1.5x, DMG 1.5x, Speed 1.15x, XP 1.5x, Loot 0.8x)</option>
+                            <option value="nightmare">Nightmare (HP 2.5x, DMG 2.0x, Speed 1.3x, XP 2.5x, Loot 0.6x)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Master Volume</label>
+                        <input type="range" id="settingsMasterVol" min="0" max="100" value="80" style="width:100%;">
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Loot Magnet Radius (Pixels)</label>
+                        <input type="range" id="settingsPickupRange" min="30" max="250" value="100" style="width:100%;">
+                    </div>
+
+                    <div>
+                        <label style="display:flex; align-items:center; gap:9px; font-size:0.9rem;"><input type="checkbox" id="settingsSpeedrunMode"> ⏱️ Speedrun Mode</label>
+                        <small style="display:block; margin:4px 0 0 27px; color:var(--grave-text-muted);">Show a precision timer, record unique room splits, and save personal bests for successful runs.</small>
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Aesthetics Configuration</label>
+                        <div style="display:flex; gap:15px; font-size:0.85rem;">
+                            <label><input type="checkbox" id="settingsCameraShake" checked> Camera Shake</label>
+                            <label><input type="checkbox" id="settingsCameraLead" checked> Camera Lead</label>
+                            <label><input type="checkbox" id="settingsCameraPunch" checked> Camera Punch</label>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn-game" id="btnCancelSettings">Cancel</button>
+                    <button class="btn-game btn-primary" id="btnSaveSettings">Save Configs</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. PAUSE SCREEN -->
+        <div class="screen-overlay hidden" id="pauseScreen" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+            <div class="menu-content glass-panel">
+                <h2 class="menu-title" id="pauseTitle" tabindex="-1" style="font-size: 2.5rem; color: var(--grave-purple-glow);">PAUSED</h2>
+                <p class="menu-subtitle">Grid Simulation Frozen</p>
+                <div class="btn-group">
+                    <button class="btn-game btn-primary" id="btnResume">Resume Run</button>
+                    <button class="btn-game" id="btnOpenBestiary">📖 Bestiary</button>
+                    <button class="btn-game" id="btnAbandon">Abandon Run</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roguelite level-up choice: a run pauses until a relic is chosen. -->
+        <div class="screen-overlay hidden" id="relicDraftScreen" role="dialog" aria-modal="true" aria-labelledby="relicDraftTitle">
+            <div class="menu-content glass-panel relic-draft-content">
+                <div class="relic-draft-kicker">RELIC SYNCHRONIZATION · LEVEL <span id="relicDraftLevel">2</span></div>
+                <h2 class="menu-title" id="relicDraftTitle">Choose Your Oath</h2>
+                <p class="menu-subtitle" id="relicDraftSubtitle">The catacombs offer power. Choose one relic to shape this run.</p>
+                <div class="relic-card-grid" id="relicCardGrid" aria-label="Choose a relic upgrade"></div>
+                <div class="relic-reroll-row"><span id="relicRerollStatus">Rift Shards: 0</span><button type="button" class="btn-game" id="btnRerollRelics" disabled>🔷 Spend 1 Rift Shard · Reroll</button></div>
+                <div class="relic-build-strip"><span>YOUR RELICS</span><div id="runRelicList">No relics yet</div></div>
+            </div>
+        </div>
+
+        <!-- 6. GAME OVER SCREEN -->
+        <div class="screen-overlay hidden" id="gameOverScreen" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+            <div class="menu-content glass-panel">
+                <h2 class="menu-title" style="font-size: 2.5rem; color: var(--grave-crimson-glow);" id="gameOverTitle">RUN COMPLETED</h2>
+                <p class="menu-subtitle" id="gameOverSub">Vital signs terminated</p>
+
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px solid var(--grave-border); text-align: left; margin-bottom: 20px;">
+                    <div class="stat-row"><span>Character Path:</span> <strong id="goRaceClass">Human Warrior</strong></div>
+                    <div class="stat-row"><span>Max Floor Depth:</span> <strong id="goFloor">Layer 1</strong></div>
+                    <div class="stat-row"><span>Enemies Slain:</span> <strong id="goKills">0</strong></div>
+                    <div class="stat-row"><span>Kill Streak Score:</span> <strong id="goScore">0 · Best Streak 0×</strong></div>
+                    <div class="stat-row"><span>Peak DPS:</span> <strong id="goPeakDps">0</strong></div>
+                    <div class="stat-row"><span>Damage Taken:</span> <strong id="goDamageTaken">0</strong></div>
+                    <div class="stat-row"><span>Critical Hits:</span> <strong id="goCrits">0</strong></div>
+                    <div class="stat-row"><span>Headshots:</span> <strong id="goHeadshots">0</strong></div>
+                    <div class="stat-row"><span>Overkills:</span> <strong id="goOverkills">0</strong></div>
+                    <div class="stat-row"><span>Environmental Kills:</span> <strong id="goEnvironmentalKills">0</strong></div>
+                    <div class="stat-row"><span>Gold Harvested:</span> <strong class="highlight-gold" id="goGold">0</strong></div>
+                    <div class="stat-row"><span>XP Gained:</span> <strong id="goXp">0</strong></div>
+                    <div class="stat-row"><span>Career XP Earned:</span> <strong id="goCareerXp">0</strong></div>
+                    <div class="stat-row"><span>Ascendant Level:</span> <strong id="goAscendantLevel">1</strong></div>
+                    <div class="stat-row" id="goCampaignRatingRow" style="display:none;"><span>Campaign Rating:</span> <strong id="goCampaignRating">—</strong></div>
+                    <div class="stat-row" id="goCampaignTimeRow" style="display:none;"><span>Mission Time:</span> <strong id="goCampaignTime">—</strong></div>
+                    <div class="stat-row" id="goCampaignAccuracyRow" style="display:none;"><span>Attack Accuracy:</span> <strong id="goCampaignAccuracy">—</strong></div>
+                    <div class="stat-row"><span>Sparkite Banked:</span> <strong id="goSparkite">0</strong></div>
+                    <div class="stat-row"><span>Rift Shards Earned:</span> <strong id="goRiftShards">0</strong></div>
+                    <div class="stat-row"><span>Relics Forged:</span> <strong id="goRelics">No relics claimed</strong></div>
+                    <div class="stat-row" id="goSpeedrunTimeRow" style="display:none;"><span>Speedrun Time:</span> <strong id="goSpeedrunTime">—</strong></div>
+                    <div class="stat-row" id="goSpeedrunBestRow" style="display:none;"><span>Personal Best:</span> <strong id="goSpeedrunBest">—</strong></div>
+                    <div class="stat-row" id="goSpeedrunSplitsRow" style="display:none; align-items:flex-start;"><span>Room Splits:</span> <small id="goSpeedrunSplits" style="max-width:65%; text-align:right; line-height:1.5;"></small></div>
+                </div>
+                <section class="death-recap hidden" id="goDeathRecapPanel" aria-labelledby="deathRecapTitle">
+                    <h3 id="deathRecapTitle">☠️ Last Damage Received</h3>
+                    <ol id="goDeathRecapList"></ol>
+                </section>
+
+                <button class="btn-game btn-primary" id="btnGoToMenu">Return to Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credits & Personnel Section -->
+    <section class="TEMPLATE-4weird-credits-section" id="TEMPLATE-4weird-credits">
+        <div class="TEMPLATE-4weird-credits-container">
+            <h2 class="TEMPLATE-4weird-credits-title">Credits & Personnel</h2>
+            <div class="TEMPLATE-4weird-credits-grid" id="TEMPLATE-4weird-credits-grid">
+                <!-- Auto populated -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Maker Bio Section -->
+    <section class="TEMPLATE-4weird-bio-section" id="TEMPLATE-4weird-bio">
+        <div class="TEMPLATE-4weird-bio-container">
+            <h2 class="TEMPLATE-4weird-bio-title">About the Intelligence Agent</h2>
+            <div class="TEMPLATE-4weird-bio-content" id="TEMPLATE-4weird-maker-bio">
+                <!-- Auto populated -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer placeholders -->
+    <div id="TEMPLATE-4weird-footer-placeholder"></div>
+
+    <script src="vendor/three.min.js"></script>
+    <script src="../html/gravegain_shared_missions.js"></script>
+    <script src="campaign/00-campaign-boot.js"></script>
+    <script src="campaign/m01.js"></script>
+    <script src="campaign/m02.js"></script>
+    <script src="campaign/m03.js"></script>
+    <script src="campaign/m04.js"></script>
+    <script src="campaign/m05.js"></script>
+    <script src="campaign/m06.js"></script>
+    <script src="campaign/m07.js"></script>
+    <script src="campaign/m08.js"></script>
+    <script src="campaign/m09.js"></script>
+    <script src="campaign/m10.js"></script>
+    <script src="lore.js"></script>
+    <script src="src/core/engine-bus.js"></script>
+    <script src="src/core/state-schema.js"></script>
+    <script src="src/core/terrain-grid.js"></script>
+    <script src="src/core/weapons-catalog.js"></script>
+    <script src="src/render/three-loader.js"></script>
+    <script src="src/render/world-renderer.js"></script>
+    <script src="src/render/camera-rig.js"></script>
+    <script src="src/render/entity-renderer.js"></script>
+    <script src="src/ui/minimap-3d.js"></script>
+    <script src="src/ui/codex-bestiary.js"></script>
+    <script src="src/net/save-bridge.js"></script>
+    <script src="src/core/game-engine.js"></script>
+    <script src="game.js"></script>
+    <script src="../html/giggles-help-draft.js"></script>
+    <script src="mp-2d.js"></script>
+    <script src="../html/gravegain-netplay.js" data-slug="gravegain2dC"></script>
+    <script src="mmorpg-2d.js"></script>
+    <script src="campaign/10-campaign-director.js"></script>
+    <script src="campaign/20-campaign-ui.js"></script>
+    <script src="campaign/30-campaign-codex.js"></script>
+    <script src="aaa/00-aaa-boot.js"></script>
+    <script src="aaa/10-fx-film.js"></script>
+    <script src="aaa/20-fx-titlecard.js"></script>
+    <script src="aaa/30-fx-announcer.js"></script>
+    <script src="aaa/40-fx-boss.js"></script>
+    <script src="aaa/50-hud-objectives.js"></script>
+    <script src="aaa/60-hud-tutorial.js"></script>
+    <script src="aaa/70-hud-runstats.js"></script>
+    <script src="aaa/80-audio-director.js"></script>
+    <script src="aaa/90-menu-upgrade.js"></script>
+    <script src="../html/game-meta.js"></script>
+    <script>
+        (function() {
+            fetch('game.json')
+                .then(r => r.json())
+                .then(data => {
+                    // Security: bio/credits go through FourWeirdMeta
+                    // (textContent + http(s)-only URLs), never innerHTML.
+                    window.FourWeirdMeta.setBio('TEMPLATE-4weird-maker-bio', data.maker && data.maker.bio);
+                    window.FourWeirdMeta.renderCredits('TEMPLATE-4weird-credits-grid', data.credits);
+                })
+                .catch(err => console.log('Metadata load fallback:', err));
+
+            // Fullscreen contract: shell helper first, native request with
+            // webkit fallback otherwise. Game.js owns F key, double-click,
+            // pause-on-hidden, and the primary re-fit; this inline handler is
+            // a guarded idempotent second pass for out-of-order script loads.
+            const fullscreenBtn = document.getElementById('gravegain-fullscreen-btn');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const gg2dToggleFullscreen = () => {
+                try {
+                    if (typeof window.__fourweirdToggleFullscreen === 'function') { window.__fourweirdToggleFullscreen(); return; }
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        const p = canvasContainer.requestFullscreen ? canvasContainer.requestFullscreen()
+                            : (canvasContainer.webkitRequestFullscreen ? canvasContainer.webkitRequestFullscreen() : null);
+                        if (p && p.catch) p.catch(() => {});
+                    } else if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                } catch (e) {}
+            };
+            if (fullscreenBtn && canvasContainer) {
+                fullscreenBtn.addEventListener('click', gg2dToggleFullscreen);
+            }
+            const gg2dRefit = () => {
+                try {
+                    if (window.GraveGainEngine && typeof window.GraveGainEngine.resize === 'function') {
+                        window.GraveGainEngine.resize();
+                        return;
+                    }
+                    const g = window.GraveGainGame;
+                    const box = document.getElementById('canvasContainer');
+                    if (!g || !box) return;
+                    const w = Math.max(320, box.clientWidth || 1000) | 0;
+                    const h = Math.max(240, box.clientHeight || 600) | 0;
+                    if (g.camera) { g.camera.width = w; g.camera.height = h; }
+                } catch (e) {}
+            };
+            document.addEventListener('fullscreenchange', gg2dRefit);
+            window.addEventListener('resize', gg2dRefit);
+        })();
+    </script>
+<script>(function(){function open(){var g=window.GraveGainGame;if(g&&g.player&&g.openGigglesHelpCase)g.openGigglesHelpCase();}var b=document.createElement('button');b.type='button';b.textContent='▰ GG · HELP';b.style.cssText='position:fixed;right:12px;top:12px;z-index:9999;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer';b.addEventListener('click',open);document.body.appendChild(b);})();</script></body>
+</html>

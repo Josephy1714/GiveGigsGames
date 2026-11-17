@@ -50,6 +50,21 @@
         <div class="quickstart-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Fork GiveGigsGames ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Read the contributor guide ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip">Download ZIP ↓</a></div>
       </section>
 
+      <section id="save-files" class="save-manager" aria-labelledby="save-manager-title">
+        <div class="save-manager-copy">
+          <p class="eyebrow">YOUR BROWSER · YOUR FILES</p>
+          <h2 id="save-manager-title">Back up or restore game saves</h2>
+          <p>Download each browser save as a readable, structured <code>.txt</code> file. Upload one later to restore it in this browser. Restored saves replace data with the same storage key.</p>
+        </div>
+        <div class="save-manager-actions">
+          <label class="button secondary upload-save-button" for="save-file-input">Upload save files</label>
+          <input id="save-file-input" class="sr-only" type="file" accept=".txt,text/plain,application/json" multiple>
+          <p id="save-manager-status" class="save-manager-status" role="status" aria-live="polite">Looking for browser saves…</p>
+        </div>
+        <div id="save-file-list" class="save-file-list" aria-live="polite"></div>
+        <p class="save-manager-note">Save files contain the stored game data. Keep them private if the game data is personal. After restoring a save, reload that game to see the restored progress.</p>
+      </section>
+
       <section id="all-games" class="catalog-section">
         <div class="section-heading">
           <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Browse every game</h2></div>

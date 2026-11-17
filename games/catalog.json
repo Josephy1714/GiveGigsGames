@@ -171,6 +171,24 @@
       "runtimeType": "static"
     },
     {
+      "slug": "gravegain2dC",
+      "title": "GraveGain2DC",
+      "description": "A 2.5D dark fantasy action roguelite with three combat tempos, a 10-mission campaign, endless procedural floors, hidden vaults, guarded treasure caches, a growing weapon arsenal, persistent career goals, and the LuckyStarShip hub.",
+      "genre": "RPG",
+      "tags": [
+        "Action",
+        "RPG",
+        "Roguelike",
+        "Procedural",
+        "Dark Fantasy"
+      ],
+      "emoji": "🗝️",
+      "featured": false,
+      "recommended": true,
+      "entrypoint": "gravegain2dC/index.html",
+      "runtimeType": "static"
+    },
+    {
       "slug": "gravegain2dB",
       "title": "GraveGain2dB: Breach MoonRock",
       "description": "A procedural left-to-right roguelite through destructible fortresses. Rescue random race/class builds, scavenge limited ammo, and reach extraction; Wave Mode is optional.",

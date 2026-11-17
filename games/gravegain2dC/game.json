@@ -1,0 +1,132 @@
+{
+    "title": "GraveGain2DC",
+    "slug": "gravegain2dC",
+    "description": "A 2.5D dark fantasy action roguelite with three temporal combat modes, a 10-mission campaign, endless procedural floors, hidden secret vaults, guarded treasure caches, 20 collectible weapons, persistent career progression, and the LuckyStarShip hub.",
+    "genre": "RPG",
+    "tags": ["HTML5", "3D", "Action", "RPG", "Roguelike", "Dark Fantasy"],
+    "maker": {
+        "name": "Antigravity Dev",
+        "bio": "Specializing in high-fidelity HTML5 game experiences with immersive systems and rich game-feel.",
+        "url": "https://4weird.com",
+        "urlLabel": "4weird"
+    },
+    "credits": [
+        {
+            "name": "Antigravity",
+            "role": "Lead Architect",
+            "avatar": "🧙",
+            "primary": true,
+            "url": "https://4weird.com",
+            "urlLabel": "4weird"
+        }
+    ],
+    "controls": {
+        "keyboard": {
+            "Focus": "Focus the arena before using game keys; UI controls keep their own keyboard actions",
+            "WASD / Mouse": "Move with WASD; aim with the mouse",
+            "Arrow Keys": "Directional dodge in Realtime / Chrono; move one tile in Turn-Based",
+            "Space": "Dodge roll, or wait a turn in Turn-Based mode",
+            "Left-Click": "Fire your equipped weapon; each click uses one Turn-Based action",
+            "V": "Hold and release to charge melee; melee can break breachable walls; taps queue briefly near recovery, or strike during the guard flash to Shield Bash",
+            "Right-Click": "Timed block; a perfectly timed block counters an enemy with a guaranteed critical",
+            "E": "Interact with nearby doors, loot, and mission objects",
+            "Q": "Cycle through weapons found this run",
+            "F": "Use your race ability",
+            "Shift": "Sprint while moving in Realtime / Chrono",
+            "M": "Mute or unmute audio",
+            "G / K": "Throw an explosive / shove nearby enemies in Realtime / Chrono",
+            "1 / 2 / 3": "Select Realtime, Chrono-Lock, or Turn-Based play from the game interface",
+            "Escape / P": "Pause Game"
+        },
+        "touch": {
+            "left side": "Movement joystick; each Turn-Based gesture moves one tile",
+            "floor": "Tap or drag the right side to aim; quick taps also move in Realtime / Chrono when Tap-to-Move is enabled",
+            "action runes": "Hold Melee to charge a heavy swing; attack, Realtime / Chrono dodge, block, interact, race ability, and Turn-Based wait buttons",
+            "audio": "Use the on-screen Sound toggle",
+            "bag": "Equip weapons found during this run"
+        },
+        "gamepad": {
+            "Left Stick": "Move; in Turn-Based, tilt once in a direction to move one tile",
+            "Right Stick": "Aim",
+            "Right Trigger": "Fire; one action in Turn-Based",
+            "A": "Select menus; dodge in Realtime / Chrono; wait in Turn-Based",
+            "B": "Hold and release to charge melee; one melee action in Turn-Based",
+            "X": "Interact and loot",
+            "Y": "Use class ability",
+            "Left Bumper": "Block; one guard action in Turn-Based",
+            "Right Bumper": "Cycle weapons",
+            "Left Trigger": "Throw an explosive",
+            "Start": "Pause Game"
+        },
+        "mouse": true
+    },
+    "instructions": "Choose a race, class, and temporal mode: Realtime, Chrono-Lock, or Turn-Based. In Turn-Based, each move, shot, guard, interaction, race ability, or wait advances the enemy turn. Hold and release V or Melee for a charged swing, break breachable walls with melee, ranged fire, or explosives, strike during the guard flash for a Shield Bash, and aim direct shots through humanoid weak spots for 2x critical headshots. Watch for violet seams that reveal breakable secret vaults and search corridor dead ends for chests; some caches are guarded. Finish standard enemies below 12% health and bosses below 5%. Play the 10-mission campaign or descend through endless procedural floors. Use the fog-of-war map to navigate, open the Bestiary from Pause to study foes, and collect weapon caches to build a run-specific arsenal of 20 weapons. Switch weapons with Q, then use class passives plus level-up relic drafts to shape your build. Gamepads navigate menus with the left stick or D-pad, A selects, and B backs out. In a run, use left stick to move, right stick to aim, RT to fire, A to dodge or wait, B to melee, X to interact, Y for ability, LB to block, RB to switch weapons, LT for explosives, and Start to pause. Find a Dungeon Duel opponent from the main menu for a five-minute kill-and-gold race; sign in when prompted. Track permanent combat, arsenal, campaign, and survival milestones in the Career Archive. Dodge the orange elite and red boss attack warnings; during Lucifer Hades' phase shifts, reach cyan Array Conduits and press E to overload them. Defeat every fifth-floor warden to unlock the descent. Bring Gold back to develop your LuckyStarShip through botany, exchange, repairs, and lore.",
+    "technical": {
+        "canvasSize": {"width": 1000, "height": 600},
+        "targetFPS": 60,
+        "mobileOptimized": true
+    },
+    "assets": {
+        "external": [],
+        "local": [
+            "../html/gravegain_shared_missions.js",
+            "../html/giggles-help-draft.js",
+            "../html/gravegain-netplay.js",
+            "../html/game-meta.js",
+            "vendor/three.min.js",
+            "src/core/engine-bus.js",
+            "src/core/state-schema.js",
+            "src/core/terrain-grid.js",
+            "src/core/weapons-catalog.js",
+            "src/render/three-loader.js",
+            "src/render/world-renderer.js",
+            "src/render/camera-rig.js",
+            "src/render/entity-renderer.js",
+            "src/ui/minimap-3d.js",
+            "src/ui/codex-bestiary.js",
+            "src/net/save-bridge.js",
+            "src/core/game-engine.js",
+            "lore.js",
+            "game.js",
+            "mp-2d.js",
+            "mmorpg-2d.js",
+            "campaign/00-campaign-boot.js",
+            "campaign/m01.js",
+            "campaign/m02.js",
+            "campaign/m03.js",
+            "campaign/m04.js",
+            "campaign/m05.js",
+            "campaign/m06.js",
+            "campaign/m07.js",
+            "campaign/m08.js",
+            "campaign/m09.js",
+            "campaign/m10.js",
+            "campaign/10-campaign-director.js",
+            "campaign/20-campaign-ui.js",
+            "campaign/30-campaign-codex.js",
+            "aaa/00-aaa-boot.js",
+            "aaa/10-fx-film.js",
+            "aaa/20-fx-titlecard.js",
+            "aaa/30-fx-announcer.js",
+            "aaa/40-fx-boss.js",
+            "aaa/50-hud-objectives.js",
+            "aaa/60-hud-tutorial.js",
+            "aaa/70-hud-runstats.js",
+            "aaa/80-audio-director.js",
+            "aaa/90-menu-upgrade.js",
+            "game.css",
+            "campaign/css/10-campaign.css",
+            "aaa/css/10-film.css",
+            "aaa/css/20-titlecard.css",
+            "aaa/css/30-announcer-combo.css",
+            "aaa/css/40-boss.css",
+            "aaa/css/50-hud.css",
+            "aaa/css/60-menu.css"
+        ]
+    },
+    "meta": {
+        "version": "2.0.0",
+        "created": "2026-06-08",
+        "license": "MIT"
+    }
+}
