@@ -18,7 +18,7 @@
     let contractIndex = Math.floor(Math.random() * objectives.length);
     let progress = 0;
     let completed = 0;
-    let nextFork = 360;
+    let nextFork = 65;
     let platforms = [];
     let supported = null;
 
@@ -41,7 +41,7 @@
         if (distance >= nextFork) {
           const route = routes[routeIndex];
           routeIndex = (routeIndex + 1) % routes.length;
-          nextFork = distance + 750;
+          nextFork = distance + 530;
           route.steps.forEach(([offset, span, height], i) => {
             const x = width + offset;
             const y = ground - height;

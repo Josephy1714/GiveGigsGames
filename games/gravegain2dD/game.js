@@ -15,6 +15,8 @@
   const VAULT_SECONDS = .5;
   let stride = 0;
   let landing = 0;
+  let sliding = false;
+  let fireballs = [];
   const W=960,H=540,ground=432;
   let running=false,last=0,time=0,distance=0,gems=0,hearts=3,world=0,spawn=0,shake=0,particles=[];
   let player={x:238,y:ground,vy:0,speed:0,jump:false,pose:0,invuln:0};
@@ -33,11 +35,44 @@
     objectiveHud.textContent = run.objective;
   }
 
-  function start(){run=GraveGainRun.createRun();objectiveHud.textContent=run.objective;stride=landing=0;running=true;last=performance.now();time=distance=gems=world=spawn=0;hearts=3;obstacles=[];loot=[];particles=[];player={x:238,y:ground,vy:0,speed:0,jump:false,pose:0,invuln:0,vault:0};$score.textContent='0';$gems.textContent='0';$hearts.textContent='3';$('#title').innerHTML='MOONLIT<br>RUN';$('#copy').innerHTML='One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault.';$('#start').textContent='BEGIN RUN';$overlay.classList.add('hidden');requestAnimationFrame(loop)}
+  function start(){sliding=false;fireballs=[];run=GraveGainRun.createRun();objectiveHud.textContent=run.objective;stride=landing=0;running=true;last=performance.now();time=distance=gems=world=spawn=0;hearts=3;obstacles=[];loot=[];particles=[];player={x:238,y:ground,vy:0,speed:0,jump:false,pose:0,invuln:0,vault:0};$score.textContent='0';$gems.textContent='0';$hearts.textContent='3';$('#title').innerHTML='MOONLIT<br>RUN';$('#start').textContent='BEGIN RUN';$overlay.classList.add('hidden');requestAnimationFrame(loop)}
   $('#start').addEventListener('click',start);
   function joy(e){const r=$('#stickZone').getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=(e.clientX-cx)/(r.width*.35),dy=(e.clientY-cy)/(r.height*.35),mag=Math.hypot(dx,dy);const m=mag>1?1/mag:1;input={x:dx*m,y:dy*m};$stick.style.transform=`translate(${input.x*30}px,${input.y*30}px)`}
-  const zone=$('#stickZone');zone.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;zone.setPointerCapture(pointer);joy(e)});zone.addEventListener('pointermove',e=>{if(e.pointerId===pointer)joy(e)});function release(e){if(e.pointerId===pointer){pointer=null;input={x:0,y:0};$stick.style.transform='translate(0,0)'}}zone.addEventListener('pointerup',release);zone.addEventListener('pointercancel',release);
-  addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp',' ','ArrowDown'].includes(e.key))e.preventDefault();if(e.key==='ArrowRight'||e.key==='d')input.x=1;if(e.key==='ArrowLeft'||e.key==='a')input.x=-1;if(e.key==='ArrowUp'||e.key===' '||e.key==='w')input.y=-1;if(!running&&(e.key==='Enter'||e.key===' '))start()});addEventListener('keyup',e=>{if(['ArrowLeft','ArrowRight','a','d'].includes(e.key))input.x=0;if(['ArrowUp',' ','w'].includes(e.key))input.y=0});
+  const zone=$('#stickZone');zone.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;zone.setPointerCapture(pointer);joy(e)});zone.addEventListener('pointermove',e=>{if(e.pointerId===pointer)joy(e)});function release(e){if(e.pointerId===pointer){pointer=null;applyKeyboard();$stick.style.transform='translate(0,0)'}}zone.addEventListener('pointerup',release);zone.addEventListener('pointercancel',release);
+  const heldKeys = new Set();
+  const controls = new Map([
+    ['KeyA', 'left'], ['ArrowLeft', 'left'],
+    ['KeyD', 'right'], ['ArrowRight', 'right'],
+    ['KeyW', 'up'], ['ArrowUp', 'up'], ['Space', 'up'],
+    ['KeyS', 'down'], ['ArrowDown', 'down']
+  ]);
+
+  function applyKeyboard() {
+    const active = new Set([...heldKeys].map(code => controls.get(code)));
+    input.x = Number(active.has('right')) - Number(active.has('left'));
+    input.y = Number(active.has('down')) - Number(active.has('up'));
+  }
+
+  addEventListener('keydown', event => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.code === 'Enter' || event.code === 'Space') {
+      if (!running && !event.repeat) {
+        event.preventDefault();
+        start();
+        return;
+      }
+    }
+    if (!controls.has(event.code)) return;
+    event.preventDefault();
+    heldKeys.add(event.code);
+    if (pointer === null) applyKeyboard();
+  });
+
+  addEventListener('keyup', event => {
+    if (!heldKeys.delete(event.code)) return;
+    if (pointer === null) applyKeyboard();
+  });
+
   function terrainHash(index) {
     const mixed = Math.imul(index ^ 0x49a7, 0x45d9f3b);
     return (mixed ^ (mixed >>> 16)) >>> 0;
@@ -55,10 +90,72 @@
 
   function drawBg(dt){
     world+=dt*(90+player.speed*80);
-    const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#142421');sky.addColorStop(.65,'#26382d');sky.addColorStop(1,'#293329');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#d8dcb7';ctx.globalAlpha=.78;ctx.beginPath();ctx.arc(765,100,43,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-    ctx.fillStyle='#293a32';for(let i=0;i<10;i++){const x=((i*137-world*.13)%1200+1200)%1200-100,h=80+(i*53%130);ctx.beginPath();ctx.moveTo(x,ground);ctx.lineTo(x+28,ground-h);ctx.lineTo(x+57,ground);ctx.fill()}
-    for(let i=0;i<6;i++){const x=((i*211-world*.36)%1200+1200)%1200-120;atlasDraw(i%2 ? 0 : 9,x,ground-82,76,82,props);if(i%2===0)atlasDraw(i%4 ? 1 : 10,x+94,ground-53,38,53,props);if(i%3===1)atlasDraw(i%2 ? 2 : 11,x+128,ground-91,34,50,props)}
+    const sky = ctx.createLinearGradient(0, 0, 0, ground);
+    sky.addColorStop(0, '#090f23');
+    sky.addColorStop(.52, '#1b3041');
+    sky.addColorStop(1, '#465952');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    for (let i = 0; i < 90; i++) {
+      const seed = terrainHash(i + 901);
+      const x = ((seed % W) - world * .025 % W + W) % W;
+      const y = 15 + ((seed >>> 10) % 250);
+      ctx.fillStyle = i % 9 ? '#b9d7da65' : '#e6f7e4b0';
+      ctx.fillRect(Math.floor(x), y, i % 9 ? 1 : 2, i % 9 ? 1 : 2);
+    }
+    const halo = ctx.createRadialGradient(745, 120, 19, 745, 120, 144);
+    halo.addColorStop(0, '#d5f9cd61');
+    halo.addColorStop(1, '#d5f9cd00');
+    ctx.fillStyle = halo;
+    ctx.fillRect(600, 0, 290, 265);
+    ctx.fillStyle = '#dce9c8';
+    ctx.beginPath();
+    ctx.arc(745, 120, 41, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#536c621f';
+    for (const [dx, dy, radius] of [[-13, -14, 11], [18, -1, 9], [-4, 18, 12]]) {
+      ctx.beginPath();
+      ctx.arc(745 + dx, 120 + dy, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (let layer = 0; layer < 3; layer++) {
+      const width = 100 - layer * 19;
+      const speed = .09 + layer * .12;
+      const scroll = world * speed;
+      const start = Math.floor(scroll / width);
+      ctx.fillStyle = ['#304652', '#293e47', '#20353c'][layer];
+      for (let i = -1; i <= Math.ceil(W / width); i++) {
+        const seed = terrainHash(start + i + 300 * layer);
+        const x = i * width - scroll % width;
+        const y = ground - (layer === 0 ? 168 : 100) - seed % 100;
+        ctx.beginPath();
+        ctx.moveTo(x - 25, ground);
+        ctx.lineTo(x + width * .52, y);
+        ctx.lineTo(x + width + 25, ground);
+        ctx.fill();
+        if (layer === 1 && seed % 3 === 0) {
+          ctx.fillRect(x + 16, y + 25, 19, ground - y - 25);
+          for (let tooth = 0; tooth < 3; tooth++) ctx.fillRect(x + 16 + tooth * 7, y + 20, 5, 5);
+        }
+      }
+    }
+    const mist = ctx.createLinearGradient(0, ground - 160, 0, ground);
+    mist.addColorStop(0, '#a3d3be00');
+    mist.addColorStop(.62, '#a3d3be29');
+    mist.addColorStop(1, '#a3d3be00');
+    ctx.fillStyle = mist;
+    ctx.fillRect(0, ground - 160, W, 160);
+    ctx.save();
+    ctx.globalAlpha = .48;
+    for (let i = 0; i < 6; i++) {
+      const x = ((i * 211 - world * .36) % 1200 + 1200) % 1200 - 120;
+      atlasDraw(i % 2 ? 0 : 9, x, ground - 82, 76, 82, props);
+      if (i % 2 === 0) atlasDraw(i % 4 ? 1 : 10, x + 94, ground - 53, 38, 53, props);
+      if (i % 3 === 1) atlasDraw(i % 2 ? 2 : 11, x + 128, ground - 91, 34, 50, props);
+    }
+    ctx.restore();
     ctx.fillStyle='#17201b';ctx.fillRect(0,ground,W,H-ground);
     ctx.fillStyle = '#526448';
     ctx.fillRect(0, ground, W, 3);
@@ -75,6 +172,11 @@
         ctx.drawImage(tile, 0, 3, 32, 29, x, ground + tileSize, tileSize, tileSize);
       }
     }
+    const soilShade = ctx.createLinearGradient(0, ground + 8, 0, H);
+    soilShade.addColorStop(0, '#0a111600');
+    soilShade.addColorStop(1, '#0a1116c0');
+    ctx.fillStyle = soilShade;
+    ctx.fillRect(0, ground + 8, W, H - ground - 8);
     ctx.fillStyle='#74805a';for(let i=0;i<45;i++){let x=((i*37-world)%1000+1000)%1000;ctx.fillRect(x,ground+10+(i*17%70),2,2)}
   }
   function atlasDraw(cell, x, y, w, h, sheet = atlas, columns = 6) {
@@ -123,21 +225,80 @@
     }
   }
 
+  function updateTurret(turret) {
+    const range = turret.x - player.x;
+    if (turret.chargeAt === undefined && range < 450 && range > 300) turret.chargeAt = time;
+    if (turret.fired || turret.chargeAt === undefined || time - turret.chargeAt < .48) return;
+    turret.fired = true;
+    fireballs.push({ x: turret.x, y: ground - 43 });
+  }
+
+  function drawTurret(turret) {
+    const x = turret.x + 12;
+    const y = ground - 43;
+    const charging = turret.chargeAt !== undefined && !turret.fired;
+    ctx.fillStyle = '#37354b';
+    ctx.fillRect(x - 9, y + 8, 18, 35);
+    ctx.fillStyle = '#9383a9';
+    ctx.fillRect(x - 11, y + 9, 22, 4);
+    ctx.shadowColor = '#ff5eaa';
+    ctx.shadowBlur = charging ? 25 : 9;
+    ctx.fillStyle = charging ? '#fff5b1' : '#e681ba';
+    ctx.beginPath();
+    ctx.arc(x, y, charging ? 8 + Math.sin(time * 30) * 2 : 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function updateFireballs(dt, velocity) {
+    const heroX = player.x + 20;
+    const head = player.y - (sliding ? 22 : 53);
+    fireballs = fireballs.filter(ball => {
+      ball.x -= (velocity + 240) * dt;
+      if (ball.x < -16) return false;
+      if (Math.abs(ball.x - heroX) < 21 && ball.y + 7 > head && ball.y - 7 < player.y) {
+        emit(ball.x, ball.y, '#fa8fbc', 10);
+        crash();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function drawFireballs() {
+    ctx.save();
+    for (const { x, y } of fireballs) {
+      ctx.shadowColor = '#ff5eaa';
+      ctx.shadowBlur = 17;
+      ctx.fillStyle = '#ef76b5';
+      ctx.beginPath();
+      ctx.ellipse(x + 8, y, 16, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff1b4';
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function spawnHazard(){const r=Math.random(),x=W+50;let o;if(r<.38)o={type:'stump',x,w:54,h:43};else if(r<.68)o={type:'bramble',x,w:61,h:60};else if(r<.86)o={type:'wall',x,w:38,h:72};else o={type:'gap',x,w:76,h:0};
-    if (distance > 140 && Math.random() < .32) {
+    if (distance > 100 && Math.random() < .20) {
+      o = { type: 'turret', x, w: 30, h: 51 };
+    } else if (distance > 140 && Math.random() < .32) {
       const type = Math.random() < .5 ? 'skeleton' : 'slime';
       o = { type, x, w: enemyTypes[type].width, h: enemyTypes[type].height };
     }
     obstacles.push(o);if(Math.random()<.78)loot.push({x:x+34,y:ground-92-Math.random()*35,r:9,cell:Math.random()<.55?3:4});}
-  function drawObstacle(o){if (enemyTypes[o.type]) { drawEnemy(o); return; }if(o.type==='gap'){ctx.fillStyle='#080e0c';ctx.fillRect(o.x,ground,o.w,32);ctx.fillStyle='#44513d';ctx.fillRect(o.x,ground,o.w,4);return}const cell={stump:7,bramble:6,wall:8}[o.type];atlasDraw(cell,o.x,ground-o.h,o.w,o.h,props);if(!props.complete||!props.naturalWidth){ctx.fillStyle=o.type==='bramble'?'#59613c':'#6d6554';ctx.fillRect(o.x,ground-o.h,o.w,o.h)}}
+  function drawObstacle(o){if (o.type === 'turret') { drawTurret(o); return; }if (enemyTypes[o.type]) { drawEnemy(o); return; }if(o.type==='gap'){ctx.fillStyle='#080e0c';ctx.fillRect(o.x,ground,o.w,32);ctx.fillStyle='#44513d';ctx.fillRect(o.x,ground,o.w,4);return}const cell={stump:7,bramble:6,wall:8}[o.type];atlasDraw(cell,o.x,ground-o.h,o.w,o.h,props);if(!props.complete||!props.naturalWidth){ctx.fillStyle=o.type==='bramble'?'#59613c':'#6d6554';ctx.fillRect(o.x,ground-o.h,o.w,o.h)}}
   function emit(x,y,color,n=8,sparkle=false){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*120,life:.45,size:2+Math.random()*3,color,sparkle:sparkle&&i===0})}
   function crash(){if(player.invuln>0)return;hearts--;player.invuln=1.3;player.speed=Math.max(.25,player.speed*.55);shake=.25;emit(player.x+18,player.y-30,'#e6b47d',14);$hearts.textContent='♥'.repeat(hearts)||'0';if(hearts<=0)end()}
   function end(){running=false;best=Math.max(best,Math.floor(distance));bestNode.textContent=best;try{localStorage.setItem('gravegain2dD-best',String(best))}catch{}$('#title').innerHTML='THE ROAD<br>CLAIMS YOU';$('#copy').innerHTML=`You ran ${Math.floor(distance)}m and gathered ${gems} moonshards.<br>Your best run is ${best}m. Objectives completed: ${run.completed}.`;$('#start').textContent='RUN AGAIN';$overlay.classList.remove('hidden')}
   function renderIntro(){if(running)return;ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);drawBg(0);atlasDraw(0,player.x-18,ground-77,76,77)}
   atlas.addEventListener('load',renderIntro);
   props.addEventListener('load',renderIntro);
-  addEventListener('blur',()=>{input={x:0,y:0};pointer=null;$stick.style.transform='translate(0,0)'});
+  addEventListener('blur',()=>{heldKeys.clear();input={x:0,y:0};pointer=null;$stick.style.transform='translate(0,0)'});
   function loop(now){if(!running)return;ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.clearRect(0,0,W,H);const dt=Math.min((now-last)/1000,.04);last=now;time+=dt;distance+=dt*(100+player.speed*135);player.speed+=(Math.max(-.72,Math.min(1,input.x))*.95-player.speed*.36)*dt;player.speed=Math.max(-.72,Math.min(1,player.speed));const velocity=145+player.speed*105;stride+=dt*(6+velocity*.045);landing=Math.max(0,landing-dt);player.x=Math.max(148,Math.min(360,player.x+input.x*55*dt));player.vault=Math.max(0,player.vault-dt);if(input.y<-.33&&!player.jump){run.leavePlatform();player.vy=-440;player.jump=true;player.pose=1}const previousY = player.y;
+    if (input.y > .36 && player.jump && player.vault === 0) player.vy = Math.max(player.vy, 380);
     player.vy += 980 * dt;
     player.y += player.vy * dt;
     run.advance(distance, velocity * dt, W, ground, loot);
@@ -151,7 +312,9 @@
     } else {
       player.jump = true;
     }player.invuln=Math.max(0,player.invuln-dt);spawn-=dt;if(spawn<=0){spawnHazard();spawn=1.15+Math.random()*1.05-Math.min(distance/18000,.3)}
+    sliding = input.y > .36 && !player.jump;
     for (const o of obstacles) {
+      if (o.type === 'turret') updateTurret(o);
       const enemy = enemyTypes[o.type];
       if (!enemy) {
         o.x -= velocity * dt;
@@ -166,7 +329,8 @@
         if (o.hitAt === undefined) record('enemy');
       }
     }obstacles=obstacles.filter(o=>o.x+o.w>-20);for(const c of loot)c.x-=velocity*dt;for(let i=loot.length-1;i>=0;i--){const c=loot[i];if(Math.abs(c.x-player.x)<34&&Math.abs(c.y-(player.y-32))<46){gems++;record('collect');$gems.textContent=gems;emit(c.x,c.y,'#efd87d',9,true);loot.splice(i,1)}else if(c.x<-20)loot.splice(i,1)}
-    const px=player.x+12;for(const o of obstacles){if(o.vaulted||px+26<=o.x||px>=o.x+o.w)continue;
+    updateFireballs(dt, velocity);
+    const px=player.x+12;for(const o of obstacles){if(o.type==='turret'||o.vaulted||px+26<=o.x||px>=o.x+o.w)continue;
       const enemy = enemyTypes[o.type];
       if (enemy) {
         if (o.hitAt === undefined && player.y > ground - o.h - o.lift + 12 && player.y - 48 < ground - o.lift) {
@@ -179,7 +343,23 @@
         continue;
       }
       if(o.type==='gap'){if(player.y>ground-18)crash()}else if(player.y>ground-o.h+16){if(input.y<-.15&&player.vault<=0){player.vy=-350;player.jump=true;player.vault=VAULT_SECONDS;o.vaulted=true;record('vault');emit(player.x+24,ground,'#d9c780',7);$('#toast').classList.add('on');setTimeout(()=>$('#toast').classList.remove('on'),350)}else crash()}}
-    drawBg(dt);run.draw(ctx);for(const o of obstacles)drawObstacle(o);for(const c of loot){ctx.shadowColor='#ffe3a0';ctx.shadowBlur=10;atlasDraw(c.cell,c.x-12,c.y-12+Math.sin(time*6+c.x*.03)*3,24,24,props);ctx.shadowBlur=0}
-    ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(player.x+18,ground+2,25,6,0,0,Math.PI*2);ctx.fill();const charCell=heroFrame();if(!(player.invuln>0&&Math.floor(time*14)%2))atlasDraw(charCell,player.x-18,player.y-77,76,77);for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;ctx.globalAlpha=Math.max(p.life*2,0);ctx.fillStyle=p.color;if(p.cell!==undefined)atlasDraw(p.cell,p.x-8,p.y-8,16,16,enemies,10);else if(p.sparkle)atlasDraw(5,p.x-12,p.y-12,24,24,props);else ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;if(p.life<=0)particles.splice(i,1)}$score.textContent=Math.floor(distance);if(shake>0){shake-=dt;ctx.translate((Math.random()-.5)*7,(Math.random()-.5)*5)}requestAnimationFrame(loop)}
+    drawBg(dt);
+    ctx.save();
+    if (shake > 0) {
+      shake = Math.max(0, shake - dt);
+      ctx.translate(Math.sin(time * 96) * shake * 9, 0);
+    }
+    run.draw(ctx);
+    drawFireballs();
+    for (const o of obstacles) {
+      ctx.save();
+      if (o.type !== 'gap') {
+        ctx.shadowColor = '#f5b8688c';
+        ctx.shadowBlur = 10;
+      }
+      drawObstacle(o);
+      ctx.restore();
+    }for(const c of loot){ctx.shadowColor='#ffe3a0';ctx.shadowBlur=10;atlasDraw(c.cell,c.x-12,c.y-12+Math.sin(time*6+c.x*.03)*3,24,24,props);ctx.shadowBlur=0}
+    ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(player.x+18,ground+2,25,6,0,0,Math.PI*2);ctx.fill();const charCell=heroFrame();ctx.save();ctx.shadowColor='#a7e8d492';ctx.shadowBlur=12;if(!(player.invuln>0&&Math.floor(time*14)%2))atlasDraw(sliding ? 16 : charCell, player.x - 18, player.y - (sliding ? 38 : 77), 76, sliding ? 38 : 77);ctx.restore();for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;ctx.globalAlpha=Math.max(p.life*2,0);ctx.fillStyle=p.color;if(p.cell!==undefined)atlasDraw(p.cell,p.x-8,p.y-8,16,16,enemies,10);else if(p.sparkle)atlasDraw(5,p.x-12,p.y-12,24,24,props);else ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;if(p.life<=0)particles.splice(i,1)}$score.textContent=Math.floor(distance);ctx.restore();requestAnimationFrame(loop)}
   renderIntro();
 })();
