@@ -22,13 +22,13 @@
     <link rel="stylesheet" href="aaa/css/60-menu.css">
     <link rel="stylesheet" href="campaign/css/10-campaign.css">
     <!-- Three.js Library (primary CDN with fallback mirror) -->
-    <script src="/games/html/vendor/three-r128.min.js"></script>
+    <script src="../html/vendor/three-r128.min.js"></script>
     <script>
         if (!window.THREE) {
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
         }
     </script>
-    <script src="/games/html/gravegain_shared_missions.js"></script>
+    <script src="../html/gravegain_shared_missions.js"></script>
     <script src="engine/config.js"></script>
     <script src="engine/persistence.js"></script>
     <script src="engine/camera-controller.js"></script>
@@ -86,7 +86,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
 [class*="game-overlay"]::-webkit-scrollbar{width:8px}
 [class*="game-overlay"]::-webkit-scrollbar-track{background:transparent}
 [class*="game-overlay"]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
-</style><script src="/games/html/giggles-help-draft.js"></script>  <script>
+</style><script src="../html/giggles-help-draft.js"></script>  <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
       var vercelAnalyticsScript = document.createElement("script");
@@ -188,11 +188,27 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                 <button class="TEMPLATE-4weird-fullscreen-btn desktop-only" id="gravegain-fullscreen-btn" title="Toggle Fullscreen">📺 Fullscreen</button>
                 <canvas id="gameCanvas" width="1000" height="600"></canvas>
                 <canvas id="effectsCanvas" aria-hidden="true"></canvas>
-                <div id="hudCrosshair" class="hud-crosshair"></div>
+                <div id="damageVignette" class="damage-vignette" aria-hidden="true"></div>
+                <div id="damageDirection" class="damage-direction" aria-hidden="true"></div>
+                <div id="sniperScopeOverlay" class="sniper-scope-overlay" aria-hidden="true">
+                    <div class="sniper-scope-reticle"></div>
+                </div>
+                <div id="hudCrosshair" class="hud-crosshair" aria-hidden="true">
+                    <i class="hit-arm hit-arm-top"></i><i class="hit-arm hit-arm-right"></i>
+                    <i class="hit-arm hit-arm-bottom"></i><i class="hit-arm hit-arm-left"></i>
+                </div>
+                <div id="hudTargetReadout" class="hud-target-readout hidden" aria-live="polite">
+                    <div class="target-readout-heading"><span id="hudTargetName">SKELETON</span><span id="hudTargetDistance" class="target-readout-distance">0u · OPTIMAL</span><span id="hudTargetHealth">100%</span></div>
+                    <div class="target-health-track"><div id="hudTargetHpBar" class="target-health-fill"></div></div>
+                </div>
                 <div class="hud-weapon-readout" aria-live="polite">
                     <span id="hudWeaponName">M4 CARBINE · 1/3</span>
                     <strong id="hudWeaponAmmo">30 / 120</strong>
                     <span id="hudWeaponStatus">READY</span>
+                    <span id="hudGrenades">GRENADES 3</span>
+                    <span id="hudLauncherAmmo" class="hud-launcher-ammo hidden">40MM 2/4</span>
+                    <button id="hudFireModeToggle" class="hud-fire-mode hidden" type="button" title="Switch M4 between full-auto and semi-auto" aria-label="Toggle M4 fire mode">AUTO</button>
+                    <div id="hudWeaponSlots" class="weapon-slot-strip" role="group" aria-label="Weapon inventory"></div>
                 </div>
 
                 <!-- Boss Health Bar -->
@@ -269,6 +285,10 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                 <div class="mobile-joystick-container" id="mobileJoystick" title="Crypt-stick: touch left side to summon, push to rim to sprint">
                     <div class="mobile-joystick-knob" id="mobileJoystickKnob"></div>
                 </div>
+                <div class="mobile-lean-buttons" aria-label="Lean controls">
+                    <button class="mobile-lean-btn" id="mobileLeanLeftBtn" title="Hold to lean left" aria-label="Lean left">↶</button>
+                    <button class="mobile-lean-btn" id="mobileLeanRightBtn" title="Hold to lean right" aria-label="Lean right">↷</button>
+                </div>
                 <!-- Spell wheel (also built lazily by input-manager if missing) -->
                 <div class="spell-wheel hidden" id="spellWheel" role="menu" aria-label="Spell wheel">
                     <div class="spell-wheel-title">🔮 SPELL WHEEL</div>
@@ -281,13 +301,20 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <div class="spell-wheel-hint">tap a spell · tap outside to close</div>
                 </div>
                 <div class="mobile-action-buttons" id="mobileActionButtons">
-                    <button class="mobile-action-btn btn-attack" id="mobileAttackBtn" title="Attack">⚔️</button>
-                    <button class="mobile-action-btn btn-block" id="mobileBlockBtn" title="Block / Defend">🛡️</button>
+                    <button class="mobile-action-btn btn-attack" id="mobileAttackBtn" title="Tap to fire · hold for automatic weapons" aria-label="Fire weapon; hold to sustain automatic fire">⚔️</button>
+                    <button class="mobile-action-btn btn-block" id="mobileBlockBtn" title="Block / Defend (turn-based: defend and wait)">🛡️</button>
                     <button class="mobile-action-btn btn-ability" id="mobileAbilityBtn" title="Cast (tap) · Spell wheel (hold)">🔮<span id="mobileAbilityCd"></span></button>
                     <button class="mobile-action-btn btn-jump" id="mobileJumpBtn" title="Jump">🦘</button>
                     <button class="mobile-action-btn btn-reload" id="mobileReloadBtn" title="Reload">↻</button>
+                    <button class="mobile-action-btn btn-grenade" id="mobileGrenadeBtn" title="Throw grenade (G)">💣<span id="mobileGrenadeCount">3</span></button>
+                    <button class="mobile-action-btn btn-melee" id="mobileMeleeBtn" title="Class attack (V)" aria-label="Use class attack">🗡️</button>
+                    <button class="mobile-action-btn btn-weapon-melee" id="mobileWeaponMeleeBtn" title="Weapon bash (N / middle mouse)" aria-label="Bash with current weapon">🥊</button>
+                    <button class="mobile-action-btn btn-slide" id="mobileSlideBtn" title="Hold to crouch · tap while sprinting to slide">⇩</button>
+                    <button class="mobile-action-btn btn-launcher hidden" id="mobileLauncherBtn" title="Fire M4 underbarrel grenade launcher (Y)">💥<span id="mobileLauncherAmmo">2</span></button>
                     <button class="mobile-action-btn btn-weapon-prev" id="mobileWeaponPrevBtn" title="Previous weapon">◀</button>
                     <button class="mobile-action-btn btn-weapon-next" id="mobileWeaponNextBtn" title="Next weapon">▶</button>
+                    <button class="mobile-action-btn btn-aim" id="mobileAimBtn" title="Hold to aim down sights">🎯</button>
+                    <button class="mobile-action-btn btn-drop-weapon" id="mobileDropWeaponBtn" title="Drop current weapon (H)">⤵</button>
                     <button class="mobile-action-btn btn-potion" id="mobilePotionBtn" title="Drink Potion">🧪<span id="mobilePotionCount">1</span></button>
                     <button class="mobile-action-btn btn-wait hidden" id="mobileWaitBtn" title="Wait Turn (Turn-based mode)">⏳</button>
                 </div>
@@ -305,7 +332,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
             <div class="desktop-bottom-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px; max-width: 100%;">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; max-width: 100%;">
                     <button class="btn-game" id="btnPause">⏸️ Pause</button>
-                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | B Block | R Reload | 1–3 / Wheel Swap | Shift Sprint | C/Ctrl Crouch | Space Jump | F Ability | Q Potion</span>
+                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | Z/X Lean | V Class Attack | N / MMB Weapon Bash | G Grenade | B Block / Defend turn | R Reload | 1–4 / Wheel Swap | H Drop Weapon | Shift Sprint | tap C Slide / Ctrl Crouch | Space Jump | F Ability | Q Potion</span>
                 </div>
                 <button class="btn-game btn-primary" id="btnReturnToHub">🚀 Return to Starship</button>
             </div>
@@ -640,7 +667,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
     <!-- Credits & Personnel Section -->
     <!-- Maker Bio Section -->
     <script src="lore.js"></script>
-    <script src="/games/html/fourweird-graphics.js"></script>
+    <script src="../html/fourweird-graphics.js"></script>
     <script src="engine/graphics-settings.js"></script>
     <script src="engine/game-runtime.js"></script>
     <!-- AAA presentation layer: many focused modules, boot first. See aaa/ folder. -->
@@ -669,7 +696,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
     <script src="campaign/10-campaign-director.js"></script>
     <script src="campaign/20-campaign-ui.js"></script>
     <script src="campaign/30-campaign-codex.js"></script>
-    <script src="/games/html/game-meta.js"></script>
+    <script src="../html/game-meta.js"></script>
     <script>
         (function() {
             fetch('game.json')
@@ -722,5 +749,5 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
             window.addEventListener('resize', gg3dRefit);
         })();
     </script>
-<script src="/games/html/runtime-bridge.js" data-slug="gravegain3dA"></script><script src="/games/html/fourweird-workers.js" data-slug="gravegain3dA"></script><script src="/games/html/fourweird-music.js" data-slug="gravegain3dA"></script><script>(function(){var b=document.createElement('button');b.type='button';b.textContent='▰ GG · HELP';b.style.cssText='position:fixed;right:12px;top:12px;z-index:9999;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer';function open(){var g=window.GraveGainGame;if(g&&g.player&&window.GigglesHelpDraft)window.GigglesHelpDraft.present('gravegain3dA',g,function(){g.updateHUD();});}b.onclick=open;document.addEventListener('keydown',function(e){if(e.key==='g'||e.key==='G')open();});document.body.appendChild(b);})();</script></body>
+<script src="../html/runtime-bridge.js" data-slug="gravegain3d"></script><script src="../html/fourweird-workers.js" data-slug="gravegain3d"></script><script src="../html/fourweird-music.js" data-slug="gravegain3d"></script><script>(function(){var b=document.createElement('button');b.type='button';b.textContent='▰ GG · HELP';b.style.cssText='position:fixed;right:12px;top:12px;z-index:9999;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer';function open(){var g=window.GraveGainGame;if(g&&g.player&&window.GigglesHelpDraft)window.GigglesHelpDraft.present('gravegain3d',g,function(){g.updateHUD();});}b.onclick=open;document.addEventListener('keydown',function(e){if(e.key==='F1')open();});document.body.appendChild(b);})();</script></body>
 </html>

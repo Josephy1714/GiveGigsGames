@@ -14,10 +14,12 @@
     const BotanySeeds = GameData.BotanySeeds;
     const ArmoryUpgrades = GameData.ArmoryUpgrades;
     const RoguelikePerks = GameData.RoguelikePerks;
+    const FPS_STARTING_WEAPON_IDS = ['rifle', 'sidearm', 'scattergun'];
     const FPS_WEAPONS = [
-        { id: 'rifle', name: 'M4 CARBINE', magazine: 30, reserve: 120, damage: 24, fireRate: 0.105, reload: 1.65, range: 850, pellets: 1, automatic: true },
-        { id: 'sidearm', name: 'SERVICE PISTOL', magazine: 12, reserve: 60, damage: 31, fireRate: 0.26, reload: 1.25, range: 650, pellets: 1, automatic: false },
-        { id: 'scattergun', name: 'BREACH SHOTGUN', magazine: 6, reserve: 36, damage: 9, fireRate: 0.72, reload: 1.9, range: 360, pellets: 7, automatic: false }
+        { id: 'rifle', name: 'M4 CARBINE', magazine: 30, reserve: 120, damage: 24, meleeDamage: 22, fireRate: 0.105, reload: 1.65, range: 850, falloffStart: 500, minDamageScale: 0.68, adsFov: 58, spreadScale: 1, pellets: 1, automatic: true, secondaryMagazine: 2, secondaryReserve: 4, secondaryDamage: 78, secondaryRadius: 96, secondaryFireRate: 0.78, recoilPattern: [[0.0015, 0.005], [-0.002, 0.006], [0.0025, 0.0065], [-0.003, 0.007], [0.0015, 0.008], [-0.001, 0.0085], [0.003, 0.009], [-0.002, 0.0095]], adsRecoilPattern: [[0.0005, 0.0028], [-0.0008, 0.0031], [0.001, 0.0035], [-0.0012, 0.0038], [0.0006, 0.0042], [-0.0005, 0.0045], [0.0012, 0.0048], [-0.0008, 0.005]] },
+        { id: 'sidearm', name: 'SERVICE PISTOL', magazine: 12, reserve: 60, damage: 31, meleeDamage: 18, fireRate: 0.26, reload: 1.25, range: 650, falloffStart: 300, minDamageScale: 0.6, adsFov: 62, spreadScale: 0.8, pellets: 1, automatic: false, recoilPattern: [[0, 0.013], [0.002, 0.015], [-0.002, 0.014], [0.001, 0.016]], adsRecoilPattern: [[0, 0.008], [0.001, 0.009], [-0.001, 0.0085], [0.0005, 0.0095]] },
+        { id: 'scattergun', name: 'BREACH SHOTGUN', magazine: 6, reserve: 36, damage: 9, meleeDamage: 27, fireRate: 0.72, reload: 1.9, shellReload: 0.48, continuousReload: true, range: 360, falloffStart: 120, minDamageScale: 0.28, adsFov: 64, spreadScale: 4.5, pellets: 7, automatic: false, recoilPattern: [[0, 0.028]], adsRecoilPattern: [[0, 0.019]] },
+        { id: 'sniper', name: 'WRAITH BOLT SNIPER', magazine: 5, reserve: 25, damage: 84, meleeDamage: 24, fireRate: 0.82, boltCycle: 0.28, reload: 2.15, range: 1250, falloffStart: 720, minDamageScale: 0.58, adsFov: 26, spreadScale: 0.46, pellets: 1, automatic: false, recoilPattern: [[0.0008, 0.042]], adsRecoilPattern: [[0.0003, 0.019]] }
     ];
 
     // Pointer lock is optional (and commonly unavailable inside embedded game
@@ -140,6 +142,8 @@
             this.scene.fog = new THREE.FogExp2(0x04030a, 0.0035);
 
             this.camera3d = new THREE.PerspectiveCamera(68, (this.container.clientWidth || 1000) / (this.container.clientHeight || 600), 2, 900);
+            this.aimRaycaster = new THREE.Raycaster();
+            this.aimHudTimer = 0;
 
             // Enhanced 3D Atmospheric Lighting
             this.ambientLight = new THREE.AmbientLight(0x2d1f4d, 0.65);
@@ -197,13 +201,33 @@
             this.weaponInventory = [];
             this.activeWeaponIndex = 0;
             this.weaponCooldown = 0;
+            this.weaponMeleeCooldown = 0;
+            this.weaponBashTimer = 0;
+            this.weaponSwapTimer = 0;
+            this.weaponSwapDuration = 0.3;
+            this.weaponBurstCount = 0;
+            this.weaponLastShotAt = 0;
+            this.weaponSpreadBloom = 0;
             this.weaponReloadTimer = 0;
             this.weaponRecoil = 0;
+            this.weaponAimBlend = 0;
+            this.weaponFlashTimer = 0;
+            this.weaponFlashDuration = 0.075;
+            this.weaponBoltTimer = 0;
+            this.weaponBoltSoundPending = false;
+            this.weaponAnimTime = 0;
             this.ads = false;
+            this.cameraBobTime = 0;
+            this.cameraBobX = 0;
+            this.cameraBobY = 0;
+            this.cameraEyeHeight = 20;
+            this.orbGlaive = null;
+            this.orbAngle = 0;
             this.enemies = [];
             this.props = [];
             this.loot = [];
             this.projectiles = [];
+            this.weaponTracers = [];
             this.mapMeshes = [];
             this.torches = [];
             this.dungeon = null;
@@ -388,15 +412,40 @@
 
         initRun(race, classType) {
             this.player = new PlayerEntity(race, classType, this.armoryRanks);
-            this.weaponInventory = FPS_WEAPONS.map(weapon => ({ ...weapon, ammo: weapon.magazine, reserveAmmo: weapon.reserve }));
+            this.weaponInventory = FPS_WEAPONS.filter(weapon => FPS_STARTING_WEAPON_IDS.includes(weapon.id)).map(weapon => ({
+                ...weapon,
+                ammo: weapon.magazine,
+                reserveAmmo: weapon.reserve,
+                secondaryAmmo: weapon.secondaryMagazine || 0,
+                secondaryReserveAmmo: weapon.secondaryReserve || 0,
+                secondaryNextFireAt: 0
+            }));
+            this.grenades = 3;
+            this.clearWeaponTracers();
             this.activeWeaponIndex = 0;
             this.weaponCooldown = 0;
+            this.weaponMeleeCooldown = 0;
+            this.weaponBashTimer = 0;
+            this.weaponSwapTimer = 0;
+            this.weaponBurstCount = 0;
+            this.weaponLastShotAt = 0;
+            this.weaponSpreadBloom = 0;
             this.weaponReloadTimer = 0;
             this.weaponRecoil = 0;
+            this.weaponAimBlend = 0;
+            this.weaponFlashTimer = 0;
+            this.weaponBoltTimer = 0;
+            this.weaponBoltSoundPending = false;
+            this.weaponAnimTime = 0;
             this.ads = false;
+            this.cameraBobTime = 0;
+            this.cameraBobX = 0;
+            this.cameraBobY = 0;
+            this.cameraEyeHeight = 20;
+            this.removeOrbitingGlaive();
             this.gigglesHelpUses = 3;
             this.gigglesHelpUsed = false;
-            try { if (window.GigglesHelpDraft) setTimeout(() => window.GigglesHelpDraft.present('gravegain3dA', this, () => this.updateHUD(), true), 0); } catch (_) {}
+            try { if (window.GigglesHelpDraft) setTimeout(() => window.GigglesHelpDraft.present('gravegain3d', this, () => this.updateHUD(), true), 0); } catch (_) {}
             this.floorIndex = 1;
             this.kills = 0;
             this.turnCount = 1;
@@ -410,8 +459,7 @@
 
             // Attach 3D First-Person Weapon
             this.disposeWeaponViewmodel();
-            this.weaponGroup = WeaponFactory.buildWeapon(classType, this.weaponInventory[this.activeWeaponIndex].id);
-            this.camera3d.add(this.weaponGroup);
+            this.buildWeaponViewmodel(classType, this.weaponInventory[this.activeWeaponIndex].id);
             this.updateWeaponHUD();
 
             this.audio.startAmbientMusic();
@@ -907,17 +955,364 @@
             const p = new Projectile(x, y, z, vx, vy, vz, dmg, isPlayer, color, type);
             this.scene.add(p.mesh);
             this.projectiles.push(p);
+            return p;
+        }
+
+        throwGrenade() {
+            if (!this.player || this.player.isDead || this.isPaused || this.grenades <= 0) return false;
+            const forward = new THREE.Vector3();
+            this.camera3d.getWorldDirection(forward);
+            const speed = 290;
+            this.grenades--;
+            this.spawnProjectile(
+                this.player.x + forward.x * 18,
+                this.player.yElevation + 18,
+                this.player.y + forward.z * 18,
+                forward.x * speed,
+                Math.max(80, forward.y * speed + 100),
+                forward.z * speed,
+                90,
+                true,
+                0xf97316,
+                'grenade'
+            );
+            this.audio.playSfx('spell', 0.75);
+            this.combatText.spawnText(this.player.x, 24, this.player.y, `GRENADE · ${this.grenades} LEFT`, 'block');
+            this.updateWeaponHUD();
+            return true;
+        }
+
+        fireSecondaryWeapon() {
+            const weapon = this.weaponInventory[this.activeWeaponIndex];
+            if (!this.player || this.player.isDead || this.isPaused || this.controlMode === 'turnbased' ||
+                !weapon || weapon.id !== 'rifle' || this.weaponSwapTimer > 0 || this.weaponReloadTimer > 0) return false;
+            const now = this.weaponAnimTime * 1000;
+            if (now < (weapon.secondaryNextFireAt || 0)) return false;
+            if (weapon.secondaryAmmo <= 0) {
+                this.combatText.spawnText(this.player.x, 20, this.player.y,
+                    weapon.secondaryReserveAmmo > 0 ? 'UNDERBARREL EMPTY · RELOAD' : 'UNDERBARREL EMPTY', 'block');
+                return false;
+            }
+
+            const forward = new THREE.Vector3();
+            this.camera3d.getWorldDirection(forward);
+            const speed = 420;
+            const verticalSpeed = THREE.MathUtils.clamp(forward.y * speed, -150, 90);
+            weapon.secondaryAmmo--;
+            weapon.secondaryNextFireAt = now + weapon.secondaryFireRate * 1000;
+            const projectile = this.spawnProjectile(
+                this.player.x + forward.x * 20,
+                Math.max(14, this.player.yElevation - 16),
+                this.player.y + forward.z * 20,
+                forward.x * speed,
+                verticalSpeed,
+                forward.z * speed,
+                weapon.secondaryDamage,
+                true,
+                0xff6b1a,
+                'launcher'
+            );
+            projectile.blastRadius = weapon.secondaryRadius;
+            if (this.weaponGroup?.muzzleFlash) {
+                this.weaponFlashDuration = 0.11;
+                this.weaponFlashTimer = this.weaponFlashDuration;
+                this.weaponGroup.muzzleFlash.material.color.setHex(0xff6b1a);
+                this.weaponGroup.muzzleFlash.scale.set(1.5, 1.5, 2.3);
+                this.weaponGroup.muzzleLight?.color.setHex(0xff6b1a);
+            }
+            this.cameraController.applyPunch(0.028, 0);
+            this.audio.playSfx('gunshot', 0.62);
+            this.combatText.spawnText(this.player.x, 20, this.player.y,
+                `40MM · ${weapon.secondaryAmmo}/${weapon.secondaryReserveAmmo}`, 'crit');
+            this.updateWeaponHUD();
+            return true;
+        }
+
+        showDamageFeedback(amount) {
+            const vignette = document.getElementById('damageVignette');
+            if (!vignette) return;
+            const strength = Math.min(0.78, 0.22 + Math.max(0, amount) * 0.014);
+            vignette.style.setProperty('--damage-strength', strength.toFixed(2));
+            vignette.classList.remove('active');
+            void vignette.offsetWidth;
+            vignette.classList.add('active');
+            clearTimeout(this.damageFeedbackTimer);
+            this.damageFeedbackTimer = setTimeout(() => vignette.classList.remove('active'), 280);
+        }
+
+        showDamageDirection(source) {
+            if (!source || !this.player) return;
+            const indicator = document.getElementById('damageDirection');
+            if (!indicator) return;
+            const dx = source.x - this.player.x;
+            const dy = source.y - this.player.y;
+            const incoming = Math.atan2(dy, dx);
+            const cameraHeading = this.player.yaw - Math.PI / 2;
+            let relative = incoming - cameraHeading;
+            while (relative > Math.PI) relative -= Math.PI * 2;
+            while (relative < -Math.PI) relative += Math.PI * 2;
+            indicator.style.setProperty('--damage-angle', `${relative * 180 / Math.PI}deg`);
+            indicator.classList.remove('active');
+            void indicator.offsetWidth;
+            indicator.classList.add('active');
+            clearTimeout(this.damageDirectionTimer);
+            this.damageDirectionTimer = setTimeout(() => indicator.classList.remove('active'), 680);
+        }
+
+        showHitMarker(isKill, isCrit, isHeadshot) {
+            const crosshair = document.getElementById('hudCrosshair');
+            if (!crosshair) return;
+            crosshair.classList.toggle('kill', !!isKill);
+            crosshair.classList.toggle('crit', !!isCrit);
+            crosshair.classList.toggle('headshot', !!isHeadshot);
+            crosshair.classList.add('hit');
+            clearTimeout(this.hitMarkerTimer);
+            this.hitMarkerTimer = setTimeout(() => {
+                crosshair.classList.remove('hit', 'kill', 'crit', 'headshot');
+            }, isKill ? 210 : 145);
+        }
+
+        updateAimTargetHUD(dt) {
+            const readout = document.getElementById('hudTargetReadout');
+            if (!readout) return;
+            const crosshair = document.getElementById('hudCrosshair');
+            if (!this.player || this.player.isDead) {
+                readout.classList.add('hidden');
+                crosshair?.classList.remove('target');
+                return;
+            }
+            this.aimHudTimer -= dt;
+            if (this.aimHudTimer > 0) return;
+            this.aimHudTimer = 0.08;
+
+            const activeWeapon = this.weaponInventory[this.activeWeaponIndex];
+            this.aimRaycaster.far = Math.max(760, activeWeapon?.range || 760);
+            this.aimRaycaster.setFromCamera({ x: 0, y: 0 }, this.camera3d);
+            const targets = this.mapMeshes[0] ? [this.mapMeshes[0]] : [];
+            this.enemies.forEach(enemy => {
+                if (enemy && enemy.hp > 0 && enemy.group3d) targets.push(enemy.group3d);
+            });
+            this.props.forEach(prop => {
+                if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d);
+            });
+            const firstHit = this.aimRaycaster.intersectObjects(targets, true)[0];
+            let object = firstHit ? firstHit.object : null;
+            let target = null;
+            while (object && !target) {
+                target = this.enemies.find(enemy => enemy.group3d === object) || null;
+                object = object.parent;
+            }
+            if (!target || target.hp <= 0) {
+                readout.classList.add('hidden');
+                crosshair?.classList.remove('target');
+                return;
+            }
+
+            const percent = Math.max(0, Math.min(100, (target.hp / target.maxHp) * 100));
+            const name = document.getElementById('hudTargetName');
+            const distance = document.getElementById('hudTargetDistance');
+            const health = document.getElementById('hudTargetHealth');
+            const bar = document.getElementById('hudTargetHpBar');
+            if (name) name.textContent = target.name || (target.isBoss ? 'BOSS' : 'ENEMY');
+            if (distance) {
+                const range = firstHit?.distance || 0;
+                const outOfRange = activeWeapon && range > activeWeapon.range;
+                const fallingOff = activeWeapon && Number.isFinite(activeWeapon.falloffStart) && range > activeWeapon.falloffStart;
+                distance.textContent = `${Math.round(range)}u · ${outOfRange ? 'OUT OF RANGE' : (fallingOff ? 'FALLOFF' : 'OPTIMAL')}`;
+                distance.classList.toggle('falloff', !!fallingOff && !outOfRange);
+                distance.classList.toggle('out-of-range', !!outOfRange);
+            }
+            if (health) health.textContent = `${Math.ceil(percent)}%`;
+            if (bar) {
+                bar.style.width = `${percent}%`;
+                bar.classList.toggle('low', percent <= 30);
+            }
+            readout.classList.remove('hidden');
+            crosshair?.classList.add('target');
+        }
+
+        projectilePathDistance(projectile, targetX, targetZ, targetY = null) {
+            const startX = Number.isFinite(projectile.previousX) ? projectile.previousX : projectile.x;
+            const startZ = Number.isFinite(projectile.previousZ) ? projectile.previousZ : projectile.z;
+            const startY = Number.isFinite(projectile.previousY) ? projectile.previousY : projectile.y;
+            const dx = projectile.x - startX;
+            const dz = projectile.z - startZ;
+            const dy = projectile.y - startY;
+            const useHeight = Number.isFinite(targetY);
+            const lengthSq = dx * dx + dz * dz + (useHeight ? dy * dy : 0);
+            const t = lengthSq > 0
+                ? THREE.MathUtils.clamp(((targetX - startX) * dx + (targetZ - startZ) * dz +
+                    (useHeight ? (targetY - startY) * dy : 0)) / lengthSq, 0, 1)
+                : 0;
+            const horizontalDistance = Math.hypot(targetX - (startX + dx * t), targetZ - (startZ + dz * t));
+            return useHeight
+                ? Math.hypot(horizontalDistance, targetY - (startY + dy * t))
+                : horizontalDistance;
+        }
+
+        projectilePathHitTime(projectile, targetX, targetY, targetZ, radius) {
+            const startX = Number.isFinite(projectile.previousX) ? projectile.previousX : projectile.x;
+            const startY = Number.isFinite(projectile.previousY) ? projectile.previousY : projectile.y;
+            const startZ = Number.isFinite(projectile.previousZ) ? projectile.previousZ : projectile.z;
+            const dx = projectile.x - startX;
+            const dy = projectile.y - startY;
+            const dz = projectile.z - startZ;
+            const mx = startX - targetX;
+            const my = startY - targetY;
+            const mz = startZ - targetZ;
+            const a = dx * dx + dy * dy + dz * dz;
+            const c = mx * mx + my * my + mz * mz - radius * radius;
+            if (c <= 0) return 0;
+            if (a <= 1e-9) return null;
+            const b = mx * dx + my * dy + mz * dz;
+            const discriminant = b * b - a * c;
+            if (discriminant < 0) return null;
+            const t = (-b - Math.sqrt(discriminant)) / a;
+            return t >= 0 && t <= 1 ? t : null;
+        }
+
+        resolveProjectileHit(projectile) {
+            if (projectile.type === 'grenade' || projectile.type === 'launcher') {
+                const blastProjectile = projectile.type === 'launcher';
+                if (!projectile.dead && projectile.y <= (blastProjectile ? 72 : 34)) {
+                    const enemyImpact = this.enemies.some(enemy => enemy.hp > 0 &&
+                        this.projectilePathDistance(projectile, enemy.x, enemy.y, 20) < enemy.radius + projectile.radius);
+                    const propImpact = this.props.some(prop => !prop.broken &&
+                        this.projectilePathDistance(projectile, prop.x, prop.z, 10) < prop.radius + projectile.radius);
+                    if (enemyImpact || propImpact) projectile.dead = true;
+                }
+                if (projectile.dead) this.detonateGrenade(projectile);
+                return;
+            }
+            if (projectile.dead && !projectile.collisionImpact) return;
+            if (projectile.isPlayer) {
+                let nearestHit = null;
+                this.enemies.forEach(enemy => {
+                    if (enemy.hp <= 0) return;
+                    const hitTime = this.projectilePathHitTime(
+                        projectile, enemy.x, 20, enemy.y, enemy.radius + projectile.radius
+                    );
+                    if (hitTime !== null && (!nearestHit || hitTime < nearestHit.time)) {
+                        nearestHit = { time: hitTime, enemy };
+                    }
+                });
+                this.props.forEach(prop => {
+                    if (prop.broken) return;
+                    const hitTime = this.projectilePathHitTime(
+                        projectile, prop.x, 10, prop.z, prop.radius + projectile.radius
+                    );
+                    if (hitTime !== null && (!nearestHit || hitTime < nearestHit.time)) {
+                        nearestHit = { time: hitTime, prop };
+                    }
+                });
+                if (nearestHit) {
+                    projectile.dead = true;
+                    if (nearestHit.enemy) {
+                        this.applyHitToEnemy(nearestHit.enemy, projectile.dmg,
+                            new THREE.Vector3(projectile.vx, 0, projectile.vz).normalize());
+                    } else {
+                        this.breakProp(nearestHit.prop);
+                    }
+                }
+            } else {
+                const playerHeight = this.player.yElevation + (this.cameraEyeHeight || 20);
+                const hitTime = this.projectilePathHitTime(
+                    projectile, this.player.x, playerHeight, this.player.y, this.player.radius + projectile.radius
+                );
+                if (hitTime !== null) {
+                    projectile.dead = true;
+                    this.player.takeDamage(projectile.dmg, 'normal', { x: projectile.x, y: projectile.z });
+                }
+            }
+        }
+
+        hasBlastLineOfSight(x1, z1, x2, z2, originHeight = 0, targetHeight = 20) {
+            const grid = this.dungeon?.grid;
+            if (!grid) return true;
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const steps = Math.ceil(Math.hypot(dx, dz) / 12);
+            const sourceX = Math.floor(x1 / 48);
+            const sourceZ = Math.floor(z1 / 48);
+            for (let i = 1; i < steps; i++) {
+                const t = i / steps;
+                const tx = Math.floor((x1 + dx * t) / 48);
+                const tz = Math.floor((z1 + dz * t) / 48);
+                if (tx === sourceX && tz === sourceZ) continue;
+                const cell = grid[tx]?.[tz];
+                const rayHeight = originHeight + (targetHeight - originHeight) * t;
+                if ((cell === 1 || cell === 6) && rayHeight <= 72) return false;
+            }
+            return true;
+        }
+
+        detonateGrenade(projectile) {
+            if (projectile.exploded) return;
+            projectile.exploded = true;
+            projectile.dead = true;
+            const radius = projectile.type === 'launcher' ? (projectile.blastRadius || 96) : 132;
+            this.vfx.spawnSparks(projectile.x, projectile.z, 0xff6b1a, projectile.type === 'launcher' ? 26 : 32);
+            this.audio.playSfx('explode', 1.15);
+            this.enemies.forEach(enemy => {
+                if (enemy.hp <= 0) return;
+                const distance = Math.hypot(enemy.x - projectile.x, enemy.y - projectile.z);
+                if (distance > radius || !this.hasBlastLineOfSight(projectile.x, projectile.z, enemy.x, enemy.y, projectile.y, 24)) return;
+                const falloff = 1 - distance / (radius * 1.5);
+                this.applyHitToEnemy(enemy, Math.round(projectile.dmg * Math.max(0.35, falloff)), new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize());
+            });
+            this.props.forEach(prop => {
+                if (!prop.broken && Math.hypot(prop.x - projectile.x, prop.z - projectile.z) < radius &&
+                    this.hasBlastLineOfSight(projectile.x, projectile.z, prop.x, prop.z, projectile.y, 10)) {
+                    prop.hp -= 45;
+                    if (prop.hp <= 0) this.breakProp(prop);
+                }
+            });
         }
 
         handleGameplayKey(code) {
-            if (!this.player || this.player.isDead || this.isPaused || this.controlMode === 'turnbased') return;
+            if (!this.player || this.player.isDead || this.isPaused) return;
             if (code === 'KeyR') this.reloadWeapon();
-            else if (code === 'Digit1') this.selectWeapon(0);
-            else if (code === 'Digit2') this.selectWeapon(1);
-            else if (code === 'Digit3') this.selectWeapon(2);
+            else if (code === 'KeyT') this.toggleRifleFireMode();
+            else if (code === 'KeyY') this.fireSecondaryWeapon();
+            else if (code === 'Digit1' && this.weaponInventory.length > 0) this.selectWeapon(0);
+            else if (code === 'Digit2' && this.weaponInventory.length > 1) this.selectWeapon(1);
+            else if (code === 'Digit3' && this.weaponInventory.length > 2) this.selectWeapon(2);
+            else if (code === 'Digit4' && this.weaponInventory.length > 3) this.selectWeapon(3);
+            else if (code === 'KeyG') {
+                if (this.controlMode === 'turnbased') this.executeTurnAction('grenade');
+                else this.throwGrenade();
+            } else if (code === 'KeyV') {
+                if (this.controlMode === 'turnbased') this.executeTurnAction('melee');
+                else this.triggerMeleeAttack();
+            } else if (code === 'KeyH') {
+                if (this.controlMode === 'turnbased') this.executeTurnAction('drop_weapon');
+                else this.dropCurrentWeapon();
+            } else if (code === 'KeyB' && this.controlMode === 'turnbased') {
+                this.executeTurnAction('wait');
+            } else if (code === 'KeyN') {
+                if (this.controlMode === 'turnbased') this.executeTurnAction('weapon_melee');
+                else this.performWeaponMeleeAttack();
+            } else if (code === 'KeyC' && this.controlMode !== 'turnbased') {
+                this.player.tryStartSlide(this.input);
+            }
+        }
+
+        toggleRifleFireMode() {
+            if (!this.player || this.player.isDead || this.isPaused || this.controlMode === 'turnbased') return false;
+            const rifle = this.weaponInventory.find(weapon => weapon.id === 'rifle');
+            if (!rifle) return false;
+            rifle.automatic = !rifle.automatic;
+            this.audio.playSfx('weapon_swap', rifle.automatic ? 1.16 : 0.82);
+            this.combatText.spawnText(this.player.x, 20, this.player.y,
+                `M4 · ${rifle.automatic ? 'FULL AUTO' : 'SEMI-AUTO'}`, 'block');
+            this.updateWeaponHUD();
+            return true;
         }
 
         disposeWeaponViewmodel() {
+            this.weaponBoltTimer = 0;
+            this.weaponBoltSoundPending = false;
+            this.weaponBashTimer = 0;
             if (!this.weaponGroup) return;
             this.camera3d.remove(this.weaponGroup);
             this.weaponGroup.traverse(object => {
@@ -928,16 +1323,367 @@
             this.weaponGroup = null;
         }
 
+        resetWeaponPresentation() {
+            this.weaponBurstCount = 0;
+            this.weaponLastShotAt = 0;
+            this.weaponSpreadBloom = 0;
+            this.weaponReloadTimer = 0;
+            this.weaponRecoil = 0;
+            this.weaponAimBlend = 0;
+            this.weaponFlashTimer = 0;
+        }
+
+        buildWeaponViewmodel(classType, weaponId) {
+            this.weaponGroup = WeaponFactory.buildWeapon(classType, weaponId);
+            const hand = this.weaponGroup.mainHand;
+            if (hand) {
+                hand.userData.idlePose = {
+                    position: hand.position.clone(),
+                    rotation: hand.rotation.clone()
+                };
+            }
+            const supportHand = this.weaponGroup.supportHand;
+            if (supportHand) {
+                supportHand.userData.idlePose = {
+                    position: supportHand.position.clone(),
+                    rotation: supportHand.rotation.clone()
+                };
+            }
+            this.camera3d.add(this.weaponGroup);
+        }
+
+        spawnWeaponTracer(start, end, color) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+            const material = new THREE.LineBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.95,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const line = new THREE.Line(geometry, material);
+            line.renderOrder = 8;
+            this.scene.add(line);
+            this.weaponTracers.push({ line, life: 0.11, duration: 0.11 });
+        }
+
+        clearWeaponTracers() {
+            (this.weaponTracers || []).forEach(tracer => {
+                this.scene.remove(tracer.line);
+                tracer.line.geometry.dispose();
+                tracer.line.material.dispose();
+            });
+            this.weaponTracers = [];
+        }
+
+        updateWeaponTracers(dt) {
+            for (let i = this.weaponTracers.length - 1; i >= 0; i--) {
+                const tracer = this.weaponTracers[i];
+                tracer.life -= dt;
+                tracer.line.material.opacity = Math.max(0, tracer.life / tracer.duration);
+                if (tracer.life <= 0) {
+                    this.scene.remove(tracer.line);
+                    tracer.line.geometry.dispose();
+                    tracer.line.material.dispose();
+                    this.weaponTracers.splice(i, 1);
+                }
+            }
+        }
+
+        enableOrbitingGlaive() {
+            this.removeOrbitingGlaive();
+            const group = new THREE.Group();
+            const orb = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(5, 1),
+                new THREE.MeshStandardMaterial({ color: 0xc084fc, emissive: 0x7e22ce, emissiveIntensity: 2.2, metalness: 0.35, roughness: 0.18 })
+            );
+            group.add(orb);
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(8, 0.7, 6, 20),
+                new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.9 })
+            );
+            ring.rotation.x = Math.PI / 2.4;
+            group.add(ring);
+            group.add(new THREE.PointLight(0xa855f7, 2.5, 75));
+            this.scene.add(group);
+            this.orbGlaive = group;
+            this.orbAngle = 0;
+        }
+
+        removeOrbitingGlaive() {
+            if (!this.orbGlaive) return;
+            this.scene.remove(this.orbGlaive);
+            this.orbGlaive.traverse(object => {
+                if (object.geometry) object.geometry.dispose();
+                if (Array.isArray(object.material)) object.material.forEach(material => material.dispose());
+                else if (object.material) object.material.dispose();
+            });
+            this.orbGlaive = null;
+        }
+
+        updateOrbitingGlaive(dt) {
+            if (!this.orbGlaive || !this.player || !this.player.hasPerk('orb_havoc')) return;
+            this.orbAngle += dt * 2.7;
+            const radius = 48;
+            this.orbGlaive.position.set(
+                this.player.x + Math.cos(this.orbAngle) * radius,
+                this.player.yElevation + 26 + Math.sin(this.orbAngle * 2.0) * 7,
+                this.player.y + Math.sin(this.orbAngle) * radius
+            );
+            this.orbGlaive.rotation.set(this.orbAngle * 0.8, this.orbAngle, this.orbAngle * 0.4);
+            this.enemies.forEach(enemy => {
+                const dist = Math.hypot(enemy.x - this.orbGlaive.position.x, enemy.y - this.orbGlaive.position.z);
+                enemy.orbHitTimer = Math.max(0, (enemy.orbHitTimer || 0) - dt);
+                if (dist < enemy.radius + 8 && enemy.orbHitTimer <= 0 && enemy.hp > 0) {
+                    enemy.orbHitTimer = 0.8;
+                    enemy.hp -= 25;
+                    this.vfx.spawnSparks(enemy.x, enemy.y, 0xc084fc, 12);
+                    this.combatText.spawnText(enemy.x, 23, enemy.y, '🔮 25', 'block');
+                    this.audio.playSfx('spell', 1.7);
+                }
+            });
+        }
+
+        triggerAlchemicalBurst(source) {
+            const radius = 120;
+            let affected = 0;
+            this.enemies.forEach(target => {
+                if (target === source || target.hp <= 0) return;
+                if (Math.hypot(target.x - source.x, target.y - source.y) <= radius) {
+                    target.hp = Math.max(1, target.hp - 28);
+                    target.poisonTimer = Math.max(target.poisonTimer || 0, 1.5);
+                    target.poisonFxTimer = 0;
+                    this.vfx.spawnSparks(target.x, target.y, 0x4ade80, 8);
+                    affected++;
+                }
+            });
+            this.vfx.spawnSparks(source.x, source.y, 0x4ade80, 30);
+            if (affected) this.combatText.spawnText(source.x, 34, source.y, `☣ ${affected} EXPOSED`, 'heal');
+        }
+
+        triggerShockwaveCleave(origin, direction, directHits = new Set()) {
+            if (!this.player?.hasPerk('cleave')) return;
+            let affected = 0;
+            const horizontalLength = Math.hypot(direction.x, direction.z) || 1;
+            this.enemies.forEach(enemy => {
+                if (enemy.hp <= 0 || directHits.has(enemy)) return;
+                const dx = enemy.x - origin.x;
+                const dy = enemy.y - origin.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 235 || dist < 1) return;
+                const dot = (direction.x * dx + direction.z * dy) / (dist * horizontalLength);
+                // A wider cone than the base melee check (0.45), so the
+                // shockwave can catch enemies flanking the normal swing.
+                if (dot < 0.32) return;
+                this.applyHitToEnemy(enemy, ClassData[this.player.classType].baseDmg * 0.65, direction, 0);
+                this.vfx.spawnSparks(enemy.x, enemy.y, 0x38bdf8, 10);
+                affected++;
+            });
+            if (affected) {
+                this.cameraController.applyShake(2.5);
+                this.audio.playSfx('spell', 1.9);
+            }
+        }
+
+        onEnemyKilled(enemy) {
+            if (this.player.hasPerk('overclock')) {
+                this.player.overclockTimer = 4;
+                this.combatText.spawnText(this.player.x, 27, this.player.y, '⚡ OVERCLOCK', 'crit');
+            }
+            if (this.player.hasPerk('alchemical')) {
+                this.audio.playSfx('explode', 1.4);
+                this.triggerAlchemicalBurst(enemy);
+            }
+        }
+
+        spawnEnemyLoot(enemy, goldValue) {
+            const roll = Math.random();
+            const type = enemy.isBoss || roll < 0.16 ? 'ammo' : (roll < 0.38 ? 'potion' : 'gold');
+            const value = type === 'ammo' ? (enemy.isBoss ? 60 : 30) : (type === 'potion' ? 1 : goldValue);
+            const loot = new LootItem(enemy.x, enemy.y, type, value);
+            this.scene.add(loot.group3d);
+            this.loot.push(loot);
+            if (enemy.isBoss || (enemy.elite && Math.random() < 0.2)) {
+                this.spawnWeaponLoot(enemy.x + 10, enemy.y - 8);
+            }
+            if (enemy.isBoss || (enemy.elite && Math.random() < 0.25)) {
+                this.spawnGrenadeLoot(enemy.x + 12, enemy.y + 8);
+            }
+        }
+
+        spawnWeaponLoot(x, y) {
+            const ranked = FPS_WEAPONS.map(definition => {
+                const owned = this.weaponInventory.find(weapon => weapon.id === definition.id);
+                const primaryCapacity = definition.magazine + definition.reserve;
+                const secondaryCapacity = definition.secondaryMagazine ? definition.secondaryMagazine + definition.secondaryReserve : 0;
+                const primaryCount = owned ? owned.ammo + owned.reserveAmmo : 0;
+                const secondaryCount = owned ? (owned.secondaryAmmo || 0) + (owned.secondaryReserveAmmo || 0) : 0;
+                // Weight each 40mm round like four rifle rounds so caches can
+                // recognize a depleted launcher when comparing weapon stocks.
+                const ratio = owned
+                    ? (primaryCount + secondaryCount * 4) / Math.max(1, primaryCapacity + secondaryCapacity * 4)
+                    : -1;
+                return { definition, ratio };
+            }).sort((a, b) => a.ratio - b.ratio);
+            const lowestRatio = ranked[0]?.ratio ?? 1;
+            const candidates = ranked.filter(item => item.ratio <= lowestRatio + 0.15);
+            const weapon = candidates[(Math.random() * candidates.length) | 0]?.definition || FPS_WEAPONS[0];
+            const loot = new LootItem(x, y, 'weapon', 1, {
+                ...weapon,
+                ammo: weapon.magazine,
+                reserveAmmo: weapon.reserve,
+                secondaryAmmo: weapon.secondaryMagazine || 0,
+                secondaryReserveAmmo: weapon.secondaryReserve || 0
+            });
+            this.scene.add(loot.group3d);
+            this.loot.push(loot);
+            return loot;
+        }
+
+        spawnGrenadeLoot(x, y) {
+            const loot = new LootItem(x, y, 'grenade', 1);
+            this.scene.add(loot.group3d);
+            this.loot.push(loot);
+        }
+
+        collectLoot(loot) {
+            if (loot.type === 'potion') {
+                this.player.potions = Math.min(5, this.player.potions + 1);
+                this.audio.playSfx('potion');
+                this.combatText.spawnText(this.player.x, 20, this.player.y, '+1 POTION', 'heal');
+            } else if (loot.type === 'grenade') {
+                const gained = Math.min(loot.value, 5 - this.grenades);
+                if (gained > 0) {
+                    this.grenades += gained;
+                    this.audio.playSfx('loot', 1.2);
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, `+${gained} GRENADE`, 'block');
+                    this.updateWeaponHUD();
+                } else {
+                    this.gold += 15;
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, '+15 GOLD', 'crit');
+                }
+            } else if (loot.type === 'ammo') {
+                let gained = 0;
+                let launcherGained = 0;
+                const perWeapon = Math.max(1, Math.ceil(loot.value / Math.max(1, this.weaponInventory.length)));
+                this.weaponInventory.forEach(weapon => {
+                    const amount = Math.min(perWeapon, weapon.reserve - weapon.reserveAmmo);
+                    weapon.reserveAmmo += amount;
+                    gained += amount;
+                    if (weapon.secondaryMagazine && weapon.secondaryReserveAmmo < weapon.secondaryReserve) {
+                        const secondaryAmount = Math.min(2, weapon.secondaryReserve - weapon.secondaryReserveAmmo);
+                        weapon.secondaryReserveAmmo += secondaryAmount;
+                        launcherGained += secondaryAmount;
+                    }
+                });
+                if (gained > 0 || launcherGained > 0) {
+                    this.audio.playSfx('loot', 1.25);
+                    const label = `${gained > 0 ? `+${gained} AMMO` : ''}${gained > 0 && launcherGained > 0 ? ' · ' : ''}${launcherGained > 0 ? `+${launcherGained} GL` : ''}`;
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, label, 'block');
+                    this.updateWeaponHUD();
+                } else {
+                    this.gold += 20;
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, '+20 GOLD', 'crit');
+                }
+            } else if (loot.type === 'weapon' && loot.weaponData) {
+                const picked = loot.weaponData;
+                const existing = this.weaponInventory.find(weapon => weapon.id === picked.id);
+                if (existing) {
+                    const oldTotal = existing.ammo + existing.reserveAmmo;
+                    const incoming = (picked.ammo || 0) + (picked.reserveAmmo || 0);
+                    const totalCap = existing.magazine + existing.reserve;
+                    const newTotal = Math.min(totalCap, oldTotal + incoming);
+                    existing.ammo = Math.min(existing.magazine, newTotal);
+                    existing.reserveAmmo = Math.max(0, newTotal - existing.ammo);
+                    const ammoGained = newTotal - oldTotal;
+                    let launcherGained = 0;
+                    if (existing.secondaryMagazine && picked.secondaryMagazine) {
+                        const oldSecondary = existing.secondaryAmmo + existing.secondaryReserveAmmo;
+                        const incomingSecondary = (picked.secondaryAmmo || 0) + (picked.secondaryReserveAmmo || 0);
+                        const secondaryTotal = Math.min(existing.secondaryMagazine + existing.secondaryReserve, oldSecondary + incomingSecondary);
+                        existing.secondaryAmmo = Math.min(existing.secondaryMagazine, secondaryTotal);
+                        existing.secondaryReserveAmmo = Math.max(0, secondaryTotal - existing.secondaryAmmo);
+                        launcherGained = secondaryTotal - oldSecondary;
+                    }
+                    if (ammoGained > 0 || launcherGained > 0) {
+                        this.combatText.spawnText(this.player.x, 20, this.player.y,
+                            `${picked.name} · ${ammoGained > 0 ? `+${ammoGained} AMMO` : ''}${ammoGained > 0 && launcherGained > 0 ? ' · ' : ''}${launcherGained > 0 ? `+${launcherGained} GL` : ''}`, 'block');
+                    } else {
+                        this.gold += 40;
+                        this.combatText.spawnText(this.player.x, 20, this.player.y, 'WEAPON CACHE · +40 GOLD', 'crit');
+                    }
+                } else if (this.weaponInventory.length < FPS_WEAPONS.length) {
+                    this.weaponInventory.push({ ...picked });
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, `${picked.name} ACQUIRED`, 'crit');
+                    if (this.controlMode !== 'turnbased') this.selectWeapon(this.weaponInventory.length - 1);
+                } else {
+                    this.gold += 40;
+                    this.combatText.spawnText(this.player.x, 20, this.player.y, 'WEAPON CACHE · +40 GOLD', 'crit');
+                }
+                this.audio.playSfx('weapon_swap', 0.9);
+                this.updateWeaponHUD();
+            } else {
+                this.gold += loot.value;
+                this.audio.playSfx('loot');
+                this.combatText.spawnText(this.player.x, 20, this.player.y, `+${loot.value} Gold`, 'crit');
+            }
+            loot.picked = true;
+            loot.destroy();
+        }
+
+        dropCurrentWeapon(turnAction = false) {
+            if (!this.player || (!turnAction && this.isTurnProcessing)) return false;
+            if (this.weaponInventory.length <= 1) {
+                this.combatText.spawnText(this.player.x, 20, this.player.y, 'KEEP YOUR LAST WEAPON', 'block');
+                return false;
+            }
+            if (this.weaponSwapTimer > 0) {
+                this.combatText.spawnText(this.player.x, 20, this.player.y, 'WEAPON BUSY', 'block');
+                return false;
+            }
+            const dropped = this.weaponInventory[this.activeWeaponIndex];
+            if (!dropped) return false;
+            const dropX = this.player.x + Math.cos(this.player.yaw) * 48;
+            const dropY = this.player.y - Math.sin(this.player.yaw) * 48;
+            const loot = new LootItem(dropX, dropY, 'weapon', 1, { ...dropped });
+            loot.pickupDelay = turnAction ? 0 : 1.25;
+            loot.waitForPlayerClear = true;
+            this.scene.add(loot.group3d);
+            this.loot.push(loot);
+            this.weaponInventory.splice(this.activeWeaponIndex, 1);
+            const nextIndex = Math.min(this.activeWeaponIndex, this.weaponInventory.length - 1);
+            this.weaponReloadTimer = 0;
+            if (turnAction) {
+                this.activeWeaponIndex = nextIndex;
+                this.disposeWeaponViewmodel();
+                this.resetWeaponPresentation();
+                this.buildWeaponViewmodel(this.player.classType, this.weaponInventory[nextIndex].id);
+                this.updateWeaponHUD();
+            } else {
+                this.activeWeaponIndex = -1;
+                this.selectWeapon(nextIndex);
+            }
+            this.combatText.spawnText(this.player.x, 20, this.player.y, `${dropped.name} DROPPED`, 'block');
+            return true;
+        }
+
         selectWeapon(index) {
-            if (!this.weaponInventory.length || this.weaponReloadTimer > 0) return;
+            if (!this.weaponInventory.length || this.isTurnProcessing || this.weaponSwapTimer > 0) return;
             const next = (index + this.weaponInventory.length) % this.weaponInventory.length;
             if (next === this.activeWeaponIndex) return;
+            if (this.weaponReloadTimer > 0) {
+                // Magazine ammo is committed only when its timer completes, so
+                // swapping safely cancels an unfinished reload. Shotguns keep
+                // any shells already inserted and interrupt the next shell.
+                this.weaponReloadTimer = 0;
+            }
             this.activeWeaponIndex = next;
             this.disposeWeaponViewmodel();
-            this.weaponGroup = WeaponFactory.buildWeapon(this.player?.classType, this.weaponInventory[next].id);
-            this.camera3d.add(this.weaponGroup);
-            this.weaponReloadTimer = 0;
-            this.swingTime = Math.max(this.swingTime, 0.12);
+            this.resetWeaponPresentation();
+            const nextWeapon = this.weaponInventory[next];
+            this.buildWeaponViewmodel(this.player?.classType, nextWeapon.id);
+            this.weaponSwapTimer = this.controlMode === 'turnbased' ? 0 : this.weaponSwapDuration;
+            this.audio.playSfx('weapon_swap', nextWeapon.id === 'scattergun' ? 0.88 : 1.08);
             this.updateWeaponHUD();
         }
 
@@ -947,11 +1693,39 @@
 
         reloadWeapon() {
             const weapon = this.weaponInventory[this.activeWeaponIndex];
-            if (!weapon || this.weaponReloadTimer > 0 || weapon.ammo >= weapon.magazine || weapon.reserveAmmo <= 0) return;
-            this.weaponReloadTimer = weapon.reload;
+            const canReloadPrimary = !!weapon && weapon.ammo < weapon.magazine && weapon.reserveAmmo > 0;
+            const canReloadSecondary = !!weapon && weapon.secondaryMagazine > 0 &&
+                weapon.secondaryAmmo < weapon.secondaryMagazine && weapon.secondaryReserveAmmo > 0;
+            if (!weapon || (!canReloadPrimary && !canReloadSecondary)) return;
+            if (this.controlMode === 'turnbased') {
+                if (!this.isTurnProcessing) this.executeTurnAction('reload');
+                return;
+            }
+            if (this.weaponReloadTimer > 0) return;
+            this.weaponReloadTimer = weapon.continuousReload ? (weapon.shellReload || weapon.reload) : weapon.reload;
             this.audio.playSfx('reload', 0.75);
             const readout = document.getElementById('hudWeaponStatus');
-            if (readout) readout.textContent = 'RELOADING';
+            if (readout) readout.textContent = canReloadPrimary
+                ? (weapon.continuousReload ? `LOADING SHELL · ${weapon.ammo}/${weapon.magazine}` : 'RELOADING')
+                : 'RELOADING UNDERBARREL';
+        }
+
+        getCurrentWeaponSpread() {
+            const moving = Math.hypot(this.player?.vx || 0, this.player?.vy || 0) > (this.player?.speed || 0) * 0.45;
+            const bloom = this.weaponSpreadBloom || 0;
+            let baseSpread = this.ads ? (moving ? 0.006 : 0.002) : (moving ? 0.024 : 0.012);
+            if (this.player?.sprinting && moving) baseSpread *= 1.25;
+            if (this.player && !this.player.grounded) baseSpread *= 1.35;
+            if (this.player?.grounded && this.player?.crouching && !this.player?.isSliding) baseSpread *= 0.72;
+            const weapon = this.weaponInventory[this.activeWeaponIndex];
+            return (baseSpread + bloom * (this.ads ? 0.55 : 1)) * (weapon?.spreadScale || 1);
+        }
+
+        getWeaponDamageScale(weapon, distance) {
+            if (!weapon || !Number.isFinite(weapon.falloffStart) || distance <= weapon.falloffStart) return 1;
+            const range = Math.max(1, weapon.range - weapon.falloffStart);
+            const progress = THREE.MathUtils.clamp((distance - weapon.falloffStart) / range, 0, 1);
+            return 1 + ((weapon.minDamageScale ?? 1) - 1) * progress;
         }
 
         updateWeaponHUD() {
@@ -960,37 +1734,154 @@
             const name = document.getElementById('hudWeaponName');
             const ammo = document.getElementById('hudWeaponAmmo');
             const status = document.getElementById('hudWeaponStatus');
+            const fireModeButton = document.getElementById('hudFireModeToggle');
+            const launcherAmmo = document.getElementById('hudLauncherAmmo');
+            const launcherButton = document.getElementById('mobileLauncherBtn');
             const crosshair = document.getElementById('hudCrosshair');
-            if (name) name.textContent = `${weapon.name}  ·  ${this.activeWeaponIndex + 1}/3`;
-            if (ammo) ammo.textContent = `${weapon.ammo} / ${weapon.reserveAmmo}`;
-            if (status) status.textContent = this.weaponReloadTimer > 0 ? 'RELOADING' : (this.ads ? 'AIMING' : 'READY');
-            if (crosshair) crosshair.classList.toggle('aiming', this.ads);
+            const scopeOverlay = document.getElementById('sniperScopeOverlay');
+            const sniperScopeActive = this.ads && weapon.id === 'sniper';
+            if (name) name.textContent = `${weapon.name}  ·  ${this.activeWeaponIndex + 1}/${this.weaponInventory.length}`;
+            if (ammo) {
+                ammo.textContent = `${weapon.ammo} / ${weapon.reserveAmmo}`;
+                ammo.classList.toggle('low', weapon.ammo > 0 && weapon.ammo <= Math.max(2, Math.ceil(weapon.magazine * 0.2)));
+                ammo.classList.toggle('empty', weapon.ammo <= 0);
+            }
+            const grenades = document.getElementById('hudGrenades');
+            if (grenades) grenades.textContent = `GRENADES ${this.grenades ?? 3}`;
+            const mobileGrenades = document.getElementById('mobileGrenadeCount');
+            if (mobileGrenades) mobileGrenades.textContent = this.grenades ?? 3;
+            const hasLauncher = weapon.id === 'rifle' && this.controlMode !== 'turnbased';
+            if (launcherAmmo) {
+                launcherAmmo.textContent = `40MM ${weapon.secondaryAmmo || 0}/${weapon.secondaryReserveAmmo || 0}`;
+                launcherAmmo.classList.toggle('hidden', !hasLauncher);
+            }
+            if (launcherButton) {
+                launcherButton.classList.toggle('hidden', !hasLauncher);
+                const launcherCount = document.getElementById('mobileLauncherAmmo');
+                if (launcherCount) launcherCount.textContent = weapon.secondaryAmmo || 0;
+            }
+            if (fireModeButton) {
+                const hasFireMode = weapon.id === 'rifle' && this.controlMode !== 'turnbased';
+                fireModeButton.classList.toggle('hidden', !hasFireMode);
+                fireModeButton.textContent = weapon.automatic ? 'AUTO' : 'SEMI';
+                fireModeButton.setAttribute('aria-label', `M4 fire mode: ${weapon.automatic ? 'full auto' : 'semi-auto'}. Tap to switch`);
+                fireModeButton.setAttribute('aria-pressed', String(weapon.automatic));
+                if (!fireModeButton.dataset.ggBound) {
+                    fireModeButton.dataset.ggBound = '1';
+                    fireModeButton.addEventListener('click', () => this.toggleRifleFireMode());
+                }
+            }
+            if (status) {
+                const modeLabel = weapon.id === 'rifle' && this.controlMode !== 'turnbased'
+                    ? `${weapon.automatic ? 'AUTO' : 'SEMI'} · `
+                    : '';
+                const readyStatus = this.player?.overclockTimer > 0
+                    ? `${modeLabel}OVERCLOCK ${this.player.overclockTimer.toFixed(1)}s`
+                    : `${modeLabel}${this.ads ? 'AIMING' : 'READY'}`;
+                status.textContent = this.weaponSwapTimer > 0 ? 'SWAPPING' : (this.weaponReloadTimer > 0 ?
+                    (weapon.continuousReload ? `LOADING SHELL · ${weapon.ammo}/${weapon.magazine}` :
+                        (weapon.secondaryMagazine && weapon.ammo >= weapon.magazine && weapon.secondaryAmmo < weapon.secondaryMagazine ? 'RELOADING 40MM' : 'RELOADING')) :
+                    (weapon.ammo <= 0 ? (weapon.reserveAmmo > 0 ? 'EMPTY · PRESS R' : 'EMPTY') :
+                        readyStatus));
+                status.classList.toggle('empty', weapon.ammo <= 0 && this.weaponReloadTimer <= 0 && this.weaponSwapTimer <= 0);
+            }
+            const slots = document.getElementById('hudWeaponSlots');
+            if (slots) {
+                const signature = this.weaponInventory.map((item, index) => `${item.id}:${item.ammo}:${item.reserveAmmo}:${item.secondaryAmmo || 0}:${item.secondaryReserveAmmo || 0}:${index === this.activeWeaponIndex}`).join('|');
+                if (slots.dataset.signature !== signature) {
+                    const shortNames = { rifle: 'RIFLE', sidearm: 'PISTOL', scattergun: 'SHOTGUN', sniper: 'SNIPER' };
+                    slots.replaceChildren(...this.weaponInventory.map((item, index) => {
+                        const slot = document.createElement('button');
+                        slot.type = 'button';
+                        slot.className = `weapon-slot${index === this.activeWeaponIndex ? ' active' : ''}${item.ammo <= 0 ? ' empty' : ''}`;
+                        const launcherLabel = item.secondaryMagazine
+                            ? ` · 40MM ${item.secondaryAmmo}/${item.secondaryReserveAmmo} reserve`
+                            : '';
+                        slot.title = `${item.name} · ${item.ammo}/${item.reserveAmmo} reserve${launcherLabel}`;
+                        const isActive = index === this.activeWeaponIndex;
+                        slot.setAttribute('aria-label', `${index + 1}: ${item.name}, ${item.ammo} loaded, ${item.reserveAmmo} reserve${item.secondaryMagazine ? `, launcher ${item.secondaryAmmo} loaded, ${item.secondaryReserveAmmo} reserve` : ''}${isActive ? ', selected' : ''}`);
+                        slot.setAttribute('aria-pressed', String(isActive));
+                        if (isActive) slot.setAttribute('aria-current', 'true');
+                        slot.addEventListener('click', () => this.selectWeapon(index));
+                        const key = document.createElement('span');
+                        key.className = 'weapon-slot-key';
+                        key.textContent = String(index + 1);
+                        const label = document.createElement('span');
+                        label.className = 'weapon-slot-name';
+                        label.textContent = shortNames[item.id] || item.name;
+                        const amount = document.createElement('span');
+                        amount.className = 'weapon-slot-ammo';
+                        amount.textContent = String(item.ammo);
+                        slot.append(key, label, amount);
+                        return slot;
+                    }));
+                    slots.dataset.signature = signature;
+                }
+            }
+            if (crosshair) {
+                crosshair.classList.toggle('aiming', this.ads);
+                crosshair.classList.toggle('sniper-scope', sniperScopeActive);
+                const spread = this.getCurrentWeaponSpread();
+                const spreadPixels = spread * (this.container?.clientWidth || 1000) * 0.25;
+                crosshair.style.setProperty('--crosshair-gap', `${(sniperScopeActive ? 3 : (this.ads ? 6 : 8)) + spreadPixels}px`);
+            }
+            if (scopeOverlay) scopeOverlay.classList.toggle('active', sniperScopeActive);
         }
 
-        fireWeapon() {
-            if (!this.player || this.player.isDead || this.weaponReloadTimer > 0 || this.weaponCooldown > 0) return false;
+        fireWeapon(ignoreCooldown = false) {
+            if (!this.player || this.player.isDead || this.weaponSwapTimer > 0 || (!ignoreCooldown && this.weaponCooldown > 0)) return false;
             const weapon = this.weaponInventory[this.activeWeaponIndex];
             if (!weapon) return false;
+            if (this.weaponReloadTimer > 0) {
+                if (!weapon.continuousReload || weapon.ammo <= 0) return false;
+                this.weaponReloadTimer = 0;
+            }
             if (weapon.ammo <= 0) {
-                this.reloadWeapon();
+                if (this.controlMode === 'turnbased') this.combatText.spawnText(this.player.x, 20, this.player.y, 'EMPTY · PRESS R', 'damage');
+                else this.reloadWeapon();
                 return false;
             }
 
             weapon.ammo--;
-            this.weaponCooldown = weapon.fireRate;
+            const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
+            this.weaponCooldown = weapon.fireRate / attackSpeedMultiplier;
+            if (weapon.id === 'sniper') {
+                this.weaponBoltTimer = weapon.boltCycle || 0.28;
+                this.weaponBoltSoundPending = true;
+            }
+            this.weaponFlashTimer = this.weaponFlashDuration;
+            if (this.weaponGroup?.muzzleFlash) {
+                this.weaponGroup.muzzleFlash.visible = true;
+                this.weaponGroup.muzzleFlash.rotation.z = (Math.random() - 0.5) * 0.8;
+                this.weaponGroup.muzzleFlash.scale.z = 1.4 + Math.random() * 1.0;
+            }
+            if (this.weaponGroup?.muzzleLight) this.weaponGroup.muzzleLight.intensity = 2.2;
             const cData = ClassData[this.player.classType];
             const classScale = cData ? cData.baseDmg / 20 : 1;
             const moving = Math.hypot(this.player.vx, this.player.vy) > this.player.speed * 0.45;
-            const spread = this.ads ? (moving ? 0.006 : 0.002) : (moving ? 0.024 : 0.012);
+            const now = this.weaponAnimTime * 1000;
+            if (now - this.weaponLastShotAt > 420) {
+                this.weaponBurstCount = 0;
+            }
+            this.weaponBurstCount++;
+            this.weaponLastShotAt = now;
+            if (this.weaponBurstCount > 1) this.weaponSpreadBloom = Math.min(0.012, this.weaponSpreadBloom + 0.003);
+            const spread = this.getCurrentWeaponSpread();
             const raycaster = new THREE.Raycaster();
             raycaster.far = weapon.range;
             const hits = new Map();
+            const tracerColor = weapon.id === 'sniper' ? 0x7dd3fc : (weapon.id === 'scattergun' ? 0xff8a3d : (weapon.id === 'sidearm' ? 0x8be9fd : 0xffd166));
+            const targets = this.mapMeshes[0] ? [this.mapMeshes[0]] : [];
+            this.enemies.forEach(enemy => { if (enemy && enemy.hp > 0 && enemy.group3d) targets.push(enemy.group3d); });
+            this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
             for (let pellet = 0; pellet < weapon.pellets; pellet++) {
                 raycaster.setFromCamera({ x: (Math.random() - 0.5) * spread, y: (Math.random() - 0.5) * spread }, this.camera3d);
-                const targets = this.mapMeshes[0] ? [this.mapMeshes[0]] : [];
-                this.enemies.forEach(enemy => { if (enemy && !enemy.isDead && enemy.group3d) targets.push(enemy.group3d); });
-                this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
                 const intersections = raycaster.intersectObjects(targets, true);
+                const impact = intersections.length
+                    ? intersections[0].point.clone()
+                    : raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, weapon.range);
+                const tracerStart = raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 9);
+                this.spawnWeaponTracer(tracerStart, impact, tracerColor);
                 if (!intersections.length) continue;
                 let object = intersections[0].object;
                 let enemy = null;
@@ -1000,33 +1891,60 @@
                     prop = this.props.find(candidate => candidate.group3d === object) || null;
                     object = object.parent;
                 }
-                if (enemy) hits.set(enemy, (hits.get(enemy) || 0) + 1);
-                else if (prop) this.breakProp(prop);
+                if (enemy) {
+                    const hit = hits.get(enemy) || { pellets: 0, headshots: 0, damageScale: 0 };
+                    hit.pellets++;
+                    hit.damageScale += this.getWeaponDamageScale(weapon, intersections[0].distance);
+                    let hitPart = intersections[0].object;
+                    while (hitPart && hitPart !== enemy.group3d) {
+                        if (hitPart === enemy.skull) {
+                            hit.headshots++;
+                            break;
+                        }
+                        hitPart = hitPart.parent;
+                    }
+                    hits.set(enemy, hit);
+                } else if (prop) this.breakProp(prop);
+                else this.vfx.spawnSparks(impact.x, impact.z, tracerColor, 3);
             }
 
             const forward = new THREE.Vector3();
             this.camera3d.getWorldDirection(forward);
-            hits.forEach((pelletCount, enemy) => this.applyHitToEnemy(enemy, weapon.damage * classScale * pelletCount, forward));
-            this.cameraController.applyPunch(this.ads ? 0.018 : 0.035, (Math.random() - 0.5) * 0.018);
-            this.audio.playSfx('gunshot', weapon.id === 'scattergun' ? 0.75 : (weapon.id === 'sidearm' ? 1.25 : 1));
+            hits.forEach((hit, enemy) => this.applyHitToEnemy(
+                enemy,
+                weapon.damage * classScale * hit.damageScale,
+                forward,
+                hit.pellets,
+                hit.headshots,
+                weapon.id
+            ));
+            this.triggerShockwaveCleave(this.player, forward, new Set(hits.keys()));
+            const hasAdsRecoil = this.ads && Array.isArray(weapon.adsRecoilPattern);
+            const recoilPattern = hasAdsRecoil ? weapon.adsRecoilPattern : (weapon.recoilPattern || [[0, this.ads ? 0.018 : 0.035]]);
+            const recoilStep = recoilPattern[(this.weaponBurstCount - 1) % recoilPattern.length];
+            const recoilScale = (this.ads && !hasAdsRecoil ? 0.62 : 1) * (moving ? 1.3 : 1);
+            this.cameraController.applyPunch(recoilStep[1] * recoilScale, recoilStep[0] * recoilScale);
+            this.audio.playSfx('gunshot', weapon.id === 'sniper' ? 0.72 : (weapon.id === 'scattergun' ? 0.75 : (weapon.id === 'sidearm' ? 1.25 : 1)));
             this.weaponRecoil = 0.7;
             this.updateWeaponHUD();
-            if (weapon.ammo === 0 && weapon.reserveAmmo > 0) this.reloadWeapon();
+            if (weapon.ammo === 0 && weapon.reserveAmmo > 0 && this.controlMode !== 'turnbased') this.reloadWeapon();
             return true;
         }
 
-        triggerMeleeAttack() {
-            if (this.swingTime > 0 || !this.player) return;
+        triggerMeleeAttack(turnAction = false) {
+            if ((!turnAction && this.swingTime > 0) || !this.player) return;
 
             const cData = ClassData[this.player.classType];
-            this.swingDuration = cData.attackSpeed;
-            this.swingTime = this.swingDuration;
+            const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
+            this.swingDuration = cData.attackSpeed / attackSpeedMultiplier;
+            this.swingTime = turnAction ? 0 : this.swingDuration;
             this.swingCombo = (this.swingCombo + 1) % 3;
 
             this.cameraController.applyPunch(0.04, -0.02);
 
             const forward = new THREE.Vector3();
             this.camera3d.getWorldDirection(forward);
+            const directHits = new Set();
 
             if (this.player.classType === ClassType.MAGE) {
                 // Cast projectile
@@ -1067,6 +1985,7 @@
 
                 // Check enemies
                 this.enemies.forEach(e => {
+                    if (e.hp <= 0) return;
                     const dx = e.x - this.player.x;
                     const dy = e.y - this.player.y;
                     const dist = Math.hypot(dx, dy);
@@ -1075,8 +1994,11 @@
                         const toEnemy = new THREE.Vector3(dx, 0, dy).normalize();
                         const dot = forward.x * toEnemy.x + forward.z * toEnemy.z;
 
-                        if (dot > 0.45) { // 70-degree cone
+                        if (dot > 0.45 && this.hasBlastLineOfSight(
+                            this.player.x, this.player.y, e.x, e.y, this.cameraEyeHeight, 20
+                        )) { // Forward melee cone, blocked by dungeon walls
                             this.applyHitToEnemy(e, cData.baseDmg, forward);
+                            directHits.add(e);
                         }
                     }
                 });
@@ -1084,22 +2006,81 @@
                 // Check breakable props
                 this.props.forEach(prop => {
                     if (prop.broken) return;
-                    const dist = Math.hypot(prop.x - this.player.x, prop.z - this.player.y);
+                    const dx = prop.x - this.player.x;
+                    const dz = prop.z - this.player.y;
+                    const dist = Math.hypot(dx, dz);
                     if (dist <= sweepRange) {
-                        this.breakProp(prop);
+                        const dot = (forward.x * dx + forward.z * dz) / Math.max(1, dist);
+                        if (dot > 0.45 && this.hasBlastLineOfSight(
+                            this.player.x, this.player.y, prop.x, prop.z, this.cameraEyeHeight, 10
+                        )) this.breakProp(prop);
                     }
                 });
             }
+            this.triggerShockwaveCleave(this.player, forward, directHits);
         }
 
         performMeleeAttack() {
             return this.triggerMeleeAttack();
         }
 
-        applyHitToEnemy(enemy, baseDmg, dir) {
+        performWeaponMeleeAttack(turnAction = false) {
+            if (!this.player || this.player.isDead || this.weaponSwapTimer > 0 ||
+                (!turnAction && this.weaponMeleeCooldown > 0)) return false;
+            if (!turnAction) {
+                this.weaponMeleeCooldown = 0.72;
+                if (this.weaponReloadTimer > 0) this.weaponReloadTimer = 0;
+            }
+            this.weaponBashTimer = 0.26;
+
+            const forward = new THREE.Vector3();
+            this.camera3d.getWorldDirection(forward);
+            const horizontalLength = Math.hypot(forward.x, forward.z) || 1;
+            const reach = 74;
+            const directHits = new Set();
+            this.enemies.forEach(enemy => {
+                if (enemy.hp <= 0) return;
+                const dx = enemy.x - this.player.x;
+                const dz = enemy.y - this.player.y;
+                const distance = Math.hypot(dx, dz);
+                if (distance > reach + enemy.radius || distance < 1) return;
+                if (!this.hasBlastLineOfSight(this.player.x, this.player.y, enemy.x, enemy.y, this.cameraEyeHeight, 20)) return;
+                const dot = (forward.x * dx + forward.z * dz) / (distance * horizontalLength);
+                if (dot < 0.38) return;
+                const weapon = this.weaponInventory[this.activeWeaponIndex];
+                this.applyHitToEnemy(enemy, weapon?.meleeDamage || 20, forward);
+                directHits.add(enemy);
+            });
+
+            this.props.forEach(prop => {
+                if (prop.broken) return;
+                const dx = prop.x - this.player.x;
+                const dz = prop.z - this.player.y;
+                const distance = Math.hypot(dx, dz);
+                if (distance > reach + prop.radius || distance < 1) return;
+                if (!this.hasBlastLineOfSight(this.player.x, this.player.y, prop.x, prop.z, this.cameraEyeHeight, 10)) return;
+                const dot = (forward.x * dx + forward.z * dz) / (distance * horizontalLength);
+                if (dot >= 0.38) this.breakProp(prop);
+            });
+
+            this.cameraController.applyPunch(0.075, -0.025);
+            this.weaponRecoil = -1.2;
+            this.audio.playSfx('swing', 1.25);
+            if (!directHits.size) this.combatText.spawnText(this.player.x, 20, this.player.y, 'WEAPON BASH', 'block');
+            return directHits.size > 0;
+        }
+
+        applyHitToEnemy(enemy, baseDmg, dir, hitUnits = 1, headshotUnits = 0, sourceWeapon = null) {
+            if (!enemy || enemy.hp <= 0) return false;
             let dmg = baseDmg;
             const dmgBonus = this.armoryRanks.damage ? (1.0 + this.armoryRanks.damage * 0.15) : 1.0;
             dmg *= dmgBonus;
+
+            const isHeadshot = headshotUnits > 0;
+            if (isHeadshot && hitUnits > 0) {
+                dmg *= 1 + 0.65 * Math.min(1, headshotUnits / hitUnits);
+            }
+            if (isHeadshot && sourceWeapon === 'sniper' && this.player.hasPerk('deadeye')) dmg *= 1.35;
 
             if (this.player.hasPerk('goldrush')) {
                 dmg *= (1.0 + (this.gold / 20) * 0.01);
@@ -1107,9 +2088,12 @@
 
             let isCrit = Math.random() < (ClassData[this.player.classType].critChance + (this.player.hasPerk('critfury') ? 0.20 : 0));
             if (isCrit) {
-                dmg *= ClassData[this.player.classType].critMult;
+                const baseCritMultiplier = ClassData[this.player.classType].critMult;
+                const critBonusMultiplier = this.player.hasPerk('critfury') ? 1.5 : 1;
+                dmg *= 1 + (baseCritMultiplier - 1) * critBonusMultiplier;
             }
 
+            const wasAlive = enemy.hp > 0;
             enemy.hp -= dmg;
             enemy.kx = dir.x * 160;
             enemy.ky = dir.z * 160;
@@ -1117,17 +2101,11 @@
             // Trigger hitstop & audio
             this.hitstop = 0.04;
             this.vfx.spawnBlood(enemy.x, enemy.y, enemy.bloodColor);
-            this.emitGraphicsBurst(enemy.x, enemy.y, isCrit ? '#fbbf24' : '#ef4444', isCrit ? 1.5 : 0.8);
-            this.audio.playSfx(isCrit ? 'crit' : 'hit');
+            this.emitGraphicsBurst(enemy.x, enemy.y, isCrit || isHeadshot ? '#fbbf24' : '#ef4444', isCrit || isHeadshot ? 1.5 : 0.8);
+            this.audio.playSfx(isCrit || isHeadshot ? 'crit' : 'hit', isHeadshot ? 1.2 : 1);
 
-            // Crosshair hit indicator
-            const crosshair = document.getElementById('hudCrosshair');
-            if (crosshair) {
-                crosshair.classList.add('hit');
-                setTimeout(() => crosshair.classList.remove('hit'), 120);
-            }
-
-            this.combatText.spawnText(enemy.x, 20, enemy.y, `${isCrit ? 'CRIT! ' : ''}${Math.round(dmg)}`, isCrit ? 'crit' : 'damage');
+            const hitLabel = `${isHeadshot ? 'HEADSHOT! ' : ''}${isCrit ? 'CRIT! ' : ''}${Math.round(dmg)}`;
+            this.combatText.spawnText(enemy.x, 20, enemy.y, hitLabel, isCrit || isHeadshot ? 'crit' : 'damage');
 
             // Perks triggers
             if (this.player.hasPerk('vampiric')) {
@@ -1139,16 +2117,36 @@
                 this.triggerChainLightning(enemy, 18);
             }
 
+            if (wasAlive && enemy.hp <= 0 && isHeadshot && sourceWeapon === 'sniper' && this.player.hasPerk('deadeye')) {
+                const sniper = this.weaponInventory.find(weapon => weapon.id === 'sniper');
+                if (sniper && sniper.ammo < sniper.magazine) {
+                    sniper.ammo++;
+                    this.combatText.spawnText(enemy.x, 27, enemy.y, '+1 SNIPER ROUND', 'crit');
+                    this.updateWeaponHUD();
+                }
+            }
+
+            if (this.player.hasPerk('pyromancy')) {
+                enemy.burnTimer = Math.max(enemy.burnTimer || 0, 3);
+                enemy.burnFxTimer = 0;
+            }
+            if (this.player.hasPerk('frostbite')) {
+                enemy.chillTimer = Math.max(enemy.chillTimer || 0, 3);
+                this.vfx.spawnSparks(enemy.x, enemy.y, 0x67e8f9, 7);
+            }
+
             if (this.player.hasPerk('executioner') && !enemy.isBoss && (enemy.hp / enemy.maxHp < 0.25)) {
                 enemy.hp = 0;
                 this.combatText.spawnText(enemy.x, 25, enemy.y, 'EXECUTED!', 'crit');
             }
+
+            this.showHitMarker(enemy.hp <= 0, isCrit, isHeadshot);
         }
 
         triggerChainLightning(sourceEnemy, dmg) {
             let hits = 0;
             this.enemies.forEach(target => {
-                if (target !== sourceEnemy && hits < 2) {
+                if (target !== sourceEnemy && target.hp > 0 && hits < 2) {
                     const dist = Math.hypot(target.x - sourceEnemy.x, target.y - sourceEnemy.y);
                     if (dist < 200) {
                         target.hp -= dmg;
@@ -1181,12 +2179,24 @@
                     this.scene.add(pot.group3d);
                     this.loot.push(pot);
                 }
+                if (Math.random() < 0.7) {
+                    const ammo = new LootItem(prop.x + 8, prop.z - 8, 'ammo', 45);
+                    this.scene.add(ammo.group3d);
+                    this.loot.push(ammo);
+                }
+                if (Math.random() < 0.35) this.spawnGrenadeLoot(prop.x - 10, prop.z + 8);
             } else {
                 if (Math.random() < 0.5) {
                     const item = new LootItem(prop.x, prop.z, 'gold', 15);
                     this.scene.add(item.group3d);
                     this.loot.push(item);
                 }
+                if (Math.random() < 0.14) {
+                    const ammo = new LootItem(prop.x, prop.z, 'ammo', 30);
+                    this.scene.add(ammo.group3d);
+                    this.loot.push(ammo);
+                }
+                if (Math.random() < 0.05) this.spawnGrenadeLoot(prop.x + 8, prop.z - 8);
             }
             // Campaign: cracked caches count toward collect_ore objectives
             // (chests hold power crystals; crates may hide raw ore).
@@ -1212,6 +2222,7 @@
 
         dealAoEDamage(x, y, radius, dmg, type) {
             this.enemies.forEach(e => {
+                if (e.hp <= 0) return;
                 const dist = Math.hypot(e.x - x, e.y - y);
                 if (dist <= radius) {
                     e.hp -= dmg;
@@ -1223,8 +2234,13 @@
             });
         }
 
-        usePotion() {
+        usePotion(fromTurnAction = false) {
             if (!this.player || this.player.isDead) return;
+            if (this.controlMode === 'turnbased' && !fromTurnAction) {
+                if (this.isTurnProcessing || this.player.potions <= 0 || this.player.hp >= this.player.maxHp) return;
+                this.executeTurnAction('potion');
+                return;
+            }
             if (this.player.potions > 0 && this.player.hp < this.player.maxHp) {
                 this.player.potions--;
                 const healAmt = Math.round(this.player.maxHp * 0.5);
@@ -1271,6 +2287,11 @@
                     const chosen = RoguelikePerks.find(p => p.id === perkId);
                     if (chosen) {
                         this.player.perks.push(chosen);
+                        if (chosen.id === 'titan') {
+                            this.player.maxHp += 50;
+                            this.player.hp = this.player.maxHp;
+                        }
+                        if (chosen.id === 'orb_havoc') this.enableOrbitingGlaive();
                         this.combatText.showBanner(`BOON ACQUIRED: ${chosen.name}`);
                     }
                     screen.classList.add('hidden');
@@ -1285,6 +2306,25 @@
 
         setControlMode(mode) {
             this.controlMode = mode;
+            if (mode === 'turnbased' && this.weaponSwapTimer > 0) {
+                this.weaponSwapTimer = 0;
+                this.updateWeaponHUD();
+            }
+            if (mode === 'turnbased' && this.weaponReloadTimer > 0) {
+                const weapon = this.weaponInventory[this.activeWeaponIndex];
+                if (weapon) {
+                    const amount = Math.min(weapon.continuousReload ? 1 : weapon.magazine - weapon.ammo, weapon.magazine - weapon.ammo, weapon.reserveAmmo);
+                    weapon.ammo += amount;
+                    weapon.reserveAmmo -= amount;
+                    if (weapon.secondaryMagazine) {
+                        const secondaryAmount = Math.min(weapon.secondaryMagazine - weapon.secondaryAmmo, weapon.secondaryReserveAmmo);
+                        weapon.secondaryAmmo += secondaryAmount;
+                        weapon.secondaryReserveAmmo -= secondaryAmount;
+                    }
+                }
+                this.weaponReloadTimer = 0;
+                this.updateWeaponHUD();
+            }
 
             // Update Mode Buttons in HUD
             document.querySelectorAll('.btn-mode').forEach(btn => {
@@ -1319,7 +2359,7 @@
                 if (mmpSpeeds) mmpSpeeds.style.display = 'flex';
                 if (mmhModeBadge) mmhModeBadge.textContent = '⚡ RT';
                 if (mobileStatusBar) mobileStatusBar.classList.add('hidden');
-                if (controlsHint) controlsHint.textContent = 'Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | B Block | R Reload | 1–3 / Wheel Swap | Shift Sprint | C/Ctrl Crouch | Space Jump | F Ability | Q Potion';
+                if (controlsHint) controlsHint.textContent = 'Controls: WASD Move | Mouse Look (RMB drag if lock unavailable) | LMB Fire | RMB Aim | Z/X Lean | T M4 AUTO/SEMI | Y M4 40MM | V Class Attack | G Grenade | B Block | R Reload | 1–4 / Wheel Swap | H Drop Weapon | Shift Sprint | tap C to Slide / Ctrl Crouch | Space Jump | F Ability | Q Potion';
             } else if (mode === 'chrono') {
                 if (speedGroup) speedGroup.classList.add('hidden');
                 if (turnGroup) turnGroup.classList.add('hidden');
@@ -1331,7 +2371,7 @@
                     mobileStatusBar.classList.remove('hidden');
                     if (mobileStatusText) mobileStatusText.textContent = 'TIME FROZEN';
                 }
-                if (controlsHint) controlsHint.textContent = 'Chrono-Lock: Time moves when active. LMB Fire | RMB Aim | R Reload | 1–3 / Wheel Swap | Freeze still to dodge.';
+                if (controlsHint) controlsHint.textContent = 'Chrono-Lock: WASD Move | Mouse Look (RMB drag if lock unavailable) | RMB Aim | Z/X Lean | LMB Fire | T M4 AUTO/SEMI | Y M4 40MM | R Reload | 1–4 / Wheel Swap | H Drop Weapon | Freeze still to dodge.';
             } else if (mode === 'turnbased') {
                 if (speedGroup) speedGroup.classList.add('hidden');
                 if (turnGroup) turnGroup.classList.remove('hidden');
@@ -1343,7 +2383,7 @@
                     mobileStatusBar.classList.remove('hidden');
                     if (mobileStatusText) mobileStatusText.textContent = 'YOUR TURN';
                 }
-                if (controlsHint) controlsHint.textContent = 'Turn-Based: WASD Step (1 tile) | Left-Click Attack | ⏳ Wait Turn (Space / Button) | Q Potion';
+                if (controlsHint) controlsHint.textContent = 'Turn-Based: WASD Step | LMB Fire | N Weapon Bash | V Class Attack | G Grenade | R Reload (shotgun one shell per turn) | 1–4 / Wheel Swap | H Drop Weapon | B / Space Defend or Wait | F Ability | Q Potion';
                 this.turnCount = 1;
                 const turnCounter = document.getElementById('hudTurnCounter');
                 if (turnCounter) turnCounter.textContent = `Turn ${this.turnCount}`;
@@ -1353,6 +2393,7 @@
                     turnPhase.className = 'turn-phase-badge player-phase';
                 }
             }
+            this.updateWeaponHUD();
         }
 
         setGameSpeed(speed) {
@@ -1364,6 +2405,10 @@
 
         executeTurnAction(action) {
             if (this.controlMode !== 'turnbased' || this.isTurnProcessing || !this.player || this.player.isDead) return;
+            if (action === 'drop_weapon' && this.weaponInventory.length <= 1) {
+                this.combatText.spawnText(this.player.x, 20, this.player.y, 'KEEP YOUR LAST WEAPON', 'block');
+                return;
+            }
 
             this.isTurnProcessing = true;
             const phaseBadge = document.getElementById('hudTurnPhase');
@@ -1386,10 +2431,38 @@
                 const dx = (nx * cosYaw + nz * sinYaw) * stepDist;
                 const dy = (-nx * sinYaw + nz * cosYaw) * stepDist;
 
-                this.physics.moveEntityWithCollision(this.player, dx, dy, this.dungeon);
+                const turnObstacles = [...this.props, ...this.enemies.filter(enemy => enemy && enemy.hp > 0)];
+                this.physics.moveEntityWithCollision(this.player, dx, dy, this.dungeon, turnObstacles);
                 this.audio.playSfx('swing', 2.0);
             } else if (action === 'attack') {
-                this.triggerMeleeAttack();
+                this.fireWeapon(true);
+            } else if (action === 'grenade') {
+                this.throwGrenade();
+            } else if (action === 'melee') {
+                this.triggerMeleeAttack(true);
+            } else if (action === 'weapon_melee') {
+                this.performWeaponMeleeAttack(true);
+            } else if (action === 'reload') {
+                const weapon = this.weaponInventory[this.activeWeaponIndex];
+                if (weapon) {
+                    const amount = Math.min(weapon.continuousReload ? 1 : weapon.magazine - weapon.ammo, weapon.magazine - weapon.ammo, weapon.reserveAmmo);
+                    weapon.ammo += amount;
+                    weapon.reserveAmmo -= amount;
+                    const secondaryAmount = weapon.secondaryMagazine
+                        ? Math.min(weapon.secondaryMagazine - weapon.secondaryAmmo, weapon.secondaryReserveAmmo)
+                        : 0;
+                    weapon.secondaryAmmo += secondaryAmount;
+                    weapon.secondaryReserveAmmo -= secondaryAmount;
+                    if (amount > 0 || secondaryAmount > 0) {
+                        this.audio.playSfx('reload', 0.75);
+                        const label = weapon.continuousReload ? 'SHELL LOADED' : 'RELOADED';
+                        this.combatText.spawnText(this.player.x, 20, this.player.y,
+                            `${label} · ${weapon.ammo}/${weapon.reserveAmmo}${secondaryAmount > 0 ? ` · GL +${secondaryAmount}` : ''}`, 'block');
+                        this.updateWeaponHUD();
+                    }
+                }
+            } else if (action === 'drop_weapon') {
+                this.dropCurrentWeapon(true);
             } else if (action === 'ability') {
                 this.player.triggerAbility();
             } else if (action === 'wait') {
@@ -1401,25 +2474,26 @@
                 this.combatText.spawnText(this.player.x, 20, this.player.y, 'DEFENDING / WAITING', 'block');
                 this.audio.playSfx('block', 0.9);
             } else if (action === 'potion') {
-                this.usePotion();
+                this.usePotion(true);
             }
 
             // Check loot pickups
-            const pickupRange = 55;
+            const pickupRange = this.player.hasPerk('magnet') ? 110 : 55;
             this.loot.forEach(l => {
                 const dist = Math.hypot(this.player.x - l.x, this.player.y - l.y);
-                if (dist < this.player.radius + l.radius + pickupRange) {
-                    if (l.type === 'potion') {
-                        this.player.potions = Math.min(5, this.player.potions + 1);
-                        this.audio.playSfx('potion');
-                        this.combatText.spawnText(this.player.x, 20, this.player.y, '+1 POTION', 'heal');
-                    } else {
-                        this.gold += l.value;
-                        this.audio.playSfx('loot');
-                        this.combatText.spawnText(this.player.x, 20, this.player.y, `+${l.value} Gold`, 'crit');
+                if (l.waitForPlayerClear) {
+                    if (dist > this.player.radius + l.radius + 55) {
+                        l.waitForPlayerClear = false;
+                        l.waitForPlayerReturn = true;
                     }
-                    l.picked = true;
-                    l.destroy();
+                    return;
+                }
+                if (l.waitForPlayerReturn) {
+                    if (dist > this.player.radius + l.radius + 55) return;
+                    l.waitForPlayerReturn = false;
+                }
+                if (l.pickupDelay <= 0 && dist < this.player.radius + l.radius + pickupRange) {
+                    this.collectLoot(l);
                 }
             });
             this.loot = this.loot.filter(l => !l.picked);
@@ -1464,6 +2538,7 @@
                     this.isTurnProcessing = false;
                     return;
                 }
+                this.player.advanceTurn(0.35);
 
                 // Advance projectiles: one turn equals 0.35s of realtime
                 // flight, stepped through the same update() the realtime
@@ -1471,21 +2546,7 @@
                 // behave identically in both modes.
                 this.projectiles.forEach(p => {
                     p.update(0.35, this.dungeon);
-                    if (p.isPlayer) {
-                        this.enemies.forEach(e => {
-                            const dist = Math.hypot(e.x - p.x, e.y - p.z);
-                            if (dist < e.radius + p.radius) {
-                                p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
-                            }
-                        });
-                    } else {
-                        const dist = Math.hypot(this.player.x - p.x, this.player.y - p.z);
-                        if (dist < this.player.radius + p.radius) {
-                            p.dead = true;
-                            this.player.takeDamage(p.dmg);
-                        }
-                    }
+                    this.resolveProjectileHit(p);
                 });
                 this.projectiles.filter(p => p.dead).forEach(p => { this.scene.remove(p.mesh); p.dispose(); });
                 this.projectiles = this.projectiles.filter(p => !p.dead);
@@ -1493,55 +2554,26 @@
                 // Enemies take turn
                 this.enemies.forEach(e => {
                     if (e.hp <= 0) return;
-                    const dist = Math.hypot(this.player.x - e.x, this.player.y - e.y);
-
-                    if (dist < 450 && e.state === 'idle') {
-                        e.state = 'chase';
-                    }
-
-                    if (e.state === 'chase') {
-                        e.angle = Math.atan2(this.player.y - e.y, this.player.x - e.x);
-
-                        if (dist < e.radius + this.player.radius + 18) {
-                            // In melee range -> attack player
-                            this.player.takeDamage(e.dmg);
-                            this.audio.playSfx('hit', 0.9);
-                            this.combatText.spawnText(this.player.x, 20, this.player.y, `-${Math.round(e.dmg)}`, 'damage');
-                            if (e.type === 'skull') {
-                                this.vfx.spawnSparks(e.x, e.y, 0xff4422, 25);
-                                this.audio.playSfx('explode');
-                                e.hp = 0;
-                            }
-                        } else if (e.type === 'mage' && dist < 320 && Math.random() < 0.65) {
-                            // Spell projectile
-                            const forwardX = Math.cos(e.angle);
-                            const forwardY = Math.sin(e.angle);
-                            this.spawnProjectile(e.x, 18, e.y, forwardX * 220, 0, forwardY * 220, e.dmg, false, 0x9333ea, 'magic');
-                            this.audio.playSfx('spell', 0.8);
-                        } else {
-                            // Step toward player
-                            const stepSize = Math.min(38, dist - (e.radius + this.player.radius));
-                            if (stepSize > 0) {
-                                const evx = Math.cos(e.angle) * stepSize;
-                                const evy = Math.sin(e.angle) * stepSize;
-                                this.physics.moveEntityWithCollision(e, evx, evy, this.dungeon);
-                            }
-                        }
-                        e.group3d.position.set(e.x, 0, e.y);
-                        e.group3d.rotation.y = -e.angle + Math.PI / 2;
-                    }
+                    // Reuse realtime AI in 0.35s turns so status effects,
+                    // attack telegraphs, and boss-specific moves stay active
+                    // in every combat mode.
+                    e.update(0.35, this.player, this.physics, this.dungeon, this);
                 });
+
+                this.updateOrbitingGlaive(0.35);
 
                 // Clean dead enemies & drop loot
                 this.enemies.forEach(e => {
                     if (e.hp <= 0) {
                         const greedMult = this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.25) : 1.0;
                         const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
-                        const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier);
-                        const xpGain = Math.round((e.isBoss ? 120 : 25) * difficulty.xpMultiplier * this.getMissionScaleMult());
+                        const perkDropMult = this.player.hasPerk('magnet') ? 1.4 : 1.0;
+                        const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier * perkDropMult);
+                        const xpGain = Math.round((e.isBoss ? 120 : 25) * difficulty.xpMultiplier * this.getMissionScaleMult() * perkDropMult);
 
                         this.gold += goldGain;
                         this.kills++;
+                        this.onEnemyKilled(e);
                         this.player.addXp(xpGain);
                         this.vfx.spawnBlood(e.x, e.y, e.bloodColor);
                         if (e.isBoss && this.vfx.spawnDeathBurst) this.vfx.spawnDeathBurst(e.x, e.y, e.name, 30);
@@ -1551,9 +2583,7 @@
                             this.checkStoryObjectives(e);
                         }
 
-                        const loot = new LootItem(e.x, e.y, (Math.random() < 0.25 ? 'potion' : 'gold'), goldGain);
-                        this.scene.add(loot.group3d);
-                        this.loot.push(loot);
+                        this.spawnEnemyLoot(e, goldGain);
 
                         if (e.isBoss) {
                             this.activeBoss = null;
@@ -1598,17 +2628,22 @@
                 effectiveDt = dt * this.gameSpeed;
             } else if (this.controlMode === 'chrono') {
                 // Chrono-Lock (SUPERHOT style): Time moves ONLY when you move, look, or attack
-                const isMovingKeys = !!(this.input.keys['KeyW'] || this.input.keys['KeyS'] || 
-                                        this.input.keys['KeyA'] || this.input.keys['KeyD'] ||
-                                        this.input.keys['ArrowUp'] || this.input.keys['ArrowDown'] ||
-                                        this.input.keys['ArrowLeft'] || this.input.keys['ArrowRight'] ||
-                                        this.input.keys['Space']);
+                const movementKeysDown = !!(this.input.keys['KeyW'] || this.input.keys['KeyS'] ||
+                    this.input.keys['KeyA'] || this.input.keys['KeyD'] ||
+                    this.input.keys['ArrowUp'] || this.input.keys['ArrowDown'] ||
+                    this.input.keys['ArrowLeft'] || this.input.keys['ArrowRight'] ||
+                    this.input.keys['Space']);
+                const isMoving = this.player.isSliding || !this.player.grounded || movementKeysDown;
                 const isJoyMoving = this.input.joystick.active && Math.hypot(this.input.joystick.x, this.input.joystick.y) > 0.08;
                 const isLooking = (this.input.lastLookDelta || 0) > 0.8;
-                const isAttacking = this.swingTime > 0 || this.input.mouse.click || this.input.mouse.fireDown || this.input.mouse.aiming || this.input.mouse.isBlocking || this.weaponReloadTimer > 0;
+                const activeWeaponForTime = this.weaponInventory[this.activeWeaponIndex];
+                const launcherCooldownActive = (activeWeaponForTime?.secondaryNextFireAt || 0) > this.weaponAnimTime * 1000;
+                const isAttacking = this.swingTime > 0 || this.weaponCooldown > 0 || this.weaponMeleeCooldown > 0 || this.projectiles.length > 0 ||
+                    launcherCooldownActive || this.input.mouse.click || this.input.mouse.fireDown || this.input.mouse.aiming || this.input.mouse.isBlocking ||
+                    this.weaponReloadTimer > 0 || this.weaponSwapTimer > 0;
                 const isAbilOrPot = !!(this.input.keys['KeyF'] || this.input.keys['KeyQ']);
 
-                const hasActivity = isMovingKeys || isJoyMoving || isLooking || isAttacking || isAbilOrPot;
+                const hasActivity = isMoving || isJoyMoving || isLooking || isAttacking || isAbilOrPot;
                 const targetScale = hasActivity ? 1.0 : 0.035;
                 this.chronoScale = THREE.MathUtils.lerp(this.chronoScale, targetScale, 0.22);
                 effectiveDt = dt * this.chronoScale;
@@ -1677,19 +2712,36 @@
             }
 
             this.weaponCooldown = Math.max(0, this.weaponCooldown - effectiveDt);
+            this.weaponMeleeCooldown = Math.max(0, this.weaponMeleeCooldown - effectiveDt);
+            if (this.weaponSwapTimer > 0) {
+                const previousSwapTimer = this.weaponSwapTimer;
+                this.weaponSwapTimer = Math.max(0, this.weaponSwapTimer - effectiveDt);
+                if (previousSwapTimer > 0 && this.weaponSwapTimer === 0) this.updateWeaponHUD();
+            }
             if (this.weaponReloadTimer > 0) {
                 this.weaponReloadTimer = Math.max(0, this.weaponReloadTimer - effectiveDt);
                 if (this.weaponReloadTimer === 0) {
                     const weapon = this.weaponInventory[this.activeWeaponIndex];
                     if (weapon) {
-                        const amount = Math.min(weapon.magazine - weapon.ammo, weapon.reserveAmmo);
+                        const amount = weapon.ammo < weapon.magazine && weapon.reserveAmmo > 0
+                            ? Math.min(weapon.continuousReload ? 1 : weapon.magazine - weapon.ammo, weapon.magazine - weapon.ammo, weapon.reserveAmmo)
+                            : 0;
                         weapon.ammo += amount;
                         weapon.reserveAmmo -= amount;
+                        if (weapon.secondaryMagazine) {
+                            const secondaryAmount = Math.min(weapon.secondaryMagazine - weapon.secondaryAmmo, weapon.secondaryReserveAmmo);
+                            weapon.secondaryAmmo += secondaryAmount;
+                            weapon.secondaryReserveAmmo -= secondaryAmount;
+                        }
+                        if (weapon.continuousReload && weapon.ammo < weapon.magazine && weapon.reserveAmmo > 0) {
+                            this.weaponReloadTimer = weapon.shellReload || weapon.reload;
+                        }
+                        this.audio.playSfx('reload', weapon.continuousReload ? 0.55 : 0.75);
                     }
                     this.updateWeaponHUD();
                 }
             }
-            this.ads = !!this.input.mouse.aiming;
+            this.ads = !!this.input.mouse.aiming && !this.player.sprinting;
 
             // 2. Realtime/Chrono updates
             if (this.controlMode !== 'turnbased') {
@@ -1711,17 +2763,20 @@
 
                 // Update enemies
                 this.enemies.forEach(e => e.update(effectiveDt, this.player, this.physics, this.dungeon, this));
+                this.updateOrbitingGlaive(effectiveDt);
 
                 // Clean dead enemies & drop loot
                 this.enemies.forEach(e => {
                     if (e.hp <= 0) {
                         const greedMult = this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.25) : 1.0;
                         const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
-                        const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier);
-                        const xpGain = Math.round((e.isBoss ? 120 : 25) * difficulty.xpMultiplier * this.getMissionScaleMult());
+                        const perkDropMult = this.player.hasPerk('magnet') ? 1.4 : 1.0;
+                        const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier * perkDropMult);
+                        const xpGain = Math.round((e.isBoss ? 120 : 25) * difficulty.xpMultiplier * this.getMissionScaleMult() * perkDropMult);
 
                         this.gold += goldGain;
                         this.kills++;
+                        this.onEnemyKilled(e);
                         this.player.addXp(xpGain);
                         this.vfx.spawnBlood(e.x, e.y, e.bloodColor);
                         if (e.isBoss && this.vfx.spawnDeathBurst) this.vfx.spawnDeathBurst(e.x, e.y, e.name, 30);
@@ -1732,9 +2787,7 @@
                         }
 
                         // Drop loot
-                        const loot = new LootItem(e.x, e.y, (Math.random() < 0.25 ? 'potion' : 'gold'), goldGain);
-                        this.scene.add(loot.group3d);
-                        this.loot.push(loot);
+                        this.spawnEnemyLoot(e, goldGain);
 
                         if (e.isBoss) {
                             this.activeBoss = null;
@@ -1759,42 +2812,32 @@
                 // Update Projectiles
                 this.projectiles.forEach(p => {
                     p.update(effectiveDt, this.dungeon);
-                    if (p.isPlayer) {
-                        this.enemies.forEach(e => {
-                            const dist = Math.hypot(e.x - p.x, e.y - p.z);
-                            if (dist < e.radius + p.radius) {
-                                p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
-                            }
-                        });
-                    } else {
-                        const dist = Math.hypot(this.player.x - p.x, this.player.y - p.z);
-                        if (dist < this.player.radius + p.radius) {
-                            p.dead = true;
-                            this.player.takeDamage(p.dmg);
-                        }
-                    }
+                    this.resolveProjectileHit(p);
                 });
                 this.projectiles.filter(p => p.dead).forEach(p => { this.scene.remove(p.mesh); p.dispose(); });
                 this.projectiles = this.projectiles.filter(p => !p.dead);
 
                 // Update Loot Pickups
-                const pickupRange = parseFloat(document.getElementById('settingsPickupRange').value) * 24 || 120;
+                const pickupBaseRange = parseFloat(document.getElementById('settingsPickupRange').value) * 24 || 120;
+                const pickupRange = pickupBaseRange * (this.player.hasPerk('magnet') ? 2 : 1);
                 this.loot.forEach(l => {
-                    l.update(effectiveDt, this.player, pickupRange);
                     const dist = Math.hypot(this.player.x - l.x, this.player.y - l.y);
-                    if (dist < this.player.radius + l.radius) {
-                        if (l.type === 'potion') {
-                            this.player.potions = Math.min(5, this.player.potions + 1);
-                            this.audio.playSfx('potion');
-                            this.combatText.spawnText(this.player.x, 20, this.player.y, '+1 POTION', 'heal');
-                        } else {
-                            this.gold += l.value;
-                            this.audio.playSfx('loot');
-                            this.combatText.spawnText(this.player.x, 20, this.player.y, `+${l.value} Gold`, 'crit');
+                    const releaseRange = this.player.radius + l.radius + 55;
+                    if (l.waitForPlayerClear) {
+                        if (dist > releaseRange) {
+                            l.waitForPlayerClear = false;
+                            l.waitForPlayerReturn = true;
                         }
-                        l.picked = true;
-                        l.destroy();
+                        return;
+                    }
+                    if (l.waitForPlayerReturn) {
+                        if (dist > releaseRange) return;
+                        l.waitForPlayerReturn = false;
+                    }
+                    l.update(effectiveDt, this.player, pickupRange);
+                    const updatedDist = Math.hypot(this.player.x - l.x, this.player.y - l.y);
+                    if (l.pickupDelay <= 0 && updatedDist < this.player.radius + l.radius) {
+                        this.collectLoot(l);
                     }
                 });
                 this.loot = this.loot.filter(l => !l.picked);
@@ -1816,25 +2859,99 @@
             // Update weapon viewmodel animation
             if (this.weaponGroup) {
                 const animDt = effectiveDt > 0 ? effectiveDt : dt * 1.5;
+                this.weaponAnimTime += animDt;
+                this.weaponSpreadBloom = Math.max(0, this.weaponSpreadBloom - animDt * 0.012);
                 this.weaponRecoil = THREE.MathUtils.lerp(this.weaponRecoil, 0, Math.min(1, animDt * 14));
-                if (this.weaponGroup.mainHand && this.weaponGroup.weaponId) {
-                    this.weaponGroup.mainHand.position.z = -6.2 + this.weaponRecoil;
+                this.weaponFlashTimer = Math.max(0, this.weaponFlashTimer - animDt);
+                if (this.weaponGroup.muzzleFlash) {
+                    const flashStrength = this.weaponFlashDuration > 0 ? this.weaponFlashTimer / this.weaponFlashDuration : 0;
+                    this.weaponGroup.muzzleFlash.visible = flashStrength > 0;
+                    this.weaponGroup.muzzleFlash.material.opacity = flashStrength * 0.95;
+                    if (this.weaponGroup.muzzleLight) this.weaponGroup.muzzleLight.intensity = flashStrength * 2.2;
                 }
-                if (this.swingTime > 0) {
+                const swapProgress = 1 - this.weaponSwapTimer / this.weaponSwapDuration;
+                const swapDip = this.weaponSwapTimer > 0 ? Math.sin(swapProgress * Math.PI) : 0;
+                this.weaponAimBlend = THREE.MathUtils.lerp(this.weaponAimBlend, this.ads ? 1 : 0, Math.min(1, animDt * 12));
+                const weaponId = this.weaponGroup.weaponId;
+                const aimX = weaponId === 'scattergun' ? -2.75 : (weaponId ? -2.25 : 0);
+                const aimY = weaponId === 'sidearm' ? 2.2 : (weaponId ? 1.35 : 0);
+                const activeWeapon = this.weaponInventory[this.activeWeaponIndex];
+                const boltDuration = activeWeapon?.boltCycle || 0.28;
+                const previousBoltTimer = this.weaponBoltTimer;
+                this.weaponBoltTimer = Math.max(0, this.weaponBoltTimer - animDt);
+                if (this.weaponBoltSoundPending && previousBoltTimer > boltDuration * 0.55 && this.weaponBoltTimer <= boltDuration * 0.55) {
+                    this.audio.playSfx('bolt_cycle', 0.95);
+                    this.weaponBoltSoundPending = false;
+                }
+                const reloadDuration = activeWeapon?.continuousReload
+                    ? (activeWeapon.shellReload || activeWeapon.reload)
+                    : activeWeapon?.reload;
+                const reloadProgress = this.weaponReloadTimer > 0 && reloadDuration
+                    ? THREE.MathUtils.clamp(1 - this.weaponReloadTimer / reloadDuration, 0, 1)
+                    : 0;
+                const reloadDip = Math.sin(reloadProgress * Math.PI);
+                const firearm = !!weaponId;
+                const baseX = -swapDip * 1.25 + aimX * this.weaponAimBlend;
+                const baseY = -swapDip * 8 + aimY * this.weaponAimBlend - reloadDip * 4;
+                const hand = this.weaponGroup.mainHand;
+                const pose = hand?.userData.idlePose;
+                const supportHand = this.weaponGroup.supportHand;
+                const supportPose = supportHand?.userData.idlePose;
+                const moving = Math.hypot(this.player.vx, this.player.vy) > 8;
+                const sprinting = moving && this.player.sprinting;
+                const bobRate = sprinting ? 0.015 : (moving ? 0.011 : 0.003);
+                const aimStability = this.ads ? 0.2 : 1;
+                const bobAmount = (sprinting ? 0.28 : (moving ? 0.16 : 0.07)) * aimStability;
+                const weaponClockMs = this.weaponAnimTime * 1000;
+                const sway = moving ? Math.cos(weaponClockMs * bobRate * 0.5) * (sprinting ? 0.14 : 0.08) * aimStability : 0;
+                const idleBob = Math.sin(weaponClockMs * bobRate) * bobAmount;
+                const bashDuration = 0.26;
+                this.weaponBashTimer = Math.max(0, this.weaponBashTimer - animDt);
+                const bashProgress = this.weaponBashTimer > 0
+                    ? THREE.MathUtils.clamp(1 - this.weaponBashTimer / bashDuration, 0, 1)
+                    : 0;
+                const bashArc = Math.sin(bashProgress * Math.PI);
+                if (this.weaponBashTimer > 0 && firearm) {
+                    this.weaponGroup.position.set(baseX + sway + bashArc * 1.6, baseY + idleBob - bashArc * 1.4, this.weaponRecoil - bashArc * 2.4);
+                    this.weaponGroup.rotation.set(0, -bashArc * 0.28, reloadDip * 0.08 + bashArc * 0.16);
+                } else if (this.swingTime > 0) {
                     this.swingTime -= animDt;
                     const progress = (this.swingDuration - this.swingTime) / this.swingDuration;
                     const arc = Math.sin(progress * Math.PI);
 
-                    if (this.weaponGroup.mainHand) {
-                        this.weaponGroup.mainHand.position.x = 2.8 - arc * 4.5;
-                        this.weaponGroup.mainHand.position.y = -2.8 + arc * 1.8;
-                        this.weaponGroup.mainHand.rotation.z = -Math.PI / 7 - arc * 1.5;
+                    if (firearm) {
+                        this.weaponGroup.position.set(baseX + sway, baseY + idleBob + arc * 1.8, this.weaponRecoil);
+                        this.weaponGroup.rotation.set(0, -arc * 0.22, reloadDip * 0.08 - arc * 0.18);
+                    } else {
+                        this.weaponGroup.position.set(baseX, baseY, 0);
+                        this.weaponGroup.rotation.z = reloadDip * 0.08;
+                    }
+                    if (!firearm && hand && pose) {
+                        hand.position.x = pose.position.x - arc * 4.5;
+                        hand.position.y = pose.position.y + arc * 1.8;
+                        hand.rotation.z = pose.rotation.z - arc * 1.5;
                     }
                 } else {
-                    // Idle bobbing
-                    const idleBob = Math.sin(Date.now() * 0.003) * 0.15;
-                    if (this.weaponGroup.mainHand) {
-                        this.weaponGroup.mainHand.position.y = -2.8 + idleBob;
+                    if (firearm) {
+                        // Move every firearm part together so the barrel, flash, and support hand stay aligned.
+                        this.weaponGroup.position.set(baseX + sway, baseY + idleBob, this.weaponRecoil);
+                        this.weaponGroup.rotation.set(0, 0, reloadDip * 0.08);
+                        if (hand && pose) {
+                            hand.position.copy(pose.position);
+                            hand.rotation.copy(pose.rotation);
+                        }
+                        if (supportHand && supportPose) {
+                            supportHand.position.copy(supportPose.position);
+                            supportHand.rotation.copy(supportPose.rotation);
+                        }
+                    } else {
+                        this.weaponGroup.position.set(baseX, baseY, 0);
+                        this.weaponGroup.rotation.z = reloadDip * 0.08;
+                    }
+                    if (!firearm && hand && pose) {
+                        hand.position.x = pose.position.x + sway;
+                        hand.position.y = pose.position.y + idleBob;
+                        hand.rotation.copy(pose.rotation);
                     }
                     if (this.weaponGroup.offHand) {
                         // Raised in block position if blocking
@@ -1846,6 +2963,14 @@
                             this.weaponGroup.offHand.rotation.set(0, Math.PI / 6, 0);
                         }
                     }
+                }
+                if (this.weaponGroup.boltHandle?.userData.idlePosition) {
+                    const boltProgress = 1 - this.weaponBoltTimer / boltDuration;
+                    const boltCycle = Math.sin(THREE.MathUtils.clamp(boltProgress, 0, 1) * Math.PI);
+                    const home = this.weaponGroup.boltHandle.userData.idlePosition;
+                    this.weaponGroup.boltHandle.position.copy(home);
+                    this.weaponGroup.boltHandle.position.x += boltCycle * 0.75;
+                    this.weaponGroup.boltHandle.position.z -= boltCycle * 0.35;
                 }
             }
 
@@ -1868,10 +2993,12 @@
             } catch (_) { /* embers are garnish */ }
 
             // Camera orientation & follow
-            this.cameraController.update(dt);
+            const cameraAnimDt = this.controlMode === 'turnbased' ? dt : effectiveDt;
+            this.cameraController.update(cameraAnimDt);
             this.camera3d.rotation.order = 'YXZ';
             this.camera3d.rotation.y = this.player.yaw + this.cameraController.punchX;
             this.camera3d.rotation.x = this.player.pitch + this.cameraController.punchY;
+            this.camera3d.rotation.z = -this.player.lean * 0.12;
 
             let shakeOffset = new THREE.Vector3(0, 0, 0);
             if (isShake && this.cameraController.shake > 0) {
@@ -1879,11 +3006,30 @@
                 shakeOffset.set((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
             }
 
-            const targetFov = this.ads ? 48 : 68;
+            const sprinting = this.player.sprinting && Math.hypot(this.player.vx, this.player.vy) > 8;
+            const aimedWeapon = this.weaponInventory[this.activeWeaponIndex];
+            const targetFov = this.ads ? (aimedWeapon?.adsFov || 58) : (this.player.isSliding ? 78 : (sprinting ? 76 : (this.player.crouching ? 62 : 68)));
             this.camera3d.fov = THREE.MathUtils.lerp(this.camera3d.fov, targetFov, Math.min(1, dt * 12));
             this.camera3d.updateProjectionMatrix();
-            const eyeHeight = this.player.crouching ? 13 : 20;
-            this.camera3d.position.set(this.player.x, this.player.yElevation + eyeHeight, this.player.y).add(shakeOffset);
+            const targetEyeHeight = this.player.isSliding ? 9 : (this.player.crouching ? 13 : 20);
+            this.cameraEyeHeight = THREE.MathUtils.lerp(this.cameraEyeHeight, targetEyeHeight, Math.min(1, dt * 14));
+            const leanOffset = this.player.lean * 9;
+            const horizontalSpeed = Math.hypot(this.player.vx, this.player.vy);
+            const bobbing = this.player.grounded && !this.player.isSliding && horizontalSpeed > 2;
+            const bobScale = this.ads ? 0.28 : (this.player.crouching ? 0.38 : (sprinting ? 1.2 : 0.75));
+            if (bobbing) this.cameraBobTime += dt * (sprinting ? 14 : 9.5);
+            const targetBobX = bobbing ? Math.cos(this.cameraBobTime) * 0.45 * bobScale : 0;
+            const targetBobY = bobbing ? Math.sin(this.cameraBobTime * 2) * 0.55 * bobScale : 0;
+            const bobBlend = Math.min(1, dt * 10);
+            this.cameraBobX += (targetBobX - this.cameraBobX) * bobBlend;
+            this.cameraBobY += (targetBobY - this.cameraBobY) * bobBlend;
+            this.camera3d.position.set(
+                this.player.x + Math.cos(this.player.yaw) * (leanOffset + this.cameraBobX),
+                this.player.yElevation + this.cameraEyeHeight + this.cameraBobY,
+                this.player.y - Math.sin(this.player.yaw) * (leanOffset + this.cameraBobX)
+            ).add(shakeOffset);
+            this.camera3d.updateMatrixWorld(true);
+            this.updateAimTargetHUD(dt);
 
             // Synchronize player lantern and flashlight
             this.playerLantern.position.copy(this.camera3d.position);
@@ -1894,6 +3040,7 @@
             this.flashlightTarget.position.copy(this.camera3d.position).add(forward.multiplyScalar(100));
 
             this.vfx.update(effectiveDt > 0 ? effectiveDt : dt * 0.1);
+            this.updateWeaponTracers(dt);
             this.updateHUD();
             this.updateWeaponHUD();
             this.drawMinimap();

@@ -15,7 +15,8 @@
                 const palette = {
                     rifle: { body: 0x263244, accent: 0x64748b, barrel: 10 },
                     sidearm: { body: 0x3f3f46, accent: 0x94a3b8, barrel: 6 },
-                    scattergun: { body: 0x4a3325, accent: 0xb08a55, barrel: 12 }
+                    scattergun: { body: 0x4a3325, accent: 0xb08a55, barrel: 12 },
+                    sniper: { body: 0x172b3d, accent: 0x7dd3fc, barrel: 18 }
                 }[weaponId] || { body: 0x263244, accent: 0x64748b, barrel: 10 };
                 const metal = new THREE.MeshStandardMaterial({ color: palette.body, metalness: 0.68, roughness: 0.34 });
                 const trim = new THREE.MeshStandardMaterial({ color: palette.accent, metalness: 0.78, roughness: 0.28 });
@@ -43,7 +44,92 @@
                     secondBarrel.rotation.x = Math.PI / 2;
                     secondBarrel.position.set(3.25, -2.2, -10.0);
                     group.add(secondBarrel);
+                } else if (weaponId === 'rifle') {
+                    const launcherBody = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.78, 0.88, 7.2, 10), metal
+                    );
+                    launcherBody.rotation.x = Math.PI / 2;
+                    launcherBody.position.set(2.25, -3.5, -8.9);
+                    group.add(launcherBody);
+                    const launcherMuzzle = new THREE.Mesh(
+                        new THREE.CylinderGeometry(1.0, 0.9, 0.8, 10), trim
+                    );
+                    launcherMuzzle.rotation.x = Math.PI / 2;
+                    launcherMuzzle.position.set(2.25, -3.5, -12.9);
+                    group.add(launcherMuzzle);
+                } else if (weaponId === 'sniper') {
+                    const scopeBody = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.82, 0.92, 3.4, 12), metal
+                    );
+                    scopeBody.rotation.x = Math.PI / 2;
+                    scopeBody.position.set(2.25, -1.05, -6.6);
+                    group.add(scopeBody);
+                    const scopeLens = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.72, 0.72, 0.35, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x7dd3fc, emissive: 0x0369a1, emissiveIntensity: 0.45, metalness: 0.8, roughness: 0.2 })
+                    );
+                    scopeLens.rotation.x = Math.PI / 2;
+                    scopeLens.position.set(2.25, -1.05, -8.35);
+                    group.add(scopeLens);
+                    const scopeMount = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.65, 1.7), trim);
+                    scopeMount.position.set(2.25, -2.15, -6.6);
+                    group.add(scopeMount);
+                    const boltHandle = new THREE.Group();
+                    const boltShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.2, 8), trim);
+                    boltShaft.rotation.z = Math.PI / 2;
+                    boltShaft.position.x = 0.25;
+                    boltHandle.add(boltShaft);
+                    const boltKnob = new THREE.Mesh(new THREE.SphereGeometry(0.34, 8, 6), metal);
+                    boltKnob.position.x = 0.88;
+                    boltHandle.add(boltKnob);
+                    boltHandle.position.set(3.35, -2.5, -5.6);
+                    boltHandle.userData.idlePosition = boltHandle.position.clone();
+                    group.add(boltHandle);
+                    group.boltHandle = boltHandle;
                 }
+                if (weaponId !== 'sidearm') {
+                    const glove = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.18, roughness: 0.82 });
+                    const supportHand = new THREE.Group();
+                    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(1.35, 1.45, 3.6), glove);
+                    sleeve.position.set(0, -0.28, 1.55);
+                    supportHand.add(sleeve);
+                    const palm = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.05, 2.0), glove);
+                    palm.position.set(0, 0, -0.35);
+                    supportHand.add(palm);
+                    for (let finger = 0; finger < 4; finger++) {
+                        const segment = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.42, 1.05), glove);
+                        segment.position.set(-0.48 + finger * 0.32, -0.48, -1.5);
+                        supportHand.add(segment);
+                    }
+                    const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.78, 0.9), glove);
+                    thumb.position.set(-0.92, 0.05, -0.45);
+                    thumb.rotation.z = -0.35;
+                    supportHand.add(thumb);
+                    supportHand.position.set(1.0, -3.25, -9.15);
+                    group.add(supportHand);
+                    group.supportHand = supportHand;
+                }
+                const muzzleFlash = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.35, 8, 6),
+                    new THREE.MeshBasicMaterial({
+                        color: (weaponId === 'sidearm' || weaponId === 'sniper') ? 0x7dd3fc : 0xffc15a,
+                        transparent: true,
+                        opacity: 0,
+                        depthWrite: false,
+                        blending: THREE.AdditiveBlending,
+                        toneMapped: false
+                    })
+                );
+                muzzleFlash.position.set(weaponId === 'scattergun' ? 2.75 : 2.25, -2.2,
+                    weaponId === 'sidearm' ? -14 : (weaponId === 'sniper' ? -21.2 : -17));
+                muzzleFlash.scale.set(1.1, 1.1, 1.8);
+                muzzleFlash.visible = false;
+                group.add(muzzleFlash);
+                const muzzleLight = new THREE.PointLight(weaponId === 'sniper' ? 0x7dd3fc : 0xffb34d, 0, 38, 2);
+                muzzleLight.position.copy(muzzleFlash.position);
+                group.add(muzzleLight);
+                group.muzzleFlash = muzzleFlash;
+                group.muzzleLight = muzzleLight;
                 group.mainHand = receiver;
                 group.weaponId = weaponId;
                 return group;

@@ -65,17 +65,111 @@ class SoundEngine {
             noise.start(now);
             noise.stop(now + 0.15);
         } else if (type === 'gunshot') {
-            const osc = this.ctx.createOscillator();
+            // Layer a filtered muzzle crack over a falling tonal body so each
+            // weapon reads as a shot instead of a lone oscillator click.
+            const bufferSize = Math.floor(this.ctx.sampleRate * 0.055);
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const samples = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) samples[i] = Math.random() * 2 - 1;
+
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            const crackFilter = this.ctx.createBiquadFilter();
+            crackFilter.type = 'highpass';
+            crackFilter.frequency.setValueAtTime(1500 * pitchMod, now);
+            crackFilter.Q.value = 0.7;
+            const crackGain = this.ctx.createGain();
+            crackGain.gain.setValueAtTime(0.28 * mainVol, now);
+            crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+            noise.connect(crackFilter);
+            crackFilter.connect(crackGain);
+            crackGain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + 0.055);
+
+            const body = this.ctx.createOscillator();
+            const bodyGain = this.ctx.createGain();
+            body.type = 'triangle';
+            body.frequency.setValueAtTime(115 * pitchMod, now);
+            body.frequency.exponentialRampToValueAtTime(34, now + 0.12);
+            bodyGain.gain.setValueAtTime(0.38 * mainVol, now);
+            bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            body.connect(bodyGain);
+            bodyGain.connect(this.ctx.destination);
+            body.start(now);
+            body.stop(now + 0.12);
+
+            const thump = this.ctx.createOscillator();
+            const thumpGain = this.ctx.createGain();
+            thump.type = 'sine';
+            thump.frequency.setValueAtTime(72 * pitchMod, now);
+            thump.frequency.exponentialRampToValueAtTime(38, now + 0.095);
+            thumpGain.gain.setValueAtTime(0.2 * mainVol, now);
+            thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+            thump.connect(thumpGain);
+            thumpGain.connect(this.ctx.destination);
+            thump.start(now);
+            thump.stop(now + 0.095);
+        } else if (type === 'weapon_swap') {
+            [0, 0.055].forEach((offset, index) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime((index === 0 ? 430 : 760) * pitchMod, now + offset);
+                osc.frequency.exponentialRampToValueAtTime((index === 0 ? 210 : 360) * pitchMod, now + offset + 0.045);
+                gain.gain.setValueAtTime(0.12 * mainVol, now + offset);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.045);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + offset);
+                osc.stop(now + offset + 0.045);
+            });
+        } else if (type === 'bolt_cycle') {
+            [0, 0.105].forEach((offset, index) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime((index === 0 ? 520 : 760) * pitchMod, now + offset);
+                osc.frequency.exponentialRampToValueAtTime((index === 0 ? 240 : 330) * pitchMod, now + offset + 0.04);
+                gain.gain.setValueAtTime((index === 0 ? 0.16 : 0.12) * mainVol, now + offset);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.04);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + offset);
+                osc.stop(now + offset + 0.04);
+            });
+        } else if (type === 'footstep') {
+            const bufferSize = Math.floor(this.ctx.sampleRate * 0.035);
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const samples = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) samples[i] = Math.random() * 2 - 1;
+
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(720 * pitchMod, now);
+            filter.frequency.exponentialRampToValueAtTime(260, now + 0.035);
             const gain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(115 * pitchMod, now);
-            osc.frequency.exponentialRampToValueAtTime(36, now + 0.09);
-            gain.gain.setValueAtTime(0.42 * mainVol, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            osc.connect(gain);
+            gain.gain.setValueAtTime(0.15 * mainVol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            noise.connect(filter);
+            filter.connect(gain);
             gain.connect(this.ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.1);
+            noise.start(now);
+            noise.stop(now + 0.04);
+
+            const thud = this.ctx.createOscillator();
+            const thudGain = this.ctx.createGain();
+            thud.type = 'sine';
+            thud.frequency.setValueAtTime(90 * pitchMod, now);
+            thud.frequency.exponentialRampToValueAtTime(42, now + 0.065);
+            thudGain.gain.setValueAtTime(0.16 * mainVol, now);
+            thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+            thud.connect(thudGain);
+            thudGain.connect(this.ctx.destination);
+            thud.start(now);
+            thud.stop(now + 0.065);
         } else if (type === 'reload') {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();

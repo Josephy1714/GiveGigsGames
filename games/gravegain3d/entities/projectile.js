@@ -8,6 +8,9 @@ class Projectile {
         this.x = x;
         this.y = y;
         this.z = z;
+        this.previousX = x;
+        this.previousY = y;
+        this.previousZ = z;
         this.vx = vx;
         this.vy = vy;
         this.vz = vz;
@@ -16,34 +19,81 @@ class Projectile {
         this.color = color;
         this.type = type;
         this.life = 2.5;
-        this.radius = 8;
+        this.radius = type === 'grenade' ? 12 : (type === 'launcher' ? 10 : 8);
         this.dead = false;
+        this.collisionImpact = false;
+        this.fuse = type === 'grenade' ? 1.35 : (type === 'launcher' ? 2.4 : 0);
 
         this.mesh = new THREE.Mesh(
-            new THREE.SphereGeometry(2.5, 8, 8),
+            new THREE.SphereGeometry(type === 'grenade' ? 5 : (type === 'launcher' ? 4 : 2.5), 10, 8),
             new THREE.MeshBasicMaterial({ color })
         );
         this.mesh.position.set(x, y, z);
     }
 
     update(dt, tilemap) {
+        this.collisionImpact = false;
+        if (this.type === 'grenade' || this.type === 'launcher') {
+            this.fuse -= dt;
+            this.vy -= (this.type === 'grenade' ? 420 : 220) * dt;
+        }
         this.life -= dt;
-        if (this.life <= 0) {
+        if (this.life <= 0 || ((this.type === 'grenade' || this.type === 'launcher') && this.fuse <= 0)) {
             this.dead = true;
             return;
         }
 
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
-        this.z += this.vz * dt;
-        this.mesh.position.set(this.x, this.y, this.z);
-
-        // Tile collision
-        const tx = Math.floor(this.x / 48);
-        const tz = Math.floor(this.z / 48);
-        if (tilemap && tilemap.grid && tilemap.grid[tx] && (tilemap.grid[tx][tz] === 1 || tilemap.grid[tx][tz] === 6)) {
+        const startX = this.x;
+        const startY = this.y;
+        const startZ = this.z;
+        this.previousX = startX;
+        this.previousY = startY;
+        this.previousZ = startZ;
+        let dx = this.vx * dt;
+        let dy = this.vy * dt;
+        let dz = this.vz * dt;
+        this.x += dx;
+        this.y += dy;
+        this.z += dz;
+        if ((this.type === 'grenade' || this.type === 'launcher') && this.y <= this.radius * 0.5) {
+            const groundY = this.radius * 0.5;
+            const impactT = dy < 0 ? THREE.MathUtils.clamp((startY - groundY) / -dy, 0, 1) : 1;
+            dx *= impactT;
+            dy *= impactT;
+            dz *= impactT;
+            this.x = startX + dx;
+            this.y = groundY;
+            this.z = startZ + dz;
             this.dead = true;
+            this.collisionImpact = true;
         }
+
+        // Sweep the full frame movement in short steps, so a fast projectile
+        // cannot skip a wall tile during a long or low-frame-rate update.
+        const grid = tilemap?.grid;
+        if (grid) {
+            const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / 12));
+            const isExplosive = this.type === 'grenade' || this.type === 'launcher';
+            for (let i = 1; i <= steps; i++) {
+                const t = i / steps;
+                const sampleX = startX + dx * t;
+                const sampleY = startY + dy * t;
+                const sampleZ = startZ + dz * t;
+                const tx = Math.floor(sampleX / 48);
+                const tz = Math.floor(sampleZ / 48);
+                const outOfBounds = tx < 0 || tx >= tilemap.gridSize || tz < 0 || tz >= tilemap.gridSize;
+                const cell = outOfBounds ? 1 : grid[tx]?.[tz];
+                if ((cell === 1 || cell === 6) && (!isExplosive || sampleY <= 72)) {
+                    this.x = sampleX;
+                    this.y = sampleY;
+                    this.z = sampleZ;
+                    this.dead = true;
+                    this.collisionImpact = true;
+                    break;
+                }
+            }
+        }
+        this.mesh.position.set(this.x, this.y, this.z);
     }
 
     dispose() {

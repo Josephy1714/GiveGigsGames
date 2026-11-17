@@ -1,6 +1,6 @@
 /* GraveGain3D AAA - 60 tutorial.
    First-run coach marks: a short bottom-center toast chain teaching move,
-   look, attack, block, potion, and the portal goal. Shows once ever
+   look, aim, fire, reload, grenade, weapon swap, and the portal goal. Shows once ever
    (localStorage), fast-forwards to the goal tip on first blood. */
 (function () {
     'use strict';
@@ -18,16 +18,22 @@
         const touch = document.body.classList.contains('touch-enabled');
         const steps = touch
             ? [
-                '<b>LEFT STICK</b> to move through the crypt',
-                'Drag the <b>RIGHT SIDE</b> to look · tap ⚔️ to attack',
-                'Tap 🛡️ to block · ⚡ for your class ability',
-                'Tap 🧪 to heal · find the ⬇ <b>portal</b> to descend'
+                'Start with the M4, pistol, and shotgun · <b>LEFT STICK</b> moves through the crypt',
+                'Hold ↶/↷ to lean · push the stick rim to sprint · hold ⇩ to crouch · tap while sprinting to slide',
+                'Drag the <b>RIGHT SIDE</b> to aim · tap ⚔️ to fire or hold for automatic fire · tap AUTO/SEMI in the weapon readout to change M4 fire mode',
+                'Hold 🎯 to aim (slower walk); the Wraith sniper zooms in · tap 🥊 to bash · tap 💥 to fire the M4 launcher · ↻ reloads rifle and launcher ammo · tap ⤵ to drop your gun · 💣 loot restores grenades',
+                'Bosses and elites drop 🔫 caches · unlock the Wraith sniper, refill ammo, or reclaim dropped guns after stepping away',
+                'Tap 🗡️ for a class attack · 🛡️ block · ⚡ ability',
+                'Hold 🦘 to glide as Human · tap again midair to double-jump as Dwarf · tap 🧪 to heal · find the ⬇ <b>portal</b> to descend'
             ]
             : [
-                '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move through the crypt',
-                '<b>MOUSE</b> to look · <b>LEFT-CLICK</b> to attack',
-                '<b>RIGHT-CLICK</b> to block · <b>F</b> for your class ability',
-                '<b>Q</b> to heal · find the ⬇ <b>portal</b> to descend'
+                '<b>START LOADOUT</b> M4, service pistol, and shotgun · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move',
+                '<b>MOUSE</b> to look (right-drag if pointer lock is unavailable) · <b>RIGHT-CLICK</b> to aim (sniper zooms) · <b>Z/X</b> to lean · <b>LEFT-CLICK</b> to fire · <b>T</b> toggles M4 AUTO/SEMI',
+                'Aim slows your walk; sprinting lowers the sight · crouch for steadier shots · target health appears below the reticle',
+                '<b>1–4 / WHEEL</b> swap weapons · <b>N / MMB</b> bash with your weapon · <b>G</b> grenade · <b>Y</b> M4 underbarrel launcher · <b>R</b> reloads both ammo types · <b>H</b> drop weapon · 💣 find grenade loot',
+                '<b>BOSSES / ELITES</b> drop 🔫 caches · unlock the Wraith sniper, refill ammo, or reclaim dropped guns after stepping away',
+                '<b>V</b> class attack · <b>SHIFT</b> sprint · tap <b>C</b> to slide · hold <b>C</b> to crouch · <b>B</b> block',
+                '<b>F</b> ability · <b>SPACE</b> jump (hold as Human to glide; tap again midair as Dwarf) · <b>Q</b> heal · find the ⬇ <b>portal</b> to descend',
             ];
 
         const toast = AAA.mk('aaaToast', 'aaa-toast');

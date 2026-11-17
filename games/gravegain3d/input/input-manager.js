@@ -14,7 +14,7 @@
 class InputManager {
     constructor() {
         this.keys = {};
-        this.mouse = { click: false, fireDown: false, rightClick: false, isBlocking: false, aiming: false };
+        this.mouse = { click: false, fireDown: false, rightClick: false, isBlocking: false, aiming: false, lookDrag: false, lastLookX: 0, lastLookY: 0, lookRebase: false };
         this.lookSensitivity = 0.0022;
         this.invertY = false;
         this.lastLookDelta = 0;
@@ -29,9 +29,9 @@ class InputManager {
         // Crypt-stick: floating-origin left-half stick with deadzone + edge sprint.
         this.cryptStick = { floating: false, dockLeft: '', dockTop: '', sprint: false };
         // Tap-to-interact: quick tap (no drag) raycasts into the 3D scene.
-        this.tap = { downX: 0, downY: 0, downT: 0, maxMovePx: 12, maxMs: 300 };
+        this.tap = { pointerId: null, downX: 0, downY: 0, downT: 0, maxMovePx: 12, maxMs: 300 };
         // Spell-wheel: ability button doubles as wheel hub (tap = cast, hold = wheel).
-        this.spellWheel = { open: false, holdTimer: null, holdMs: 350 };
+        this.spellWheel = { open: false, holdTimer: null, holdMs: 350, holdTriggered: false };
         this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) ||
             (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
@@ -48,6 +48,11 @@ class InputManager {
 
     setupDesktopControls() {
         window.addEventListener('keydown', (e) => {
+            const target = e.target;
+            if (target?.isContentEditable || target?.matches?.('input, textarea, select')) {
+                this.keys[e.code] = false;
+                return;
+            }
             this.keys[e.code] = true;
             if (!e.repeat && window.GraveGainGame && window.GraveGainGame.handleGameplayKey) {
                 window.GraveGainGame.handleGameplayKey(e.code);
@@ -68,30 +73,42 @@ class InputManager {
         if (!container) return;
 
         container.addEventListener('contextmenu', (e) => e.preventDefault());
+        container.addEventListener('auxclick', (e) => {
+            if (e.button === 1) e.preventDefault();
+        });
         container.addEventListener('wheel', (e) => {
             const game = window.GraveGainGame;
-            if (!game || !game.player || game.controlMode === 'turnbased') return;
+            if (!game || !game.player) return;
             e.preventDefault();
             game.cycleWeapon(e.deltaY > 0 ? 1 : -1);
         }, { passive: false });
 
         container.addEventListener('mousedown', (e) => {
+            if (e.target?.closest?.('button, input, select, textarea, [role="button"]')) return;
+            if (e.button === 1) {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyN');
+                return;
+            }
             // Bot/synthetic presses (virtual mouse, autoplay, playtests) must
             // act as real attacks even without pointer lock, which embedded
             // players and headless test windows routinely deny. Human first
             // clicks still request pointer lock as before.
             const botDriven = e.isTrusted === false ||
                 (window.GraveGainBotInput && window.GraveGainBotInput.isBotControl());
-            if (document.pointerLockElement !== container && !botDriven) {
-                requestPointerLockSafely(container);
-            } else {
-                if (e.button === 0) {
-                    this.mouse.click = true;
-                    this.mouse.fireDown = true;
-                } else if (e.button === 2) {
-                    this.mouse.aiming = true;
-                    this.mouse.rightClick = true;
-                }
+            if (document.pointerLockElement !== container && !botDriven) requestPointerLockSafely(container);
+            if (!botDriven && e.button === 2) {
+                this.mouse.lookDrag = true;
+                this.mouse.lastLookX = e.clientX;
+                this.mouse.lastLookY = e.clientY;
+                this.mouse.lookRebase = false;
+            }
+            if (e.button === 0) {
+                this.mouse.click = true;
+                this.mouse.fireDown = true;
+            } else if (e.button === 2) {
+                this.mouse.aiming = true;
+                this.mouse.rightClick = true;
             }
         });
 
@@ -117,7 +134,7 @@ class InputManager {
                 return;
             }
             if (code === 'KeyF' && window.GraveGainGame && window.GraveGainGame.player) {
-                window.GraveGainGame.player.triggerAbility();
+                this.castAbility();
                 return;
             }
             this.keys[code] = true;
@@ -128,22 +145,57 @@ class InputManager {
             if (e.button === 0) this.mouse.fireDown = false;
             if (e.button === 2) {
                 this.mouse.aiming = false;
+                this.mouse.lookDrag = false;
             }
+            if (e.buttons === 0) this.mouse.lookDrag = false;
+        });
+        document.addEventListener('pointerlockchange', () => {
+            this.mouse.lookRebase = true;
         });
         window.addEventListener('blur', () => {
+            this.mouse.click = false;
             this.mouse.fireDown = false;
             this.mouse.aiming = false;
+            this.mouse.rightClick = false;
             this.mouse.isBlocking = false;
+            this.mouse.lookDrag = false;
+            this.mouse.lookRebase = true;
+            Object.keys(this.keys).forEach(code => { this.keys[code] = false; });
+            this.joystick.active = false;
+            this.joystick.x = 0;
+            this.joystick.y = 0;
+            this.cryptStick.sprint = false;
+            this.touchLook.active = false;
+            this.tap.pointerId = null;
+            this.tap.downT = 0;
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === container && window.GraveGainGame && window.GraveGainGame.player) {
-                const p = window.GraveGainGame.player;
-                p.yaw -= e.movementX * this.lookSensitivity;
-                const dy = this.invertY ? -e.movementY : e.movementY;
+            const game = window.GraveGainGame;
+            const locked = document.pointerLockElement === container;
+            if (game && game.player && (locked || this.mouse.lookDrag)) {
+                if (locked) {
+                    this.mouse.lastLookX = e.clientX;
+                    this.mouse.lastLookY = e.clientY;
+                    this.mouse.lookRebase = false;
+                } else if (this.mouse.lookRebase) {
+                    this.mouse.lastLookX = e.clientX;
+                    this.mouse.lastLookY = e.clientY;
+                    this.mouse.lookRebase = false;
+                    return;
+                }
+                const dx = locked ? e.movementX : e.clientX - this.mouse.lastLookX;
+                const rawDy = locked ? e.movementY : e.clientY - this.mouse.lastLookY;
+                if (!locked) {
+                    this.mouse.lastLookX = e.clientX;
+                    this.mouse.lastLookY = e.clientY;
+                }
+                const p = game.player;
+                p.yaw -= dx * this.lookSensitivity;
+                const dy = this.invertY ? -rawDy : rawDy;
                 p.pitch -= dy * this.lookSensitivity;
                 p.pitch = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, p.pitch));
-                this.lastLookDelta = (this.lastLookDelta || 0) + Math.abs(e.movementX) + Math.abs(e.movementY);
+                this.lastLookDelta = (this.lastLookDelta || 0) + Math.abs(dx) + Math.abs(rawDy);
             }
         });
     }
@@ -220,6 +272,13 @@ class InputManager {
             joystickContainer.addEventListener('pointerup', onJoyEnd);
             joystickContainer.addEventListener('pointercancel', onJoyEnd);
             joystickContainer.addEventListener('lostpointercapture', onJoyEnd);
+            window.addEventListener('blur', () => {
+                joystickPointerId = null;
+                this.joystick.active = false;
+                this.joystick.x = 0;
+                this.joystick.y = 0;
+                knob.style.transform = 'translate(-50%, -50%)';
+            });
         }
 
         // Mobile Touch Look Gesture
@@ -261,6 +320,10 @@ class InputManager {
             lookZone.addEventListener('pointerup', endLook);
             lookZone.addEventListener('pointercancel', endLook);
             lookZone.addEventListener('lostpointercapture', endLook);
+            window.addEventListener('blur', () => {
+                lookPointerId = null;
+                this.touchLook.active = false;
+            });
         }
 
         // Mobile Action Buttons
@@ -270,18 +333,68 @@ class InputManager {
         const jumpBtn = document.getElementById('mobileJumpBtn');
         const potionBtn = document.getElementById('mobilePotionBtn');
         const reloadBtn = document.getElementById('mobileReloadBtn');
+        const grenadeBtn = document.getElementById('mobileGrenadeBtn');
+        const launcherBtn = document.getElementById('mobileLauncherBtn');
+        const meleeBtn = document.getElementById('mobileMeleeBtn');
+        const weaponMeleeBtn = document.getElementById('mobileWeaponMeleeBtn');
+        const slideBtn = document.getElementById('mobileSlideBtn');
         const weaponPrevBtn = document.getElementById('mobileWeaponPrevBtn');
         const weaponNextBtn = document.getElementById('mobileWeaponNextBtn');
+        const dropWeaponBtn = document.getElementById('mobileDropWeaponBtn');
+        const aimBtn = document.getElementById('mobileAimBtn');
+        const leanLeftBtn = document.getElementById('mobileLeanLeftBtn');
+        const leanRightBtn = document.getElementById('mobileLeanRightBtn');
         const waitBtn = document.getElementById('mobileWaitBtn');
 
-        if (attackBtn) {
-            attackBtn.addEventListener('pointerdown', (e) => {
+        [[leanLeftBtn, 'KeyZ'], [leanRightBtn, 'KeyX']].forEach(([button, code]) => {
+            if (!button) return;
+            let pointerId = null;
+            const stopLean = (e) => {
+                if (e && e.pointerId !== pointerId) return;
+                pointerId = null;
+                this.keys[code] = false;
+            };
+            button.addEventListener('pointerdown', (e) => {
+                if (pointerId !== null) return;
                 e.preventDefault();
+                pointerId = e.pointerId;
+                try { button.setPointerCapture?.(e.pointerId); } catch (_) {}
+                this.keys[code] = true;
+            });
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(eventName => {
+                button.addEventListener(eventName, stopLean);
+            });
+            button.addEventListener('click', (e) => {
+                if (e.detail === 0) {
+                    this.keys[code] = true;
+                    requestAnimationFrame(() => { this.keys[code] = false; });
+                }
+            });
+            window.addEventListener('blur', () => stopLean());
+        });
+
+        if (attackBtn) {
+            let attackPointerId = null;
+            attackBtn.addEventListener('pointerdown', (e) => {
+                if (attackPointerId !== null) return;
+                e.preventDefault();
+                attackPointerId = e.pointerId;
+                try { attackBtn.setPointerCapture?.(e.pointerId); } catch (_) {}
                 this.mouse.click = true;
+                this.mouse.fireDown = true;
+            });
+            const endAttack = (e) => {
+                if (attackPointerId === null || (e && e.pointerId !== attackPointerId)) return;
+                attackPointerId = null;
+                this.mouse.fireDown = false;
+            };
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(eventName => {
+                attackBtn.addEventListener(eventName, endAttack);
             });
             attackBtn.addEventListener('click', (e) => {
                 if (e.detail === 0) this.mouse.click = true;
             });
+            window.addEventListener('blur', () => endAttack());
         }
 
         if (reloadBtn) {
@@ -291,6 +404,65 @@ class InputManager {
             });
             reloadBtn.addEventListener('click', (e) => {
                 if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.reloadWeapon();
+            });
+        }
+
+        if (grenadeBtn) {
+            grenadeBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyG');
+            });
+            grenadeBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyG');
+            });
+        }
+
+        if (launcherBtn) {
+            launcherBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyY');
+            });
+            launcherBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyY');
+            });
+        }
+
+        if (meleeBtn) {
+            meleeBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyV');
+            });
+            meleeBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyV');
+            });
+        }
+
+        if (weaponMeleeBtn) {
+            weaponMeleeBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyN');
+            });
+            weaponMeleeBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyN');
+            });
+        }
+
+        if (slideBtn) {
+            slideBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                this.keys['KeyC'] = true;
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyC');
+            });
+            const releaseCrouch = () => { this.keys['KeyC'] = false; };
+            ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach(eventName => {
+                slideBtn.addEventListener(eventName, releaseCrouch);
+            });
+            slideBtn.addEventListener('click', (e) => {
+                if (e.detail === 0) {
+                    this.keys['KeyC'] = true;
+                    if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyC');
+                    requestAnimationFrame(releaseCrouch);
+                }
             });
         }
 
@@ -312,10 +484,39 @@ class InputManager {
                 if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.cycleWeapon(1);
             });
         }
+        if (dropWeaponBtn) {
+            dropWeaponBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyH');
+            });
+            dropWeaponBtn.addEventListener('click', (e) => {
+                if (e.detail === 0 && window.GraveGainGame) window.GraveGainGame.handleGameplayKey('KeyH');
+            });
+        }
+        if (aimBtn) {
+            const stopAim = () => { this.mouse.aiming = false; };
+            aimBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                this.mouse.aiming = true;
+            });
+            ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach(eventName => {
+                aimBtn.addEventListener(eventName, stopAim);
+            });
+            aimBtn.addEventListener('click', (e) => {
+                if (e.detail === 0) {
+                    this.mouse.aiming = true;
+                    requestAnimationFrame(stopAim);
+                }
+            });
+        }
 
         if (blockBtn) {
             blockBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
+                if (window.GraveGainGame?.controlMode === 'turnbased') {
+                    window.GraveGainGame.executeTurnAction('wait');
+                    return;
+                }
                 this.mouse.isBlocking = true;
                 this.mouse.rightClick = true;
             });
@@ -327,6 +528,10 @@ class InputManager {
             blockBtn.addEventListener('lostpointercapture', endBlock);
             blockBtn.addEventListener('click', (e) => {
                 if (e.detail !== 0) return;
+                if (window.GraveGainGame?.controlMode === 'turnbased') {
+                    window.GraveGainGame.executeTurnAction('wait');
+                    return;
+                }
                 this.mouse.rightClick = true;
                 this.mouse.isBlocking = true;
                 requestAnimationFrame(() => { this.mouse.isBlocking = false; });
@@ -336,17 +541,9 @@ class InputManager {
         if (abilityBtn) {
             abilityBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
-                this.keys['KeyF'] = true;
             });
-            const clearAbility = () => { this.keys['KeyF'] = false; };
-            abilityBtn.addEventListener('pointerup', clearAbility);
-            abilityBtn.addEventListener('pointercancel', clearAbility);
-            abilityBtn.addEventListener('lostpointercapture', clearAbility);
             abilityBtn.addEventListener('click', (e) => {
-                if (e.detail === 0) {
-                    this.keys['KeyF'] = true;
-                    requestAnimationFrame(clearAbility);
-                }
+                if (e.detail === 0) this.castAbility();
             });
         }
 
@@ -409,16 +606,26 @@ class InputManager {
         if (tapZone && !tapZone.dataset.ggTap) {
             tapZone.dataset.ggTap = '1';
             tapZone.addEventListener('pointerdown', (e) => {
+                if (this.tap.pointerId !== null) return;
+                this.tap.pointerId = e.pointerId;
                 this.tap.downX = e.clientX;
                 this.tap.downY = e.clientY;
                 this.tap.downT = performance.now();
             });
             tapZone.addEventListener('pointerup', (e) => {
+                if (e.pointerId !== this.tap.pointerId) return;
                 const dt = performance.now() - (this.tap.downT || 0);
                 const moved = Math.hypot(e.clientX - this.tap.downX, e.clientY - this.tap.downY);
+                this.tap.pointerId = null;
+                this.tap.downT = 0;
                 if (dt <= this.tap.maxMs && moved <= this.tap.maxMovePx) {
                     this.tapInteract(e.clientX, e.clientY);
                 }
+            });
+            tapZone.addEventListener('pointercancel', (e) => {
+                if (e.pointerId !== this.tap.pointerId) return;
+                this.tap.pointerId = null;
+                this.tap.downT = 0;
             });
         }
     }
@@ -482,6 +689,7 @@ class InputManager {
         const knob = document.getElementById('mobileJoystickKnob');
         if (!container || !base || !knob || base.dataset.ggCrypt) return;
         base.dataset.ggCrypt = '1';
+        let cryptPointerId = null;
 
         const dock = () => {
             base.style.left = this.cryptStick.dockLeft || '';
@@ -507,6 +715,7 @@ class InputManager {
             const baseRect = base.getBoundingClientRect();
             if (e.clientX >= baseRect.left - 8 && e.clientX <= baseRect.right + 8 &&
                 e.clientY >= baseRect.top - 8 && e.clientY <= baseRect.bottom + 8) return; // on the docked stick: let its own handler run
+            cryptPointerId = e.pointerId;
             this.cryptStick.floating = true;
             base.style.left = '0';
             base.style.top = '0';
@@ -520,7 +729,7 @@ class InputManager {
         });
 
         const onMove = (e) => {
-            if (!this.cryptStick.floating || !this.joystick.active) return;
+            if (e.pointerId !== cryptPointerId || !this.cryptStick.floating || !this.joystick.active) return;
             const dx = e.clientX - this.joystick.originX;
             const dy = e.clientY - this.joystick.originY;
             const maxRadius = 48;
@@ -544,7 +753,8 @@ class InputManager {
             }
         };
         const onUp = (e) => {
-            if (!this.cryptStick.floating) return;
+            if (e.pointerId !== cryptPointerId || !this.cryptStick.floating) return;
+            cryptPointerId = null;
             this.joystick.active = false;
             this.joystick.x = 0;
             this.joystick.y = 0;
@@ -553,9 +763,20 @@ class InputManager {
             knob.style.transform = 'translate(-50%, -50%)';
             dock();
         };
+        window.addEventListener('blur', () => {
+            cryptPointerId = null;
+            this.joystick.active = false;
+            this.joystick.x = 0;
+            this.joystick.y = 0;
+            this.cryptStick.sprint = false;
+            this.keys['ShiftLeft'] = false;
+            knob.style.transform = 'translate(-50%, -50%)';
+            dock();
+        });
         container.addEventListener('pointermove', onMove);
         container.addEventListener('pointerup', onUp);
         container.addEventListener('pointercancel', onUp);
+        container.addEventListener('lostpointercapture', onUp);
     }
 
     // Tap-to-interact raycast. A quick tap casts from the camera through the
@@ -577,7 +798,7 @@ class InputManager {
                 ray.far = 900;
                 const targets = [];
                 (game.enemies || []).forEach((en) => {
-                    if (!en || en.isDead || !en.group3d) return;
+                    if (!en || en.hp <= 0 || !en.group3d) return;
                     targets.push(en.group3d);
                 });
                 (game.loot || []).forEach((l) => { if (l && !l.picked && l.group3d) targets.push(l.group3d); });
@@ -628,6 +849,14 @@ class InputManager {
         if (!ch) return;
         ch.classList.add('hit');
         setTimeout(() => ch.classList.remove('hit'), 160);
+    }
+
+    castAbility() {
+        const game = window.GraveGainGame;
+        if (!game || !game.player || game.player.isDead) return false;
+        if (game.controlMode === 'turnbased') return game.executeTurnAction('ability');
+        game.player.triggerAbility();
+        return true;
     }
 
     // Spell-wheel button: the ability key becomes a radial wheel hub.
@@ -683,11 +912,7 @@ class InputManager {
         const fireSpell = (kind) => {
             const game = window.GraveGainGame;
             if (kind === 'attack') this.mouse.click = true;
-            else if (kind === 'cast') {
-                this.keys['KeyF'] = true;
-                requestAnimationFrame(() => { this.keys['KeyF'] = false; });
-                if (game && game.player) { try { game.player.triggerAbility(); } catch (_) {} }
-            }
+            else if (kind === 'cast') this.castAbility();
             else if (kind === 'potion') { if (game) game.usePotion(); }
             else if (kind === 'move') {
                 if (game && game.controlMode === 'turnbased') game.executeTurnAction('wait');
@@ -706,13 +931,21 @@ class InputManager {
             e.stopPropagation();
         });
 
-        // Hold-to-open on the ability button; plain tap still instant-casts
-        // via the pre-existing pointerdown handler above (KeyF pulse).
-        abilityBtn.addEventListener('pointerdown', () => {
+        // Hold opens the wheel without casting; a quick release casts once.
+        abilityBtn.addEventListener('pointerdown', (e) => {
             clearTimeout(this.spellWheel.holdTimer);
-            this.spellWheel.holdTimer = setTimeout(openWheel, this.spellWheel.holdMs);
+            this.spellWheel.holdTriggered = false;
+            try { abilityBtn.setPointerCapture?.(e.pointerId); } catch (_) {}
+            this.spellWheel.holdTimer = setTimeout(() => {
+                this.spellWheel.holdTriggered = true;
+                openWheel();
+            }, this.spellWheel.holdMs);
         });
-        ['pointerup', 'pointercancel', 'lostpointercapture', 'pointerleave'].forEach((ev) => {
+        abilityBtn.addEventListener('pointerup', () => {
+            clearTimeout(this.spellWheel.holdTimer);
+            if (!this.spellWheel.holdTriggered) this.castAbility();
+        });
+        ['pointercancel', 'lostpointercapture'].forEach((ev) => {
             abilityBtn.addEventListener(ev, () => clearTimeout(this.spellWheel.holdTimer));
         });
         document.addEventListener('keydown', (e) => { if (e.code === 'Escape' && this.spellWheel.open) closeWheel(); });

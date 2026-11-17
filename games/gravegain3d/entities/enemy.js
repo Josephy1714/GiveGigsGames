@@ -16,6 +16,7 @@
             this.dmg = typeData.dmg * difficultyScale * (typeData.damageMultiplier || 1);
             this.speed = typeData.speed;
             this.elite = !!typeData.elite;
+            this.enraged = false;
             this.variantKey = EnemyEntity.matchVariant(typeData.variant || typeData.name || '');
             var styleScale = (EnemyEntity.STYLES[this.variantKey] || {}).scale || 1.0;
             this.scale = (typeData.scale || styleScale || 1.0) * (this.elite ? 1.35 : 1.0);
@@ -28,7 +29,14 @@
             this.spawnX = x;
             this.spawnY = y;
             this.attackTimer = 0;
+            this.attackWindupTimer = 0;
+            this.pendingAttack = null;
             this.attackInterval = typeData.attackInterval || 1.0;
+            this.burnTimer = 0;
+            this.burnFxTimer = 0;
+            this.poisonTimer = 0;
+            this.poisonFxTimer = 0;
+            this.chillTimer = 0;
 
             this.group3d = new THREE.Group();
             this.group3d.scale.set(this.scale, this.scale, this.scale);
@@ -52,6 +60,8 @@
             else eyeColor = this.isBoss ? 0xff0044 : (typeData.type === 'mage' ? 0x9333ea : 0xff2222);
             if (typeData.elite && !this.isBoss) eyeColor = 0xffd700;
             const eyeMat = new THREE.MeshBasicMaterial({ color: eyeColor });
+            this.eyeMaterial = eyeMat;
+            this.eyeBaseColor = eyeColor;
 
             if (this.type === 'skull' || this.variantKey === 'drone') {
                 // Flying flaming skull (Drone Array rides the same rig + rotor)
@@ -277,12 +287,50 @@
             }
         }
 
+        tickStatusEffects(dt, game) {
+            if (this.burnTimer > 0) {
+                this.burnTimer = Math.max(0, this.burnTimer - dt);
+                this.hp -= 8 * dt;
+                this.burnFxTimer -= dt;
+                if (this.burnFxTimer <= 0 && this.hp > 0) {
+                    this.burnFxTimer = 0.35;
+                    game.vfx.spawnSparks(this.x, this.y, 0xf97316, 2);
+                }
+            }
+            if (this.poisonTimer > 0) {
+                this.poisonTimer = Math.max(0, this.poisonTimer - dt);
+                this.hp -= 8 * dt;
+                this.poisonFxTimer -= dt;
+                if (this.poisonFxTimer <= 0 && this.hp > 0) {
+                    this.poisonFxTimer = 0.35;
+                    game.vfx.spawnSparks(this.x, this.y, 0x4ade80, 2);
+                }
+            }
+            if (this.chillTimer > 0) this.chillTimer = Math.max(0, this.chillTimer - dt);
+        }
+
         update(dt, player, physics, tilemap, game) {
+            this.tickStatusEffects(dt, game);
+            if (this.hp <= 0) return;
+            if (this.isBoss && !this.enraged && this.hp / this.maxHp <= 0.5) {
+                this.enraged = true;
+                this.speed *= 1.2;
+                this.dmg *= 1.12;
+                this.attackInterval *= 0.8;
+                this.eyeBaseColor = 0xff1538;
+                if (this.eyeMaterial) this.eyeMaterial.color.setHex(this.eyeBaseColor);
+                if (game.vfx && game.vfx.spawnSparks) {
+                    game.vfx.spawnSparks(this.x, this.y, 0xff3b20, 42);
+                }
+                if (game.audio && game.audio.playSfx) game.audio.playSfx('boss_roar', 1.15);
+                if (game.combatText && game.combatText.showBanner) {
+                    game.combatText.showBanner(`${this.name} ENRAGED`);
+                }
+            }
             const dist = Math.hypot(player.x - this.x, player.y - this.y);
 
             // Decay knockback
-            this.x += this.kx * dt;
-            this.y += this.ky * dt;
+            physics.moveEntityWithCollision(this, this.kx * dt, this.ky * dt, tilemap, [player]);
             this.kx -= this.kx * 8 * dt;
             this.ky -= this.ky * 8 * dt;
 
@@ -294,35 +342,115 @@
                 this.state = 'chase';
             }
 
-            if (this.state === 'chase') {
+            if (this.attackWindupTimer > 0) {
+                // Give the player a readable response window before attacks
+                // resolve. Mages keep tracking during the cast; melee enemies
+                // commit to the swing so moving out of reach can dodge it.
+                this.attackWindupTimer = Math.max(0, this.attackWindupTimer - dt);
+                if (this.pendingAttack === 'ranged') {
+                    this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                }
+                if (this.eyeMaterial) {
+                    const pulse = Math.sin((0.45 - this.attackWindupTimer) * 24) > 0;
+                    this.eyeMaterial.color.setHex(pulse ? 0xffb020 : (this.enraged ? 0xff1538 : 0xff4b32));
+                }
+                if (this.leftArm && this.rightArm) {
+                    const drawBack = (this.pendingAttack === 'melee' || this.pendingAttack === 'charge' || this.pendingAttack === 'slam') ? 0.85 : 0.35;
+                    const windup = Math.max(0, Math.min(1, 1 - this.attackWindupTimer / 0.45));
+                    this.leftArm.rotation.x = -drawBack * windup;
+                    this.rightArm.rotation.x = -drawBack * windup;
+                }
+
+                if (this.attackWindupTimer <= 0) {
+                    const attack = this.pendingAttack;
+                    this.pendingAttack = null;
+                    if (this.eyeMaterial) this.eyeMaterial.color.setHex(this.eyeBaseColor);
+                    if (attack === 'charge') {
+                        // The Berserker commits to a straight, collision-aware
+                        // rush. Its direction locks during the windup, so a
+                        // lateral dodge can make it miss.
+                        const lungeDistance = this.enraged ? 118 : 82;
+                        physics.moveEntityWithCollision(
+                            this,
+                            Math.cos(this.angle) * lungeDistance,
+                            Math.sin(this.angle) * lungeDistance,
+                            tilemap,
+                            [player]
+                        );
+                    }
+                    const impactDist = Math.hypot(player.x - this.x, player.y - this.y);
+                    if (attack === 'ranged') {
+                        if (this.isBoss && this.variantKey === 'drone' && impactDist < 540 && impactDist > 150) {
+                            const baseAngle = this.angle;
+                            [-0.14, 0, 0.14].forEach(offset => {
+                                const shotAngle = baseAngle + offset;
+                                game.spawnProjectile(this.x, 22, this.y,
+                                    Math.cos(shotAngle) * 245, 0, Math.sin(shotAngle) * 245,
+                                    this.dmg * 0.58, false, 0x22d3ee, 'magic');
+                            });
+                            game.audio.playSfx('spell', 0.95);
+                        } else if (impactDist < 360 && impactDist > 120) {
+                            const forwardX = Math.cos(this.angle);
+                            const forwardY = Math.sin(this.angle);
+                            game.spawnProjectile(this.x, 18, this.y, forwardX * 220, 0, forwardY * 220, this.dmg, false, 0x9333ea, 'magic');
+                            game.audio.playSfx('spell', 0.8);
+                        }
+                    } else if (attack === 'slam') {
+                        const slamRadius = this.enraged ? 112 : 86;
+                        game.vfx.spawnSparks(this.x, this.y, 0xfbbf24, 30);
+                        game.audio.playSfx('explode', 0.9);
+                        if (impactDist <= slamRadius) {
+                            player.takeDamage(this.dmg, 'normal', { x: this.x, y: this.y });
+                            game.combatText.spawnText(player.x, 24, player.y, 'THANE SLAM', 'damage');
+                        }
+                    } else if ((attack === 'melee' || attack === 'charge') && impactDist < this.radius + player.radius + 12) {
+                        player.takeDamage(this.dmg, 'normal', { x: this.x, y: this.y });
+                        if (this.type === 'skull') {
+                            // Kamikaze skulls only detonate if their warned
+                            // attack actually connects; dodging lets them live.
+                            game.vfx.spawnSparks(this.x, this.y, 0xff4422, 30);
+                            game.audio.playSfx('explode');
+                            this.hp = 0;
+                        }
+                    }
+                }
+            } else if (this.state === 'chase') {
                 this.angle = Math.atan2(player.y - this.y, player.x - this.x);
 
-                if (this.type === 'mage' && dist < 320 && dist > 140) {
-                    // Ranged attacker keeps distance and casts shadow skull
+                const droneBoss = this.isBoss && this.variantKey === 'drone';
+                const rangedAttacker = this.type === 'mage' || droneBoss;
+                const rangedMax = droneBoss ? 520 : 320;
+                const rangedMin = droneBoss ? 160 : 140;
+                if (rangedAttacker && dist < rangedMax && dist > rangedMin) {
+                    // The eye flash and short cast give the player time to
+                    // dodge or break line of fire before the shadow skull.
                     if (this.attackTimer <= 0) {
-                        this.attackTimer = 2.4;
-                        const forwardX = Math.cos(this.angle);
-                        const forwardY = Math.sin(this.angle);
-                        game.spawnProjectile(this.x, 18, this.y, forwardX * 220, 0, forwardY * 220, this.dmg, false, 0x9333ea, 'magic');
-                        game.audio.playSfx('spell', 0.8);
+                        const rangedCooldown = this.isBoss ? this.attackInterval : 2.4;
+                        this.attackTimer = this.chillTimer > 0 ? rangedCooldown / 0.65 : rangedCooldown;
+                        this.attackWindupTimer = 0.45;
+                        this.pendingAttack = 'ranged';
+                        game.vfx.spawnSparks(this.x, this.y, droneBoss ? 0x22d3ee : 0x9333ea, this.isBoss ? 18 : 9);
                     }
                 } else {
                     // Melee pursuit
-                    const vx = Math.cos(this.angle) * this.speed * dt;
-                    const vy = Math.sin(this.angle) * this.speed * dt;
-                    physics.moveEntityWithCollision(this, vx, vy, tilemap);
+                    const moveSpeed = this.speed * (this.chillTimer > 0 ? 0.65 : 1);
+                    const vx = Math.cos(this.angle) * moveSpeed * dt;
+                    const vy = Math.sin(this.angle) * moveSpeed * dt;
+                    physics.moveEntityWithCollision(this, vx, vy, tilemap, [player]);
 
                     // Melee attack range check
                     if (dist < this.radius + player.radius + 12) {
                         if (this.attackTimer <= 0) {
-                            this.attackTimer = this.attackInterval;
-                            player.takeDamage(this.dmg);
-
-                            if (this.type === 'skull') {
-                                // Kamikaze explosion
-                                game.vfx.spawnSparks(this.x, this.y, 0xff4422, 30);
-                                game.audio.playSfx('explode');
-                                this.hp = 0;
+                            this.attackTimer = this.chillTimer > 0 ? this.attackInterval / 0.65 : this.attackInterval;
+                            this.attackWindupTimer = 0.38;
+                            this.pendingAttack = this.isBoss && this.variantKey === 'berserker'
+                                ? 'charge'
+                                : (this.isBoss && this.variantKey === 'thane' ? 'slam' : 'melee');
+                            const warningColor = this.type === 'skull' ? 0xff4422
+                                : (this.pendingAttack === 'charge' ? 0xef4444 : (this.pendingAttack === 'slam' ? 0xfbbf24 : 0xffb020));
+                            game.vfx.spawnSparks(this.x, this.y, warningColor, this.isBoss ? 18 : 8);
+                            if (this.pendingAttack === 'slam') {
+                                game.combatText.spawnText(this.x, 34, this.y, 'SLAM WINDUP', 'crit');
                             }
                         }
                     }
@@ -357,17 +485,19 @@
     }
 
     class LootItem {
-        constructor(x, y, type = 'gold', value = 15) {
+        constructor(x, y, type = 'gold', value = 15, weaponData = null) {
             const ProceduralTextures = window.GraveGainProceduralTextures;
             this.x = x;
             this.y = y;
             this.type = type;
             this.value = value;
+            this.weaponData = weaponData ? { ...weaponData } : null;
+            this.pickupDelay = 0;
             this.radius = 12;
             this.pulse = Math.random() * Math.PI;
 
             this.group3d = new THREE.Group();
-            const emoji = type === 'gold' ? '🪙' : (type === 'potion' ? '🧪' : '📜');
+            const emoji = type === 'gold' ? '🪙' : (type === 'potion' ? '🧪' : (type === 'ammo' ? '📦' : (type === 'grenade' ? '💣' : (type === 'weapon' ? '🔫' : '📜'))));
             this.sprite = ProceduralTextures.createEmojiSprite(emoji, 64);
             this.sprite.position.y = 8;
             this.group3d.add(this.sprite);
@@ -377,6 +507,8 @@
         update(dt, player, range) {
             this.pulse += 5 * dt;
             this.sprite.position.y = 8 + Math.sin(this.pulse) * 3;
+            this.pickupDelay = Math.max(0, this.pickupDelay - dt);
+            if (this.pickupDelay > 0) return;
 
             const dist = Math.hypot(player.x - this.x, player.y - this.y);
             if (dist < range) {

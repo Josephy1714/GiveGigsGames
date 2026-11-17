@@ -1,5 +1,5 @@
 /* GraveGain3D AAA - 70 run stats.
-   Owns the run clock: resets shots/hits/combo on initRun, counts trigger
+   Owns the run clock: resets shots/hits/combo on initRun, counts weapon
    pulls and confirmed hits, and stamps a stats ribbon (time · accuracy ·
    max combo · depth · kills · gold) onto the game-over screen. */
 (function () {
@@ -19,6 +19,7 @@
             AAA.state.runStart = Date.now();
             AAA.state.shots = 0;
             AAA.state.hits = 0;
+            AAA.state.headshots = 0;
             AAA.state.maxCombo = 0;
             AAA.state.streak = 0;
             // Drop last run's ribbon so stats never stack.
@@ -29,8 +30,7 @@
             return out;
         });
 
-        // Trigger pulls: melee path. (Ranged projectiles resolve through
-        // applyHitToEnemy on impact, so accuracy stays honest.)
+        // Keep discrete turn-based/class attacks in the accuracy denominator.
         if (typeof game.triggerMeleeAttack === 'function') {
             AAA.wrap(game, 'triggerMeleeAttack', (orig, ...args) => {
                 AAA.state.shots += 1;
@@ -38,8 +38,23 @@
             });
         }
 
+        // Firearms became the real-time primary attack. Count ammunition
+        // actually consumed (including shotgun pellets), while leaving failed
+        // cooldown/empty-mag trigger attempts out of the accuracy denominator.
+        if (typeof game.fireWeapon === 'function') {
+            AAA.wrap(game, 'fireWeapon', (orig, ...args) => {
+                const weapon = game.weaponInventory && game.weaponInventory[game.activeWeaponIndex];
+                const ammoBefore = weapon ? weapon.ammo : 0;
+                const out = orig(...args);
+                if (weapon && weapon.ammo < ammoBefore) AAA.state.shots += weapon.pellets || 1;
+                return out;
+            });
+        }
+
         AAA.wrap(game, 'applyHitToEnemy', (orig, ...args) => {
-            AAA.state.hits += 1;
+            const units = args[3] === 0 ? 0 : Math.max(1, Number(args[3]) || 1);
+            AAA.state.hits += units;
+            AAA.state.headshots += Math.max(0, Number(args[4]) || 0);
             return orig(...args);
         });
 
@@ -57,6 +72,7 @@
                     const cells = [
                         [fmtTime(Date.now() - (AAA.state.runStart || Date.now())), 'Run time'],
                         [`${acc}%`, 'Accuracy'],
+                        [`${AAA.state.headshots || 0}`, 'Headshots'],
                         [`${AAA.state.maxCombo || 0}`, 'Best combo'],
                         [`Layer ${game.floorIndex || 1}`, 'Depth'],
                         [`${game.kills || 0}`, 'Kills'],

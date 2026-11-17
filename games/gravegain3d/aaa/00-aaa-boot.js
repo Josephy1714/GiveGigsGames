@@ -19,8 +19,9 @@
         state: {
             runStart: 0, // Date.now() of current run start
             floor: 1,
-            shots: 0, // melee / trigger pulls this run
-            hits: 0, // confirmed hits this run
+            shots: 0, // bullets or pellets fired this run
+            hits: 0, // bullets or pellets confirmed on target
+            headshots: 0, // confirmed hits on enemy skull meshes
             maxCombo: 0,
             streak: 0
         },
