@@ -13,11 +13,13 @@
 <main class="game" aria-label="GraveGain2dD endless runner">
 <canvas id="game" width="960" height="540"></canvas>
 <header class="hud"><div class="brand">GRAVEGAIN <span style="color:#f3eee0">2D</span></div><div class="stats"><span>✦ <b id="score">0</b> m</span><span>BEST <b id="best">0</b> m</span><span>◈ <b id="gems">0</b></span><span>♥ <b id="hearts">3</b></span></div></header>
-<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault.</p><button id="start">BEGIN RUN</button></div>
+<p id="objective" aria-live="polite" style="position:absolute;top:44px;left:12px;margin:0;color:#fff1a8;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none"></p>
+<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault. Jump onto marked balconies for an upper route.</p><button id="start">BEGIN RUN</button></div>
 <div id="toast" class="toast">VAULT!</div>
 <div id="stickZone" class="stick-zone" aria-label="Movement joystick"><div class="stick-ring"></div><div id="stick" class="stick"></div></div>
 <div class="hint">ONE FINGER · PUSH UP TO JUMP</div>
 </main>
+<script src="run-features.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

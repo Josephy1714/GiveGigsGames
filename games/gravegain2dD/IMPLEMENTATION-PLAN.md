@@ -10,7 +10,7 @@ The complete game package must stay below **10 MB** and work without network acc
 
 - `index.html` contains the responsive game frame, HUD, start/game-over overlay, and one-finger joystick.
 - `game.js` contains the canvas loop, scrolling graveyard, speed control, jumping, generated hazards and pickups, score, lives, and restart flow.
-- `assets/gravegain-sprites.webp` is a transparent 192 × 128 atlas with 24 cells at 32 × 32 pixels; 20 cells contain sprites and the remainder are transparent. The sprites include elf poses, terrain and graveyard props, pickups, and a sparkle.
+- The transparent WebP atlases use 32 × 32 cells. `assets/lira-motion.webp` has 18 hero frames and `assets/moonlit-props.webp` has 12 props, pickups, and effects. The canvas draws the ground.
 - `games/catalog.json` and `games/catalog-data.js` now list the game as featured and recommended.
 - `games/index.html` now leads with GraveGain2dD in the featured carousel.
 - The current package is about 0.04 MB; the repository size checker confirms it is below the 10 MB limit.

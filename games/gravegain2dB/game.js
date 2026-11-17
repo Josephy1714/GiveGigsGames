@@ -26,15 +26,16 @@
 
     /* Fixed timestep: exactly 1/60 sim step; view clamps frame delta 0.1s. */
     var DT = 1 / 60;
+    var VIEW_WIDTH = 960, VIEW_HEIGHT = 540, FLOOR_Y = 430;
     var GRAV = 2200;          // px/s^2
-    var MOVE = 320;           // px/s run speed
-    var AIR_CTL = 0.75;       // air steering factor
+    var MOVE = 365;           // px/s run speed
+    var AIR_CTL = 0.9;       // air steering factor
     var JUMP_V = 820;         // px/s jump velocity
     var COYOTE = 0.10;        // s forgiving ledge grace
     var JBUF = 0.12;          // s jump buffer
-    var DASH_V = 640;         // px/s dash velocity
+    var DASH_V = 780;         // px/s dash velocity
     var DASH_T = 0.16;        // s dash duration
-    var DASH_CD = 0.9;        // s dash cooldown
+    var DASH_CD = 0.72;        // s dash cooldown
     var IFRAMES = 0.25;       // s dash invulnerability
 
     var HEROES = {
@@ -161,6 +162,7 @@
             // nature never sit on a grid.
             var gap = biome.gap[0] + rand() * (biome.gap[1] - biome.gap[0]);
             var base = cursor + Math.floor(rand() * 110);
+            var sectorStart = cursor;
             cursor += gap;
             var propCount = 1 + Math.floor(rand() * 3);
             for (var pi = 0; pi < propCount; pi++) {
@@ -202,20 +204,32 @@
                 var sp = SPECIES[Math.floor(rand() * SPECIES.length)], combo = Object.keys(BUILDS)[Math.floor(rand() * 16)];
                 civs.push({ id: civs.length, x: base + 270, species: sp.name, emoji: sp.emoji, buildId: combo, saved: false, brokenT: 0 });
             }
-            // Verticality: free catwalks at varied heights + occasional
-            // climbable shaft (stacked platforms) with a rooftop reward.
-            var tiers = 1 + Math.floor(rand() * 2);
-            for (var t = 0; t < tiers; t++) {
-                platforms.push({ x: base - 85 + Math.floor(rand() * 120) - 60, w: 140 + Math.floor(rand() * 130),
-                    y: -70 - Math.floor(rand() * 60) - t * (70 + Math.floor(rand() * 50)), biome: biome.id });
+            // Every sector has a staircase to the cross-sector gantries, then a
+            // shorter climb to its lookout. Adjacent steps overlap by design.
+            var gantryY = -296;
+            var stairsX = Math.floor(sectorStart + gap * (seg % 2 ? 0.65 : 0.31));
+            var lookoutSteps = 3 + Math.floor(rand() * 3) + (biome.building === 'tower' ? 1 : 0);
+            for (var step = 1; step <= 4 + lookoutSteps; step++) {
+                if (step === 4) continue; // The gantry is the fourth step.
+                var shift = step % 2 ? -68 : 0;
+                platforms.push({ x: stairsX + shift, w: 146, y: -74 * step,
+                    kind: step === 4 + lookoutSteps ? 'lookout' : 'step', accent: biome.accent });
             }
-            if (rand() > 0.62) {
-                var shaftX = base + 120 + Math.floor(rand() * 200);
-                var shaftBase = -60;
-                for (var lvl = 0; lvl < 3; lvl++) {
-                    platforms.push({ x: shaftX + (lvl % 2 ? 60 : -60), w: 120, y: shaftBase - lvl * 85, biome: biome.id });
-                }
-                pickups.push({ x: shaftX, y: shaftBase - 3 * 85 - 20, weapon: LOOT_WEAPONS[Math.floor(rand() * LOOT_WEAPONS.length)], ammo: 18 + Math.floor(rand() * 15), taken: false });
+            var gantryX = Math.floor(sectorStart + 27);
+            platforms.push({ x: gantryX, w: Math.floor(gap - 54), y: gantryY, kind: 'gantry', accent: biome.accent });
+
+            var lookoutX = stairsX + ((4 + lookoutSteps) % 2 ? -68 : 0) + 73;
+            var lookoutY = -74 * (4 + lookoutSteps);
+            pickups.push({ x: lookoutX + 25, y: lookoutY - 12, weapon: LOOT_WEAPONS[Math.floor(rand() * LOOT_WEAPONS.length)],
+                ammo: 22 + Math.floor(rand() * 13), taken: false });
+            if (seg % 2 === 0) {
+                foes.push({ id: foes.length, type: 'rifle', x: lookoutX - 35, y: lookoutY,
+                    hp: FOES.rifle.hp, maxHp: FOES.rifle.hp, elevated: true, fireCd: 0.9 + rand() });
+            }
+            if (!waveMode && seg % 3 === 1) {
+                var crew = SPECIES[seg % SPECIES.length], buildId = Object.keys(BUILDS)[Math.floor(rand() * 16)];
+                civs.push({ id: civs.length, x: gantryX + 50, y: gantryY, species: crew.name,
+                    emoji: crew.emoji, buildId: buildId, saved: false, brokenT: 0 });
             }
             if (rand() > 0.4) pickups.push({ x: base + 180, y: -12, weapon: LOOT_WEAPONS[Math.floor(rand() * LOOT_WEAPONS.length)], ammo: 18 + Math.floor(rand() * 15), taken: false });
             if (rand() > 0.43) pickups.push({ x: base + 360, y: -12, ammoPack: 16 + Math.floor(rand() * 15), taken: false });
@@ -303,10 +317,14 @@
     function fireWeapon(s, ev) {
         var p = s.player;
         if (p.weaponSlot === 'pickup' && p.pickupAmmo <= 0) { p.weapon = p.starterWeapon; p.weaponSlot = 'starter'; }
-        var w = WEAPONS[p.weapon] || WEAPONS.pulse;
+        var weapon = p.weapon;
+        var w = WEAPONS[weapon] || WEAPONS.pulse;
         if (p.fireCd > 0) return;
         if (p.weaponSlot === 'pickup') { p.pickupAmmo -= 1; if (p.pickupAmmo <= 0) ev.push({ t: 'empty' }); }
         p.fireCd = w.cd;
+        p.muzzleUntil = s.ticks + 3;
+        p.muzzleKick = w.blast ? 12 : (w.pellets ? 9 : 5);
+        if (p.muzzleKick >= 9) s.shake = Math.max(s.shake, p.muzzleKick * 0.32);
         var buildDmg = (BUILDS[s.buildId] || BUILDS['human:warrior']).damage;
         var n = w.pellets || 1;
         for (var i = 0; i < n; i++) {
@@ -320,7 +338,7 @@
         }
         s.shotsFired += n;
         if (p.weaponSlot === 'pickup' && p.pickupAmmo <= 0) { p.weapon = p.starterWeapon; p.weaponSlot = 'starter'; }
-        ev.push({ t: 'shot', weapon: p.weapon });
+        ev.push({ t: 'shot', weapon: weapon });
     }
 
     function altFire(s, ev) {
@@ -329,58 +347,89 @@
         p.altCd = 0.72; p.altAmmo -= 1;
         s.shots.push({
             x: p.x, y: p.y - 20, vx: p.face * 420, vy: -260,
-            dmg: 75, pierce: false, blast: 150, life: 2.0, foe: false
+            dmg: 75, pierce: false, blast: 150, gravity: 700, life: 2.0, foe: false
         });
         ev.push({ t: 'alt', alt: p.alt });
     }
 
-    function breachExplosion(s, x, y, damage, radius, ev, directTarget) {
-        ev.push({ t: 'blast', x: Math.round(x), y: Math.round(y), radius: radius });
-        s.shake = Math.max(s.shake, Math.min(18, radius * 0.11));
-        var selfDx = s.player.x - x, selfDy = (s.player.y - 20) - y;
-        if (selfDx * selfDx + selfDy * selfDy <= radius * radius) { var selfDmg = Math.max(4, Math.ceil(damage * 0.34)); hurtPlayer(s, selfDmg); ev.push({ t: 'hurt', dmg: selfDmg, selfBlast: true }); }
-        var ux = s.unstable.x - x, uy = -40 - y;
-        if (ux * ux + uy * uy <= (radius + 66) * (radius + 66)) {
-            s.unstable.hp -= damage;
-            ev.push({ t: 'hit-support', hp: Math.max(0, Math.ceil(s.unstable.hp)) });
+    function registerChain(s) {
+        s.chain += 1;
+        s.chainT = 3;
+        s.comboBest = Math.max(s.comboBest, s.chain);
+    }
+
+    function damageProp(s, prop, damage, ev, blasts) {
+        if (!prop.alive) return;
+        prop.hp -= damage;
+        prop.hitUntil = s.ticks + 5;
+        if (prop.hp > 0) return;
+
+        prop.alive = false;
+        s.demolition += 1;
+        registerChain(s);
+        ev.push({ t: 'demolish', kind: prop.kind, x: Math.round(prop.x), y: prop.y - 36, chain: s.chain });
+        for (var i = s.platforms.length - 1; i >= 0; i--) {
+            if (s.platforms[i].supportsBy !== prop.id) continue;
+            var platform = s.platforms.splice(i, 1)[0];
+            s.shake = Math.max(s.shake, 7);
+            ev.push({ t: 'collapse-platform', x: platform.x, y: platform.y, width: platform.w });
         }
-        for (var i = 0; i < s.foes.length; i++) {
-            var foe = s.foes[i];
-            if (foe.hp <= 0 || foe === directTarget) continue;
-            var dx = foe.x - x, dy = (foe.y - 20) - y;
-            if (dx * dx + dy * dy <= radius * radius) {
-                foe.hp -= Math.max(1, Math.ceil(damage * (1 - Math.sqrt(dx * dx + dy * dy) / (radius * 1.45))));
-                if (foe.hp <= 0) {
-                    s.kills += 1; s.chain += 1; s.chainT = 3; s.comboBest = Math.max(s.comboBest, s.chain);
-                    ev.push({ t: 'kill', type: foe.type, chain: s.chain, explosive: true });
-                } else ev.push({ t: 'hit', type: foe.type });
+        if (prop.kind === 'fuel') {
+            blasts.push({ x: prop.x, y: prop.y - 36, damage: 48, radius: 118 });
+        }
+    }
+
+    function resolveBlasts(s, blasts, ev) {
+        // Each fuel prop queues its explosion once, when it changes from alive to destroyed.
+        for (var i = 0; i < blasts.length; i++) {
+            var blast = blasts[i], x = blast.x, y = blast.y, radius = blast.radius, damage = blast.damage;
+            ev.push({ t: 'blast', x: Math.round(x), y: Math.round(y), radius: radius });
+            if (Math.abs(s.player.x - x) < 520) s.shake = Math.max(s.shake, Math.min(18, radius * 0.11));
+            if (Math.hypot(s.player.x - x, s.player.y - 20 - y) <= radius) {
+                var selfDmg = Math.max(4, Math.ceil(damage * 0.34));
+                hurtPlayer(s, selfDmg);
+                ev.push({ t: 'hurt', dmg: selfDmg, selfBlast: true });
             }
-        }
-        for (var j = 0; j < s.props.length; j++) {
-            var prop = s.props[j];
-            if (!prop.alive) continue;
-            var pdx = prop.x - x, pdy = (prop.y - 36) - y;
-            if (pdx * pdx + pdy * pdy <= (radius + 52) * (radius + 52)) {
-                prop.hp -= damage;
-                prop.shake = 0.18;
-                if (prop.hp <= 0) {
-                    prop.alive = false; s.demolition += 1;
-                    s.chain += 1; s.chainT = 3; s.comboBest = Math.max(s.comboBest, s.chain);
-                    ev.push({ t: 'demolish', kind: prop.kind, x: Math.round(prop.x), chain: s.chain });
-                    if (prop.kind === 'fuel') {
-                        // One satisfying fuel-chain pop, with a smaller blast.
-                        for (var q = 0; q < s.foes.length; q++) {
-                            var near = s.foes[q], ndx = near.x - prop.x;
-                            if (near.hp > 0 && ndx * ndx < 128 * 128) {
-                                near.hp -= 42;
-                                if (near.hp <= 0) { s.kills += 1; s.chain += 1; s.chainT = 3; s.comboBest = Math.max(s.comboBest, s.chain); ev.push({ t: 'kill', type: near.type, chain: s.chain, explosive: true }); }
-                            }
-                        }
-                        ev.push({ t: 'blast', x: Math.round(prop.x), y: -40, radius: 105 });
-                    }
+            if (Math.hypot(s.unstable.x - x, -40 - y) <= radius + 66) {
+                s.unstable.hp -= damage;
+                ev.push({ t: 'hit-support', hp: Math.max(0, Math.ceil(s.unstable.hp)) });
+            }
+            for (var f = 0; f < s.foes.length; f++) {
+                var foe = s.foes[f];
+                if (foe.hp <= 0 || foe === blast.directTarget) continue;
+                var dist = Math.hypot(foe.x - x, foe.y - 20 - y);
+                if (dist <= radius) damageFoe(s, foe, Math.ceil(damage * (1 - dist / (radius * 1.45))), x, ev, true);
+            }
+            for (var j = 0; j < s.props.length; j++) {
+                var prop = s.props[j];
+                if (prop.alive && prop !== blast.directTarget && Math.hypot(prop.x - x, prop.y - 36 - y) <= radius + 52) {
+                    damageProp(s, prop, damage, ev, blasts);
                 }
             }
         }
+    }
+
+    function damageFoe(s, foe, damage, sourceX, ev, explosive) {
+        foe.hp -= damage;
+        foe.hitUntil = s.ticks + 5;
+        if (foe.hp <= 0) {
+            s.kills += 1;
+            foe.effectDone = true;
+            registerChain(s);
+            ev.push({ t: 'kill', type: foe.type, x: foe.x, y: foe.y - 20, direction: sign(foe.x - sourceX), chain: s.chain, explosive: explosive });
+        } else {
+            ev.push({ t: 'hit', type: foe.type, x: foe.x, y: foe.y - 20, direction: sign(foe.x - sourceX) });
+        }
+    }
+
+    function crossedPlatform(platforms, x, fromY, toY, margin) {
+        var first = null;
+        for (var i = 0; i < platforms.length; i++) {
+            var deck = platforms[i];
+            if (deck.y < fromY || deck.y > toY || x + margin <= deck.x || x - margin >= deck.x + deck.w) continue;
+            if (!first || deck.y < first.y) first = deck;
+        }
+        return first;
     }
 
     /* One fixed DT step. input: {move, jump, aim, fire, alt, dash,
@@ -416,9 +465,9 @@
         /* Buffered acceleration with strong ground friction, responsive air control. */
         var target = mv * s.moveSpeed;
         if (p.dashT <= 0) {
-            var accel = p.ground ? 3000 : 1850 * AIR_CTL;
+            var accel = p.ground ? 4500 : 2600 * AIR_CTL;
             if (mv !== 0) p.vx += clamp(target - p.vx, -accel * DT, accel * DT);
-            else p.vx *= p.ground ? 0.72 : 0.985;
+            else p.vx *= p.ground ? 0.62 : 0.94;
             p.vx = clamp(p.vx, -s.moveSpeed * 1.18, s.moveSpeed * 1.18);
         }
         if (mv !== 0) p.face = sign(mv);
@@ -436,7 +485,7 @@
             p.abilityCd = 5.5; s.abilitiesUsed += 1;
             if (build.abilityKind === 'dash') { p.dashT = 0.23; p.dashCd = 0.55; p.iframes = Math.max(p.iframes, 0.2); p.vx = p.face * DASH_V * 1.2; }
             else if (build.abilityKind === 'snare' || build.abilityKind === 'shock') {
-                for (var ab = 0; ab < s.foes.length; ab++) if (s.foes[ab].hp > 0 && Math.abs(s.foes[ab].x - p.x) < 190) {
+                for (var ab = 0; ab < s.foes.length; ab++) if (s.foes[ab].hp > 0 && Math.hypot(s.foes[ab].x - p.x, s.foes[ab].y - p.y) < 190) {
                     s.foes[ab].hp -= build.abilityKind === 'shock' ? 28 : 18;
                     if (build.abilityKind === 'snare') s.foes[ab].touchCd = 1.8;
                     if (s.foes[ab].hp <= 0) { s.kills += 1; ev.push({ t: 'kill', type: s.foes[ab].type, ability: true }); }
@@ -446,7 +495,7 @@
             if (build.cls === 'tank') p.armor = Math.min(p.maxArmor, p.armor + 18);
             else if (build.cls === 'support') p.hp = Math.min(p.maxHp, p.hp + 18);
             else if (build.cls === 'mage') {
-                for (var arc = 0; arc < s.foes.length; arc++) if (s.foes[arc].hp > 0 && Math.abs(s.foes[arc].x - p.x) < 240) {
+                for (var arc = 0; arc < s.foes.length; arc++) if (s.foes[arc].hp > 0 && Math.hypot(s.foes[arc].x - p.x, s.foes[arc].y - p.y) < 240) {
                     s.foes[arc].hp -= 14;
                     if (s.foes[arc].hp <= 0) { s.kills += 1; ev.push({ t: 'kill', type: s.foes[arc].type, ability: true }); }
                 }
@@ -460,14 +509,19 @@
                 if (targetFoe.hp > 0 && dxM * p.face >= -6 && dxM * p.face < 82 && Math.abs(targetFoe.y - p.y) < 58) {
                     targetFoe.hp -= kit.meleeDamage;
                     if (targetFoe.hp <= 0) { s.kills += 1; s.meleeKills += 1; ev.push({ t: 'kill', type: targetFoe.type, melee: true }); }
-                    if (kit.cls === 'tank') { targetFoe.x += p.face * 96; targetFoe.touchCd = 1; }
+                    if (kit.cls === 'tank') { if (!targetFoe.elevated) targetFoe.x += p.face * 96; targetFoe.touchCd = 1; }
                     else if (kit.cls === 'support') { targetFoe.touchCd = 1.6; p.hp = Math.min(p.maxHp, p.hp + 4); }
-                    else if (kit.cls === 'mage') for (var chainHit = 0; chainHit < s.foes.length; chainHit++) if (s.foes[chainHit] !== targetFoe && s.foes[chainHit].hp > 0 && Math.abs(s.foes[chainHit].x - targetFoe.x) < 92) { s.foes[chainHit].hp -= Math.ceil(kit.meleeDamage * 0.62); if (s.foes[chainHit].hp <= 0) { s.kills += 1; s.meleeKills += 1; ev.push({ t: 'kill', type: s.foes[chainHit].type, melee: true }); } break; }
+                    else if (kit.cls === 'mage') for (var chainHit = 0; chainHit < s.foes.length; chainHit++) if (s.foes[chainHit] !== targetFoe && s.foes[chainHit].hp > 0 && Math.hypot(s.foes[chainHit].x - targetFoe.x, s.foes[chainHit].y - targetFoe.y) < 92) { s.foes[chainHit].hp -= Math.ceil(kit.meleeDamage * 0.62); if (s.foes[chainHit].hp <= 0) { s.kills += 1; s.meleeKills += 1; ev.push({ t: 'kill', type: s.foes[chainHit].type, melee: true }); } break; }
                     ev.push({ t: 'melee', name: kit.melee }); break;
                 }
             }
-            for (var mp = 0; mp < s.props.length; mp++) if (s.props[mp].alive && Math.abs(s.props[mp].x - p.x) < 90) {
-                s.props[mp].hp -= kit.meleeDamage; if (s.props[mp].hp <= 0) { s.props[mp].alive = false; s.demolition += 1; ev.push({ t: 'demolish', kind: s.props[mp].kind, x: s.props[mp].x }); } break;
+            for (var mp = 0; mp < s.props.length; mp++) {
+                var meleeProp = s.props[mp];
+                if (!meleeProp.alive || Math.abs(meleeProp.x - p.x) >= 90 || Math.abs(meleeProp.y - p.y) >= 110) continue;
+                var meleeBlasts = [];
+                damageProp(s, meleeProp, kit.meleeDamage, ev, meleeBlasts);
+                resolveBlasts(s, meleeBlasts, ev);
+                break;
             }
         }
 
@@ -488,8 +542,10 @@
         /* Gravity + integrate (floor y=0). */
         if (p.dashT <= 0) p.vy += GRAV * DT;
         var previousX = p.x;
+        var previousY = p.y;
         p.x += p.vx * DT;
-        p.y += p.vy * DT;
+        var nextY = p.y + p.vy * DT;
+        p.y = nextY;
         if (p.x < 20) { p.x = 20; p.vx = 0; }
         if (p.x > s.worldLength) { p.x = s.worldLength; p.vx = 0; }
         /* Fortifications stop a ground push until you blow them open; a jump
@@ -502,22 +558,18 @@
             p.vx = 0;
             break;
         }
-        /* Raised catwalks are optional shortcuts: generous landing window,
-           always safe to ignore by running through the breach below. */
-        var landedPlatform = false;
-        if (p.vy >= 0) for (var pl = 0; pl < s.platforms.length; pl++) {
-            var platform = s.platforms[pl];
-            if (p.x + 16 > platform.x && p.x - 16 < platform.x + platform.w && p.y <= platform.y && p.y + p.vy * DT >= platform.y) {
-                p.y = platform.y; p.vy = 0; p.ground = true; p.coyote = COYOTE; landedPlatform = true;
-                ev.push({ t: 'land' }); break;
-            }
+        /* One-way platforms catch the first deck crossed on descent. */
+        var landing = p.vy >= 0 ? crossedPlatform(s.platforms, p.x, previousY, nextY, 16) : null;
+        if (landing) {
+            if (!p.ground || previousY !== landing.y) ev.push({ t: 'land' });
+            p.y = landing.y; p.vy = 0; p.ground = true; p.coyote = COYOTE;
         }
         if (p.y >= 0) {
             if (!p.ground && p.vy > 500) ev.push({ t: 'land' });
             p.y = 0; p.vy = 0;
             if (!p.ground) { p.ground = true; }
             p.coyote = COYOTE;
-        } else if (p.ground && p.y < -1 && !landedPlatform) {
+        } else if (p.ground && !landing) {
             p.ground = false; p.coyote = COYOTE;
         }
         /* Grab onto destructible walls and climb when holding up/jump. */
@@ -536,8 +588,11 @@
         /* Shots: move, expire, hit foes / unstable support. */
         for (var i = s.shots.length - 1; i >= 0; i--) {
             var sh = s.shots[i];
+            var shotY = sh.y;
             sh.x += sh.vx * DT; sh.y += sh.vy * DT; sh.life -= DT;
-            if (!sh.foe) sh.vy += 300 * DT;
+            var grenadeDeck = sh.gravity && sh.y >= shotY ? crossedPlatform(s.platforms, sh.x, shotY, sh.y, 0) : null;
+            if (grenadeDeck) sh.y = grenadeDeck.y;
+            if (sh.gravity) sh.vy += sh.gravity * DT;
             var dead = sh.life <= 0;
             if (!dead && !sh.foe) {
                 var struckWorld = false;
@@ -546,16 +601,10 @@
                     if (foe.hp <= 0) continue;
                     var dx = foe.x - sh.x, dy = (foe.y - 20) - sh.y;
                     if (dx * dx + dy * dy < 900) {
-                        foe.hp -= sh.dmg;
+                        damageFoe(s, foe, sh.dmg, sh.x - sh.vx * DT, ev, sh.blast > 0);
                         if (sh.slow > 0) foe.touchCd = Math.max(foe.touchCd || 0, sh.slow);
                         if (sh.blast > 0) {
-                            breachExplosion(s, sh.x, sh.y, sh.dmg, sh.blast, ev, foe);
-                        }
-                        if (foe.hp <= 0) {
-                            s.kills += 1; s.chain += 1; s.chainT = 3;
-                            ev.push({ t: 'kill', type: foe.type, chain: s.chain });
-                        } else {
-                            ev.push({ t: 'hit', type: foe.type });
+                            resolveBlasts(s, [{ x: sh.x, y: sh.y, damage: sh.dmg, radius: sh.blast, directTarget: foe }], ev);
                         }
                         if (!sh.pierce) { dead = true; struckWorld = true; break; }
                     }
@@ -566,29 +615,24 @@
                     var tdx = target.x - sh.x, tdy = (target.y - 44) - sh.y;
                     var hitRadius = target.kind === 'watchtower' ? 72 : 50;
                     if (tdx * tdx < hitRadius * hitRadius && Math.abs(tdy) < (target.kind === 'watchtower' ? 105 : 86)) {
-                        if (sh.blast > 0) breachExplosion(s, sh.x, sh.y, sh.dmg, sh.blast, ev);
-                        else {
-                            target.hp -= sh.dmg; target.shake = 0.12;
-                            ev.push({ t: 'prop-hit', kind: target.kind });
-                            if (target.hp <= 0) {
-                                target.alive = false; s.demolition += 1; s.chain += 1; s.chainT = 3;
-                                s.comboBest = Math.max(s.comboBest, s.chain);
-                                ev.push({ t: 'demolish', kind: target.kind, x: Math.round(target.x), chain: s.chain });
-                                if (target.kind === 'fuel') breachExplosion(s, target.x, -40, 48, 118, ev);
-                                // Support collapse: platforms bolted to this prop fall too.
-                                for (var cp = (s.platforms || []).length - 1; cp >= 0; cp--) {
-                                    if (s.platforms[cp].supportsBy === target.id) {
-                                        var fell = s.platforms.splice(cp, 1)[0];
-                                        s.shake = Math.max(s.shake, 7);
-                                        ev.push({ t: 'demolish', kind: 'platform', x: Math.round(fell.x), chain: s.chain });
-                                    }
-                                }
-                            }
+                        var blasts = [];
+                        if (sh.blast > 0) {
+                            damageProp(s, target, sh.dmg, ev, blasts);
+                            blasts.unshift({ x: sh.x, y: sh.y, damage: sh.dmg, radius: sh.blast, directTarget: target });
+                        } else {
+                            damageProp(s, target, sh.dmg, ev, blasts);
+                            ev.push({ t: 'prop-hit', kind: target.kind, x: sh.x, y: sh.y, direction: sign(sh.vx) });
                         }
+                        resolveBlasts(s, blasts, ev);
                         dead = true; break;
                     }
                 }
             }
+            if (!sh.foe && sh.blast > 0 && (sh.life <= 0 || (!dead && (sh.y >= 0 || grenadeDeck)))) {
+                resolveBlasts(s, [{ x: sh.x, y: Math.min(0, sh.y), damage: sh.dmg, radius: sh.blast }], ev);
+                dead = true;
+            }
+            if (!sh.foe && sh.y >= 0) dead = true;
             if (dead) s.shots.splice(i, 1);
         }
         if (s.shots.length > 80) s.shots.splice(0, s.shots.length - 80);
@@ -615,20 +659,22 @@
             var px = p.x - F.x;
             if (FD.kind === 'ranged') {
                 F.fireCd -= DT;
-                    if (Math.abs(px) < 620 && F.fireCd <= 0) {
+                var heightDelta = p.y - F.y;
+                if (Math.abs(px) < 620 && Math.abs(heightDelta) < 320 && F.fireCd <= 0) {
                     F.fireCd = 1.55;
+                    var shotAngle = F.elevated ? Math.atan2(heightDelta, px) : (px < 0 ? Math.PI : 0);
                     s.shots.push({
-                        x: F.x, y: F.y - 20, vx: sign(px) * 380, vy: 0,
+                        x: F.x, y: F.y - 20, vx: Math.cos(shotAngle) * 380, vy: Math.sin(shotAngle) * 380,
                         dmg: FD.dmg, pierce: false, blast: 0, life: 1.5, foe: true
                     });
                     ev.push({ t: 'foe-shot' });
                 }
-                F.x += sign(px) * FD.speed * 0.4 * DT;
+                if (!F.elevated) F.x += sign(px) * FD.speed * 0.4 * DT;
             } else if (FD.kind === 'bomber') {
                 F.x += sign(px) * FD.speed * DT;
-                if (Math.abs(px) < 36) {
+                if (Math.abs(px) < 36 && Math.abs(p.y - F.y) < 60) {
                     F.hp = 0; s.kills += 1; s.chain += 1; s.chainT = 3;
-                    ev.push({ t: 'blast', x: Math.round(F.x), y: -20 });
+                    ev.push({ t: 'blast', x: Math.round(F.x), y: -20, radius: 105 });
                     hurtPlayer(s, FD.dmg);
                     ev.push({ t: 'hurt', dmg: FD.dmg });
                 }
@@ -667,7 +713,7 @@
                 ev.push({ t: 'collapse', x: U.x });
                 for (var z = 0; z < s.foes.length; z++) {
                     var cf = s.foes[z];
-                    if (cf.hp > 0 && Math.abs(cf.x - U.x) < 160) {
+                    if (cf.hp > 0 && Math.abs(cf.x - U.x) < 160 && cf.y > -200) {
                         cf.hp = 0; s.kills += 1; s.chain += 1; s.chainT = 3;
                         ev.push({ t: 'kill', type: cf.type, chain: s.chain, crushed: true });
                     }
@@ -688,7 +734,8 @@
         /* Rescue by touching the linked crew, or press E from nearby. */
         for (var n = 0; n < s.civs.length; n++) {
             var cv = s.civs[n], rescueDistance = Math.abs(cv.x - p.x);
-            if (!cv.saved && rescueDistance < 70 && (input.interact || rescueDistance < 24)) {
+            if (!cv.saved && Math.abs(p.y - (cv.y || 0)) < 60 &&
+                rescueDistance < 70 && (input.interact || rescueDistance < 24)) {
                     cv.saved = true; cv.brokenT = 1.1; s.rescued += 1;
                     s.lifeQueue.push(cv.buildId); s.rescuedBuilds.push(cv.buildId); s.checkpointX = Math.max(s.checkpointX, p.x);
                     ev.push({ t: 'rescue', id: cv.id, buildId: cv.buildId, name: BUILDS[cv.buildId].name });
@@ -802,18 +849,28 @@
         } catch (_) {}
     }
 
+    function cameraX(s) {
+        return clamp(s.player.x - 350, 0, Math.max(0, s.worldLength - VIEW_WIDTH));
+    }
+
+    function cameraY(s) {
+        return Math.min(0, s.player.y + 155);
+    }
+
     function render() {
         try {
             if (!G || !G.ctx) return;
             var ctx = G.ctx, s = G.run;
-            var W = 960, H = 540;
+            var W = VIEW_WIDTH, H = VIEW_HEIGHT;
             ctx.setTransform(G.dpr || 1, 0, 0, G.dpr || 1, 0, 0);
             /* Scale the authored scene to the responsive canvas backing store. */
             var sx = G.canvas.width / (G.dpr || 1) / W;
             var sy = G.canvas.height / (G.dpr || 1) / H;
             ctx.scale(sx, sy);
             var now = s ? s.time : 0;
-            var cam = s ? clamp(s.player.x - 350, 0, Math.max(0, s.worldLength - W)) : 0;
+            var cam = s ? cameraX(s) : 0;
+            var elevation = s ? cameraY(s) : 0;
+            var floorY = FLOOR_Y - elevation;
             var shake = s ? s.shake : 0;
             if (s && s.shake > 0) s.shake = Math.max(0, s.shake - DT * 34);
             if (shake > 0 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -837,16 +894,15 @@
                 var bx = ((k * 185 - cam * 0.28) % (W + 240) + W + 240) % (W + 240) - 120;
                 var bh = 92 + ((k * 71) % 114);
                 ctx.fillStyle = k % 3 === 0 ? '#352d4b' : '#292c48';
-                ctx.fillRect(bx, 330 - bh, 90, bh + 64);
+                ctx.fillRect(bx, 330 - bh - elevation * 0.18, 90, bh + 64);
                 ctx.fillStyle = k % 2 ? '#ffbd65' : '#88e4ed';
-                for (var wy = 0; wy < 3; wy++) for (var wx = 0; wx < 3; wx++) if ((k + wx + wy) % 3 !== 0) ctx.fillRect(bx + 12 + wx * 23, 342 - bh + wy * 28, 7, 10);
-                ctx.fillStyle = '#181a2b'; ctx.fillRect(bx - 5, 330, 100, 8);
+                for (var wy = 0; wy < 3; wy++) for (var wx = 0; wx < 3; wx++) if ((k + wx + wy) % 3 !== 0) ctx.fillRect(bx + 12 + wx * 23, 342 - bh - elevation * 0.18 + wy * 28, 7, 10);
+                ctx.fillStyle = '#181a2b'; ctx.fillRect(bx - 5, 330 - elevation * 0.18, 100, 8);
             }
             /* Moonstone dust bands and hot breach horizon. */
             ctx.fillStyle = '#e88153'; ctx.globalAlpha = 0.22;
             for (var hz = 0; hz < 8; hz++) ctx.fillRect(0, 280 + hz * 8, W, 2);
             ctx.globalAlpha = 1;
-            if (!s) return;
             if (!s) return;
             var p = s.player;
             var px = p.x - cam;
@@ -854,23 +910,34 @@
             for (var pi = 0; pi < (s.platforms || []).length; pi++) {
                 var plat = s.platforms[pi], platX = plat.x - cam;
                 if (platX + plat.w < -20 || platX > W + 20) continue;
+                var deckY = floorY + plat.y;
+                if (deckY < -40 || deckY > H + 60) continue;
                 var supported = typeof plat.supportsBy === 'number';
-                ctx.fillStyle = supported ? '#6b545b' : '#545b6b'; ctx.fillRect(platX, H - 110 + plat.y, plat.w, 17);
-                ctx.fillStyle = '#c49b65'; ctx.fillRect(platX, H - 110 + plat.y, plat.w, 5);
+                if (plat.kind === 'gantry' || plat.kind === 'lookout') {
+                    ctx.strokeStyle = '#363648'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(platX, deckY - 21); ctx.lineTo(platX + plat.w, deckY - 21);
+                    for (var post = 0; post <= plat.w; post += 30) {
+                        ctx.moveTo(platX + post, deckY - 21); ctx.lineTo(platX + post, deckY);
+                    }
+                    ctx.stroke();
+                }
+                ctx.fillStyle = supported ? '#6b545b' : '#545b6b'; ctx.fillRect(platX, deckY, plat.w, 17);
+                ctx.fillStyle = plat.accent || '#c49b65'; ctx.fillRect(platX, deckY, plat.w, 4);
                 ctx.fillStyle = '#858a8d';
-                for (var bolt = 0; bolt < plat.w; bolt += 44) ctx.fillRect(platX + bolt + 8, H - 94 + plat.y, 6, 24);
-                if (supported) { ctx.fillStyle = '#ffd166'; ctx.font = '12px sans-serif'; ctx.fillText('⚙', platX + plat.w / 2, H - 114 + plat.y); }
+                for (var bolt = 8; bolt < plat.w - 6; bolt += 44) ctx.fillRect(platX + bolt, deckY + 7, 6, 6);
+                if (supported) { ctx.fillStyle = '#ffd166'; ctx.font = '12px sans-serif'; ctx.fillText('⚙', platX + plat.w / 2, deckY - 4); }
             }
             /* Rubble-strewn trench floor with moving rails, cracks and sparks. */
-            var floorY = H - 110;
-            ctx.fillStyle = '#242330'; ctx.fillRect(0, floorY, W, H - floorY);
-            ctx.fillStyle = '#77706a'; ctx.fillRect(0, floorY, W, 7);
-            ctx.fillStyle = '#d5a26d'; ctx.fillRect(0, floorY + 7, W, 3);
-            for (var tile = 0; tile < 28; tile++) {
-                var tx = ((tile * 48 - cam) % (W + 48) + W + 48) % (W + 48);
-                ctx.fillStyle = tile % 2 ? '#33323a' : '#3b3740'; ctx.fillRect(tx, floorY + 10, 43, 9);
-                ctx.fillStyle = '#82756d'; ctx.fillRect(tx + 8, floorY + 27 + (tile % 3) * 8, 18, 4);
-                if (tile % 5 === 0) { ctx.fillStyle = '#f29c56'; ctx.globalAlpha = 0.55 + Math.sin(now * 8 + tile) * 0.2; ctx.fillRect(tx + 31, floorY - 5, 3, 3); ctx.globalAlpha = 1; }
+            if (floorY < H) {
+                ctx.fillStyle = '#242330'; ctx.fillRect(0, floorY, W, H - floorY);
+                ctx.fillStyle = '#77706a'; ctx.fillRect(0, floorY, W, 7);
+                ctx.fillStyle = '#d5a26d'; ctx.fillRect(0, floorY + 7, W, 3);
+                for (var tile = 0; tile < 28; tile++) {
+                    var tx = ((tile * 48 - cam) % (W + 48) + W + 48) % (W + 48);
+                    ctx.fillStyle = tile % 2 ? '#33323a' : '#3b3740'; ctx.fillRect(tx, floorY + 10, 43, 9);
+                    ctx.fillStyle = '#82756d'; ctx.fillRect(tx + 8, floorY + 27 + (tile % 3) * 8, 18, 4);
+                    if (tile % 5 === 0) { ctx.fillStyle = '#f29c56'; ctx.globalAlpha = 0.55 + Math.sin(now * 8 + tile) * 0.2; ctx.fillRect(tx + 31, floorY - 5, 3, 3); ctx.globalAlpha = 1; }
+                }
             }
             /* Civilians. */
             ctx.font = '28px sans-serif'; ctx.textAlign = 'center';
@@ -879,8 +946,16 @@
                 var cx = cv.x - cam;
                 if (cx < -40 || cx > W + 40) continue;
                 if (cv.brokenT > 0) cv.brokenT = Math.max(0, cv.brokenT - DT);
-                ctx.fillText(cv.saved ? (cv.brokenT > 0 ? '⛓️‍💥' : '✅') : cv.emoji, cx, H - 110);
-                if (!cv.saved) { ctx.font = '20px sans-serif'; ctx.fillText('🔗', cx, H - 148); if (Math.abs(cv.x - p.x) < 70) { ctx.font = '14px sans-serif'; ctx.fillText('E · RESCUE', cx, H - 174); } }
+                var crewY = floorY + (cv.y || 0);
+                if (crewY < -10 || crewY > H + 60) continue;
+                ctx.font = '28px sans-serif';
+                ctx.fillText(cv.saved ? (cv.brokenT > 0 ? '⛓️‍💥' : '✅') : cv.emoji, cx, crewY);
+                if (!cv.saved) {
+                    ctx.font = '20px sans-serif'; ctx.fillText('🔗', cx, crewY - 38);
+                    if (Math.abs(cv.x - p.x) < 70 && Math.abs(p.y - (cv.y || 0)) < 60) {
+                        ctx.font = '14px sans-serif'; ctx.fillText('E · RESCUE', cx, crewY - 64);
+                    }
+                }
             }
             /* Destructible bunkers, towers, fuel trucks and supply crates. */
             for (var pr = 0; pr < s.props.length; pr++) {
@@ -919,6 +994,10 @@
                 ctx.fillStyle = '#080a12'; ctx.fillRect(wx - 30, base - (prop.kind === 'watchtower' ? 198 : 108), 60, 5);
                 ctx.fillStyle = prop.hp / prop.maxHp < 0.42 ? '#ff625d' : '#66dfb4';
                 ctx.fillRect(wx - 30, base - (prop.kind === 'watchtower' ? 198 : 108), 60 * Math.max(0, prop.hp / prop.maxHp), 5);
+                if (prop.hitUntil > s.ticks) {
+                    ctx.fillStyle = '#ffe3a2';
+                    ctx.fillRect(wx - 24, top + 4, 48, 3);
+                }
                 if (prop.hp < prop.maxHp * 0.5) {
                     ctx.fillStyle = '#ffd166'; ctx.font = '14px sans-serif'; ctx.fillText('⚠', wx + 38, top - 2);
                 }
@@ -927,9 +1006,11 @@
             for (var pk = 0; pk < s.pickups.length; pk++) {
                 var pickup = s.pickups[pk], pickX = pickup.x - cam;
                 if (pickup.taken || pickX < -30 || pickX > W + 30) continue;
-                ctx.globalAlpha = 0.5 + Math.sin(now * 5 + pk) * 0.22; ctx.fillStyle = '#ffe68a'; ctx.beginPath(); ctx.arc(pickX, floorY - 35, 23, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+                var pickupY = floorY + pickup.y;
+                if (pickupY < -10 || pickupY > H + 40) continue;
+                ctx.globalAlpha = 0.5 + Math.sin(now * 5 + pk) * 0.22; ctx.fillStyle = '#ffe68a'; ctx.beginPath(); ctx.arc(pickX, pickupY - 23, 23, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
                 var pglyph = pickup.ammoPack ? '🔋' : pickup.weapon === 'launcher' ? '🚀' : pickup.weapon === 'moonbeam' ? '⚡' : pickup.weapon === 'saw' ? '🪚' : pickup.weapon === 'cryo' ? '❄️' : pickup.weapon === 'sun' ? '☀️' : pickup.weapon === 'harpoon' ? '⚓' : pickup.weapon ? '💥' : '🩹';
-                ctx.font = '25px sans-serif'; ctx.fillText(pglyph, pickX, floorY - 26);
+                ctx.font = '25px sans-serif'; ctx.fillText(pglyph, pickX, pickupY - 14);
             }
             /* Foes. */
             var glyph = s.contentMode === 'kids' ? { zed: '👻', rifle: '🤖', sapper: '👾' } : (s.contentMode === 'adult' ? { zed: '🧟', rifle: '💀', sapper: '🧌' } : { zed: '🧟', rifle: '💀', sapper: '👾' });
@@ -938,11 +1019,18 @@
                 if (F.hp <= 0) continue;
                 var fx = F.x - cam;
                 if (fx < -40 || fx > W + 40) continue;
-                ctx.fillStyle = '#101018'; ctx.fillRect(fx - 22, floorY - 49, 44, 4);
-                ctx.fillStyle = '#ff665f'; ctx.fillRect(fx - 22, floorY - 49, 44 * Math.max(0, F.hp / F.maxHp), 4);
-                ctx.font = '31px sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(glyph[F.type] || '🧟', fx, floorY - 6);
-                if (F.type === 'rifle') { ctx.font = '16px sans-serif'; ctx.fillText('🔫', fx + 16, floorY - 16); }
-                if (F.type === 'sapper') { ctx.font = '14px sans-serif'; ctx.fillText('💣', fx + 17, floorY - 39); }
+                var foeY = floorY + F.y;
+                if (foeY < -10 || foeY > H + 55) continue;
+                ctx.fillStyle = '#101018'; ctx.fillRect(fx - 22, foeY - 49, 44, 4);
+                ctx.fillStyle = '#ff665f'; ctx.fillRect(fx - 22, foeY - 49, 44 * Math.max(0, F.hp / F.maxHp), 4);
+                ctx.font = '31px sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(glyph[F.type] || '🧟', fx, foeY - 6);
+                if (F.hitUntil > s.ticks) {
+                    ctx.fillStyle = '#fff3bc';
+                    ctx.fillRect(fx - 16, foeY - 28, 7, 3);
+                    ctx.fillRect(fx + 10, foeY - 34, 5, 3);
+                }
+                if (F.type === 'rifle') { ctx.font = '16px sans-serif'; ctx.fillText('🔫', fx + 16, foeY - 16); }
+                if (F.type === 'sapper') { ctx.font = '14px sans-serif'; ctx.fillText('💣', fx + 17, foeY - 39); }
             }
             /* Shots: bright streaks and readable rockets. */
             for (var q = 0; q < s.shots.length; q++) {
@@ -964,6 +1052,18 @@
                     ctx.globalAlpha = Math.max(0, effect.life / effect.max);
                     ctx.strokeStyle = '#ffd56d'; ctx.lineWidth = 8 * (1 - progress) + 1; ctx.beginPath(); ctx.arc(ex, ey, (effect.radius || 100) * progress, 0, Math.PI * 2); ctx.stroke();
                     ctx.fillStyle = '#ff7b3d'; ctx.beginPath(); ctx.arc(ex, ey, (effect.radius || 100) * progress * 0.52, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+                } else if (effect.type === 'girder') {
+                    effect.vy += 880 * DT;
+                    effect.y += effect.vy * DT;
+                    ctx.save();
+                    ctx.translate(ex, ey);
+                    ctx.rotate(effect.vy * effect.spin);
+                    ctx.globalAlpha = Math.min(1, effect.life * 4);
+                    ctx.fillStyle = '#58525b';
+                    ctx.fillRect(-effect.width / 2, 0, effect.width, 12);
+                    ctx.fillStyle = '#c49b65';
+                    ctx.fillRect(-effect.width / 2, 0, effect.width, 3);
+                    ctx.restore();
                 } else {
                     effect.x += effect.vx * DT; effect.y += effect.vy * DT; effect.vy += 500 * DT;
                     ctx.globalAlpha = Math.min(1, effect.life * 2); ctx.fillStyle = effect.color; ctx.fillRect(ex, ey, effect.size, effect.size); ctx.globalAlpha = 1;
@@ -977,9 +1077,21 @@
             ctx.font = '38px sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(heroEmoji, px, heroY + 4);
             ctx.globalAlpha = 1;
             var w = WEAPONS[p.weapon] || WEAPONS.pulse;
-            var gunX = px + Math.cos(p.aim) * 28, gunY = heroY - 23 + Math.sin(p.aim) * 28;
+            var muzzle = Math.max(0, (p.muzzleUntil || 0) - s.ticks) / 3;
+            var barrel = 28 - (p.muzzleKick || 0) * muzzle;
+            var gunX = px + Math.cos(p.aim) * barrel, gunY = heroY - 23 + Math.sin(p.aim) * barrel;
             ctx.strokeStyle = '#22212a'; ctx.lineWidth = p.weapon === 'launcher' ? 12 : 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px + 2, heroY - 22); ctx.lineTo(gunX, gunY); ctx.stroke();
-            if (p.fireCd > 0.055) { ctx.globalAlpha = 0.85; ctx.fillStyle = '#ffe68a'; ctx.beginPath(); ctx.arc(gunX + Math.cos(p.aim) * 7, gunY + Math.sin(p.aim) * 7, 7 + Math.random() * 5, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+            if (muzzle > 0) {
+                ctx.save();
+                ctx.translate(gunX, gunY);
+                ctx.rotate(p.aim);
+                ctx.globalAlpha = muzzle;
+                ctx.fillStyle = '#ffad50';
+                ctx.fillRect(1, -4, 10 + p.muzzleKick, 8);
+                ctx.fillStyle = '#fff3bc';
+                ctx.fillRect(1, -2, 8 + p.muzzleKick, 4);
+                ctx.restore();
+            }
             var aimX = px + Math.cos(p.aim) * 76, aimY = heroY - 22 + Math.sin(p.aim) * 76;
             ctx.strokeStyle = '#fff2bb'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(aimX, aimY, 5, 0, Math.PI * 2); ctx.moveTo(aimX - 9, aimY); ctx.lineTo(aimX - 6, aimY); ctx.moveTo(aimX + 6, aimY); ctx.lineTo(aimX + 9, aimY); ctx.stroke();
             ctx.font = '12px sans-serif'; ctx.fillStyle = '#f3ddaa'; ctx.textAlign = 'left';
@@ -987,7 +1099,7 @@
             if (!s.unstable.dropped && Math.abs(p.x - s.unstable.x) < 220 &&
                 s.unstable.hp <= s.unstable.maxHp * 0.5) {
                 ctx.fillStyle = '#ff5d5d';
-                ctx.fillText('⬇ DANGER: COLLAPSE', px - 50, H - 170);
+                ctx.fillText('⬇ DANGER: COLLAPSE', px - 50, floorY - 60);
                 ctx.fillStyle = '#9aa3c0';
             }
             /* Arcade cabinet HUD: score, combo, wave and forward progress. */
@@ -1046,6 +1158,7 @@
         } catch (_) {}
         G.run = newRun({ buildId: buildId, mission: mission, gameMode: gameMode || 'real-time', routeMode: routeMode || 'roguelite', contentMode: contentMode || 'teens', seed: Math.floor(Date.now() % 2147483647) });
         G.gigglesSaveNotified = false;
+        G.effects.length = 0;
         try { if (window.GigglesHelpDraft) setTimeout(function () { window.GigglesHelpDraft.present('gravegain2dB', G, null, true); }, 0); } catch (_) {}
         try {
             el('gg2dbMenu').style.display = 'none';
@@ -1056,7 +1169,8 @@
         var intro = routeMode === 'wave' ? (contentMode === 'kids' ? 'Stay together, dodge the classic waves, and reach the exit!\nSpace climb/jump · F melee · C special move · break cover carefully' : contentMode === 'adult' ? 'Classic waves are incoming. Hold the lane, then reach extraction.\nSpace climb/jump · F melee · C ability · blasts remain dangerous' : 'Classic enemy waves · clear lanes, keep moving, and reach extraction\nSpace climb/jump · F melee · C ability · control your fire') : (contentMode === 'kids' ? 'Help the crew and watch for cover · E frees a new helper\nSpace climb/jump · F melee · C special move · break things carefully!' : contentMode === 'adult' ? 'Read the breach, pick your angle, and free the crew · E recruits a new life\nSpace climb/jump · F melee · C ability · every blast can bite back' : 'Generated route · scout for cover and rescue chains · E recruits a new breacher\nSpace climb/jump · F melee · C ability · destruction is powerful and dangerous');
         var routeTitle = G.run.routeMode === 'wave' ? 'WAVE MODE' : 'ROGUELITE';
         var clockTitle = G.run.gameMode === 'chrono-lock' ? 'CHRONO-LOCK' : G.run.gameMode === 'turn-based' ? 'TURN-BASED' : 'REAL-TIME';
-        showBanner(routeTitle + ' · ' + clockTitle + ' — ' + mission.toUpperCase(), intro);
+        showBanner(routeTitle + ' · ' + clockTitle + ' — ' + mission.toUpperCase(),
+            intro + '\nTake the stairs to the gantries and lookout loot.');
         G.acc = 0; G.last = performance.now();
     }
 
@@ -1083,11 +1197,10 @@
             } else if (G.run && G.canvas) {
                 var rect = G.canvas.getBoundingClientRect();
                 var rw = Math.max(1, rect.width), rh = Math.max(1, rect.height);
-                var cam = clamp(G.run.player.x - 350, 0, Math.max(0, G.run.worldLength - 960));
-                var pxGame = G.run.player.x - cam;
-                var heroYGame = 430 + G.run.player.y - 22;
-                var canvasX = (typeof K.mx === 'number' ? K.mx : rw / 2) / rw * 960;
-                var canvasY = (typeof K.my === 'number' ? K.my : rh / 2) / rh * 540;
+                var pxGame = G.run.player.x - cameraX(G.run);
+                var heroYGame = FLOOR_Y - cameraY(G.run) + G.run.player.y - 22;
+                var canvasX = (typeof K.mx === 'number' ? K.mx : rw / 2) / rw * VIEW_WIDTH;
+                var canvasY = (typeof K.my === 'number' ? K.my : rh / 2) / rh * VIEW_HEIGHT;
                 inp.aim = Math.atan2(canvasY - heroYGame, canvasX - pxGame);
             }
             var gp = readPad();
@@ -1135,21 +1248,38 @@
                             var rescueCopy = G.run.contentMode === 'kids' ? 'A new friend is ready: ' + ev[i].name : G.run.contentMode === 'adult' ? 'Chain broken. ' + ev[i].name + ' joins the reserve lives.' : 'Crew freed: ' + ev[i].name + ' joins the reverse rescue queue.';
                             showBanner(G.run.contentMode === 'kids' ? '✨ FRIEND RESCUED' : '⛓️‍💥 CREW FREE', rescueCopy);
                         }
-                        if (ev[i].t === 'blast' || ev[i].t === 'demolish') {
+                        if (ev[i].t === 'collapse-platform') {
+                            var fall = ev[i], count = Math.ceil(fall.width / 45);
+                            for (var piece = 0; piece < count; piece++) {
+                                var width = fall.width / count;
+                                G.effects.push({ type: 'girder', x: fall.x + width * (piece + 0.5), y: fall.y,
+                                    width: width - 2, vy: 45 + piece * 28, spin: (piece % 2 ? -1 : 1) * 0.001, life: 0.65 });
+                            }
+                        } else if ((ev[i].t === 'hit' && typeof ev[i].x === 'number') || ev[i].t === 'prop-hit') {
+                            var hit = ev[i];
+                            for (var hs = 0; hs < 3; hs++) {
+                                G.effects.push({ type: 'debris', x: hit.x, y: hit.y,
+                                    vx: hit.direction * (70 + Math.random() * 160), vy: -40 - Math.random() * 110,
+                                    size: 3, color: '#ffe6aa', life: 0.16 + Math.random() * 0.12 });
+                            }
+                        } else if (ev[i].t === 'blast' || ev[i].t === 'demolish') {
                             var boom = ev[i];
-                            G.effects.push({ type: 'blast', x: boom.x, y: boom.y || -35, radius: boom.radius || 105, life: 0.32, max: 0.32 });
+                            if (boom.t === 'blast') G.effects.push({ type: 'blast', x: boom.x, y: boom.y, radius: boom.radius, life: 0.32, max: 0.32 });
                             var debris = boom.kind === 'fuel' ? 22 : 11;
                             for (var db = 0; db < debris; db++) {
                                 var a = Math.random() * Math.PI * 2, v = 90 + Math.random() * (boom.kind === 'fuel' ? 480 : 250);
-                                G.effects.push({ type: 'debris', x: boom.x, y: boom.y || -35, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 110,
+                                G.effects.push({ type: 'debris', x: boom.x, y: typeof boom.y === 'number' ? boom.y : -35, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 110,
                                     size: 2 + Math.random() * 6, color: boom.kind === 'fuel' ? (db % 2 ? '#ffc35b' : '#ff5a3d') : (db % 2 ? '#b7b2a2' : '#70d8e9'), life: 0.35 + Math.random() * 0.6, max: 1 });
                             }
                         } else if (ev[i].t === 'kill' && G.run) {
-                            var deadFoe = G.run.foes.find(function (f) { return f.type === ev[i].type && f.hp <= 0 && !f.effectDone; });
-                            if (deadFoe) {
-                                deadFoe.effectDone = true;
-                                for (var spark = 0; spark < 6; spark++) G.effects.push({ type: 'debris', x: deadFoe.x, y: -25,
-                                    vx: (Math.random() - 0.5) * 190, vy: -70 - Math.random() * 170, size: 3 + Math.random() * 4,
+                            var kill = ev[i];
+                            var deadFoe = typeof kill.x === 'number' ? null : G.run.foes.find(function (f) {
+                                return f.type === kill.type && f.hp <= 0 && !f.effectDone;
+                            });
+                            if (deadFoe) deadFoe.effectDone = true;
+                            if (deadFoe || typeof kill.x === 'number') {
+                                for (var spark = 0; spark < (kill.explosive ? 12 : 8); spark++) G.effects.push({ type: 'debris', x: deadFoe ? deadFoe.x : kill.x, y: deadFoe ? deadFoe.y - 25 : kill.y,
+                                    vx: (Math.random() - 0.5) * 190 + (kill.direction || 0) * 110, vy: -70 - Math.random() * 170, size: 3 + Math.random() * 4,
                                     color: G.run.contentMode === 'kids' ? (spark % 2 ? '#a8e9ff' : '#d8f7a3') : G.run.contentMode === 'adult' ? (spark % 2 ? '#7f1d1d' : '#c1121f') : (spark % 2 ? '#ff725b' : '#f6ca77'), life: 0.25 + Math.random() * 0.28, max: 0.6 });
                             }
                         }
@@ -1175,6 +1305,7 @@
                 G.last = now;
             }
             if (G.bannerUntil && now >= G.bannerUntil) { hideBanner(); G.bannerUntil = 0; }
+            if (G.effects.length > 360) G.effects.splice(0, G.effects.length - 360);
             render();
         } catch (_) {}
         try { requestAnimationFrame(loop); } catch (_) {}
