@@ -11,7 +11,9 @@ let failed = false;
 
 for (const game of catalog.games.filter((item) => item.runtimeType === "static")) {
   const html = await readFile(path.join(gamesRoot, ...game.entrypoint.split("/")), "utf8");
-  if (rootAbsoluteAsset.test(html)) {
+  // Vercel's optional analytics script is injected only on hosted HTTP(S) pages.
+  const offlineMarkup = html.replace(/vercelAnalyticsScript\.src\s*=\s*["']\/_vercel\/insights\/script\.js["']/g, "");
+  if (rootAbsoluteAsset.test(offlineMarkup)) {
     console.error(`${game.slug}: use relative asset and hub links so the game can open from a downloaded folder.`);
     failed = true;
   }

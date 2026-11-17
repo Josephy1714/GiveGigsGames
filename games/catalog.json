@@ -36,6 +36,15 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "platform-wars/index.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Phone: twin-thumb touch controls. Desktop: keyboard controls. Quick Match pairs phone and desktop players.",
+      "modes": [
+        "solo",
+        "multiplayer"
+      ],
       "runtimeType": "static"
     },
     {
@@ -104,7 +113,8 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "serversavershield/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "guideEntrypoint": "serversavershield/guide.html"
     },
     {
       "slug": "overtake",
@@ -251,7 +261,8 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "demolichdom/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "guideEntrypoint": "demolichdom/guide.html"
     },
     {
       "slug": "fridgesimulator",
@@ -266,7 +277,8 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "fridgesimulator/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "guideEntrypoint": "fridgesimulator/guide.html"
     },
     {
       "slug": "discoveramerica",
@@ -282,7 +294,8 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "discoveramerica/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "guideEntrypoint": "discoveramerica/guide.html"
     },
     {
       "slug": "orbitaldrift",
@@ -415,7 +428,8 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "gravegain4dA/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "guideEntrypoint": "gravegain4dA/guide.html"
     },
     {
       "slug": "starship-simulator",

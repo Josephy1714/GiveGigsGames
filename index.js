@@ -13,10 +13,46 @@
   const saveFileInput = document.getElementById("save-file-input");
   const SAVE_FILE_FORMAT = "givegigsgames-save";
   const selectedTags = new Set();
+  const collection = document.getElementById("catalog-collection");
+  const input = document.getElementById("catalog-input");
+  const gameMode = document.getElementById("catalog-mode");
   let games = [];
+  let favorites = new Set();
+  let recent = [];
+  let savedView;
+  try {
+    favorites = new Set(JSON.parse(localStorage.getItem("arcade:favorites") || "[]"));
+    recent = JSON.parse(localStorage.getItem("arcade:recent") || "[]");
+    savedView = JSON.parse(sessionStorage.getItem("arcade:catalog") || "null");
+  } catch {}
+
+  function rememberLaunch(game, played = true) {
+    if (played) recent = [game.slug, ...recent.filter((slug) => slug !== game.slug)].slice(0, 20);
+    try {
+      localStorage.setItem("arcade:recent", JSON.stringify(recent));
+      sessionStorage.setItem("arcade:catalog", JSON.stringify({
+        search: search.value, sort: sort.value, tagMatch: tagMatch.value,
+        tags: [...selectedTags], collection: collection.value, input: input.value, mode: gameMode.value,
+        view: grid.classList.contains("grid-view") ? "grid" : "list",
+        scroll: window.scrollY, slug: game.slug
+      }));
+    } catch {}
+  }
 
   const normalizedTags = (game) => [...new Set((game.tags || []).map((tag) => String(tag).trim()).filter(Boolean))];
   const compare = (a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
+
+  function withinOneEdit(word, candidate) {
+    if (Math.abs(word.length - candidate.length) > 1) return false;
+    if (word.length > candidate.length) return withinOneEdit(candidate, word);
+    let index = 0;
+    while (index < word.length && word[index] === candidate[index]) index += 1;
+    const suffix = word.slice(index + (word.length === candidate.length ? 1 : 0));
+    if (suffix === candidate.slice(index + 1)) return true;
+    return word.length === candidate.length &&
+      word[index] === candidate[index + 1] && word[index + 1] === candidate[index] &&
+      word.slice(index + 2) === candidate.slice(index + 2);
+  }
 
   function safeFilename(value) {
     return String(value || "save").normalize("NFKD").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70) || "save";
@@ -40,15 +76,38 @@
       game: game ? { slug: game.slug, title: game.title } : null,
       storage: { type: "localStorage", key, value }
     };
+    downloadFile(payload, `givegigsgames-${safeFilename(game?.slug || "browser")}-${safeFilename(key)}-${timestamp.replace(/[:.]/g, "-")}-${uniqueId}.txt`);
+  }
+
+  function downloadFile(payload, filename) {
     const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `givegigsgames-${safeFilename(game?.slug || "browser")}-${safeFilename(key)}-${timestamp.replace(/[:.]/g, "-")}-${uniqueId}.txt`;
+    link.download = filename;
     document.body.append(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadAllSaves() {
+    try {
+      const saves = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key === null || key.startsWith("arcade:")) continue;
+        const value = localStorage.getItem(key);
+        if (value !== null) saves.push({ type: "localStorage", key, value });
+      }
+      if (!saves.length) {
+        saveManagerStatus.textContent = "No saves to download.";
+        return;
+      }
+      downloadFile({ format: "givegigsgames-backup", version: 1, saves }, "givegigsgames-backup.txt");
+    } catch {
+      saveManagerStatus.textContent = "Browser saves could not be exported.";
+    }
   }
 
   function renderSaveFiles() {
@@ -57,7 +116,8 @@
       const entries = Array.from({ length: localStorage.length }, (_, index) => {
         const key = localStorage.key(index);
         return key === null ? null : { key, value: localStorage.getItem(key) };
-      }).filter((entry) => entry && entry.value !== null).sort((a, b) => compare(a.key, b.key));
+      }).filter((entry) => entry && entry.value !== null && !entry.key.startsWith("arcade:"))
+        .sort((a, b) => compare(gameForStorageKey(a.key)?.title || "", gameForStorageKey(b.key)?.title || "") || compare(a.key, b.key));
 
       saveManagerStatus.textContent = entries.length
         ? `${entries.length} browser storage ${entries.length === 1 ? "entry" : "entries"} found. Download each entry to back it up.`
@@ -92,12 +152,15 @@
     for (const file of files) {
       try {
         const payload = JSON.parse(await file.text());
-        if (payload?.format !== SAVE_FILE_FORMAT || payload?.version !== 1 ||
-            payload?.storage?.type !== "localStorage" || typeof payload.storage.key !== "string" ||
-            !payload.storage.key.trim() || typeof payload.storage.value !== "string") {
+        const saves = payload?.version === 1 && payload.format === "givegigsgames-backup"
+          ? payload.saves
+          : payload?.version === 1 && payload.format === SAVE_FILE_FORMAT ? [payload.storage] : null;
+        if (!Array.isArray(saves) || !saves.length || saves.some((save) =>
+          save?.type !== "localStorage" || typeof save.key !== "string" ||
+          !save.key.trim() || save.key.startsWith("arcade:") || typeof save.value !== "string")) {
           throw new Error("This is not a supported GiveGigsGames save file.");
         }
-        parsed.push({ file, key: payload.storage.key, value: payload.storage.value });
+        for (const { key, value } of saves) parsed.push({ file, key, value });
       } catch (error) {
         errors.push(`${file.name}: ${error.message || "could not be read"}`);
       }
@@ -107,20 +170,38 @@
       return;
     }
 
-    let overwrites;
+    const dialog = document.getElementById("restore-dialog");
+    const options = document.getElementById("restore-options");
+    const unique = [...new Map(parsed.map((item) => [item.key, item])).values()];
+    options.replaceChildren();
+    const choices = [];
     try {
-      overwrites = parsed.filter(({ key }) => localStorage.getItem(key) !== null);
+      for (const item of unique) {
+        const exists = localStorage.getItem(item.key) !== null;
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !exists;
+        const game = gameForStorageKey(item.key);
+        label.append(checkbox, ` ${game?.title || "Browser save"} · ${item.key} · ${exists ? "Replaces existing save" : "New save"}`);
+        options.append(label);
+        choices.push({ item, checkbox });
+      }
     } catch {
       saveManagerStatus.textContent = "This browser does not allow access to this site's local save data.";
       return;
     }
-    if (overwrites.length && !window.confirm(`Restore ${parsed.length} save file${parsed.length === 1 ? "" : "s"}? This will replace existing data for ${overwrites.length} matching storage key${overwrites.length === 1 ? "" : "s"}.`)) {
+    dialog.returnValue = "cancel";
+    dialog.showModal();
+    await new Promise((resolve) => dialog.addEventListener("close", resolve, { once: true }));
+    if (dialog.returnValue !== "restore") {
       saveManagerStatus.textContent = "Restore cancelled. Existing saves were not changed.";
       return;
     }
 
     let restored = 0;
-    for (const item of parsed) {
+    for (const { item, checkbox } of choices) {
+      if (!checkbox.checked) continue;
       try {
         localStorage.setItem(item.key, item.value);
         restored += 1;
@@ -173,16 +254,40 @@
 
   function render() {
     const query = search.value.trim().toLowerCase();
+    const rank = (game) => {
+      const title = game.title.toLowerCase();
+      if (title === query) return 0;
+      if (title.startsWith(query)) return 1;
+      if (title.includes(query)) return 2;
+      const terms = [game.genre, game.description, ...normalizedTags(game)].join(" ").toLowerCase();
+      const words = query.split(/\s+/);
+      if (words.every((word) => (title + " " + terms).includes(word))) return 3;
+      const titleWords = title.match(/[\p{L}\p{N}]+/gu) || [];
+      if (words.every((word) => title.includes(word) ||
+        (word.length >= 4 && titleWords.some((candidate) => withinOneEdit(word, candidate))))) return 4;
+      return Infinity;
+    };
     const filtered = games.filter((game) => {
       const tags = normalizedTags(game);
-      const haystack = `${game.title} ${game.genre} ${game.description} ${tags.join(" ")}`.toLowerCase();
+      if (collection.value === "favorites" && !favorites.has(game.slug)) return false;
+      if (collection.value === "recent" && !recent.includes(game.slug)) return false;
+      if (collection.value === "offline" && game.runtimeType !== "static") return false;
+      if (input.value && !game.inputs?.includes(input.value)) return false;
+      if (gameMode.value && !game.modes?.includes(gameMode.value)) return false;
       const tagMatches = [...selectedTags].map((tag) => tags.includes(tag));
       const matchesTags = !tagMatches.length || (tagMatch.value === "all" ? tagMatches.every(Boolean) : tagMatches.some(Boolean));
-      return (!query || haystack.includes(query)) && matchesTags;
+      return (!query || Number.isFinite(rank(game))) && matchesTags;
     });
     const sorted = sortGames(filtered);
+    if (collection.value === "recent") sorted.sort((a, b) => recent.indexOf(a.slug) - recent.indexOf(b.slug));
+    if (query) sorted.sort((a, b) => rank(a) - rank(b));
     count.textContent = `${sorted.length} of ${games.length} games · tags can match any or all`;
     grid.replaceChildren();
+    if (!sorted.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "No games match. Try changing your search, collection, or selected tags.";
+      grid.append(empty);
+    }
     for (const game of sorted) {
       const card = document.createElement("article");
       card.className = "game-card";
@@ -208,6 +313,10 @@
       genre.textContent = game.genre || "Uncategorized";
       const description = document.createElement("p");
       description.textContent = game.description || "";
+      const availability = document.createElement("span");
+      availability.className = "genre";
+      const status = game.status ? `${game.status[0].toUpperCase()}${game.status.slice(1)} · ` : "";
+      availability.textContent = status + (game.runtimeType === "external" ? "Internet required" : "Browser build");
       const tags = document.createElement("div");
       tags.className = "game-tags";
       for (const tag of normalizedTags(game)) {
@@ -216,19 +325,43 @@
         chip.textContent = tag;
         tags.append(chip);
       }
-      body.append(title, genre, description, tags);
+      body.append(title, genre, availability, description, tags);
       const actions = document.createElement("div");
       actions.className = "game-card-actions";
       const play = document.createElement("a");
+      play.id = `launch-${game.slug}`;
       play.className = "play-label";
-      play.href = game.runtimeType === "external" ? game.externalUrl : `./games/${game.entrypoint}`;
-      play.textContent = game.runtimeType === "external" ? "Launch hosted build ↗ (online)" : "Open game →";
-      if (game.runtimeType === "external") { play.target = "_blank"; play.rel = "noreferrer"; }
+      play.href = `/ggg/play/${encodeURIComponent(game.slug)}`;
+      play.addEventListener("click", () => rememberLaunch(game));
       const test = document.createElement("a");
       test.className = "test-link";
-      test.href = `./tester/?game=${encodeURIComponent(game.slug)}`;
-      test.textContent = "Open in tester";
-      actions.append(play, test);
+      test.href = `/ggg/test/${encodeURIComponent(game.slug)}`;
+      test.textContent = "Test";
+      const details = document.createElement("a");
+      details.className = "test-link";
+      details.href = `/ggg/info/${encodeURIComponent(game.slug)}`;
+      details.textContent = "Game details";
+      details.addEventListener("click", () => rememberLaunch(game, false));
+      const guide = document.createElement("a");
+      guide.className = "test-link";
+      guide.href = `/ggg/guide/${encodeURIComponent(game.slug)}`;
+      guide.textContent = "Walkthrough";
+      const favorite = document.createElement("button");
+      favorite.type = "button";
+      favorite.className = "save-download-button";
+      favorite.textContent = "Favorite";
+      favorite.setAttribute("aria-label", `Favorite ${game.title}`);
+      favorite.setAttribute("aria-pressed", String(favorites.has(game.slug)));
+      favorite.addEventListener("click", () => {
+        favorites.has(game.slug) ? favorites.delete(game.slug) : favorites.add(game.slug);
+        try { localStorage.setItem("arcade:favorites", JSON.stringify([...favorites])); } catch {}
+        favorite.setAttribute("aria-pressed", String(favorites.has(game.slug)));
+        if (collection.value === "favorites") {
+          render();
+          collection.focus();
+        }
+      });
+      actions.append(play, test, details, guide, favorite);
       card.append(head, body, actions);
       grid.append(card);
     }
@@ -238,6 +371,21 @@
     const catalog = window.GIVEGIGSGAMES_CATALOG;
     if (!catalog || !Array.isArray(catalog.games)) throw new Error("Catalog data is missing.");
     games = catalog.games;
+    if (savedView && location.hash === "#all-games") {
+      search.value = savedView.search;
+      sort.value = savedView.sort;
+      tagMatch.value = savedView.tagMatch;
+      collection.value = savedView.collection;
+      input.value = savedView.input || "";
+      gameMode.value = savedView.mode || "";
+      for (const tag of savedView.tags) selectedTags.add(tag);
+      updateSelectedTagCount();
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-view="${savedView.view === "grid" ? "grid" : "list"}"]`).click();
+        document.getElementById(`launch-${savedView.slug}`)?.focus({ preventScroll: true });
+        window.scrollTo({ top: savedView.scroll, behavior: "instant" });
+      });
+    }
     renderTagOptions();
     render();
   } catch {
@@ -245,6 +393,9 @@
     error.hidden = false;
   }
   search.addEventListener("input", render);
+  collection.addEventListener("change", render);
+  input.addEventListener("change", render);
+  gameMode.addEventListener("change", render);
   sort.addEventListener("change", render);
   tagSearch.addEventListener("input", renderTagOptions);
   tagMatch.addEventListener("change", render);
@@ -259,6 +410,7 @@
     if (files.length) await restoreSaveFiles(files);
     saveFileInput.value = "";
   });
+  document.getElementById("download-all-saves").addEventListener("click", downloadAllSaves);
   renderSaveFiles();
   document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => {
     const listView = button.dataset.view === "list";

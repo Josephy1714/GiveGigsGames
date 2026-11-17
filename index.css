@@ -12,3 +12,27 @@
 .game-grid.list-view{grid-template-columns:1fr;gap:8px}.game-grid.list-view .game-card{min-height:0;display:grid;grid-template-columns:42px minmax(0,1fr) max-content;align-items:center;gap:12px;padding:13px 16px}.game-grid.list-view .card-head{grid-column:1;grid-row:1;align-self:start}.game-grid.list-view .game-card-body{grid-column:2;grid-row:1}.game-grid.list-view .game-card-body h3{margin:0 0 3px}.game-grid.list-view .game-card-body p{display:block;margin:6px 0;max-width:850px}.game-grid.list-view .game-card-actions{grid-column:3;grid-row:1;display:flex;flex-direction:column;align-items:flex-end;gap:8px}.game-tags{display:flex;flex-wrap:wrap;gap:5px}.game-tag{padding:3px 7px;border:1px solid #344b5d;border-radius:999px;color:#a9bfd0;font-size:9px;line-height:1.2}.game-grid.grid-view{grid-template-columns:repeat(4,minmax(0,1fr))}.game-grid.grid-view .game-card{display:flex;flex-direction:column}.game-grid.grid-view .game-card-body{display:contents}.game-grid.grid-view .game-card-actions{margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 @media(max-width:920px){.game-grid.grid-view{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:680px){.catalog-tools{align-items:stretch;flex-wrap:wrap}.catalog-search{flex-basis:100%}.catalog-sort{flex:1}.game-grid.list-view .game-card{grid-template-columns:30px minmax(0,1fr);gap:9px;padding:12px}.game-grid.list-view .game-card-body{grid-column:2}.game-grid.list-view .game-card-actions{grid-column:2;grid-row:2;flex-direction:row;align-items:center}.game-grid.grid-view{grid-template-columns:repeat(2,minmax(0,1fr))}.game-grid.grid-view .game-card-actions{margin-top:auto}}
+.save-download-button[aria-pressed="true"] {
+  background: #82f2c3;
+  color: #07111d;
+}
+
+#restore-dialog {
+  width: min(620px, calc(100% - 24px));
+  border: 1px solid #31495f;
+  border-radius: 12px;
+  background: #0d1b29;
+  color: #f4f8fb;
+}
+
+#restore-options {
+  max-height: 50vh;
+  overflow: auto;
+  margin: 16px 0;
+}
+
+#restore-options label {
+  display: block;
+  padding: 6px 0;
+  overflow-wrap: anywhere;
+}

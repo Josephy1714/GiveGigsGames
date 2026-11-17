@@ -1,9 +1,43 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 
 const catalogUrl = new URL("../games/catalog.json", import.meta.url);
 const outputUrl = new URL("../games/catalog-data.js", import.meta.url);
 const catalog = JSON.parse(await readFile(catalogUrl, "utf8"));
+const slugs = new Set();
+for (const game of catalog.games) {
+  const fail = (message) => { throw new Error(`${game.slug || "(missing slug)"}: ${message}`); };
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(game.slug || "")) fail("Use letters, digits, and hyphens in the slug.");
+  const slug = game.slug.toLowerCase();
+  if (slugs.has(slug)) fail("Use a unique slug.");
+  slugs.add(slug);
+  if (typeof game.title !== "string" || !game.title.trim()) fail("Provide a game title.");
+  if (game.status !== undefined && !["stable", "preview", "experimental"].includes(game.status)) {
+    fail("Set status to stable, preview, or experimental.");
+  }
+  if (game.inputs !== undefined && (!Array.isArray(game.inputs) ||
+      game.inputs.some((input) => !["touch", "keyboard", "gamepad"].includes(input)))) {
+    fail("List supported inputs from touch, keyboard, and gamepad.");
+  }
+  if (game.modes !== undefined && (!Array.isArray(game.modes) ||
+      game.modes.some((mode) => !["solo", "multiplayer"].includes(mode)))) {
+    fail("List supported modes from solo and multiplayer.");
+  }
+  if (game.runtimeType === "static") {
+    if (!/^(?:[\w-]+\/)+[\w-]+\.html$/.test(game.entrypoint || "")) fail("Use a relative HTML entrypoint inside games/.");
+    const file = await stat(new URL(game.entrypoint, catalogUrl)).catch(() => null);
+    if (!file?.isFile()) fail(`Create the missing entrypoint ${game.entrypoint}.`);
+    if (game.guideEntrypoint !== undefined) {
+      if (!/^(?:[\w-]+\/)+[\w-]+\.html$/.test(game.guideEntrypoint)) fail("Use a relative HTML guide path inside games/.");
+      const guide = await stat(new URL(game.guideEntrypoint, catalogUrl)).catch(() => null);
+      if (!guide?.isFile()) fail(`Create the missing guide ${game.guideEntrypoint}.`);
+    }
+  } else if (game.runtimeType === "external") {
+    if (!/^https:\/\/[^/\s]+/i.test(game.externalUrl || "")) fail("Provide an HTTPS launch URL.");
+  } else {
+    fail("Set runtimeType to static or external.");
+  }
+}
 const output = `/* Generated from catalog.json by scripts/build-browser-catalog.mjs. */\nwindow.GIVEGIGSGAMES_CATALOG = ${JSON.stringify(catalog).replace(/</g, "\\u003c")};\n`;
 
 if (process.argv.includes("--check")) {

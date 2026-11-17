@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#07111d">
+    <title>Play — GiveGigsGames</title>
+    <link rel="stylesheet" href="/play.css">
+    <link rel="stylesheet" href="/play-layout.css">
+    <script src="/games/catalog-data.js" defer></script>
+    <script src="/play.js" defer></script>
+  </head>
+  <body>
+    <header class="player-bar">
+      <a class="back-link" href="/ggg/" aria-label="Back to game select">← <span>Back to game select</span></a>
+      <h1 id="game-title">Loading game…</h1>
+      <a class="home-link" id="direct-link" hidden>Open directly</a>
+    </header>
+    <main class="player-content">
+      <p id="player-error" role="alert" hidden></p>
+      <div id="player-loading" role="status" hidden>
+        <span id="loading-status">Loading game…</span>
+        <button id="retry-game" type="button" hidden>Retry</button>
+      </div>
+      <iframe id="game-frame" title="Game" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+    </main>
+  </body>
+</html>

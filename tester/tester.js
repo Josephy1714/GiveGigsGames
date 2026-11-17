@@ -18,6 +18,32 @@
   let games = [];
   let selected = null;
   const selectedTags = new Set();
+  const viewport = byId("viewport-preset");
+
+  viewport.addEventListener("change", () => {
+    const [width, height] = viewport.value.split("x");
+    frameWrap.style.overflow = width ? "auto" : "";
+    frame.style.width = width ? `${width}px` : "";
+    frame.style.height = height ? `${height}px` : "";
+    frame.style.maxWidth = width ? "none" : "";
+  });
+
+  byId("draft-bug").addEventListener("click", () => {
+    if (!selected) return;
+    const draft = byId("bug-draft");
+    draft.value = [
+      `Game: ${selected.title} (${selected.slug})`,
+      `Tester URL: ${location.href}`,
+      `Build: ${selected.buildId || "Not recorded"}`,
+      `Frame size: ${frame.clientWidth} × ${frame.clientHeight}`,
+      `Browser: ${navigator.userAgent}`,
+      "Input method:",
+      "",
+      byId("bug-steps").value
+    ].join("\n");
+    draft.focus();
+    draft.select();
+  });
 
   const tagsFor = (game) => [...new Set((game.tags || []).map((tag) => String(tag).trim()).filter(Boolean))];
   const compare = (a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
@@ -51,7 +77,7 @@
   const safePath = (game) => {
     if (game.runtimeType === "external") return game.externalUrl;
     if (!/^[a-z0-9-]+(?:\/[a-zA-Z0-9._-]+)*$/.test(game.entrypoint || "")) return "";
-    return `../games/${game.entrypoint.split("/").map(encodeURIComponent).join("/")}`;
+    return `/games/${game.entrypoint.split("/").map(encodeURIComponent).join("/")}`;
   };
 
   function render() {
@@ -125,6 +151,9 @@
     byId("player-genre").textContent = game.genre;
     byId("player-description").textContent = game.description;
     byId("open-game").href = source;
+    byId("view-info").href = `/ggg/info/${encodeURIComponent(game.slug)}`;
+    byId("view-guide").href = `/ggg/guide/${encodeURIComponent(game.slug)}`;
+    byId("view-play").href = game.runtimeType === "external" ? source : `/ggg/play/${encodeURIComponent(game.slug)}`;
     frame.title = `${game.title} game`;
     const external = game.runtimeType === "external";
     frameWrap.hidden = external;
@@ -146,6 +175,12 @@
     try { history.replaceState(null, "", location.pathname); } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  window.addEventListener("message", (event) => {
+    if (event.source === frame.contentWindow && event.data?.type === "givegigsgames:back-to-select") {
+      closeGame();
+    }
+  });
 
   search.addEventListener("input", render);
   genre.addEventListener("change", render);

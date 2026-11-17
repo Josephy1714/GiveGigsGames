@@ -41,6 +41,18 @@ python -m http.server 4173
 
 Then open <http://localhost:4173/>. The searchable tester is at <http://localhost:4173/tester/>.
 
+## Five views of the game library
+
+The hosted Vercel site exposes five clear routes for each title. The root-level legacy pages remain available for local development and downloads.
+
+- `https://games.givegigs.com/ggg/` — full searchable games library.
+- `https://games.givegigs.com/ggg/play/<slug>` — player view.
+- `https://games.givegigs.com/ggg/test/<slug>` — tester view with viewport controls.
+- `https://games.givegigs.com/ggg/info/<slug>` — concise game information and links to the other views.
+- `https://games.givegigs.com/ggg/guide/<slug>` — walkthrough view, using the game's authored guide when available.
+
+For example, `platform-wars` is available under each route at `/ggg/play/platform-wars`, `/ggg/test/platform-wars`, `/ggg/info/platform-wars`, and `/ggg/guide/platform-wars`. Routes are configured in `vercel.json` and use the existing catalog slugs.
+
 ## Contribute a game
 
 We welcome playable browser games and improvements. Start with [CONTRIBUTING.md](CONTRIBUTING.md), copy [`templates/vanilla-game/`](templates/vanilla-game/), and open a pull request. The template is plain HTML, CSS, and JavaScript so a game can be tested by opening its `index.html` directly.

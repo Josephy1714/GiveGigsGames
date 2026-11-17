@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Game details · GiveGigsGames</title>
+    <link rel="stylesheet" href="/index.css">
+    <script src="/games/catalog-data.js" defer></script>
+    <script src="/game-details.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar"><a href="/ggg/">← Game select</a><nav class="ggg-views"><a id="nav-play">Play</a><a id="nav-test">Test</a><a id="nav-info">Info</a><a id="nav-guide">Guide</a></nav></header>
+    <main class="catalog-section">
+      <h1 id="title">Game details</h1>
+      <p id="description" role="status"></p>
+      <p id="requirements"></p>
+      <p id="controls"></p>
+      <div id="actions" hidden>
+        <div class="hero-actions">
+        <a id="play" class="button primary">Play</a>
+        <a id="tester" class="button secondary">Open in tester</a>
+        <a id="guide" class="button secondary">In-depth walkthrough</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

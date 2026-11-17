@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#08131f">
     <meta name="description" content="Download GiveGigsGames to a desktop or phone and play the static browser games from index.html, even offline.">
     <title>GiveGigsGames — Full Game Library</title>
-    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="/index.css">
     <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -19,12 +19,52 @@
 </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="./" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
       <span class="host-label">FULL GAME LIBRARY</span>
-      <a class="top-link" href="./tester/">Developer tester ↗</a>
+      <a class="top-link" href="/tester/">Developer tester ↗</a>
     </header>
 
     <main>
+      <section id="all-games" class="catalog-section">
+        <div class="section-heading">
+          <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Browse every game</h2></div>
+          <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
+        </div>
+        <div class="catalog-tools">
+          <label class="catalog-search"><span class="sr-only">Search titles, genres, and tags</span><input id="catalog-search" type="search" placeholder="Search games, genres, tags…" autocomplete="off"></label>
+          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
+          <div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div>
+        </div>
+        <div class="catalog-tools">
+          <label class="catalog-sort">Collection
+            <select id="catalog-collection">
+              <option value="">All games</option>
+              <option value="favorites">Favorites</option>
+              <option value="recent">Recently played</option>
+              <option value="offline">Downloadable browser games</option>
+            </select>
+          </label>
+          <label class="catalog-sort">Input
+            <select id="catalog-input">
+              <option value="">Any input</option>
+              <option value="touch">Touch</option>
+              <option value="keyboard">Keyboard</option>
+              <option value="gamepad">Gamepad</option>
+            </select>
+          </label>
+          <label class="catalog-sort">Mode
+            <select id="catalog-mode">
+              <option value="">Any mode</option>
+              <option value="solo">Solo</option>
+              <option value="multiplayer">Multiplayer</option>
+            </select>
+          </label>
+        </div>
+        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button></div><div id="tag-options" class="tag-options"></div></details>
+        <div id="game-grid" class="game-grid list-view"></div>
+        <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
+      </section>
+
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow"><span class="live-dot"></span> ALL GAMES · ALL BUILDS</p>
@@ -57,6 +97,7 @@
           <p>Download each browser save as a readable, structured <code>.txt</code> file. Upload one later to restore it in this browser. Restored saves replace data with the same storage key.</p>
         </div>
         <div class="save-manager-actions">
+          <button id="download-all-saves" class="save-download-button" type="button">Download all saves</button>
           <label class="button secondary upload-save-button" for="save-file-input">Upload save files</label>
           <input id="save-file-input" class="sr-only" type="file" accept=".txt,text/plain,application/json" multiple>
           <p id="save-manager-status" class="save-manager-status" role="status" aria-live="polite">Looking for browser saves…</p>
@@ -65,25 +106,20 @@
         <p class="save-manager-note">Save files contain the stored game data. Keep them private if the game data is personal. After restoring a save, reload that game to see the restored progress.</p>
       </section>
 
-      <section id="all-games" class="catalog-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Browse every game</h2></div>
-          <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
-        </div>
-        <div class="catalog-tools">
-          <label class="catalog-search"><span class="sr-only">Search titles, genres, and tags</span><input id="catalog-search" type="search" placeholder="Search games, genres, tags…" autocomplete="off"></label>
-          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
-          <div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div>
-        </div>
-        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button></div><div id="tag-options" class="tag-options"></div></details>
-        <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
-        <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
-      </section>
     </main>
+    <dialog id="restore-dialog" aria-labelledby="restore-title">
+      <form method="dialog">
+        <h2 id="restore-title">Review save import</h2>
+        <p>Choose the entries to restore. Existing saves are left unchecked.</p>
+        <div id="restore-options"></div>
+        <button value="cancel" autofocus>Cancel</button>
+        <button value="restore">Restore selected</button>
+      </form>
+    </dialog>
 
     <section class="contribute-strip" aria-label="Contribute to GiveGigsGames"><div><p class="eyebrow">OPEN SOURCE · UNDER 10 MB PER GAME</p><h2>Don't just play the arcade. Help build it.</h2><p>New games, fixes, art, sound, and ideas are welcome. Fork the repo, make something playable, and share it with the next contributor.</p></div><div class="contribute-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Start contributing on GitHub ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/issues/new/choose">Pitch an idea or report a bug ↗</a></div></section>
-    <footer class="footer"><a class="brand footer-brand" href="./"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="https://github.com/mattyjacks/GiveGigsGames">Contribute ↗</a><a href="./tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="./terms.html">Terms of Use</a><a href="./privacy.html">Privacy Policy</a></footer>
-    <script src="./games/catalog-data.js" defer></script>
-    <script src="./index.js" defer></script>
+    <footer class="footer"><a class="brand footer-brand" href="/ggg/"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="https://github.com/mattyjacks/GiveGigsGames">Contribute ↗</a><a href="/tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="/terms.html">Terms of Use</a><a href="/privacy.html">Privacy Policy</a></footer>
+    <script src="/games/catalog-data.js" defer></script>
+    <script src="/index.js" defer></script>
   </body>
 </html>

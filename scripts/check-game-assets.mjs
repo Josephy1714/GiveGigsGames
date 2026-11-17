@@ -12,7 +12,8 @@ for (const game of catalog.games.filter((item) => item.runtimeType === "static")
   const entrypoint = path.join(gamesRoot, ...game.entrypoint.split("/"));
   const baseDir = path.dirname(entrypoint);
   const html = readFileSync(entrypoint, "utf8");
-  for (const [, , url] of html.matchAll(/(?:src|href|poster|data-src)\s*=\s*(["'])(.*?)\1/gi)) {
+  const offlineMarkup = html.replace(/vercelAnalyticsScript\.src\s*=\s*["']\/_vercel\/insights\/script\.js["']/g, "");
+  for (const [, , url] of offlineMarkup.matchAll(/(?:src|href|poster|data-src)\s*=\s*(["'])(.*?)\1/gi)) {
     const value = url.trim();
     if (!value || /^(?:https?:|\/\/|data:|blob:|javascript:|#)/i.test(value)) continue;
     const localPath = decodeURIComponent(value.split(/[?#]/, 1)[0]);

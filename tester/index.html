@@ -2,10 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
+    <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#08121f">
     <title>GiveGigsGames Full Library Tester</title>
-    <link rel="stylesheet" href="./tester.css">
+    <link rel="stylesheet" href="/tester/tester.css">
     <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -18,7 +19,7 @@
 </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="../" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
       <span class="dev-badge">FULL CATALOG</span>
       <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames">Contribute a game ↗</a>
     </header>
@@ -39,7 +40,7 @@
         <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button><div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div></div><div id="tag-options" class="tag-options"></div></details>
         <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
         <p id="load-error" class="load-error" hidden></p>
-        <footer class="library-footer">Some titles are works in progress. For local development, serve the repository over HTTP so storage, workers, and relative assets behave like a hosted game. <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a></footer>
+        <footer class="library-footer">Some titles are works in progress. For local development, serve the repository over HTTP so storage, workers, and relative assets behave like a hosted game. <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></footer>
       </section>
 
       <section id="player-view" class="player-view" hidden>
@@ -47,6 +48,9 @@
           <button id="back-button" class="back-button" type="button">← All games</button>
           <div class="player-title"><span id="player-emoji" class="player-emoji" aria-hidden="true"></span><div><p id="player-genre" class="eyebrow"></p><h1 id="player-name"></h1></div></div>
           <div class="player-actions">
+            <a id="view-info" class="tool-button">Info</a>
+            <a id="view-guide" class="tool-button">Guide</a>
+            <a id="view-play" class="tool-button">Play</a>
             <a id="open-game" class="tool-button" target="_blank" rel="noreferrer">Open raw game ↗</a>
             <button id="reload-game" class="tool-button" type="button">Reload</button>
             <button id="fullscreen-game" class="tool-button primary" type="button">Fullscreen ⛶</button>
@@ -59,12 +63,30 @@
           <form id="console-form" class="console-form"><label class="sr-only" for="console-input">Enter a GraveGain tester command</label><span aria-hidden="true">&gt;</span><input id="console-input" autocomplete="off" spellcheck="false" placeholder="help · god on/off · heal · gold 1000 · win · lose"><button type="submit">Run</button></form>
           <output id="console-output" class="console-output" aria-live="polite">Console ready. Select a command or type help.</output>
         </section>
+        <label>Preview viewport
+          <select id="viewport-preset">
+            <option value="">Fit available space</option>
+            <option value="390x844">Phone portrait</option>
+            <option value="844x390">Phone landscape</option>
+            <option value="768x1024">Tablet</option>
+            <option value="1280x720">Desktop</option>
+          </select>
+        </label>
+        <small>Presets resize the frame. Use a real device to check touch and performance.</small>
+        <details>
+          <summary>Draft a bug report</summary>
+          <label for="bug-steps">Steps, expected behavior, and actual behavior</label>
+          <textarea id="bug-steps" rows="4"></textarea>
+          <button id="draft-bug" type="button">Generate draft</button>
+          <label for="bug-draft">Report draft</label>
+          <textarea id="bug-draft" rows="8" readonly></textarea>
+        </details>
         <div id="frame-wrap" class="frame-wrap"><iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe></div>
         <div id="external-runtime" class="external-runtime" hidden><p>This game is still hosted by MattyJacks. It blocks embedding from another site, so open it in a separate tab.</p><a id="open-external" class="tool-button primary" target="_blank" rel="noreferrer">Open game ↗</a></div>
         <p class="player-note">Testing environment: cloud saves and cross-device sync are not available. Any progress a game saves stays in this browser's local storage. Click inside the game to send it keyboard or mouse input. <a href="https://github.com/mattyjacks/GiveGigsGames">Found a problem? Fix it and send a pull request ↗</a></p>
       </section>
     </main>
-    <script src="../games/catalog-data.js" defer></script>
-    <script src="./tester.js" defer></script>
+    <script src="/games/catalog-data.js" defer></script>
+    <script src="/tester/tester.js" defer></script>
   </body>
 </html>
