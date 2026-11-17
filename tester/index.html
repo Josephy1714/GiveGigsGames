@@ -4,21 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#08121f">
-    <title>GiveGigsGames Developer Arcade</title>
+    <title>GiveGigsGames Full Library Tester</title>
     <link rel="stylesheet" href="./tester.css">
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="./" aria-label="GiveGigsGames tester home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
-      <span class="dev-badge">DEVELOPER TESTER</span>
-      <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames" target="_blank" rel="noreferrer">Repository ↗</a>
+      <a class="brand" href="../" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+      <span class="dev-badge">FULL CATALOG</span>
+      <a class="repo-link" href="https://givegigs.com/games/" target="_blank" rel="noreferrer">Curated GiveGigs catalog ↗</a>
     </header>
     <main class="shell">
       <section id="library-view" class="library-view">
         <div class="intro">
-          <p class="eyebrow">LIGHTWEIGHT HTML ARCADE</p>
-          <h1>Test a game.<br><span>Keep the feedback loop short.</span></h1>
-          <p class="intro-copy">Launch the same static game files used by the host pages. No Next.js app or build step required.</p>
+          <p class="eyebrow">FULL LIBRARY · TEST & PREVIEW BUILDS</p>
+          <h1>Play a build.<br><span>Check how it behaves.</span></h1>
+          <p class="intro-copy">This public testing environment includes released titles, previews, experiments, and development builds. Launch the current game files directly; no Next.js app or game build step is required. Cloud saves are not available.</p>
         </div>
         <div class="library-tools">
           <label class="search-wrap"><span class="sr-only">Search games</span><span aria-hidden="true">⌕</span><input id="game-search" type="search" placeholder="Find a game…" autocomplete="off"></label>
@@ -27,7 +27,7 @@
         </div>
         <div id="game-grid" class="game-grid" aria-live="polite"></div>
         <p id="load-error" class="load-error" hidden></p>
-        <footer class="library-footer">Run from a local HTTP server so iframe storage, workers, and relative assets behave like a hosted game.</footer>
+        <footer class="library-footer">Some titles are works in progress. For local development, serve the repository over HTTP so storage, workers, and relative assets behave like a hosted game.</footer>
       </section>
 
       <section id="player-view" class="player-view" hidden>
@@ -43,7 +43,7 @@
         <p id="player-description" class="player-description"></p>
         <div id="frame-wrap" class="frame-wrap"><iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe></div>
         <div id="external-runtime" class="external-runtime" hidden><p>This game is still hosted by MattyJacks. It blocks embedding from another site, so open it in a separate tab.</p><a id="open-external" class="tool-button primary" target="_blank" rel="noreferrer">Open game ↗</a></div>
-        <p class="player-note">Keyboard and mouse input go to the game after you click inside it. Browser storage uses this local server origin.</p>
+        <p class="player-note">Testing environment: cloud saves and cross-device sync are not available. Any progress a game saves stays in this browser's local storage. Click inside the game to send it keyboard or mouse input.</p>
       </section>
     </main>
     <script src="./tester.js" defer></script>
