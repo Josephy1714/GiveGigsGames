@@ -6,6 +6,10 @@ An open browser-game framework and full public test library for GiveGigs. The re
 
 ## Quick start — play without installing anything
 
+**Fastest: [Play GiveGigsGames now](https://games.givegigs.com/).** Open the live arcade in your browser, choose a game, and start playing.
+
+For offline play, download and extract the repo:
+
 ### Desktop
 
 1. Open [GiveGigsGames on GitHub](https://github.com/mattyjacks/GiveGigsGames).
