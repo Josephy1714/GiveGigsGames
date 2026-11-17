@@ -1,0 +1,13 @@
+{
+  "files": [
+    "storage.js",
+    "state.js",
+    "steering.js",
+    "input.js",
+    "session.js",
+    "simulation.js",
+    "rendering.js",
+    "integration.js",
+    "lifecycle.js"
+  ]
+}

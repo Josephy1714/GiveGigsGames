@@ -1,0 +1,55 @@
+{
+    "title": "GraveGain1DA",
+    "slug": "gravegain1dA",
+    "description": "A one-dimensional GraveGain RPG: walk the ley-line east, turn-based or real-time, 5 sectors, bosses, and endless Echo Drift. BIG upgrade: emoji-parallax art + emergent wanderers with quests and events.",
+    "genre": "RPG",
+    "tags": ["HTML5", "RPG", "1D", "Turn-Based"],
+    "maker": {
+        "name": "4weird Games",
+        "bio": "One dimension is all a courier needs: walk east, hold the line, deliver the charge.",
+        "url": "https://4weird.com",
+        "urlLabel": "4weird"
+    },
+    "credits": [
+        {
+            "name": "4weird Games",
+            "role": "Creator",
+            "primary": true,
+            "url": "https://4weird.com",
+            "urlLabel": "4weird"
+        }
+    ],
+    "controls": {
+        "keyboard": {
+            "Right Arrow / D": "Step east (turn-based: 1 tick; real-time: move intent)",
+            "Space / J": "Attack nearest enemy in range",
+            "K / 1": "Class ability",
+            "H / 2": "Drink potion",
+            "W / 0": "Wait one tick (turn-based)",
+            "Q": "Cycle speed 0.5x / 1x / 2x (real-time)",
+            "P or Esc": "Pause (real-time)"
+        },
+        "touch": {
+            "scheme": "One-thumb crypt line + ritual tap bar",
+            "crypt line": "Tap LEFT half = STEP east, tap RIGHT half = ATTACK. Hold LEFT = auto-march, hold RIGHT = charge ritual (ABILITY) then steady strikes",
+            "ritual tap bar": "Big STEP / ATK / RITUAL buttons (STEP+ATK hold-to-repeat) plus POT / WAIT",
+            "layout": "Vertical portrait stack: HUD / stage / crypt line / ritual bar, safe-area padded, 64px+ targets"
+        },
+        "mouse": true
+    },
+    "instructions": "Pick turn-based or real-time, pick a class, and walk east along the ley-line toward Hades' spire. Clear 5 sectors and their bosses, then push into endless Echo Drift. You can never move left and never jump — the line only goes right.",
+    "technical": {
+        "canvasSize": {"width": 960, "height": 540},
+        "targetFPS": 60,
+        "mobileOptimized": true
+    },
+    "assets": {
+        "external": [],
+        "local": ["game.js", "game.css"]
+    },
+    "meta": {
+        "version": "1.0.0",
+        "created": "2026-09-12",
+        "license": "Proprietary"
+    }
+}

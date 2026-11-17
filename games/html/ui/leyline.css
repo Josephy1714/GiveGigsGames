@@ -1,0 +1,18 @@
+.fw-leyline-setup{position:absolute!important;inset:8px!important;width:auto!important;max-width:720px!important;height:auto!important;max-height:calc(100% - 16px)!important;margin:auto!important;padding:14px!important;box-sizing:border-box!important;background:#100b20!important;border:1px solid #73558a;border-radius:16px}
+.fw-leyline-setup h1{font-size:clamp(1rem,3vw,1.6rem)!important;margin:0!important}
+.fw-leyline-setup>.sub{font-size:.8rem!important;line-height:1.35!important;margin:0!important}
+.fw-leyline-setup .fw-flow-section{width:100%;min-height:0!important}
+.fw-leyline-setup .fw-choice-deck>button{font-size:1rem!important;border-radius:12px!important}
+.fw-leyline-setup .fw-choice-deck>button small{display:block!important;font-size:.85rem!important}
+.fw-leyline-setup [id$="GoBtn"]{margin:0!important;min-height:40px!important;padding:8px 14px!important;font-size:.85rem!important}
+#gg1dWrap,#gg5dWrap{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;width:100%!important;padding:8px!important;overflow:hidden!important;box-sizing:border-box!important}
+#gg1dStage,#gg5dStage{flex:1 1 0!important;min-height:0!important;display:flex;align-items:center;justify-content:center}
+#gg1dCanvas,#gg5dCanvas{width:100%!important;height:100%!important;object-fit:contain!important;min-height:0!important}
+#gg1dHud,#gg5dHud{flex:0 0 auto!important;gap:4px 10px!important;padding:6px!important;font-size:.72rem!important;margin-bottom:4px!important}
+#gg1dHud .bar,#gg5dHud .bar{width:70px!important;height:7px!important}
+#gg1dTouch,#gg5dTouch{flex:0 0 auto!important;margin-top:4px!important;gap:4px!important}
+#gg1dTouch button,#gg5dTouch button{min-height:40px!important;padding:6px!important;font-size:.8rem!important}
+#gg1dRitualLabel{display:none!important}
+#gg1dHud[hidden],#gg5dHud[hidden],#gg1dTouch[hidden],#gg5dTouch[hidden]{display:none!important}
+@media(max-height:450px){.fw-leyline-setup>.sub{display:none!important}.fw-leyline-setup{gap:6px!important;padding:8px!important}.fw-leyline-setup .fw-choice-deck>button{min-height:55px!important}.fw-leyline-setup h1{font-size:1rem!important}}
+

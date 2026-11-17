@@ -1,0 +1,18 @@
+{
+  "name": "venturemechanically",
+  "files": [
+    "core/constants.js",
+    "core/audio.js",
+    "core/quotes.js",
+    "core/math-helpers.js",
+    "vm-ads/banner.js",
+    "vm-ads/book-cta.js",
+    "ui/navigation.js",
+    "games/game-llc.js",
+    "games/game-ratchet.js",
+    "games/game-boardroom.js",
+    "games/game-safes.js",
+    "games/game-vesting.js",
+    "main.js"
+  ]
+}

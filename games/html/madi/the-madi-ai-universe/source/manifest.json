@@ -1,0 +1,10 @@
+{
+  "files": [
+    "state.js",
+    "engine.js",
+    "world.js",
+    "controls.js",
+    "rendering.js",
+    "navigation.js"
+  ]
+}

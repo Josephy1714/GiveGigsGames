@@ -1,0 +1,63 @@
+/* Focused page layouts for the game surfaces, independent from the legacy site chrome. */
+.game-container { min-height: min(100svh, 760px); }
+#gameCanvas:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
+.overlay {
+    box-sizing: border-box;
+    max-height: 100%;
+    overflow: hidden;
+    gap: clamp(8px, 1.4vh, 15px);
+    padding: clamp(14px, 2.6vh, 26px) clamp(18px, 3vw, 34px);
+}
+.overlay h1 { margin: 0; line-height: 1.08; }
+.overlay p { margin: 0; }
+.overlay .subtitle { margin: 0; }
+.overlay .btn { margin: 0; }
+.overlay[hidden], .dl-briefing-page[hidden], .dl-manual-page[hidden] { display: none !important; }
+.dl-briefing { width: min(100%, 600px); display: grid; gap: 14px; text-align: left; }
+.dl-briefing-page { min-height: 174px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.dl-briefing-page p { max-width: 500px; color: #c7c5d5; line-height: 1.5; }
+.dl-briefing-page strong { font-size: clamp(1.1rem, 2.8vw, 1.45rem); }
+.dl-briefing-icon { font-size: 2.5rem; filter: drop-shadow(0 0 16px #8b5cf680); }
+.dl-briefing-facts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.dl-briefing-facts span { padding: 5px 10px; border-radius: 999px; color: #ddd6fe; background: #8b5cf622; border: 1px solid #8b5cf655; font-size: .78rem; font-weight: 700; }
+.dl-briefing-footer, .dl-manual-footer, .dl-upgrade-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; color: #9b98ac; font-size: .78rem; font-variant-numeric: tabular-nums; }
+.dl-briefing-footer > div { display: flex; gap: 8px; }
+.dl-step-btn { min-height: 38px; padding: 7px 13px; color: #e9e4ff; font: inherit; font-weight: 700; border: 1px solid #8b5cf677; border-radius: 9px; background: #8b5cf622; cursor: pointer; }
+.dl-step-btn:hover:not(:disabled) { background: #8b5cf644; }
+.dl-step-btn:disabled { opacity: .42; cursor: default; }
+.how-to-grid { width: min(100%, 650px); max-height: none; overflow: visible; display: block; }
+.dl-manual-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.dl-manual-page .how-to-item { box-sizing: border-box; min-width: 0; min-height: 145px; padding: 13px 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; line-height: 1.35; }
+.dl-manual-page .how-to-item strong { font-size: .9rem; }
+.dl-manual-page .how-to-item > span:last-child { color: #c7c5d5; font-size: .78rem; }
+.dl-manual-page .how-icon { font-size: 1.6rem; }
+.dl-manual-footer { max-width: 650px; }
+.dl-upgrade-footer { max-width: 520px; }
+.dl-upgrade-choice { width: 100%; max-width: 520px; min-height: 240px; flex: none; padding: clamp(18px, 4vh, 34px) 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: 16px; cursor: pointer; text-align: center; }
+.dl-upgrade-choice .emoji { font-size: 3.2rem; }
+.dl-upgrade-choice h3, .dl-upgrade-choice p { margin: 0; }
+.dl-upgrade-choice p { max-width: 38ch; line-height: 1.45; }
+.dl-pick-hint { color: #a78bfa; font-size: .7rem; font-weight: 800; letter-spacing: .12em; }
+.dl-sheet { box-sizing: border-box; }
+.end-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.end-stat { min-width: 72px; padding: 8px 10px; }
+@media (max-width: 700px), (max-height: 600px) {
+    .overlay { gap: 8px; padding: 10px 16px; }
+    .overlay h1 { font-size: clamp(1.2rem, 4vh, 1.75rem); }
+    .dl-briefing-page { min-height: 130px; gap: 7px; }
+    .dl-briefing-icon { font-size: 1.8rem; }
+    .dl-manual-page { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    .dl-manual-page .how-to-item { min-height: 115px; padding: 8px 5px; gap: 5px; }
+    .dl-manual-page .how-to-item strong { font-size: .78rem; }
+    .dl-manual-page .how-to-item > span:last-child { font-size: .68rem; }
+    .dl-upgrade-choice { min-height: 190px; padding: 12px; gap: 7px; }
+    .dl-upgrade-choice .emoji { font-size: 2.4rem; }
+    .btn, .btn-start, .btn-menu { min-height: 42px; font-size: .94rem; }
+}
+@media (max-width: 480px) {
+    .dl-manual-page { grid-template-columns: 1fr; }
+    .dl-manual-page .how-to-item { min-height: 0; display: grid; grid-template-columns: 32px 1fr; justify-content: start; text-align: left; }
+    .dl-manual-page .how-to-item .how-icon { grid-row: span 2; }
+    .dl-manual-page .how-to-item strong { font-size: .82rem; }
+    .dl-manual-page .how-to-item > span:last-child { font-size: .72rem; }
+}

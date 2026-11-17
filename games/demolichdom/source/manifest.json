@@ -1,0 +1,17 @@
+{
+  "files": [
+    "clock.js",
+    "screens.js",
+    "core.js",
+    "input.js",
+    "session.js",
+    "combat.js",
+    "rewards.js",
+    "enemy-ai.js",
+    "progression.js",
+    "simulation.js",
+    "view.js",
+    "loop.js",
+    "boot.js"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+    "title": "Venture Mechanics - 6 Founder Survival Simulators",
+    "slug": "venturemechanically",
+    "description": "Explore six interactive founder simulators: liquidation waterfalls, entity choice, down-round ratchets, board control, SAFE dilution, and vesting decisions.",
+    "genre": "Simulation",
+    "tags": ["Simulation", "Strategy", "Educational", "Business", "Startups", "Finance"],
+    "maker": {
+        "name": "4weird Games",
+        "bio": "Interactive browser simulators demystifying venture capital and startup governance, directly adapted from Ron Wiener's book and Venture Mechanics.",
+        "url": "https://www.linkedin.com/in/ronwiener/",
+        "urlLabel": "Ron Wiener's LinkedIn"
+    },
+    "credits": [
+        {
+            "name": "Ron Wiener",
+            "role": "Author of 'Lawyers, Venture Capitalists and Other Useful Predators'",
+            "avatar": "📖",
+            "primary": true,
+            "url": "https://www.venturemechanics.com/blog/sold-for-a-fortune-took-home-nothing-what-founders-learn-too-late-about-startup-exits",
+            "urlLabel": "Venture Mechanics"
+        },
+        {
+            "name": "4weird Games",
+            "role": "Game Developer",
+            "avatar": "🎮",
+            "primary": false,
+            "url": "/",
+            "urlLabel": "4weird Home"
+        }
+    ],
+    "controls": {
+        "keyboard": {
+            "Mouse / Touch": "Switch sub-games, toggle terms, adjust sliders, and run interactive scenarios"
+        },
+        "touch": true,
+        "mouse": true
+    },
+    "instructions": "Choose one of six simulators from the top menu. Adjust assumptions to compare founder outcomes, then try the waterfall challenges. All tax and governance examples are simplified educational models.",
+    "technical": {
+        "canvasSize": {"width": 800, "height": 420},
+        "targetFPS": 60,
+        "mobileOptimized": true
+    },
+    "assets": {
+        "external": [],
+        "local": ["game.js", "game.css"]
+    },
+    "meta": {
+        "version": "2.0.0",
+        "created": "2026-06-17",
+        "updated": "2026-11-10",
+        "license": "Private"
+    }
+}

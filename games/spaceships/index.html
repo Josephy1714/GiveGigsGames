@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starship Simulator - 4weird Games</title>
+    <meta name="description" content="Experience our fullscreen 3D Spaceship steering and flocking simulation. Powered by Three.js with real-time autopilot, collision avoidance, and boids physics.">
+    <link rel="canonical" href="https://mattyjacks.com/games/starship-simulator">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#8b5cf6">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Starship Simulator - 4weird Games">
+    <meta property="og:description" content="Fullscreen interactive 3D spaceship steering and flocking simulation.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mattyjacks.com/games/starship-simulator">
+    <meta property="og:image" content="https://www.4weird.com/games/images/thumb_serversavershield.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Starship Simulator - 4weird Games">
+    <meta name="twitter:description" content="Starship Simulator: an interactive 3D flight sandbox with fleet AI and cinematic space environments.">
+    <meta name="twitter:image" content="https://www.4weird.com/games/images/thumb_serversavershield.png">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.4weird.com/"
+      },{
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Starship Simulator",
+        "item": "https://mattyjacks.com/games/starship-simulator"
+      }]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Spaceship Steering and Flocking Simulation",
+      "operatingSystem": "All",
+      "applicationCategory": "GameApplication",
+      "browserRequirements": "Requires HTML5, WebGL, and Javascript support.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+    <style>
+        :root {
+            --bg-primary: #05030a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #9ca3af;
+            --neon-purple: #8b5cf6;
+            --neon-cyan: #06b6d4;
+            --neon-green: #10b981;
+            --font-display: 'Orbitron', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+        }
+
+        #starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
+
+        .launch-screen {
+            position: absolute; inset: 0; z-index: 20; display: grid; place-items: center;
+            padding: 24px; background: linear-gradient(115deg, rgba(3,8,22,.84), rgba(3,8,22,.38) 62%, rgba(3,8,22,.2));
+            transition: opacity .35s ease, visibility .35s ease;
+        }
+        .launch-screen.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
+        .launch-card { width: min(100%, 520px); margin-right: auto; padding: clamp(22px, 4vw, 38px); border: 1px solid rgba(103,232,249,.28); border-radius: 22px; background: rgba(5,12,28,.88); box-shadow: 0 28px 90px rgba(0,0,0,.55); backdrop-filter: blur(18px); }
+        .launch-eyebrow { color: #67e8f9; font: 700 .72rem var(--font-display); letter-spacing: .2em; text-transform: uppercase; }
+        .launch-card h1 { margin-top: 12px; font: 800 clamp(2rem, 5vw, 3.2rem)/1.02 var(--font-display); letter-spacing: -.04em; }
+        .launch-card p { margin-top: 12px; color: #b8c4d8; line-height: 1.65; }
+        .launch-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 22px 0; }
+        .launch-step { padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.04); color: #dbeafe; font-size: .76rem; line-height: 1.45; }
+        .launch-step strong { display:block; margin-bottom: 5px; color:#67e8f9; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; }
+        .launch-actions { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+        .launch-button { border:0; border-radius:10px; padding:13px 20px; background:#67e8f9; color:#06202b; font-weight:900; cursor:pointer; box-shadow:0 0 30px rgba(103,232,249,.2); }
+        .launch-button:hover { background:#a5f3fc; transform:translateY(-1px); }
+        .launch-note { margin:0!important; font-size:.76rem; }
+        @media(max-width:560px) { .launch-screen { place-items:end center; padding:14px; } .launch-card { margin:0; padding:20px; } .launch-steps { gap:5px; } .launch-step { padding:9px 7px; font-size:.68rem; } }
+
+        /* Fullscreen Overlay HUD Wrapper */
+        .hud-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* HUD Panels (interactive elements need pointer-events auto) */
+        .hud-panel {
+            pointer-events: auto;
+            background: rgba(10, 5, 25, 0.75);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s ease;
+        }
+
+        .hud-panel:hover {
+            border-color: rgba(6, 182, 212, 0.4);
+        }
+
+        /* Top Bar Layout */
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            outline: none;
+            border: 1px solid transparent;
+        }
+
+        .btn-exit {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-exit:hover {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-restart {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--neon-purple);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-restart:hover {
+            background: var(--neon-purple);
+            color: white;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Controls / Dilation Controls Panel */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .slider-val {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: var(--neon-green);
+        }
+
+        .dilation-slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .dilation-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+            transition: transform 0.1s;
+        }
+
+        .dilation-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* Bottom Row HUD */
+        .hud-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+        }
+
+        /* Credits Balance HUD */
+        .credits-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 160px;
+            transition: all 0.3s ease;
+        }
+
+        /* In Cockpit view, elevate credits panel out of the way of the tactical screens */
+        body.is-cockpit-view .credits-panel {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 16px;
+            background: rgba(10, 5, 25, 0.65);
+        }
+
+        body.is-cockpit-view .credits-value {
+            font-size: 1.15rem;
+        }
+
+        .credits-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 4px;
+        }
+
+        .credits-value {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Help Legend */
+        .legend-panel {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            max-width: 280px;
+            line-height: 1.5;
+        }
+
+        .legend-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .legend-key {
+            font-family: var(--font-display);
+            color: var(--neon-cyan);
+            font-weight: 700;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(6, 182, 212, 0.25);
+        }
+
+        /* Camera mode toggles */
+        .camera-toggles {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-cam {
+            font-size: 0.65rem;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .btn-cam.active {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+        }
+
+        /* Custom Audio Toggle */
+        .btn-audio {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .btn-audio:hover {
+            color: var(--neon-cyan);
+            border-color: var(--neon-cyan);
+        }
+
+        /* Embedded / Background Mode Override: completely hide HUD and mobile controls */
+        .is-embedded-sim .hud-overlay,
+        .is-embedded-sim .sj-ui,
+        .is-embedded-sim #sj-stick-zone,
+        .is-embedded-sim #sj-ordnance,
+        .is-embedded-sim #sj-lock-toast,
+        .is-embedded-sim #sj-pause-veil {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+    </style>
+    <script>
+        (function() {
+            try {
+                var p = new URLSearchParams(window.location.search);
+                if (p.get('embed') === 'true' || p.get('bg') === 'true' || p.get('hud') === 'false' || p.get('controls') === 'false') {
+                    document.documentElement.classList.add('is-embedded-sim');
+                }
+            } catch (e) {}
+        })();
+    </script>
+<style id="fourweird-game-only">
+/* Generated by sync-game-bundles: game-only runtime. The v1 site chrome
+   (nav, header, info panel, credits, bio, promos, footer) is stripped at
+   build time; these rules hide any remnant and make the game fill the frame. */
+html,body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;background:#000!important}
+body{display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important}
+.hidden,#gameMain.hidden,.game-main.hidden{display:none!important}
+[id*="nav-placeholder"],[id*="footer-placeholder"],[id*="starfield"],
+[class*="game-header"],[class*="game-info-panel"],[class*="credits-section"],
+[class*="bio-section"],[class*="more-games"],[class*="more-kouzi"],
+[kouzi-cta],[class*="kouzi-cta"],[class*="madi-cta"]{display:none!important}
+[class*="game-page"]{margin:0!important;padding:0!important;max-width:none!important;min-height:0!important;height:100%!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+[class*="game-main"],.TEMPLATE-4weird-game-main{margin:0!important;padding:0!important;width:100%!important;height:100%!important;min-height:0!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+[class*="game-frame"],.game-wrapper,.game-container{width:100%!important;max-width:none!important;margin:0!important;border-radius:0!important}
+.game-wrapper{padding:0!important}
+.TEMPLATE-4weird-game-frame{position:relative!important;margin:auto!important;overflow:hidden!important;background:#000!important}
+#TEMPLATE-4weird-gameCanvas,.TEMPLATE-4weird-gameCanvas{display:block!important;background:#000!important}
+.TEMPLATE-4weird-game-overlay,.screen-overlay{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;background:rgba(6,10,20,.94)!important;backdrop-filter:blur(10px)!important;z-index:1000!important;text-align:center!important;overflow-y:auto!important;padding:20px!important;box-sizing:border-box!important}
+.TEMPLATE-4weird-game-overlay.hidden,.screen-overlay.hidden,.TEMPLATE-4weird-game-overlay[style*="display: none"],.screen-overlay[style*="display: none"]{display:none!important}
+.TEMPLATE-4weird-game-overlay h1,.TEMPLATE-4weird-game-overlay h2,.screen-overlay .logo-big{color:#fff!important;text-shadow:0 0 16px rgba(56,189,248,.8),0 0 32px rgba(168,85,247,.6)!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;font-weight:900!important;letter-spacing:.05em!important;margin:0 0 12px 0!important;font-size:clamp(1.4rem,4.5vw,2.4rem)!important}
+.TEMPLATE-4weird-game-overlay p,.screen-overlay .tagline,.screen-overlay p{color:#cbd5e1!important;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif!important;font-size:clamp(.82rem,2.2vw,1rem)!important;line-height:1.5!important;max-width:480px!important;margin:0 auto 14px auto!important}
+.TEMPLATE-4weird-game-overlay .instructions,.TEMPLATE-4weird-game-overlay .controls-hint,.screen-overlay .controls-hint{color:#94a3b8!important;font-size:clamp(.72rem,2vw,.85rem)!important;line-height:1.5!important;margin-top:10px!important}
+.TEMPLATE-4weird-game-overlay .btn-primary,.TEMPLATE-4weird-game-overlay #TEMPLATE-4weird-start-btn,.screen-overlay .btn-start{background:linear-gradient(135deg,#06b6d4,#8b5cf6)!important;color:#fff!important;font-weight:800!important;font-size:clamp(.95rem,2.2vw,1.15rem)!important;padding:12px 30px!important;border-radius:9999px!important;border:1px solid rgba(255,255,255,.4)!important;box-shadow:0 0 25px rgba(6,182,212,.5),inset 0 1px 0 rgba(255,255,255,.4)!important;cursor:pointer!important;transition:transform .15s ease,box-shadow .15s ease!important}
+.TEMPLATE-4weird-fullscreen-btn,#neon-fs-breaker,#fourweird-fullscreen-exit{display:none!important}
+html{scrollbar-color:rgba(255,255,255,.25) #000}
+[class*="game-overlay"]{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+[class*="game-overlay"]::-webkit-scrollbar{width:8px}
+[class*="game-overlay"]::-webkit-scrollbar-track{background:transparent}
+[class*="game-overlay"]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
+</style><style id="fourweird-game-stage">
+html,body{width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;margin:0!important;padding:0!important;background:#000!important}
+.TEMPLATE-4weird-game-main,[class*="game-main"]{width:100%!important;height:100%!important;min-height:0!important;display:block!important;margin:0!important;padding:0!important}
+.TEMPLATE-4weird-game-frame,[class*="game-frame"],.game-wrapper,.game-container,#canvas-container{width:100%!important;height:100%!important;min-height:0!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;position:relative!important;margin:0!important;padding:0!important;border-radius:0!important}
+#TEMPLATE-4weird-gameCanvas,.TEMPLATE-4weird-gameCanvas,#gameCanvas,#canvas-container>canvas{width:100%!important;height:100%!important;display:block!important}
+.TEMPLATE-4weird-fullscreen-btn,#neon-fs-breaker,#fourweird-fullscreen-exit{display:none!important}
+
+
+#starfield{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+
+</style></head>
+<body class="fullscreen-sim">
+    <!-- Starfield/Simulation Viewport Canvas -->
+    <canvas id="starfield" tabindex="0" aria-label="Starship flight simulation"></canvas>
+
+    <section class="launch-screen" id="launch-screen" aria-labelledby="launch-title">
+        <div class="launch-card">
+            <div class="launch-eyebrow">Flight deck · sandbox mode</div>
+            <h1 id="launch-title">Your ship is ready.</h1>
+            <p>Take the controls or watch the fleet fly itself. There’s no mission timer—explore at your own pace.</p>
+            <div class="launch-steps" aria-label="Quick start guide">
+                <div class="launch-step"><strong>01 · Fly</strong>WASD to steer. Arrow keys to pitch.</div>
+                <div class="launch-step"><strong>02 · Explore</strong>Choose a camera view. Autopilot keeps the fleet moving.</div>
+                <div class="launch-step"><strong>03 · Play</strong>Space or click open space to fire.</div>
+            </div>
+            <div class="launch-actions">
+                <button class="launch-button" id="btn-launch-flight" type="button">Launch flight <span aria-hidden="true">→</span></button>
+                <button class="launch-button launch-academy-btn" id="btn-launch-academy" type="button" style="background: linear-gradient(135deg, #0284c7, #0d9488); margin-top: 10px;">🎓 Flight Academy (10 Tutorials) <span aria-hidden="true">→</span></button>
+                <p class="launch-note">You can reset or change camera any time.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overlay UI HUD HUD -->
+    <div class="hud-overlay">
+        <!-- Top Row -->
+        <div class="hud-header">
+            <div class="logo">
+                <span>🚀</span> Starship Simulator
+            </div>
+            
+            <div style="display: flex; gap: 12px; align-items: center; pointer-events: auto;">
+                <button class="btn btn-academy" id="btn-open-tutorials" title="Starfleet Flight Academy (10 Interactive Tutorials)" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.45), rgba(13, 148, 136, 0.45)); border: 1px solid #38bdf8; font-weight: 700; color: #e0f2fe; padding: 6px 12px; border-radius: 8px; cursor: pointer;">🎓 Tutorials (10)</button>
+                <button class="btn btn-audio" id="btn-sound-toggle" title="Toggle Simulation Audio">🔊</button>
+                <button class="btn btn-restart" id="btn-restart-sim" title="Reset the current flight">New Flight</button>
+                <button class="btn btn-exit" id="btn-exit-fullscreen">Exit Fullscreen</button>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="hud-footer">
+            <!-- Left Corner: Steering & Camera controls -->
+            <div class="hud-panel controls-panel">
+                <div class="panel-title">Simulation Speed</div>
+                <div class="slider-group">
+                    <div class="slider-labels">
+                        <span>Time Dilation</span>
+                        <span class="slider-val" id="time-dilation-val">0.45x</span>
+                    </div>
+                    <input type="range" class="dilation-slider" id="dilation-slider" min="0.05" max="4.0" step="0.05" value="0.45">
+                </div>
+
+                <div class="panel-title" style="margin-top: 10px;">Camera View Mode</div>
+                <div class="camera-toggles" style="flex-wrap: wrap; gap: 4px;">
+                    <button class="btn-cam active" data-mode="chase">Chase</button>
+                    <button class="btn-cam" data-mode="cockpit">Cockpit</button>
+                    <button class="btn-cam" data-mode="gun_barrel">Gun Sight</button>
+                    <button class="btn-cam" data-mode="wingman_cam">Wingman</button>
+                    <button class="btn-cam" data-mode="auto">Auto Sequence</button>
+                </div>
+            </div>
+
+            <!-- Center: Credits Balance display -->
+            <div class="hud-panel credits-panel">
+                <div class="credits-label">Pilot Credits · Saved on this device</div>
+                <div class="credits-value" id="hud-credits">0 CR</div>
+            </div>
+
+            <!-- Right Corner: Keyboard Controls Help Legend -->
+            <div class="hud-panel legend-panel">
+                <div class="panel-title">Manual Flight Controls</div>
+                <div class="legend-row">
+                    <span>Steer Lead Ship</span>
+                    <span class="legend-key">W/A/S/D</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Tilt / Pitch</span>
+                    <span class="legend-key">↑ / ↓</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Fire Plasma Cannons</span>
+                    <span class="legend-key">Spacebar</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Toggle 3D Cockpit</span>
+                    <span class="legend-key">C</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Flight Academy</span>
+                    <span class="legend-key">T</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Underside Missiles</span>
+                    <span class="legend-key">M</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Land on Planet</span>
+                    <span class="legend-key">L</span>
+                </div>
+                <div class="legend-row" style="margin-top: 4px;">
+                    <span>Fleet Formations</span>
+                    <span class="legend-key">1 - 4</span>
+                </div>
+                <div style="font-size: 0.65rem; color: var(--neon-cyan); margin-top: 8px; text-align: center; font-weight: 500;">
+                    *Steering overrides autopilot mode
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Three.js Library -->
+    <script src="/games/html/vendor/three-r128.min.js"></script><script>if(!window.THREE){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')}</script>
+    
+    <!-- Load Game core modules -->
+    <script type="module" src="/game/spaceships/main.js?v=26"></script>
+
+    <!-- Page Specific Script binds -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const launchScreen = document.getElementById('launch-screen');
+            const openTutBtn = document.getElementById('btn-open-tutorials');
+            if (openTutBtn) {
+                openTutBtn.addEventListener('click', () => {
+                    if (window.spaceGameCore && window.spaceGameCore.tutorialSystem) {
+                        window.spaceGameCore.tutorialSystem.openAcademyModal();
+                    }
+                });
+            }
+            const launchAcademyBtn = document.getElementById('btn-launch-academy');
+            if (launchAcademyBtn) {
+                launchAcademyBtn.addEventListener('click', () => {
+                    launchScreen.classList.add('is-dismissed');
+                    if (window.spaceGameCore && window.spaceGameCore.tutorialSystem) {
+                        window.spaceGameCore.tutorialSystem.openAcademyModal();
+                    }
+                });
+            }
+            document.getElementById('btn-launch-flight').addEventListener('click', () => {
+                launchScreen.classList.add('is-dismissed');
+                document.getElementById('starfield').focus({ preventScroll: true });
+            });
+            // Exit Button listener
+            const exitBtn = document.getElementById('btn-exit-fullscreen');
+            exitBtn.addEventListener('click', () => {
+                // Try window.close() first if opened in new tab, fallback to going back home
+                window.close();
+                setTimeout(() => {
+                    window.location.href = "/";
+                }, 100);
+            });
+
+            // Camera toggle triggers
+            const camButtons = document.querySelectorAll('.btn-cam');
+            camButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    camButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const mode = btn.getAttribute('data-mode');
+                    if (mode === 'cockpit') {
+                        document.body.classList.add('is-cockpit-view');
+                    } else {
+                        document.body.classList.remove('is-cockpit-view');
+                    }
+                    if (window.spaceGameCore) {
+                        if (mode === 'auto') {
+                            window.spaceGameCore.cameraDirector.autoSequence = true;
+                            window.spaceGameCore.cameraDirector.manualOverride = false;
+                        } else {
+                            window.spaceGameCore.cameraDirector.setMode(mode, true);
+                        }
+                    }
+                });
+            });
+
+            // Time Dilation slider link
+            const slider = document.getElementById('dilation-slider');
+            const sliderVal = document.getElementById('time-dilation-val');
+            slider.addEventListener('input', () => {
+                const val = parseFloat(slider.value);
+                sliderVal.textContent = (val % 0.1 === 0 ? val.toFixed(1) : val.toFixed(2)) + 'x';
+                if (window.spaceGameCore) {
+                    window.spaceGameCore.timeScale = val;
+                }
+            });
+
+            // Restart trigger
+            const restartBtn = document.getElementById('btn-restart-sim');
+            restartBtn.addEventListener('click', () => {
+                if (window.spaceGameMain) {
+                    window.spaceGameMain.destroy();
+                    window.spaceGameMain.init();
+                    
+                    // Reset HUD time scale
+                    if (window.spaceGameCore) {
+                        window.spaceGameCore.timeScale = parseFloat(slider.value);
+                    }
+                }
+            });
+
+            // Embed / Background mode check
+            const urlParams = new URLSearchParams(window.location.search);
+            const isEmbed = urlParams.get('embed') === 'true' || urlParams.get('bg') === 'true' || urlParams.get('hud') === 'false' || urlParams.get('controls') === 'false';
+            if (isEmbed) {
+                document.body.classList.add('is-embedded-sim');
+                document.documentElement.classList.add('is-embedded-sim');
+                const hudOverlay = document.querySelector('.hud-overlay');
+                if (hudOverlay) hudOverlay.style.display = 'none';
+                if (window.spaceGameMain && window.spaceGameMain.mobile) {
+                    try { window.spaceGameMain.mobile.destroy(); } catch (e) {}
+                }
+            }
+
+            // Sync audio toggle with core UI
+            const soundBtn = document.getElementById('btn-sound-toggle');
+            soundBtn.addEventListener('click', () => {
+                if (window.spaceGameCore) {
+                    const soundSystem = window.spaceGameCore.getSystem('audiosystem') || window.spaceGameCore.soundSystem;
+                    if (soundSystem) {
+                        const isMuted = soundSystem.toggleMute();
+                        soundBtn.textContent = isMuted ? '🔇' : '🔊';
+                    }
+                }
+            });
+
+            // Click / Tap anywhere on the space simulation canvas to fire forward plasma laser cannons
+            window.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('.hud-panel') || e.target.closest('.launch-screen') || e.target.closest('#planet-surface-panel') || e.target.closest('#planet-land-button') || e.target.closest('#starship-life-panel') || e.target.closest('.btn') || e.target.closest('input') || window.spaceGameCore?.planetSurface?.active) return;
+                if (window.spaceGameCore && window.spaceGameCore.ships && window.spaceGameCore.ships[0]) {
+                    window.spaceGameCore.fireLaser(window.spaceGameCore.ships[0]);
+                }
+            });
+
+            // Signal readiness and initial playing state to parent frame
+            const notifyPlaying = () => {
+                if (window.parent && window.parent !== window) {
+                    try {
+                        const isRunning = window.spaceGameCore ? Boolean(window.spaceGameCore.state.running) : true;
+                        window.parent.postMessage({ type: 'SPACESHIP_PLAYING', playing: isRunning }, '*');
+                    } catch (e) {}
+                }
+            };
+
+            const readyInterval = setInterval(() => {
+                if (window.spaceGameCore && window.spaceGameCore.state && window.spaceGameCore.state.running) {
+                    if (isEmbed && window.spaceGameCore.soundSystem) {
+                        window.spaceGameCore.soundSystem.muted = true;
+                    }
+                    notifyPlaying();
+                    clearInterval(readyInterval);
+                }
+            }, 250);
+
+            // Parent Frame postMessage Controller
+            window.addEventListener('message', (event) => {
+                if (!event.data || typeof event.data !== 'object') return;
+                const { type } = event.data;
+                if (type === 'OPEN_TUTORIALS' && window.spaceGameCore && window.spaceGameCore.tutorialSystem) {
+                    window.spaceGameCore.tutorialSystem.openAcademyModal();
+                } else if (type === 'START_TUTORIAL' && window.spaceGameCore && window.spaceGameCore.tutorialSystem) {
+                    window.spaceGameCore.tutorialSystem.startTutorial(event.data.id || 1);
+                } else if (type === 'PAUSE' && window.spaceGameCore) {
+                    window.spaceGameCore.manuallyPaused = true;
+                    window.spaceGameCore.stop();
+                    notifyPlaying();
+                } else if (type === 'RESUME' && window.spaceGameCore) {
+                    window.spaceGameCore.start();
+                    notifyPlaying();
+                } else if (type === 'PING') {
+                    notifyPlaying();
+                } else if (type === 'SET_POTATO' && window.spaceGameCore) {
+                    if (event.data.enabled) {
+                        window.spaceGameCore.timeScale = 0.3;
+                    } else {
+                        window.spaceGameCore.timeScale = 0.45;
+                    }
+                } else if (type === 'SET_CAMERA' && window.spaceGameCore && event.data.mode) {
+                    if (window.spaceGameCore.cameraDirector) {
+                        if (event.data.mode === 'auto') {
+                            window.spaceGameCore.cameraDirector.autoSequence = true;
+                            window.spaceGameCore.cameraDirector.manualOverride = false;
+                        } else {
+                            window.spaceGameCore.cameraDirector.setMode(event.data.mode, true);
+                        }
+                    } else {
+                        window.spaceGameCore.state.cameraMode = event.data.mode;
+                    }
+                    camButtons.forEach(b => {
+                        if (b.getAttribute('data-mode') === event.data.mode) b.classList.add('active');
+                        else b.classList.remove('active');
+                    });
+                } else if (type === 'SET_SPEED' && window.spaceGameCore && typeof event.data.speed === 'number') {
+                    const s = event.data.speed;
+                    window.spaceGameCore.timeScale = s;
+                    if (slider) slider.value = s;
+                    if (sliderVal) sliderVal.textContent = s.toFixed(1) + 'x';
+                } else if (type === 'RESTART' && window.spaceGameMain) {
+                    window.spaceGameMain.destroy();
+                    window.spaceGameMain.init();
+                    if (window.spaceGameCore && slider) {
+                        window.spaceGameCore.timeScale = parseFloat(slider.value);
+                    }
+                } else if (type === 'TOGGLE_SOUND' && window.spaceGameCore) {
+                    const soundSystem = window.spaceGameCore.getSystem('audiosystem') || window.spaceGameCore.soundSystem;
+                    if (soundSystem) {
+                        const isMuted = soundSystem.toggleMute();
+                        if (soundBtn) soundBtn.textContent = isMuted ? '🔇' : '🔊';
+                    }
+                }
+            });
+        });
+    </script>
+<script src="/games/html/runtime-bridge.js" data-slug="spaceships"></script><script src="/games/html/fourweird-workers.js" data-slug="spaceships"></script><script src="/games/html/fourweird-music.js" data-slug="spaceships"></script></body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "files": [
+    "state.js",
+    "engine.js",
+    "world.js",
+    "session.js",
+    "controls.js",
+    "rendering.js",
+    "lifecycle.js",
+    "../../../madi-session-controls.js"
+  ]
+}

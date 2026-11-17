@@ -1,0 +1,17 @@
+{
+  "wrapped": false,
+  "files": [
+    "state.js",
+    "audio.js",
+    "meal-model.js",
+    "session.js",
+    "economy.js",
+    "persistence.js",
+    "controls.js",
+    "view.js",
+    "screens.js",
+    "planner.js",
+    "briefing.js",
+    "dialogs.js"
+  ]
+}

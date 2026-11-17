@@ -1,0 +1,14 @@
+{
+  "files": [
+    "audio.js",
+    "state.js",
+    "engine.js",
+    "controls.js",
+    "session.js",
+    "simulation.js",
+    "world.js",
+    "rendering.js",
+    "interface.js",
+    "messages.js"
+  ]
+}

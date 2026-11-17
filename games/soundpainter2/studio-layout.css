@@ -1,0 +1,68 @@
+/* Each view gets a bounded work area; original controls retain their handlers. */
+.studio-main { height:100%!important; width:100%!important; min-height:0!important }
+.bounded-studio { width:100%!important; height:100%!important; min-height:0!important; box-sizing:border-box; padding:8px!important; gap:6px!important; border-radius:0!important }
+.bounded-studio [hidden] { display:none!important }
+.studio-screen-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; flex:0 0 32px }
+.studio-page-button { border:1px solid #495273; background:#171b2c; color:#e2e8f0; border-radius:6px; padding:5px 9px; font:600 12px system-ui; cursor:pointer; min-width:0 }
+.studio-page-button[aria-current=page] { background:#333b70; border-color:#a5b4fc; color:white }
+.bounded-studio .studio-dashboard { flex:0 0 38px; padding:3px 6px; gap:8px; flex-direction:row; flex-wrap:nowrap; border-radius:6px; align-items:center }
+.bounded-studio .dashboard-left { gap:5px }
+.bounded-studio .control-btn { font:600 12px system-ui; padding:6px 9px; min-height:30px }
+.bounded-studio .dashboard-tempo { display:flex; align-items:center; gap:7px; flex:1; justify-content:flex-end; min-width:0 }
+.bounded-studio .dashboard-tempo label { display:none }
+.bounded-studio #input-bpm { width:clamp(60px,15vw,160px); min-width:40px }
+.bounded-studio #label-bpm { font:12px system-ui; white-space:nowrap }
+.bounded-studio .pocket-tracks { display:grid!important; flex:0 0 34px; gap:5px }
+.bounded-studio .pocket-pad { padding:4px!important; border-radius:6px; min-height:0; font:600 11px system-ui; justify-content:center }
+.bounded-studio .pocket-pad-sub,.bounded-studio .pocket-pad-dot { display:none }
+.studio-screen-body { min-height:0; flex:1; display:flex; overflow:hidden }
+.studio-page { min-height:0; width:100%; display:flex; flex-direction:column; gap:6px }
+.studio-bank-controls { display:flex; gap:6px; align-items:center; justify-content:space-between; flex:0 0 30px; font:11px system-ui; min-width:0 }
+.studio-bank-controls .control-btn { font-size:11px; min-height:26px; padding:4px 7px }
+.bounded-studio .sequencer-steps-indicator { grid-template-columns:70px minmax(0,1fr); gap:6px; flex:0 0 16px }
+.bounded-studio .notes-label-padding { font:10px system-ui }
+.bounded-studio .steps-indicators-grid { gap:4px }
+.bounded-studio .step-indicator-node { height:16px; text-align:center; font:10px/16px system-ui; color:#cbd5e1 }
+.bounded-studio .sequencer-container { min-height:0; flex:1; grid-template-columns:62px minmax(0,1fr); gap:6px; padding:6px }
+.bounded-studio .sequencer-grid,.bounded-studio .sequencer-y-labels { display:grid!important; gap:4px!important; min-height:0; min-width:0 }
+.bounded-studio .pitch-row-label { height:auto!important; min-height:0; font:11px system-ui; color:#e2e8f0 }
+.bounded-studio .sequencer-row-grid { min-height:0; gap:4px }
+.bounded-studio .sequencer-cell { height:100%!important; min-height:0; min-width:0; border-radius:4px; touch-action:none }
+.bounded-studio .channels-column,.bounded-studio .parameters-column { width:100%; min-height:0; padding:10px; box-sizing:border-box }
+.bounded-studio h3 { font:600 13px system-ui; margin:0 0 8px }
+.bounded-studio .track-channel { padding:12px; margin:0; max-width:620px }
+.bounded-studio .channel-faders { gap:12px }
+.bounded-studio .channel-header { margin-bottom:12px }
+.bounded-studio .fader-group { flex-direction:column; align-items:stretch; gap:8px }
+.bounded-studio .fader-group label { font:12px system-ui }
+.bounded-studio .channel-vol,.bounded-studio .channel-pan { height:18px!important }
+.bounded-studio .parameters-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:8px }
+.bounded-studio .param-card { min-width:0; padding:10px; gap:8px }
+.bounded-studio .param-title { font:600 11px system-ui; color:#cbd5e1 }
+.bounded-studio .mini-select { width:100%; min-width:0 }
+.studio-library-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+.studio-library-controls .dashboard-right { display:flex; flex-wrap:wrap; gap:8px }
+.studio-library-controls .selector-container { display:flex; align-items:center; gap:8px }
+.studio-library-controls label { font:11px system-ui }
+.bounded-studio .pocket-touch-hint { display:block; font:12px/1.4 system-ui; margin:2px 0; color:#cbd5e1 }
+.bounded-studio .visualizer-container { flex:1; min-height:40px; max-height:none; height:auto }
+.bounded-studio .studio-overlay { padding:10px; box-sizing:border-box }
+.bounded-studio .overlay-card { padding:20px; max-width:440px }
+.bounded-studio .studio-logo { font-size:38px }
+.bounded-studio .overlay-card h2 { font-size:clamp(18px,4vw,30px) }
+.bounded-studio .share-feedback { position:absolute; bottom:10px; left:10px; right:10px; z-index:110; font:12px system-ui; padding:8px; animation:none }
+@media(max-width:600px) {
+ .bounded-studio .studio-dashboard { gap:4px }.bounded-studio .studio-select { max-width:190px; font-size:12px }
+ .studio-bank-controls { gap:3px; font-size:10px }.studio-page-button { padding:5px 6px; font-size:11px }
+ .bounded-studio .sequencer-container { grid-template-columns:54px minmax(0,1fr); padding:3px }
+ .bounded-studio .sequencer-steps-indicator { grid-template-columns:57px minmax(0,1fr) }
+}
+@media(max-height:370px) {
+ .bounded-studio { gap:3px!important; padding:4px!important }.studio-screen-tabs { flex-basis:26px }
+ .bounded-studio .studio-dashboard { flex-basis:28px }.bounded-studio .pocket-tracks { flex-basis:26px }
+ .bounded-studio .control-btn { padding:4px 7px; min-height:24px }.studio-bank-controls { flex-basis:24px }
+ .bounded-studio .parameters-column,.bounded-studio .channels-column { padding:4px }.bounded-studio h3 { display:none }
+ .bounded-studio .param-card { padding:5px; gap:4px }.bounded-studio .param-title { font-size:10px }
+ .bounded-studio .channel-header { margin-bottom:5px }.bounded-studio .track-channel { padding:6px }
+ .bounded-studio .overlay-card { padding:12px }.bounded-studio .studio-logo { display:none }
+}

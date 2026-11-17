@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Demo Lichdom - 4weird Games</title>
+    <meta name="description" content="Command your skeleton army to demolish buildings as a modern necromancer! Pure HTML5 strategy action.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💀</text></svg>">
+    <link rel="stylesheet" href="../../../styles.css">
+    <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="screens.css">
+</head>
+<body class="TEMPLATE-4weird-game-page">
+    <canvas id="TEMPLATE-4weird-starfield"></canvas>
+    <div id="TEMPLATE-4weird-nav-placeholder"></div>
+
+    <div class="game-container" id="dl-game-container">
+        <button class="dl-fs-btn" id="dl-fs-btn" title="Fullscreen (F) — Esc to exit">⛶</button>
+        <button class="dl-pause-btn" id="dl-pause-btn" title="Pause (P)" aria-label="Pause game">⏸</button>
+        <canvas id="gameCanvas" width="800" height="500" tabindex="0" aria-label="Demo Lichdom playfield. Use WASD or arrow keys to move and click to cast."></canvas>
+
+        <!-- Mobile: swipeable-court scheme — joystick (left thumb) + tap-to-cast (right) -->
+        <div class="dl-stick-zone" id="dl-stick-zone" aria-hidden="true">
+            <div class="dl-stick-base" id="dl-stick-base"><div class="dl-stick-nub" id="dl-stick-nub"></div></div>
+        </div>
+        <div class="dl-swipe-hint" id="dl-swipe-hint">👈 drag left to move &nbsp;•&nbsp; tap right to cast 👉</div>
+
+        <!-- Decree thumb bar: big tap targets for strategy actions -->
+        <div class="dl-decree-bar" id="dl-decree-bar" role="toolbar" aria-label="Spell actions">
+            <button id="btnCastMobile" class="dl-decree-btn dl-cast" aria-label="Cast skull spell">⚡<small>CAST</small></button>
+            <button id="btnSummonMobile" class="dl-decree-btn dl-summon" aria-label="Summon skeleton">💀<small>ARMY</small></button>
+            <button id="btnBlinkMobile" class="dl-decree-btn dl-blink" style="display:none" aria-label="Blink teleport">👻<small>BLINK</small></button>
+            <button id="btnPauseMobile" class="dl-decree-btn dl-pause" aria-label="Pause">⏸<small>PAUSE</small></button>
+        </div>
+
+        <div class="mobile-action-buttons" id="mobileActionButtons" style="display:none"></div>
+        
+        <div class="hud">
+            <div class="bar-container">
+                <span aria-hidden="true">❤️</span><span class="bar-name">HP</span>
+                <div class="bar" id="hpMeter" role="progressbar" aria-label="Health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div class="bar-fill hp-fill" id="hpBar"></div><span class="bar-readout" id="hpReadout">100</span></div>
+            </div>
+            <div class="bar-container">
+                <span aria-hidden="true">💧</span><span class="bar-name">MP</span>
+                <div class="bar" id="manaMeter" role="progressbar" aria-label="Mana" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div class="bar-fill mana-fill" id="manaBar"></div><span class="bar-readout" id="manaReadout">100</span></div>
+            </div>
+            <div class="bar-container">
+                <span aria-hidden="true">⭐</span><span class="bar-name">XP</span>
+                <div class="bar" id="xpMeter" role="progressbar" aria-label="Experience" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar-fill xp-fill" id="xpBar"></div><span class="bar-readout" id="xpReadout">0 / 100</span></div>
+            </div>
+            <div class="bar-container" id="blinkBar" style="display:none" aria-label="Blink cooldown">
+                <span aria-hidden="true">👻</span><span class="bar-name">BLINK</span>
+                <div class="bar" id="blinkMeter" role="progressbar" aria-label="Blink recharge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><div class="bar-fill blink-fill" id="blinkBarFill"></div><span class="bar-readout" id="blinkReadout">Ready</span></div>
+            </div>
+        </div>
+        <div class="combo-display" id="comboDisplay"></div>
+
+        <div class="stats">
+            <div><span class="label">Level</span><div class="value" id="levelDisplay">1</div></div>
+            <div><span class="label">Score</span><div class="value" id="scoreDisplay">0</div></div>
+            <div><span class="label">Phase</span><div class="value" id="phaseDisplay">P1 Church</div></div>
+            <div><span class="label">Best</span><div class="value" id="highScoreDisplay">0</div></div>
+        </div>
+
+        <div class="skeleton-count">
+            <span class="emoji">💀</span>
+            <span>Army: <strong id="skeletonCount">0/3</strong></span>
+        </div>
+
+        <div class="controls">
+            <strong>CONTROLS</strong><br>
+            WASD / Arrows: Move<br>
+            Click: Cast Skull Spell<br>
+            S: Summon Skeleton (-25 Mana)<br>
+            Space: Blink (after upgrade)<br>
+            1/2/3: Pick Upgrade<br>
+            P: Pause Game<br>
+            ⛶/F: Fullscreen (Esc exits)
+        </div>
+
+        <div class="phase-indicator" id="phaseIndicator">PHASE 1</div>
+
+        <div class="overlay" id="mainMenu" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+            <h1 id="dl-title">💀 DEMO LICHDOM 🏰</h1>
+            <div class="subtitle">Command the Undead. Demolish the Modern World.</div>
+            <div class="dl-briefing" aria-live="polite">
+                <div class="dl-briefing-page" data-briefing-page="0">
+                    <span class="dl-briefing-icon">💀</span><strong>Your demolition crew awaits.</strong>
+                    <p>Lead a skeleton crew through three increasingly dangerous sites. Break each building before its defenders overwhelm you.</p>
+                    <div class="dl-briefing-facts"><span>3 sites</span><span>5 decrees</span><span>1 lich</span></div>
+                </div>
+                <div class="dl-briefing-page" data-briefing-page="1" hidden>
+                    <span class="dl-briefing-icon">🎮</span><strong>Choose your controls.</strong>
+                    <p><b>Desktop:</b> WASD or arrows move · click to cast · S to summon · Space to blink.</p>
+                    <p><b>Touch:</b> drag the left stick · tap the right side to cast · use the decree bar for actions.</p>
+                </div>
+                <div class="dl-briefing-footer"><span id="dl-briefing-count">01 / 02</span><div><button class="dl-step-btn" id="dl-briefing-prev" type="button" aria-label="Previous briefing page">Back</button><button class="dl-step-btn" id="dl-briefing-next" type="button">Controls →</button></div></div>
+            </div>
+            <button class="btn btn-start" id="dl-main-start" onclick="game.start()">⚔️ BEGIN THE CONTRACT</button>
+            <button class="btn btn-menu" onclick="game.showHowToPlay()">📖 Field manual</button>
+            <a href="guide.html" class="btn btn-menu" style="display: inline-block; margin-top: 10px; text-decoration: none; text-align: center; width: auto; padding: 10px 20px;">📖 Game Guide</a>
+        </div>
+
+        <div class="overlay hidden dl-sheet" id="pauseMenu" role="dialog" aria-modal="true" aria-labelledby="dl-pause-title">
+            <h1 id="dl-pause-title">⏸️ PAUSED</h1>
+            <button class="btn btn-start" id="pauseResume" onclick="game.resume()">▶️ Resume</button>
+            <button class="btn btn-menu" onclick="game.restart()">🔄 Restart</button>
+            <button class="btn btn-menu" onclick="game.toMenu()">📋 Main Menu</button>
+        </div>
+
+        <div class="overlay hidden dl-sheet" id="upgradeMenu" role="dialog" aria-modal="true" aria-labelledby="dl-upgrade-title">
+            <div class="dl-sheet-handle" aria-hidden="true"></div>
+            <h1 id="dl-upgrade-title">⭐ LEVEL UP!</h1>
+            <p>Choose one decree to shape this run. <span class="hint" id="dl-upgrade-count"></span></p>
+            <div class="upgrades-grid dl-court-track" id="upgradeOptions"></div>
+            <div class="dl-upgrade-footer"><button class="dl-step-btn" id="dl-upgrade-prev" type="button">← Previous</button><span id="dl-upgrade-progress">1 / 3</span><button class="dl-step-btn" id="dl-upgrade-next" type="button">Next →</button></div>
+        </div>
+
+        <div class="overlay hidden dl-sheet" id="howToPlayMenu" role="dialog" aria-modal="true" aria-labelledby="dl-manual-title">
+            <h1 id="dl-manual-title">📖 HOW TO PLAY</h1>
+            <div class="how-to-grid" id="dl-manual-pages" aria-live="polite">
+                <section class="dl-manual-page" data-manual-page="0"><div class="how-to-item"><span class="how-icon">🏰</span><strong>Three sites, one contract</strong><span>Ruin the Church, Factory, then Skyscraper. The last site is guarded.</span></div><div class="how-to-item"><span class="how-icon">🧙‍♂️</span><strong>Keep your lich alive</strong><span>Enemies attack while you work. Move around the site and avoid contact.</span></div><div class="how-to-item"><span class="how-icon">🧱</span><strong>Watch the skyline</strong><span>Later sites rain debris. Keep moving when the warning appears.</span></div></section>
+                <section class="dl-manual-page" data-manual-page="1" hidden><div class="how-to-item"><span class="how-icon">🖱️</span><strong>Cast a skull bolt</strong><span>Click or tap the field to aim. Costs 10 mana; mana regenerates.</span></div><div class="how-to-item"><span class="how-icon">💀</span><strong>Build your crew</strong><span>Press S or tap Army. Each skeleton costs 25 mana and attacks nearby threats.</span></div><div class="how-to-item"><span class="how-icon">👻</span><strong>Escape with a blink</strong><span>Choose the Spectral Dash decree to unlock Space / Blink.</span></div></section>
+                <section class="dl-manual-page" data-manual-page="2" hidden><div class="how-to-item"><span class="how-icon">⭐</span><strong>Grow stronger</strong><span>Damage buildings and defeat enemies to earn XP. Pick one decree each level.</span></div><div class="how-to-item"><span class="how-icon">⚡</span><strong>Chain defeats</strong><span>Take down enemies quickly to build a combo and raise your score.</span></div><div class="how-to-item"><span class="how-icon">🎮</span><strong>Touch controls</strong><span>Drag the left stick to move. Tap the right side to cast; the bottom bar has actions.</span></div></section>
+            </div>
+            <div class="dl-manual-footer"><button class="dl-step-btn" id="dl-manual-prev" type="button">← Back</button><span id="dl-manual-progress">1 / 3</span><button class="dl-step-btn" id="dl-manual-next" type="button">Next →</button></div>
+            <button class="btn btn-start" id="dl-manual-done" onclick="game.closeHowToPlay()">Back to briefing</button>
+        </div>
+
+        <div class="overlay hidden dl-sheet" id="winScreen">
+            <h1>🏆 VICTORY!</h1>
+            <div class="subtitle">The city lies in ruins. You are the ultimate demolition lich.</div>
+            <div class="end-stats">
+                <div class="end-stat"><span class="end-label">Score</span><span class="end-value" id="finalScore">0</span></div>
+                <div class="end-stat"><span class="end-label">Level</span><span class="end-value" id="finalLevel">1</span></div>
+                <div class="end-stat"><span class="end-label">Time</span><span class="end-value" id="finalTime">0m 0s</span></div>
+                <div class="end-stat"><span class="end-label">Best Combo</span><span class="end-value" id="finalCombo">x0</span></div>
+                <div class="end-stat"><span class="end-label">High Score</span><span class="end-value" id="finalHighScore">0</span></div>
+            </div>
+            <button class="btn btn-start" id="winReplay" onclick="game.restart()">🔄 Play Again</button>
+            <button class="btn btn-menu" onclick="window.location.href='/games/index.html'">🏠 All Games</button>
+        </div>
+
+        <div class="overlay hidden dl-sheet" id="loseScreen">
+            <h1>💀 DEFEATED</h1>
+            <div class="subtitle">Your necromantic power was not enough...</div>
+            <div class="end-stats">
+                <div class="end-stat"><span class="end-label">Score</span><span class="end-value" id="deathScore">0</span></div>
+                <div class="end-stat"><span class="end-label">Buildings</span><span class="end-value" id="buildingsDestroyed">0</span>/3</div>
+                <div class="end-stat"><span class="end-label">High Score</span><span class="end-value" id="deathHighScore">0</span></div>
+            </div>
+            <button class="btn btn-start" id="loseReplay" onclick="game.restart()">🔄 Try Again</button>
+            <button class="btn btn-menu" onclick="game.toMenu()">📋 Main Menu</button>
+        </div>
+    </div>
+
+    <!-- Credits Section -->
+    <section class="TEMPLATE-4weird-credits-section" id="TEMPLATE-4weird-credits">
+        <div class="TEMPLATE-4weird-credits-container">
+            <h2 class="TEMPLATE-4weird-credits-title">Credits</h2>
+            <div class="TEMPLATE-4weird-credits-grid" id="TEMPLATE-4weird-credits-grid">
+                <div class="TEMPLATE-4weird-credit-card TEMPLATE-4weird-primary">
+                    <div class="TEMPLATE-4weird-credit-avatar">🧙‍♂️</div>
+                    <h3 class="TEMPLATE-4weird-credit-name">MattyJacks</h3>
+                    <p class="TEMPLATE-4weird-credit-role">Game Developer &amp; Designer</p>
+                    <p class="TEMPLATE-4weird-credit-links"><a href="https://mattyjacks.com" target="_blank" rel="noopener">mattyjacks.com</a></p>
+                </div>
+                <div class="TEMPLATE-4weird-credit-card">
+                    <div class="TEMPLATE-4weird-credit-avatar">🎮</div>
+                    <h3 class="TEMPLATE-4weird-credit-name">4weird Games</h3>
+                    <p class="TEMPLATE-4weird-credit-role">Publisher</p>
+                    <p class="TEMPLATE-4weird-credit-links"><a href="https://github.com/mattyjacks/4weird" target="_blank" rel="noopener">GitHub</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Maker Bio Section -->
+    <section class="TEMPLATE-4weird-bio-section" id="TEMPLATE-4weird-bio">
+        <div class="TEMPLATE-4weird-bio-container">
+            <h2 class="TEMPLATE-4weird-bio-title">About the Creator</h2>
+            <div class="TEMPLATE-4weird-bio-content">
+                <p>Founder of 4weird Games and creator of Demo Lichdom. I specialize in creating quirky browser games that blend unconventional concepts with polished gameplay. As a necromancer demolition contractor in this game, you embody the weird spirit that drives all 4weird creations - unexpected combinations that just work.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- More Games -->
+    <section class="TEMPLATE-4weird-more-games">
+        <div class="TEMPLATE-4weird-more-games-container">
+            <h2>More 4weird Games</h2>
+            <a href="/games/index.html" class="btn btn-secondary">
+                <span class="btn-emoji">🎯</span> Browse All Games
+            </a>
+        </div>
+    </section>
+
+    <div id="TEMPLATE-4weird-footer-placeholder"></div>
+
+    <script src="../../../components.js"></script>
+    <script src="game.js"></script>
+    <script>
+        // 4weird fullscreen: overlay button + F key + double-click (group B).
+        // Canvas is fixed 800x500 internally; CSS scales it in :fullscreen.
+        (function () {
+            var frame = document.querySelector('.game-container') || document.documentElement;
+            var canvas = document.getElementById('gameCanvas');
+            var btn = document.getElementById('dl-fs-btn');
+            function toggleFS() {
+                if (!document.fullscreenElement) {
+                    if (frame.requestFullscreen) {
+                        var p = frame.requestFullscreen();
+                        if (p && p.catch) p.catch(function () {});
+                    }
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+            if (btn) btn.addEventListener('click', toggleFS);
+            document.addEventListener('keydown', function (e) {
+                var t = e.target;
+                if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+                if (e.key === 'f' || e.key === 'F') toggleFS();
+            });
+            if (canvas) canvas.addEventListener('fw-dblclick-disabled', toggleFS);
+        })();
+    </script>
+</body>
+</html>

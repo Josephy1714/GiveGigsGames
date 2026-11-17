@@ -1,0 +1,16 @@
+{
+  "files": [
+    "../../kouzi/shared/fixed-step.js",
+    "audio.js",
+    "state.js",
+    "entities.js",
+    "engine.js",
+    "controls.js",
+    "session.js",
+    "simulation.js",
+    "world.js",
+    "rendering.js",
+    "lifecycle.js",
+    "interface.js"
+  ]
+}

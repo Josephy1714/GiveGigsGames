@@ -1,0 +1,13 @@
+{
+  "wrapped": true,
+  "files": [
+    "history.js",
+    "state.js",
+    "audio.js",
+    "session.js",
+    "transport.js",
+    "controls.js",
+    "view.js",
+    "screens.js"
+  ]
+}

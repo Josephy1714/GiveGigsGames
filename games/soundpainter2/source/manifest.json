@@ -1,0 +1,15 @@
+{
+  "wrapped": true,
+  "files": [
+    "state.js",
+    "audio.js",
+    "session.js",
+    "transport.js",
+    "song-codec.js",
+    "persistence.js",
+    "sequencer.js",
+    "controls.js",
+    "view.js",
+    "screens.js"
+  ]
+}

@@ -1,0 +1,33 @@
+html,body{height:100%!important;max-height:100%!important;overflow:hidden!important;min-height:0!important}
+.waterfall-game-main-wrapper{height:100%!important;width:100%!important;padding:8px!important;box-sizing:border-box!important;overflow:hidden!important}
+.waterfall-game-main.fw-flow{height:100%!important;width:min(100%,1000px)!important;max-width:1000px!important;margin:auto!important;padding:0!important;box-sizing:border-box!important;gap:6px!important}
+.waterfall-game-main>aside[hidden]{display:none!important}
+.waterfall-game-main>.fw-flow-section{height:auto!important;overflow:hidden!important;box-sizing:border-box!important;max-width:100%!important;width:100%!important;padding:8px!important}
+.waterfall-game-frame.fw-flow-section{background:#080e1b!important;border-radius:12px!important;align-items:stretch!important}
+.machine-container{height:100%!important;min-height:0!important;display:flex!important;flex-direction:column!important;padding:8px!important;gap:4px!important;overflow:hidden!important}
+.machine-header{padding:0!important;flex:0 0 auto!important}
+.exit-amount-display{font-size:clamp(1.2rem,4vw,2rem)!important}
+#waterfall-gameCanvas{min-height:0!important;flex:1 1 0!important;width:100%!important;height:auto!important;aspect-ratio:auto!important;max-height:150px!important}
+.billboard-caption,.exit-vibes-tag{display:none!important}
+.mobile-ledger-wrap{margin:0!important;flex:0 0 auto!important}
+.mobile-ledger{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;overflow:hidden!important;gap:6px!important}
+.ledger-card{min-width:0!important;min-height:0!important;padding:6px!important;width:auto!important}
+.ledger-value{font-size:clamp(.9rem,3vw,1.3rem)!important}
+.ledger-label{font-size:.65rem!important;letter-spacing:0!important;white-space:normal!important}
+.ledger-emoji{font-size:1rem!important;margin:0!important}
+.ledger-dots,.ledger-hint{display:none!important}
+.mobile-ledger-wrap{width:100%!important}
+.exit-slider-container{flex:0 0 auto!important;width:100%!important;box-sizing:border-box!important}
+.exit-billboard{padding:6px 12px!important;min-width:0!important}
+.ledger-card p{font-size:.7rem!important}
+.exit-slider-container{padding:6px!important;margin:0!important}
+.tab-content.fw-flow-section{background:#111827!important;border-radius:12px!important;justify-content:flex-start!important;gap:4px!important}
+.tab-content .input-group,.handbook-card,.scenario-card{padding:12px!important;margin:0!important}
+.tab-content .collapsible-body{padding:8px!important}
+.tab-content .control-row{margin-bottom:6px!important;gap:8px!important}
+.tab-content .control-row label{font-size:.8rem!important}
+.waterfall-stats-card.fw-flow-section{background:#111827!important;border-radius:12px!important;justify-content:flex-start!important}
+.waterfall-stats-card .stats-grid{gap:6px!important}
+.waterfall-stats-card .stat-value{font-size:1rem!important}
+.fw-flow-navigation{gap:6px}
+@media(max-height:440px){#waterfall-gameCanvas{max-height:55px!important}.ledger-card{font-size:.7rem!important}.exit-slider-container{padding:0!important}.fw-flow-status{font-size:.7rem!important}.fw-flow-steps button{min-height:28px!important;padding:4px!important}.waterfall-stats-card .audit-wrap{margin-top:4px!important;padding-top:4px!important}}

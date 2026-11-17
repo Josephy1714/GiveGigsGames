@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08121f">
+    <title>GiveGigsGames Developer Arcade</title>
+    <link rel="stylesheet" href="./tester.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="GiveGigsGames tester home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+      <span class="dev-badge">DEVELOPER TESTER</span>
+      <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames" target="_blank" rel="noreferrer">Repository ↗</a>
+    </header>
+    <main class="shell">
+      <section id="library-view" class="library-view">
+        <div class="intro">
+          <p class="eyebrow">LIGHTWEIGHT HTML ARCADE</p>
+          <h1>Test a game.<br><span>Keep the feedback loop short.</span></h1>
+          <p class="intro-copy">Launch the same static game files used by the host pages. No Next.js app or build step required.</p>
+        </div>
+        <div class="library-tools">
+          <label class="search-wrap"><span class="sr-only">Search games</span><span aria-hidden="true">⌕</span><input id="game-search" type="search" placeholder="Find a game…" autocomplete="off"></label>
+          <label class="filter-wrap"><span class="sr-only">Filter by genre</span><select id="genre-filter"><option value="">All genres</option></select></label>
+          <span id="game-count" class="game-count" aria-live="polite"></span>
+        </div>
+        <div id="game-grid" class="game-grid" aria-live="polite"></div>
+        <p id="load-error" class="load-error" hidden></p>
+        <footer class="library-footer">Run from a local HTTP server so iframe storage, workers, and relative assets behave like a hosted game.</footer>
+      </section>
+
+      <section id="player-view" class="player-view" hidden>
+        <div class="player-heading">
+          <button id="back-button" class="back-button" type="button">← All games</button>
+          <div class="player-title"><span id="player-emoji" class="player-emoji" aria-hidden="true"></span><div><p id="player-genre" class="eyebrow"></p><h1 id="player-name"></h1></div></div>
+          <div class="player-actions">
+            <a id="open-game" class="tool-button" target="_blank" rel="noreferrer">Open raw game ↗</a>
+            <button id="reload-game" class="tool-button" type="button">Reload</button>
+            <button id="fullscreen-game" class="tool-button primary" type="button">Fullscreen ⛶</button>
+          </div>
+        </div>
+        <p id="player-description" class="player-description"></p>
+        <div id="frame-wrap" class="frame-wrap"><iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe></div>
+        <div id="external-runtime" class="external-runtime" hidden><p>This game is still hosted by MattyJacks. It blocks embedding from another site, so open it in a separate tab.</p><a id="open-external" class="tool-button primary" target="_blank" rel="noreferrer">Open game ↗</a></div>
+        <p class="player-note">Keyboard and mouse input go to the game after you click inside it. Browser storage uses this local server origin.</p>
+      </section>
+    </main>
+    <script src="./tester.js" defer></script>
+  </body>
+</html>

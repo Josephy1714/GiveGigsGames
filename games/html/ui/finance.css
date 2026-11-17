@@ -1,0 +1,43 @@
+.TEMPLATE-4weird-game-frame{min-height:0!important;height:100%!important}
+#ff-game-scroll.fw-flow{height:100%!important;min-height:0!important;padding:8px!important;gap:6px!important;overflow:hidden!important;box-sizing:border-box!important}
+.ff-life-deck,.ff-quick-actions,.ff-bottom-tabs,.ff-scroll-pad,.ff-fs-btn,.ff-fs-bar-btn,.game-tabs{display:none!important}
+.overview-bar{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;margin:0!important;flex:0 0 auto!important}
+.metric-card{padding:5px!important;border-radius:6px!important;min-width:0!important}
+.metric-label{font-size:.6rem!important;white-space:normal!important}
+.metric-value{font-size:clamp(.8rem,2.5vw,1.1rem)!important}
+.metric-change{display:none!important}
+#ff-game-scroll .fw-flow-steps{gap:3px!important}
+#ff-game-scroll .fw-flow-steps button{padding:5px!important;min-height:30px!important;font-size:.65rem!important;flex:1 1 20%!important}
+#ff-game-scroll .fw-flow-status{display:none!important}
+.tab-panel.fw-flow-section{gap:0!important;padding:0!important;overflow:hidden!important;justify-content:flex-start!important}
+.dashboard-grid{gap:0!important;margin:0!important;min-height:0!important;flex:1 1 auto!important}
+.game-card-panel{padding:10px!important;min-height:0!important;overflow:hidden!important;border-radius:8px!important}
+.panel-title{font-size:.9rem!important;margin:0 0 8px!important}
+.input-row-group,.budget-summary-item{padding:5px 0!important;margin:0!important;font-size:.75rem!important;gap:8px!important}
+.input-row-group span{min-width:0!important}
+.game-alert{font-size:.7rem!important;line-height:1.3!important;padding:6px!important;margin:4px 0!important}
+.svg-chart-container{height:80px!important;min-height:0!important}
+.fi-progress-wrapper{margin-top:6px!important}
+.turn-control-bar{position:static!important;display:flex!important;flex-direction:row!important;flex:0 0 auto!important;margin:0!important;padding:6px!important;gap:6px!important;border-radius:8px!important;width:100%!important;box-sizing:border-box!important;z-index:auto!important}
+#game-timeline{font-size:.75rem!important}
+.turn-control-bar>div>div{font-size:.65rem!important;margin-top:2px!important}
+.turn-control-bar{flex-wrap:nowrap!important}
+.next-month-btn{padding:8px 12px!important;font-size:.8rem!important;white-space:nowrap!important;width:auto!important;flex:0 0 auto!important;min-height:40px!important}
+.turn-control-bar>div{flex:1 1 auto!important;min-width:0!important}
+#ff-game-scroll>.fw-flow-navigation{display:none!important}
+.profile-selection-overlay{box-sizing:border-box!important;padding:12px!important;gap:8px!important;overflow:hidden!important;justify-content:center!important;color:#e2e8f0!important;font-family:system-ui!important;z-index:100!important}
+.profile-selection-overlay h2,.profile-selection-overlay h3,.profile-card h3{color:#f8fafc!important}
+.profile-card p{color:#cbd5e1!important}
+.profile-name{color:#f8fafc!important;font-size:1rem!important}
+.profile-emoji{font-size:1.6rem!important;margin:0!important}
+.profile-details{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;font-size:.75rem!important;margin:8px 0!important}
+.profile-card .profile-icon{font-size:1.4rem!important;margin-bottom:6px!important}
+.profile-card button{min-height:36px!important;padding:8px!important;margin-top:6px!important}
+.profile-selection-overlay h2{font-size:1.1rem!important;margin:0!important}
+.profile-selection-overlay>p{font-size:.8rem!important;line-height:1.35!important;margin:0!important}
+.profile-grid{display:block!important;max-width:600px!important;width:100%!important;min-height:0!important;margin:0!important}
+.profile-card{padding:12px!important;min-height:0!important;max-height:100%!important}
+.profile-grid+.fw-book-navigation{width:min(100%,600px)!important}
+.profile-card .profile-desc{font-size:.75rem!important;line-height:1.35!important}
+#events-log-list{font-size:.75rem!important;line-height:1.4!important}
+@media(max-height:440px){.overview-bar{display:none!important}.profile-selection-overlay>p{display:none!important}.profile-card{padding:6px!important}.game-card-panel{padding:6px!important}.input-row-group,.budget-summary-item{padding:3px 0!important}}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GraveGain2DB - Breach MoonRock - 4weird Games</title>
+    <meta name="description" content="GraveGain2DB: Breach MoonRock — deterministic co-op breach sim. Fully mobile playable: floating crypt-stick, A/B runes, tap-to-loot.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../../styles.css">
+    <link rel="stylesheet" href="game.css">
+</head>
+<body class="TEMPLATE-4weird-game-page">
+    <canvas id="TEMPLATE-4weird-starfield"></canvas>
+    <div id="TEMPLATE-4weird-nav-placeholder"></div>
+
+    <div class="game-wrapper">
+        <div class="game-main" id="gameMain">
+            <div class="game-hud glass-panel">
+                <div class="hud-group">
+                    <div class="hud-stat">
+                        <span class="hud-label">❤️ HP</span>
+                        <div class="hud-bar-container"><div class="hud-bar bar-hp" id="hudHpBar"></div></div>
+                        <span class="hud-value" id="hudHpText">100/100</span>
+                    </div>
+                    <div class="hud-stat">
+                        <span class="hud-label">🎯 Objective</span>
+                        <span class="hud-value highlight-cyan" id="hudObjectiveText">Breach the MoonRock</span>
+                        <span class="hud-xp" id="hudTickText">tick 0</span>
+                    </div>
+                </div>
+                <div class="hud-group">
+                    <div class="hud-stat">
+                        <span class="hud-label">☠️ Kills</span>
+                        <span class="hud-value gold-display" id="hudKillsText">0</span>
+                    </div>
+                    <div class="hud-stat">
+                        <span class="hud-label">💚 Revives</span>
+                        <span class="hud-value uusd-display" id="hudRevivesText">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-container" id="canvasContainer">
+                <button class="TEMPLATE-4weird-fullscreen-btn" id="gg2db-fullscreen-btn" title="Toggle Fullscreen">📺 Fullscreen</button>
+                <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+                <!-- Mobile controls overlays: Floating crypt-stick + A/B runes + tap-to-loot -->
+                <div class="crypt-stick-layer" id="cryptStickLayer" aria-hidden="true">
+                    <div class="crypt-stick-base" id="cryptStickBase">
+                        <div class="crypt-stick-knob" id="cryptStickKnob"></div>
+                    </div>
+                    <div class="crypt-tap-marker" id="cryptTapMarker" aria-hidden="true">👆</div>
+                </div>
+                <div class="rune-cluster" id="runeCluster" aria-label="Touch attack controls">
+                    <button class="rune-btn rune-a" id="runeBtnA" aria-label="A: Fire">🔫<span>A</span></button>
+                    <button class="rune-btn rune-b" id="runeBtnB" aria-label="B: Interact and loot">✋<span>B</span></button>
+                    <button class="rune-btn rune-small" id="mobileDashBtn" aria-label="Dash">💨</button>
+                    <button class="rune-btn rune-small" id="mobileAbilityBtn" aria-label="Race ability">✦</button>
+                </div>
+                <div class="thumb-tabs" id="thumbTabs" role="tablist" aria-label="Assist tabs">
+                    <button class="thumb-tab" id="thumbBagBtn" role="tab" aria-label="Open run status">🎒<span>Bag</span></button>
+                    <button class="thumb-tab thumb-toggle" id="thumbTargetBtn" role="tab" aria-pressed="true" aria-label="Toggle auto-target nearest enemy">🎯<span>Target:ON</span></button>
+                    <button class="thumb-tab thumb-toggle" id="thumbTapBtn" role="tab" aria-pressed="true" aria-label="Toggle tap to move">👆<span>Tap:ON</span></button>
+                </div>
+                <div class="mobile-drawer hidden" id="mobileDrawer" role="dialog" aria-label="Run status panel">
+                    <div class="mobile-drawer-tabs" role="tablist">
+                        <button class="thumb-tab active" data-drawer="bag" role="tab">🎒 Run</button>
+                        <button class="thumb-tab drawer-close" id="mobileDrawerClose" aria-label="Close panel">✖</button>
+                    </div>
+                    <div class="mobile-drawer-body">
+                        <div class="mobile-drawer-pane active" id="drawerBag"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-action-row">
+                <button class="btn-game" id="btnPause">⏸️ Pause</button>
+                <button class="btn-game btn-primary" id="btnRestart">↻ Restart breach</button>
+            </div>
+            <div class="menu-content glass-panel" id="menuPanel" style="margin-top:12px;">
+                <h1 class="menu-title" style="font-size:1.6rem;">GRAVEGAIN2DB</h1>
+                <p class="menu-subtitle">Breach MoonRock · deterministic sim · mobile ready</p>
+                <div class="race-row" id="raceRow" aria-label="Choose race">
+                    <button class="char-card selected" data-race="human" aria-pressed="true"><span class="char-emoji">🧑‍🚀</span><div class="char-name">Human</div></button>
+                    <button class="char-card" data-race="elf" aria-pressed="false"><span class="char-emoji">🧝</span><div class="char-name">Elf</div></button>
+                    <button class="char-card" data-race="dwarf" aria-pressed="false"><span class="char-emoji">🧔</span><div class="char-name">Dwarf</div></button>
+                    <button class="char-card" data-race="orc" aria-pressed="false"><span class="char-emoji">👹</span><div class="char-name">Orc</div></button>
+                </div>
+                <div class="btn-group" style="margin-top:12px;">
+                    <button class="btn-game btn-primary" id="btnDeploy">⚔️ Deploy (Mission 1)</button>
+                </div>
+                <p id="simStatus" style="font-size:.75rem;opacity:.8;">loading sim modules…</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="TEMPLATE-4weird-footer-placeholder"></div>
+
+    <script src="../../../components.js"></script>
+    <script src="sim/movement.js"></script>
+    <script src="sim/player.js"></script>
+    <script src="sim/terrain.js"></script>
+    <script src="sim/collapse.js"></script>
+    <script src="sim/engine.js"></script>
+    <script src="builds/races-classes.js"></script>
+    <script src="builds/weapons.js"></script>
+    <script src="missions/mission1.js"></script>
+    <script src="missions/campaign.js"></script>
+    <script src="missions/endless.js"></script>
+    <script src="net/protocol.js"></script>
+    <script src="mmo/events.js"></script>
+    <script src="mmo/hub.js"></script>
+    <script src="fx/emoji-art.js"></script>
+    <script src="fx/hud.js"></script>
+    <script src="fx/audio.js"></script>
+    <script src="game.js"></script><script src="/games/html/giggles-help-draft.js"></script><script>(function(){function open(){var g=window.GraveGain2DBLegacy&&window.GraveGain2DBLegacy.getState();if(g&&g.running&&window.GigglesHelpDraft)window.GigglesHelpDraft.present("gravegain2dB_legacy",g,function(){if(window.GraveGain2DBLegacy)window.GraveGain2DBLegacy.render();});}var b=document.createElement("button");b.type="button";b.textContent="▰ GG · HELP";b.style.cssText="position:fixed;right:12px;top:12px;z-index:9999;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer";b.onclick=open;document.addEventListener("keydown",function(e){if(e.key==="g"||e.key==="G")open();});document.body.appendChild(b);})();</script>
+</body>
+</html>

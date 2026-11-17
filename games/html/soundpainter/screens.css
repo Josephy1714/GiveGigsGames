@@ -1,0 +1,25 @@
+.bounded-painter { display:flex!important; flex-direction:column!important; align-items:stretch!important; min-height:0!important; padding:8px!important; box-sizing:border-box; gap:6px; overflow:hidden!important }
+.bounded-painter [hidden] { display:none!important }
+.bounded-painter .sp-scheme-badge { display:none }
+.sp-screen-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:0 0 34px }
+.sp-screen-tabs button,.bounded-painter .sound-painter-btn { background:#211d38; border:1px solid #71629a; color:#eee; border-radius:6px; padding:5px 9px; font:600 12px system-ui; cursor:pointer; min-height:28px }
+.sp-screen-tabs button[aria-current=page] { background:#514187; border-color:#c4b5fd }
+.sp-paint-stage { flex:1; min-width:0; min-height:0; position:relative; overflow:hidden }
+.bounded-painter #TEMPLATE-4weird-gameCanvas { width:100%!important; height:100%!important; display:block }
+.sp-instrument-screen { flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; padding:8px; box-sizing:border-box }
+.sp-instrument-screen h2 { font:600 18px system-ui; color:#e9d5ff; margin:0 }
+.sp-instrument-screen p { font:13px/1.4 system-ui; color:#d6d3e4; margin:0; max-width:650px }
+.bounded-painter .sp-palette { position:static!important; transform:none!important; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); flex:1; min-height:0; gap:8px; overflow:visible; width:100%; padding:0; margin:0; background:none; border:0 }
+.bounded-painter .sp-thumb { min-width:0; min-height:0; width:auto; padding:6px; display:flex; flex-direction:column; align-items:center; justify-content:center }
+.bounded-painter .sp-name { font:600 12px system-ui; color:#ede9fe }.bounded-painter .sp-emoji { font-size:24px }
+.bounded-painter #TEMPLATE-4weird-game-controls { position:static!important; transform:none!important; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; flex:0 0 34px; padding:0; margin:0; width:100%; background:none }
+.bounded-painter .sound-painter-btn { margin:0; min-width:0; white-space:normal }
+.bounded-painter #TEMPLATE-4weird-play-btn { color:#f5f3ff!important }
+.bounded-painter .sound-painter-btn:disabled { opacity:.4; cursor:default }
+#sp-edit-status { flex:0 0 18px; margin:0; text-align:center; font:12px/18px system-ui; color:#d6d3e4 }
+@media(max-height:350px) {
+ .bounded-painter { padding:4px!important; gap:3px }.sp-screen-tabs { flex-basis:28px }
+ .bounded-painter #TEMPLATE-4weird-game-controls { flex-basis:28px }.sp-instrument-screen { padding:4px; gap:4px }
+ .sp-instrument-screen h2 { font-size:14px }.sp-instrument-screen p { font-size:11px }
+ .bounded-painter .sp-palette { gap:4px }.bounded-painter .sp-emoji { font-size:18px }
+}
