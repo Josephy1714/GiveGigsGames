@@ -3,19 +3,14 @@
   const count = document.getElementById("catalog-count");
   const error = document.getElementById("catalog-error");
 
-  fetch("./games/catalog.json")
-    .then((response) => {
-      if (!response.ok) throw new Error("Catalog unavailable");
-      return response.json();
-    })
-    .then((catalog) => {
-      const games = Array.isArray(catalog.games) ? catalog.games : [];
+  try {
+      const catalog = window.GIVEGIGSGAMES_CATALOG;
+      if (!catalog || !Array.isArray(catalog.games)) throw new Error("Catalog data is missing.");
+      const games = catalog.games;
       count.textContent = `${games.length} titles · includes previews and experiments`;
       for (const game of games) {
-        const card = document.createElement("a");
+        const card = document.createElement("article");
         card.className = "game-card";
-        card.href = `./tester/?game=${encodeURIComponent(game.slug)}`;
-        card.setAttribute("aria-label", `Play ${game.title}`);
 
         const head = document.createElement("div");
         head.className = "card-head";
@@ -38,15 +33,23 @@
         genre.textContent = game.genre;
         const description = document.createElement("p");
         description.textContent = game.description;
-        const play = document.createElement("span");
+        const play = document.createElement("a");
         play.className = "play-label";
-        play.textContent = game.runtimeType === "external" ? "Launch hosted build ↗" : "Play current build →";
-        card.append(head, title, genre, description, play);
+        play.href = game.runtimeType === "external" ? game.externalUrl : `./games/${game.entrypoint}`;
+        play.textContent = game.runtimeType === "external" ? "Launch hosted build ↗ (online)" : "Open game →";
+        if (game.runtimeType === "external") {
+          play.target = "_blank";
+          play.rel = "noreferrer";
+        }
+        const test = document.createElement("a");
+        test.className = "test-link";
+        test.href = `./tester/?game=${encodeURIComponent(game.slug)}`;
+        test.textContent = "Open in tester";
+        card.append(head, title, genre, description, play, test);
         grid.append(card);
       }
-    })
-    .catch(() => {
-      count.textContent = "";
-      error.hidden = false;
-    });
+  } catch {
+    count.textContent = "";
+    error.hidden = false;
+  }
 })();

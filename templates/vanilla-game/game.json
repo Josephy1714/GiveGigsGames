@@ -1,0 +1,10 @@
+{
+  "title": "New Game Title",
+  "slug": "new-game-title",
+  "description": "Describe the game in one sentence.",
+  "genre": "Arcade",
+  "tags": ["HTML5", "Offline-friendly"],
+  "emoji": "🎮",
+  "entrypoint": "index.html",
+  "license": "Choose a license you have the right to grant"
+}

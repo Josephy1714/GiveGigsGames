@@ -78,7 +78,7 @@
     frame.src = external ? "about:blank" : source;
     library.hidden = true;
     player.hidden = false;
-    history.replaceState(null, "", `?game=${encodeURIComponent(game.slug)}`);
+    try { history.replaceState(null, "", `?game=${encodeURIComponent(game.slug)}`); } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -87,7 +87,7 @@
     player.hidden = true;
     library.hidden = false;
     selected = null;
-    history.replaceState(null, "", location.pathname);
+    try { history.replaceState(null, "", location.pathname); } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -106,12 +106,9 @@
     }
   });
 
-  fetch("../games/catalog.json")
-    .then((response) => {
-      if (!response.ok) throw new Error("The game catalog could not be loaded.");
-      return response.json();
-    })
-    .then((catalog) => {
+  try {
+      const catalog = window.GIVEGIGSGAMES_CATALOG;
+      if (!catalog || !Array.isArray(catalog.games)) throw new Error("The game catalog could not be loaded.");
       games = Array.isArray(catalog.games) ? catalog.games.filter((game) => game.slug && game.title && safePath(game)) : [];
       for (const item of [...new Set(games.map((game) => game.genre).filter(Boolean))].sort()) {
         const option = document.createElement("option");
@@ -123,9 +120,8 @@
       const slug = new URLSearchParams(location.search).get("game");
       const requested = games.find((game) => game.slug.toLowerCase() === (slug || "").toLowerCase());
       if (requested) openGame(requested);
-    })
-    .catch((error) => {
-      byId("load-error").hidden = false;
-      byId("load-error").textContent = `${error.message} Start a local server at the GiveGigsGames repository root, then open /tester/.`;
-    });
+  } catch (error) {
+    byId("load-error").hidden = false;
+    byId("load-error").textContent = `${error.message} Check that games/catalog-data.js is present.`;
+  }
 })();

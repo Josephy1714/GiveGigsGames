@@ -1,0 +1,45 @@
+name: Suggest a game
+description: Pitch a small offline-friendly browser game for GiveGigsGames
+title: "[Game idea]: "
+labels: [game-idea]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for helping grow the game library. Keep proposals small enough to ship below the 10 MB per-game limit."
+  - type: input
+    id: title
+    attributes:
+      label: Game title
+      placeholder: A short, memorable name
+    validations:
+      required: true
+  - type: textarea
+    id: pitch
+    attributes:
+      label: Game pitch
+      description: What does the player do, and what makes it fun?
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: Controls and device support
+      description: Note touch, keyboard, mouse, or controller needs.
+    validations:
+      required: true
+  - type: textarea
+    id: assets
+    attributes:
+      label: Assets and rights
+      description: List planned art, audio, fonts, code, and their licenses or sources.
+    validations:
+      required: true
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Contribution fit
+      options:
+        - label: I can keep the game under 10 MB.
+          required: true
+        - label: I can make it playable without cloud saves or private credentials.
+          required: true

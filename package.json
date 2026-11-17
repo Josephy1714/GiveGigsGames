@@ -1,0 +1,13 @@
+{
+  "name": "givegigsgames",
+  "version": "1.0.0",
+  "private": false,
+  "description": "A lightweight, offline-friendly HTML5 browser game library.",
+  "scripts": {
+    "catalog:build": "node scripts/build-browser-catalog.mjs",
+    "check:size": "node scripts/check-game-sizes.mjs",
+    "check:offline": "node scripts/check-offline-entrypoints.mjs && node scripts/check-game-assets.mjs",
+    "check": "node scripts/build-browser-catalog.mjs --check && npm run check:size && npm run check:offline",
+    "serve": "python -m http.server 4173"
+  }
+}

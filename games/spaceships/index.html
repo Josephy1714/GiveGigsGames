@@ -6,7 +6,7 @@
     <title>Starship Simulator - 4weird Games</title>
     <meta name="description" content="Experience our fullscreen 3D Spaceship steering and flocking simulation. Powered by Three.js with real-time autopilot, collision avoidance, and boids physics.">
     <link rel="canonical" href="https://mattyjacks.com/games/starship-simulator">
-    <link rel="manifest" href="/manifest.json">
+    
     <meta name="theme-color" content="#8b5cf6">
 
     <!-- Open Graph -->
@@ -556,10 +556,10 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     </div>
 
     <!-- Load Three.js Library -->
-    <script src="/games/html/vendor/three-r128.min.js"></script><script>if(!window.THREE){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')}</script>
+    <script src="../html/vendor/three-r128.min.js"></script><script>if(!window.THREE){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')}</script>
     
     <!-- Load Game core modules -->
-    <script type="module" src="/game/spaceships/main.js?v=26"></script>
+    <script type="module" src="./main.js?v=26"></script>
 
     <!-- Page Specific Script binds -->
     <script>
@@ -592,7 +592,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 // Try window.close() first if opened in new tab, fallback to going back home
                 window.close();
                 setTimeout(() => {
-                    window.location.href = "/";
+                    window.location.href = "../index.html";
                 }, 100);
             });
 
@@ -756,5 +756,5 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             });
         });
     </script>
-<script src="/games/html/runtime-bridge.js" data-slug="spaceships"></script><script src="/games/html/fourweird-workers.js" data-slug="spaceships"></script><script src="/games/html/fourweird-music.js" data-slug="spaceships"></script></body>
+<script src="../html/runtime-bridge.js" data-slug="spaceships"></script><script src="../html/fourweird-workers.js" data-slug="spaceships"></script><script src="../html/fourweird-music.js" data-slug="spaceships"></script></body>
 </html>

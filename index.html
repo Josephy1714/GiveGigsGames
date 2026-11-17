@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#08131f">
-    <meta name="description" content="Browse the complete GiveGigsGames library, including preview and experimental browser games.">
+    <meta name="description" content="Download GiveGigsGames to a desktop or phone and play the static browser games from index.html, even offline.">
     <title>GiveGigsGames — Full Game Library</title>
     <link rel="stylesheet" href="./index.css">
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+      <a class="brand" href="./" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
       <span class="host-label">FULL GAME LIBRARY</span>
       <a class="top-link" href="./tester/">Developer tester ↗</a>
     </header>
@@ -24,6 +24,7 @@
           <div class="hero-actions">
             <a class="button primary" href="#all-games">Browse all games <span aria-hidden="true">↓</span></a>
             <a class="button secondary" href="https://givegigs.com/games/">GiveGigs public games ↗</a>
+            <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Contribute a game ↗</a>
           </div>
         </div>
         <aside class="release-note">
@@ -35,17 +36,23 @@
         <div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
       </section>
 
+      <section class="quickstart" aria-labelledby="quickstart-title">
+        <div><p class="eyebrow">NO INSTALL REQUIRED</p><h2 id="quickstart-title">Take the arcade with you</h2><p>Download the GitHub ZIP, extract it on a desktop or phone, then open this <code>index.html</code>. Local static games can run offline; cloud saves are not available.</p></div>
+        <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip">Download repository ZIP ↓</a>
+      </section>
+
       <section id="all-games" class="catalog-section">
         <div class="section-heading">
           <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Choose a game</h2></div>
           <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
         </div>
         <div id="game-grid" class="game-grid" aria-live="polite"></div>
-        <p id="catalog-error" class="catalog-error" hidden>Catalog could not be loaded. Start a local HTTP server from the repository root, then reload this page.</p>
+        <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
       </section>
     </main>
 
-    <footer class="footer"><a class="brand footer-brand" href="/"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="./tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a></footer>
+    <footer class="footer"><a class="brand footer-brand" href="./"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="./tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="./terms.html">Terms of Use</a><a href="./privacy.html">Privacy Policy</a></footer>
+    <script src="./games/catalog-data.js" defer></script>
     <script src="./index.js" defer></script>
   </body>
 </html>

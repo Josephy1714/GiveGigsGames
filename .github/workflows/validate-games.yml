@@ -1,0 +1,26 @@
+name: Validate browser games
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check generated offline catalog
+        run: node scripts/build-browser-catalog.mjs --check
+      - name: Enforce per-game 10 MB limit
+        run: node scripts/check-game-sizes.mjs
+      - name: Check downloaded-folder entrypoints
+        run: node scripts/check-offline-entrypoints.mjs
+      - name: Check local game assets
+        run: node scripts/check-game-assets.mjs
