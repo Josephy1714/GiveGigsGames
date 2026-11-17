@@ -2,6 +2,32 @@
   "version": 1,
   "games": [
     {
+      "slug": "gravegain2dD",
+      "title": "GraveGain2dD: Moonlit Run",
+      "description": "Guide Lira, a moonlit elf runner, through an endless graveyard parkour course. One finger controls pace, braking, jumps, and vaults.",
+      "genre": "Endless Runner",
+      "tags": [
+        "Action",
+        "Endless Runner",
+        "Parkour",
+        "Mobile",
+        "Pixel Art"
+      ],
+      "emoji": "🌙",
+      "featured": true,
+      "recommended": true,
+      "entrypoint": "gravegain2dD/index.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "One-finger joystick: push right to accelerate, left to slow down, and up to jump or vault. Arrow keys or WASD on desktop.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static"
+    },
+    {
       "slug": "ecosystemic-evolver",
       "title": "Ecosystemic Evolver",
       "description": "Play as animals or human roles in five living biomes with 10 interactive tutorials covering all gameplay systems, food webs, and economies.",

@@ -1244,6 +1244,21 @@
     <script>
         const GAMES_DATA = [
             {
+                title: "GraveGain2dD",
+                path: "gravegain2dD/index.html",
+                description: "Guide Lira through an endless moonlit graveyard run. One finger controls pace, braking, jumps, and parkour vaults.",
+                categories: ["Action", "Runner", "Mobile"],
+                tags: ["Endless Runner", "Parkour", "One-Finger Controls", "Pixel Art"],
+                rating: 0,
+                playCount: 0,
+                releaseDate: "2026-11-17",
+                featured: true,
+                compatibility: "mobile-desktop",
+                status: "polished",
+                emoji: "🌙",
+                image: ""
+            },
+            {
                 title: "Last Words Zombies",
                 path: "html/lastwordszombies/index.html",
                 description: "A high-intensity 3D zombie typing survival game. Banish shambling zombies before they overrun your graveyard barricade. Lock-on, banish, trigger holy payloads, and release stuns!",
@@ -1601,7 +1616,7 @@
 
         // Setup Carousel
         function setupCarousel() {
-            featuredGames = GAMES_DATA.filter(g => g.title === "Last Words Zombies" || g.title === "AI Whack-a-Mole");
+            featuredGames = GAMES_DATA.filter(g => g.title === "GraveGain2dD");
             const track = document.getElementById('carouselTrack');
             const indicatorsContainer = document.getElementById('carouselIndicators');
             
@@ -1644,8 +1659,8 @@
                         <h3 class="carousel-title">${game.title}</h3>
                         <p class="carousel-desc">${game.description}</p>
                         <div class="carousel-meta">
-                            <span><strong class="carousel-meta-icon">⭐</strong> ${game.rating.toFixed(1)} Rating</span>
-                            <span><strong class="carousel-meta-icon">👁️</strong> ${(game.playCount / 1000).toFixed(1)}k Plays</span>
+                            <span><strong class="carousel-meta-icon">${game.rating ? '⭐' : '🎮'}</strong> ${game.rating ? `${game.rating.toFixed(1)} Rating` : 'New Game'}</span>
+                            <span><strong class="carousel-meta-icon">${game.playCount ? '👁️' : '☝️'}</strong> ${game.playCount ? `${(game.playCount / 1000).toFixed(1)}k Plays` : 'One-Finger Controls'}</span>
                             <span><strong class="carousel-meta-icon">💻</strong> ${game.compatibility === 'mobile-desktop' ? 'Mobile + PC' : 'PC Only'}</span>
                         </div>
                         <span class="carousel-btn-play">🕹️ PLAY MODULE</span>
