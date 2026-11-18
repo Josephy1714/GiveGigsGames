@@ -35,7 +35,7 @@
   const input=modules.input.createInputManager(options.inputTarget||shell,options.inputOptions||{});
   const renderer=modules.renderer.create({canvas:canvas,maxDevicePixelRatio:options.maxDevicePixelRatio||2});
   const life=modules.life.createEngine(storage);
-  const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes});
+  const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes,loadImage:options.loadImage});
   let disposed=false, lifecycle='created',frameHandle=null,lastFrameTime=0,lastError=null,resizeHandler=null;
   const subscribers=new Set();
   let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,visibilityHandler,escapeHandler;
@@ -146,7 +146,7 @@
    const previous=environment.getState().district;
    if(!previous||!world.districts[previous].exits.includes(destination))fail('No authored route connects the current district to that destination.');
    const result=await environment.enter(destination,{spawn:travelOptions&&travelOptions.spawn||'default'});
-   try{const journey=life.travel(destination);const spawn=sceneManifest[destination].spawnPoints[(travelOptions&&travelOptions.spawn)||'default'];character.reset(spawn);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,minutes:journey.minutes},'runtime');return getState();}
+   try{const journey=life.travel(destination);services.sync();const spawn=sceneManifest[destination].spawnPoints[(travelOptions&&travelOptions.spawn)||'default'];character.reset(spawn);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,minutes:journey.minutes},'runtime');return getState();}
    catch(error){await environment.enter(previous,{spawn:'default'});const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
   function pause(){
