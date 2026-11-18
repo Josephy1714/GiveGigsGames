@@ -60,7 +60,7 @@
   }
   function submitAssignment(id,score){
    sync();const a=state.assignments.find(x=>x.id===id);if(!a)throw new Error('Assignment not found.');
-   if(a.status==='submitted')throw new Error('This assignment has already been submitted.');
+   if(a.status==='submitted'||a.status==='submitted-late')throw new Error('This assignment has already been submitted.');
    const late=a.status==='overdue';
    if(score===undefined){const course=life.getState().academics.courses.find(x=>x.id===a.courseId);score=Math.min(100,Math.round(45+(course.assignmentPoints||0)*0.35+(course.studyPoints||0)*0.25+(course.preparation||0)*0.2+(life.getState().condition.wellbeing||0)*0.1));}if(!Number.isFinite(score)||score<0||score>100)throw new Error('Score must be between 0 and 100.');
    const result=life.recordAssignmentSubmission(a.courseId,a.id,score);
