@@ -87,6 +87,8 @@
         c.vy = Math.max(-CONFIG.terminalFallSpeed, c.vy - CONFIG.gravity * dt);
         c.y += c.vy * dt;
         if (c.vy < -0.1 && c.state !== 'jump-fall') transition('jump-fall', 'descending');
+        else if (c.vy > 0.1 && c.state !== 'jump-takeoff' && c.state !== 'jump-rise') transition('jump-rise', 'ascending');
+        else if (Math.abs(c.vy) <= 0.45 && c.vy >= 0 && c.state !== 'jump-apex') transition('jump-apex', 'apex');
         if (c.y <= 0) {
           const impactVelocity = Math.abs(c.vy);
           c.y = 0;
