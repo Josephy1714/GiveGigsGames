@@ -1,21 +1,42 @@
-# Student Phone and Academic Portal
+# Student Phone and University Services
 
-`student-phone-runtime.js` composes a read-only phone snapshot from the authoritative life engine and authored world. It does not maintain duplicate academic, financial, relationship, location or timetable records.
+The student phone is a playable university-life system, not a static mock dashboard. It reads authoritative records from the life engine and delegates registration, coursework, inbox and notification actions to `university-services.js`.
 
-## Sections
-- Overview: semester, calendar, district and condition.
-- Timetable: the schedule supplied by the life engine.
-- Courses: current semester course records (read-only).
-- Academic record: cumulative GPA and completed transcript entries.
-- Coursework: recorded assignment progress. Deadlines are deliberately not fabricated; authored assignment records are a later data milestone.
-- CATs and exams: only scores actually recorded in the academic engine.
-- Wallet: cash, debt and lifetime totals.
-- People: relationship values and recorded conversation history, not invented incoming messages.
-- District map: current district, connected exits and authored places.
+## Architecture and data ownership
 
-Opening the academic, course or assessment section emits `academics:reviewed`; opening Wallet emits `budget:reviewed`. These are review events, not mutations to academic or financial state. The host should forward the events to the campaign runtime.
+- `life-systems.js` owns semester course catalogues, active registration, academic progress, scores, finances and the finance transaction ledger.
+- `university-services.js` owns assignment briefs/deadlines, submission lifecycle, inbox messages, notifications and registration-window state. It persists to `semester-survival.university.v1`.
+- `student-phone-runtime.js` exposes a narrow phone interface and forwards incoming game-domain events to university services.
+- `student-phone-ui.js` renders accessible, text-safe controls and views. It does not calculate grades or mutate simulation state directly.
+
+The phone's UI must never create fake grades, pretend to send a real-world email, or imply that an unconnected system has run.
+
+## Functional features
+
+### Course registration
+The active semester catalogue contains five core courses and two electives. Students can select three to five courses, within a 9–15 credit load. Duplicate courses are rejected, elective prerequisites are checked against completed transcript entries, and the add/drop action is locked after the first registration change for that semester. Newly registered courses receive clean academic progress records. The timetable is derived from the active registration.
+
+### Coursework and deadlines
+Each registered course receives authored coursework and practical assignment records with due times measured against the simulation calendar. Deadline reminders and overdue notices are generated as simulation time advances. Submission is a real life-engine mutation and updates course assignment points. The submission score is calculated from recorded assignment work, study, preparation and wellbeing; the player cannot type an arbitrary grade. Late work can still be submitted with a 15-point penalty. Duplicate submissions are rejected.
+
+### Inbox and notifications
+Messages are authored in-world communications triggered by supported events such as meeting a named NPC, submitting coursework, recording an assessment and arriving on campus. The inbox supports read state and in-game replies. Replies are local simulation messages, not external communications. Notification records are persisted and can be dismissed/read.
+
+The host must forward relevant domain events into `phone.receiveEvent(event)`. At minimum, forward `dialogue:opened`, `assessment:submitted`, `travel`, and `assignment:submitted`. The university-services `onEvent` callback should forward service events to the campaign runtime and any other host subscribers.
+
+### Finance ledger
+Purchases and earnings performed through the life engine append transaction records with category, signed amount, time and resulting balance. The phone displays the latest ledger entries alongside current cash, debt and lifetime totals. Do not mutate balances from the phone UI.
 
 ## Host integration
-Load `student-phone-runtime.js`, then `student-phone-ui.js`; include `student-phone-ui.css`. Create the runtime with `{ lifeEngine, world, inputManager, onEvent }`, mount the UI into the game's overlay host, and call `phone.handleIntent(inputManager.consume())` from the host frame/update loop. When phone state changes, call `phoneUI.render()`. The input manager already reserves Tab for `phonePressed` and blocks movement while `phoneOpen` is true. Call both `phoneUI.destroy()` and `phone.destroy()` during teardown.
 
-The original game entrypoint is not changed by this milestone. The UI is a standalone host-mounted layer pending the final game-shell integration.
+Load the modules in this order:
+1. `life-systems.js`
+2. `world-content.js`
+3. `input-manager.js`
+4. `university-services.js`
+5. `student-phone-runtime.js`
+6. `student-phone-ui.js`
+
+Create the life engine, then university services. Supply the same event-forwarding callback to university services and the game host. Create the phone runtime with `{ lifeEngine, world, inputManager, universityServices, onEvent }`. Mount the UI into the game's overlay host. In the host frame/update loop, pass consumed input to `phone.handleIntent(intent)` and call `phoneUI.render()` when the phone state changes. Forward successful domain events with `phone.receiveEvent(event)`. Destroy the UI, phone and services during teardown.
+
+The original game entrypoint remains untouched until the complete game shell is ready. These modules are committed as an independently testable feature milestone, not represented as fully integrated in-game presentation yet.
