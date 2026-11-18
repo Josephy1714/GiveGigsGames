@@ -8,7 +8,7 @@
     residence: {
       title: 'Student Residence',
       mood: 'A compact shared student residence with lived-in corridors and a courtyard.',
-      exits: ['township'],
+      exits: ['township', 'campus'],
       places: [
         { id: 'room', name: 'Shared Room', actions: ['sleep', 'study', 'check-phone'] },
         { id: 'courtyard', name: 'Residence Courtyard', actions: ['talk-roommate', 'socialize'] },
