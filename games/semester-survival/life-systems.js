@@ -36,20 +36,20 @@
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function id(prefix) { return prefix + '-' + Math.random().toString(36).slice(2, 9); }
 
+  function makeCourseCatalog(semester) {
+    const names = COURSE_NAMES.concat([
+      semester === 1 ? 'Digital Study Skills' : 'Applied Research Workshop',
+      semester === 1 ? 'Introduction to Critical Thinking' : 'Collaborative Project Studio'
+    ]);
+    return names.map(function (name, i) {
+      return { id: 'S' + semester + '-U' + (i + 1), name: name, credits: i === 6 ? 2 : 3,
+        prerequisites: i === 5 ? ['S' + Math.max(1, semester - 1) + '-U2'] : i === 6 ? ['S' + Math.max(1, semester - 1) + '-U3'] : [] };
+    });
+  }
   function makeCourses(semester) {
-    return COURSE_NAMES.map(function (name, i) {
-      return {
-        id: 'S' + semester + '-U' + (i + 1),
-        name: name,
-        credits: 3,
-        studyPoints: 0,
-        preparation: 0,
-        assignmentPoints: 0,
-        attendance: 0,
-        catScore: null,
-        examScore: null,
-        grade: null
-      };
+    return makeCourseCatalog(semester).slice(0, 5).map(function (course) {
+      return Object.assign({}, course, { studyPoints: 0, preparation: 0, assignmentPoints: 0,
+        attendance: 0, catScore: null, examScore: null, grade: null });
     });
   }
 
@@ -66,7 +66,7 @@
       location: 'residence',
       condition: { energy: 90, hunger: 78, stress: 18, wellbeing: 75 },
       finances: { cash: 2500, debt: 0, lifetimeEarned: 0, lifetimeSpent: 0, transactions: [] },
-      academics: { cumulativeGpa: 0, courses: makeCourses(1), transcript: [] },
+      academics: { cumulativeGpa: 0, catalog: makeCourseCatalog(1), courses: makeCourses(1), transcript: [] },
       relationships: {
         roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
         coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
@@ -176,7 +176,7 @@
         if (!raw) return false;
         const parsed = JSON.parse(raw);
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
-        parsed.relationships = parsed.relationships || {};\n        parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
+        parsed.relationships = parsed.relationships || {};\n        parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);\n        parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
           coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
@@ -311,8 +311,8 @@
       if (!Array.isArray(courseIds) || courseIds.length < 3 || courseIds.length > 5) throw new Error('Register between three and five courses.');
       if (new Set(courseIds).size !== courseIds.length) throw new Error('A course cannot be registered twice.');
       const current = state.academics.courses;
-      const available = current.reduce(function(map, course){ map[course.id]=course; return map; }, {});
-      if (courseIds.some(function(courseId){ return !available[courseId]; })) throw new Error('One or more selected courses are not available in this semester catalogue.');
+      const available = (state.academics.catalog || current).reduce(function(map, course){ map[course.id]=course; return map; }, {});
+      if (courseIds.some(function(courseId){ return !available[courseId]; })) throw new Error('One or more selected courses are not available in this semester catalogue.');\n      const completed = state.academics.transcript.map(function(result){return result.id;});\n      const blocked = courseIds.find(function(courseId){return (available[courseId].prerequisites||[]).some(function(required){return !completed.includes(required);});});\n      if (blocked) throw new Error('A prerequisite has not been completed for '+available[blocked].name+'.');
       const credits = courseIds.reduce(function(total, courseId){ return total + available[courseId].credits; }, 0);
       if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
       return commit(function(s){
@@ -368,7 +368,7 @@
           s.campaign.ending = gpa >= 3.5 && s.condition.wellbeing >= 45 ? 'honours-and-wellbeing' : gpa >= 2 ? 'resilient-graduate' : 'hard-earned-graduate';
         } else {
           s.campaign.semester += 1;
-          s.academics.courses = makeCourses(s.campaign.semester);
+          s.academics.catalog = makeCourseCatalog(s.campaign.semester);\n          s.academics.courses = makeCourses(s.campaign.semester);
           s.calendar.week = 1;
           s.calendar.dayIndex = 0;
           s.calendar.minuteOfDay = 7 * 60;
