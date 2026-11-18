@@ -669,6 +669,19 @@ function onWhack(e) {
     performWhack(e.clientX, e.clientY, e.clientX, e.clientY);
 }
 
+window.addEventListener('keydown', (e) => {
+    if (!isPlaying || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key >= '1' && e.key <= '9') {
+        const hole = holes[Number(e.key) - 1];
+        if (!hole || (hole.state !== 'active' && hole.state !== 'rising')) return;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const pos = hole.group.position.clone().project(camera);
+        const sx = rect.left + (pos.x * 0.5 + 0.5) * rect.width;
+        const sy = rect.top + (-pos.y * 0.5 + 0.5) * rect.height;
+        performWhack(sx, sy, sx, sy);
+    }
+});
+
 
 // Multi-touch: every finger in changedTouches whacks independently, so two
 // thumbs (or a full multi-finger drum-roll) can hit two moles at once.
