@@ -67,7 +67,7 @@
   let atlasReady=false;
   const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,onEvent:function(event){publish(event,'student-phone');}});
   phone=phoneRuntime;
-  interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onEvent:function(event){publish(event,'interaction');}});
+  interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onEvent:function(event){publish(event,'interaction');}});
   character=null;
   phoneUI=modules.phoneUI.mount(phoneRoot,phone);
   campaignUI=modules.campaignUI.create({root:campaignRoot,document:doc,campaignRuntime:campaign});
