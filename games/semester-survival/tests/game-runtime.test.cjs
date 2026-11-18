@@ -56,7 +56,7 @@ function memoryStorage(){const map=new Map();return{getItem:key=>map.get(key)||n
 
 test('central runtime composes, starts, routes events, travels and tears down',async()=>{
  const doc=makeDocument(),host=new ElementMock('main',doc),events=[],storage=memoryStorage(),assets=fixture();
- const runtime=global.SemesterAdventureRuntime.create({...assets,host,document:doc,storage,autoLoop:false,loadImage:async()=>({width:640,height:360,naturalWidth:640,naturalHeight:360})});
+ const runtime=global.SemesterAdventureRuntime.create({...assets,host,document:doc,storage,autoLoop:false,loadImage:async(src,asset)=>({width:asset.width,height:asset.height,naturalWidth:asset.width,naturalHeight:asset.height})});
  const unsubscribe=runtime.subscribe(event=>events.push(event));
  const started=await runtime.start();
  assert.equal(started.lifecycle,'running');assert.equal(started.district,'residence');assert.equal(started.atlasReady,true);
