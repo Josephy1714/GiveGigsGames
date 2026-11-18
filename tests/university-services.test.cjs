@@ -12,7 +12,7 @@ test('course registration enforces unique selection, credit limits and a single 
  const {life,services,events}=setup(),catalog=life.getState().academics.catalog;
  const ids=[catalog[0].id,catalog[1].id,catalog[2].id,catalog[3].id,catalog[5].id];
  assert.throws(()=>services.registerCourses([ids[0],ids[0],ids[1]]),/twice/);
- assert.throws(()=>services.registerCourses(ids.slice(0,2)),/three and five/);
+ assert.throws(()=>services.registerCourses(ids.slice(0,4)),/five courses/);
  services.registerCourses(ids);assert.equal(life.getState().academics.courses.length,3);
  assert.equal(services.getSnapshot().credits,9);assert.ok(events.some(e=>e.type==='courses:registered'));
  assert.throws(()=>life.registerCourses(ids),/locked/);
