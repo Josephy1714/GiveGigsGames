@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 require('../interaction-runtime.js');
 
 function harness() {
-  const events = [], focused = [], context = [];
+  const events = [], focused = [], context = [], relationships = [];
   const world = {
     districts: { township: { places: [
       { id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'] }
@@ -26,14 +26,14 @@ function harness() {
   const life = {
     getState() { return state; },
     perform(activity) { events.push({ type: 'activity', activity }); return { result: { activity } }; },
-    recordRelationship(key, changes, event) { events.push({ type: 'relationship', key, changes, event }); }
+    recordRelationship(key, changes, event) { relationships.push({ key, changes, event }); }
   };
   const input = { setContext(value) { context.push(value); } };
   const runtime = globalThis.SemesterInteractionRuntime.create({
     world, environment, renderer, lifeEngine: life, inputManager: input,
     npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] }
   });
-  return { runtime, events, focused, context };
+  return { runtime, events, focused, context, relationships };
 }
 
 test('proximity prompt appears only inside authored hotspot radius', () => {
@@ -62,8 +62,7 @@ test('talk action opens authored NPC dialogue and applies relationship consequen
   assert.deepEqual(h.context.at(-1), { dialogueOpen: true });
   const next = h.runtime.interact({ x: 120, y: 120 }, { topic: 'budget' });
   assert.match(next.dialogue.line, /Plan your meals/);
-  assert.equal(h.events.at(-1).type, 'relationship');
-  assert.equal(h.events.at(-1).key, undefined); // event callback is separate from the life-engine transaction
+  assert.equal(h.relationships.at(-1).key, undefined); // Njeri has no tracked relationship slot in the current save schema
 });
 
 test('dialogue closes and releases the input context lock', () => {
