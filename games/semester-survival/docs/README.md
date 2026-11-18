@@ -12,6 +12,7 @@ This directory is the production source of truth. Implementation decisions must 
 - TECHNICAL_ARCHITECTURE.md — runtime, modules, saves and performance.
 - CHARACTER_RUNTIME.md — movement, authored animation, camera and rendering orchestration.
 - INTERACTION_RUNTIME.md — proximity, place actions, NPC dialogue and relationship consequences.
+- INTERACTION_UI.md — contextual prompts, dialogue overlay, accessibility and host integration.
 - ASSET_MANIFEST.md — source, ownership, licence, dimensions and package budget.
 - OWNERSHIP_AND_CREDITS.md — authorship, attribution and rights.
 - TESTING_AND_RELEASE.md — QA gates and release checklist.
