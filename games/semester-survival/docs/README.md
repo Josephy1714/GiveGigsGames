@@ -28,3 +28,5 @@ This directory is the production source of truth. Implementation decisions must 
 7. The complete game folder remains strictly below 10,000,000 bytes.
 8. Never claim an asset is hand-drawn, animated or licensed unless its production/source supports that claim.
 9. Mark prototypes clearly; do not present placeholders as finished content.
+
+- STUDENT_PHONE.md — student phone, academic portal sections, data provenance and host integration.
