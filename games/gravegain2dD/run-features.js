@@ -1,21 +1,40 @@
 (() => {
   const routes = [
-    { name: 'Crypt balconies', steps: [[0, 78, 52], [104, 108, 90], [240, 118, 148], [382, 98, 82]] },
-    { name: 'Lantern bridge', steps: [[0, 68, 46], [88, 104, 100], [214, 192, 139], [430, 88, 75]] },
-    { name: 'Broken cloister', steps: [[0, 100, 64], [128, 84, 125], [238, 90, 177], [350, 148, 119]] },
-    { name: 'Watchtower stairs', steps: [[0, 80, 40], [103, 90, 91], [213, 105, 138], [340, 165, 192]] }
+    { name: 'Crypt balconies', steps: [[0, 104, 55], [123, 94, 116], [234, 114, 180], [375, 105, 250], [502, 124, 314], [653, 115, 222], [791, 112, 124]] },
+    { name: 'Lantern bridge', steps: [[0, 112, 62], [129, 112, 124], [259, 168, 195], [452, 180, 252], [655, 108, 165], [787, 107, 88]] },
+    { name: 'Broken cloister', steps: [[0, 104, 73], [123, 94, 138], [234, 104, 208], [354, 94, 276], [469, 134, 329], [621, 103, 217], [743, 119, 133]] },
+    { name: 'Watchtower stairs', steps: [[0, 110, 54], [128, 90, 117], [236, 87, 190], [343, 88, 260], [448, 142, 323], [609, 104, 251], [734, 142, 156]] }
   ];
 
-  const objectives = [
+  routes.push(
+    { name: 'Hollowroot cave', theme: 'cave', steps: [[0,110,52],[138,128,112],[302,107,167],[442,140,228],[618,115,154],[762,130,86]] },
+    { name: 'Castle of the waning moon', theme: 'castle', steps: [[0,104,59],[133,110,119],[275,113,196],[417,110,267],[556,126,337],[709,160,275],[893,117,181]] }
+  );
+
+  const objectiveTypes = [
     { label: 'Gather moonshards', event: 'collect', target: 6 },
     { label: 'Land on upper platforms', event: 'platform', target: 4 },
     { label: 'Vault obstacles', event: 'vault', target: 3 },
     { label: 'Clear enemies untouched', event: 'enemy', target: 4 }
   ];
 
+  const objectives = Array.from({ length: 8 }, (_, tier) => objectiveTypes.map(objective => ({
+    ...objective,
+    target: objective.target + tier
+  }))).flat();
+  const routeVariants = routes.flatMap(route => [0, 1, 2, 3].map(variant => ({
+    ...route,
+    name: route.name + ['', ' · broken stair', ' · long bridge', ' · summit'][variant],
+    steps: route.steps.map(([x, span, height], index) => [
+      x + index * [0, 10, 5, 9][variant],
+      span + [0, -12, 10, -7][variant],
+      height + (index === 0 ? 0 : [0, (index % 2) * 14, -12, 18][variant])
+    ])
+  })));
+
   function createRun() {
-    let routeIndex = Math.floor(Math.random() * routes.length);
-    let contractIndex = Math.floor(Math.random() * objectives.length);
+    let routeIndex = 16 + Math.floor(Math.random() * 8);
+    let contractIndex = Math.floor(Math.random() * objectiveTypes.length);
     let progress = 0;
     let completed = 0;
     let nextFork = 65;
@@ -37,17 +56,20 @@
         contractIndex = (contractIndex + 1) % objectives.length;
         return true;
       },
-      advance(distance, movement, width, ground, loot) {
+      advance(distance, movement, width, ground, loot, obstacles) {
         if (distance >= nextFork) {
-          const route = routes[routeIndex];
-          routeIndex = (routeIndex + 1) % routes.length;
-          nextFork = distance + 530;
+          const route = routeVariants[routeIndex];
+          routeIndex = (routeIndex + 7) % routeVariants.length;
+          nextFork = distance + 720;
           route.steps.forEach(([offset, span, height], i) => {
             const x = width + offset;
             const y = ground - height;
-            platforms.push({ x, y, span, label: i === 0 ? route.name : '', visited: false });
+            platforms.push({ x, y, span, theme: route.theme, label: i === 0 ? route.name : '', visited: false });
             loot.push({ x: x + span / 2, y: y - 40, cell: 3 });
           });
+          if (route.theme) {
+            obstacles.push({ type: 'climbwall', x: width + 340, w: 36, h: route.theme === 'castle' ? 166 : 130 });
+          }
         }
         for (const platform of platforms) platform.x -= movement;
         platforms = platforms.filter(platform => platform.x + platform.span > -20);
@@ -65,9 +87,24 @@
         return { y: landing.y, visited };
       },
       draw(ctx) {
-        for (const { x, y, span, label } of platforms) {
-          ctx.fillStyle = '#35443e';
+        for (const { x, y, span, label, theme } of platforms) {
+          ctx.fillStyle = theme === 'castle' ? '#545369' : theme === 'cave' ? '#3f4d45' : '#35443e';
           ctx.fillRect(x, y, span, 13);
+          if (theme === 'castle') {
+            for (let pier = x + 5; pier < x + span - 10; pier += 35) {
+              ctx.fillRect(pier, y - 8, 11, 9);
+              ctx.fillRect(pier, y + 13, 6, 13);
+            }
+          }
+          if (theme === 'cave') {
+            for (let tooth = x + 8; tooth < x + span - 12; tooth += 17) {
+              ctx.beginPath();
+              ctx.moveTo(tooth, y + 12);
+              ctx.lineTo(tooth + 6, y + 24);
+              ctx.lineTo(tooth + 12, y + 12);
+              ctx.fill();
+            }
+          }
           ctx.fillStyle = '#85946a';
           ctx.fillRect(x, y, span, 3);
           ctx.fillStyle = '#202b26';

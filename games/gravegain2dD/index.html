@@ -6,6 +6,18 @@
 <meta name="theme-color" content="#101916">
 <title>GraveGain2dD — Moonlit Run</title>
 <style>
+[hidden]{display:none!important}
+#overlay{overflow:auto;padding:18px}
+#overlay:has(#upgrade-shop[open]){display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+#upgrade-shop{margin:12px auto;width:min(570px,94vw);background:#101d25;border:1px solid #46615e;border-radius:12px;padding:10px 14px}
+#upgrade-shop summary{cursor:pointer;color:#ead8a3}
+#permanent-upgrades div{display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left;font-size:12px}
+#permanent-upgrades button:disabled{opacity:.56;cursor:default}
+#draft-panel{z-index:5}
+#draft-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+#draft-choices button{min-width:125px}
+#draft-choices small{display:block;margin-top:4px}
+
 #objective{z-index:1;border:1px solid #d1e9c333;background:#0b1722dc;padding:6px 10px;border-radius:8px}
 #overlay{z-index:2}
 @media(pointer:fine){#stickZone{display:none}.hint{font-size:0}.hint::after{content:"A BRAKE · D SPRINT · W JUMP / VAULT · S SLIDE / DROP";font-size:11px;letter-spacing:.08em}}
@@ -18,12 +30,17 @@
 <canvas id="game" width="960" height="540"></canvas>
 <header class="hud"><div class="brand">GRAVEGAIN <span style="color:#f3eee0">2D</span></div><div class="stats"><span>✦ <b id="score">0</b> m</span><span>BEST <b id="best">0</b> m</span><span>◈ <b id="gems">0</b></span><span>♥ <b id="hearts">3</b></span></div></header>
 <p id="objective" aria-live="polite" style="position:absolute;top:44px;left:12px;margin:0;color:#fff1a8;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none"></p>
-<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault. Jump onto marked balconies for an upper route.<br>Keyboard: A brake, D sprint, W jump or vault, S slide or drop. Duck under turret fire.</p><button id="start">BEGIN RUN</button></div>
+<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault. Jump onto marked balconies for an upper route.<br>Keyboard: A brake, D sprint, W jump or vault, S slide or drop. Duck under turret fire. Push up again when Lira grabs a wall.</p><button id="start">BEGIN RUN</button><details id="upgrade-shop"><summary>Permanent upgrades</summary><div id="permanent-upgrades"></div></details></div>
+<div id="draft-panel" class="overlay" role="dialog" aria-modal="true" aria-labelledby="draft-title" hidden>
+  <h2 id="draft-title">Choose a run upgrade</h2>
+  <div id="draft-choices"></div>
+</div>
 <div id="toast" class="toast">VAULT!</div>
 <div id="stickZone" class="stick-zone" aria-label="Movement joystick"><div class="stick-ring"></div><div id="stick" class="stick"></div></div>
 <div class="hint">PUSH UP TO JUMP · DOWN TO SLIDE</div>
 </main>
 <script src="run-features.js"></script>
+<script src="progression.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

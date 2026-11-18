@@ -12,30 +12,83 @@
     tile.addEventListener('load', renderIntro);
     return tile;
   });
+  const terrainOverlays = ['crack', 'grass'].flatMap(kind =>
+    Array.from({ length: 20 }, (_, i) => {
+      const overlay = new Image();
+      overlay.src = `assets/terrain-overlays/${kind}-${String(i + 1).padStart(2, '0')}.svg`;
+      return overlay;
+    })
+  );
+  let wallGrip = null;
+  let wallJumpLock = 0;
   const VAULT_SECONDS = .5;
   let stride = 0;
   let landing = 0;
   let sliding = false;
+  let jumpBuffer = 0;
+  let coyote = 0;
+  let cameraLift = 0;
+  let jumpHeld = false;
   let fireballs = [];
   const W=960,H=540,ground=432;
   let running=false,last=0,time=0,distance=0,gems=0,hearts=3,world=0,spawn=0,shake=0,particles=[];
-  let player={x:238,y:ground,vy:0,speed:0,jump:false,pose:0,invuln:0};
+  let player={x:238,y:ground,vy:0,speed:220,jump:false,pose:0,invuln:0};
   let obstacles=[],loot=[],input={x:0,y:0},pointer=null;
   const $score=$('#score'),$gems=$('#gems'),$hearts=$('#hearts'),$overlay=$('#overlay'),$stick=$('#stick');
   function resize(){const c=canvas,r=c.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);ctx.setTransform(c.width/W,0,0,c.height/H,0,0);if(!running)renderIntro()}
   addEventListener('resize',resize);resize();
   const bestNode=$('#best');let best=0;try{best=Number(localStorage.getItem('gravegain2dD-best')||0)}catch{}bestNode.textContent=best;
   const objectiveHud = $('#objective');
+  const draftPanel = $('#draft-panel');
+  const shop = $('#permanent-upgrades');
   let run = GraveGainRun.createRun();
+  let build = {};
+  let nextDraft = 0;
+  let drafts = 0;
+
+  function showDraft() {
+    if (!running || !draftPanel.hidden) return;
+    drafts++;
+    draftPanel.hidden = false;
+    const choices = $('#draft-choices');
+    choices.replaceChildren();
+    const options = GraveGainProgression.draft(build);
+    options.forEach((card, index) => {
+      const button = document.createElement('button');
+      const detail = document.createElement('small');
+      button.type = 'button';
+      button.textContent = `${index + 1}. ${card.name}`;
+      detail.textContent = card.detail;
+      button.append(detail);
+      button.addEventListener('click', () => {
+        if (draftPanel.hidden || !running) return;
+        card.apply();
+        updateObjectiveHud();
+        draftPanel.hidden = true;
+      });
+      choices.append(button);
+    });
+    choices.firstElementChild?.focus();
+  }
+
   function record(event) {
-    if (run.record(event) && hearts < 3) {
+    const complete = run.record(event);
+    if (complete && hearts < 3 + (build.health || 0)) {
       hearts++;
       $hearts.textContent = '♥'.repeat(hearts);
     }
-    objectiveHud.textContent = run.objective;
+    if (complete || gems >= nextDraft) {
+      if (gems >= nextDraft) nextDraft += 5 + Math.min(drafts, 5) - (build.experience || 0);
+      showDraft();
+    }
+    updateObjectiveHud();
   }
+  function updateObjectiveHud() {
+    objectiveHud.textContent = `${run.objective} · Draft at ${nextDraft} shards · Wards ${build.armor || 0}`;
+  }
+  GraveGainProgression.renderShop(shop);
 
-  function start(){sliding=false;fireballs=[];run=GraveGainRun.createRun();objectiveHud.textContent=run.objective;stride=landing=0;running=true;last=performance.now();time=distance=gems=world=spawn=0;hearts=3;obstacles=[];loot=[];particles=[];player={x:238,y:ground,vy:0,speed:0,jump:false,pose:0,invuln:0,vault:0};$score.textContent='0';$gems.textContent='0';$hearts.textContent='3';$('#title').innerHTML='MOONLIT<br>RUN';$('#start').textContent='BEGIN RUN';$overlay.classList.add('hidden');requestAnimationFrame(loop)}
+  function start(){build=GraveGainProgression.createBuild();drafts=0;nextDraft=5-(build.experience||0);draftPanel.hidden=true;wallGrip=null;wallJumpLock=0;jumpBuffer=coyote=cameraLift=0;jumpHeld=false;sliding=false;fireballs=[];run=GraveGainRun.createRun();updateObjectiveHud();stride=landing=0;running=true;last=performance.now();time=distance=gems=world=spawn=0;hearts=3+(build.health||0);obstacles=[];loot=[];particles=[];player={x:238,y:ground,vy:0,speed:220,jump:false,pose:0,invuln:0,vault:0};$score.textContent='0';$gems.textContent='0';$hearts.textContent=hearts;$('#title').innerHTML='MOONLIT<br>RUN';$('#start').textContent='BEGIN RUN';$overlay.classList.add('hidden');if(build.draft)showDraft();requestAnimationFrame(loop)}
   $('#start').addEventListener('click',start);
   function joy(e){const r=$('#stickZone').getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=(e.clientX-cx)/(r.width*.35),dy=(e.clientY-cy)/(r.height*.35),mag=Math.hypot(dx,dy);const m=mag>1?1/mag:1;input={x:dx*m,y:dy*m};$stick.style.transform=`translate(${input.x*30}px,${input.y*30}px)`}
   const zone=$('#stickZone');zone.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;zone.setPointerCapture(pointer);joy(e)});zone.addEventListener('pointermove',e=>{if(e.pointerId===pointer)joy(e)});function release(e){if(e.pointerId===pointer){pointer=null;applyKeyboard();$stick.style.transform='translate(0,0)'}}zone.addEventListener('pointerup',release);zone.addEventListener('pointercancel',release);
@@ -55,6 +108,15 @@
 
   addEventListener('keydown', event => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!draftPanel.hidden) {
+      const index = ['Digit1', 'Digit2', 'Digit3'].indexOf(event.code);
+      if (index >= 0) {
+        event.preventDefault();
+        $('#draft-choices').children[index]?.click();
+      }
+      return;
+    }
+    if (!running && event.target instanceof HTMLElement && event.target.closest('button, summary')) return;
     if (event.code === 'Enter' || event.code === 'Space') {
       if (!running && !event.repeat) {
         event.preventDefault();
@@ -88,14 +150,93 @@
     return groundTiles[material * 5 + variant];
   }
 
-  function drawBg(dt){
-    world+=dt*(90+player.speed*80);
+  function drawGravePlots() {
+    const spacing = 295;
+    const scroll = world * .39;
+    const first = Math.floor(scroll / spacing);
+    ctx.save();
+    for (let i = -1; i <= Math.ceil(W / spacing); i++) {
+      const plot = first + i;
+      const seed = terrainHash(plot + 2200);
+      const center = i * spacing - scroll % spacing + 112;
+      const lean = seed % 52 - 26;
+      const base = ground - 12 - seed % 15;
+      const hillHeight = 19 + seed % 15;
+
+      // Depth 0 is the far edge. The plot gets wider toward the camera.
+      function project(u, depth) {
+        const mound = Math.sin(Math.PI * u);
+        return {
+          x: center + lean * (1 - depth) + (u - .5) * (123 + 100 * depth),
+          y: base - 80 * (1 - depth) - mound * hillHeight * (.65 + depth * .35),
+          height: 15 + depth * 15
+        };
+      }
+
+      function fence(fromU, fromDepth, toU, toDepth, count) {
+        const posts = Array.from({ length: count + 1 }, (_, j) => {
+          const t = j / count;
+          return project(fromU + (toU - fromU) * t, fromDepth + (toDepth - fromDepth) * t);
+        });
+        const near = (fromDepth + toDepth) / 2;
+        ctx.lineWidth = 1 + near;
+        ctx.strokeStyle = near > .6 ? '#233333' : '#324448';
+        for (const rail of [.23, .76]) {
+          ctx.beginPath();
+          posts.forEach(({ x, y, height }, j) => {
+            if (j) ctx.lineTo(x, y - height * rail);
+            else ctx.moveTo(x, y - height * rail);
+          });
+          ctx.stroke();
+        }
+        for (const [j, { x, y, height }] of posts.entries()) {
+          ctx.fillStyle = j % 4 === 0 ? '#263637' : '#304044';
+          const width = (j % 4 === 0 ? 3 : 1.4) + near;
+          ctx.fillRect(x - width / 2, y - height, width, height);
+          ctx.fillStyle = '#627579';
+          ctx.fillRect(x - width / 2, y - height - 1, width, 2);
+        }
+      }
+
+      const hill = ctx.createLinearGradient(0, base - 112, 0, ground);
+      hill.addColorStop(0, '#435756');
+      hill.addColorStop(1, '#293d37');
+      ctx.fillStyle = hill;
+      ctx.beginPath();
+      ctx.moveTo(center - 147, ground);
+      ctx.bezierCurveTo(center - 92, base - 45, center - 103 + lean, base - 106, center + lean, base - 111);
+      ctx.bezierCurveTo(center + 103 + lean, base - 106, center + 91, base - 42, center + 146, ground);
+      ctx.fill();
+
+      fence(0, 0, 1, 0, 12);
+      fence(0, 0, 0, 1, 8);
+      fence(1, 0, 1, 1, 8);
+      for (let row = 0; row < 3; row++) {
+        const depth = .18 + row * .25;
+        for (let stone = 0; stone < 4; stone++) {
+          const variation = terrainHash(seed % 10000 + row * 13 + stone);
+          if (variation % 5 === 0) continue;
+          const u = .17 + stone * .21 + (variation % 9 - 4) * .01;
+          const point = project(u, depth);
+          const size = 17 + 21 * depth + variation % 6;
+          ctx.globalAlpha = .52 + depth * .24;
+          atlasDraw(variation % 2 ? 1 : 10, point.x - size / 2, point.y - size, size, size, props);
+        }
+      }
+      ctx.globalAlpha = 1;
+      fence(0, 1, 1, 1, 19);
+    }
+    ctx.restore();
+  }
+
+  function drawBg(dt, velocity = 0, lift = 0){
+    world += dt * velocity;
     const sky = ctx.createLinearGradient(0, 0, 0, ground);
     sky.addColorStop(0, '#090f23');
     sky.addColorStop(.52, '#1b3041');
     sky.addColorStop(1, '#465952');
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, -lift, W, H + lift);
 
     for (let i = 0; i < 90; i++) {
       const seed = terrainHash(i + 901);
@@ -147,15 +288,7 @@
     mist.addColorStop(1, '#a3d3be00');
     ctx.fillStyle = mist;
     ctx.fillRect(0, ground - 160, W, 160);
-    ctx.save();
-    ctx.globalAlpha = .48;
-    for (let i = 0; i < 6; i++) {
-      const x = ((i * 211 - world * .36) % 1200 + 1200) % 1200 - 120;
-      atlasDraw(i % 2 ? 0 : 9, x, ground - 82, 76, 82, props);
-      if (i % 2 === 0) atlasDraw(i % 4 ? 1 : 10, x + 94, ground - 53, 38, 53, props);
-      if (i % 3 === 1) atlasDraw(i % 2 ? 2 : 11, x + 128, ground - 91, 34, 50, props);
-    }
-    ctx.restore();
+    drawGravePlots();
     ctx.fillStyle='#17201b';ctx.fillRect(0,ground,W,H-ground);
     ctx.fillStyle = '#526448';
     ctx.fillRect(0, ground, W, 3);
@@ -168,6 +301,11 @@
         const x = i * tileSize - Math.floor(offset);
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(tile, x, ground, tileSize, tileSize);
+        const seed = terrainHash(firstTile + i + 440);
+        const overlay = terrainOverlays[seed % terrainOverlays.length];
+        if (seed % 5 !== 0 && overlay.complete && overlay.naturalWidth) {
+          ctx.drawImage(overlay, x, ground, tileSize, tileSize);
+        }
         // Continue the buried masonry without repeating the surface lip.
         ctx.drawImage(tile, 0, 3, 32, 29, x, ground + tileSize, tileSize, tileSize);
       }
@@ -227,7 +365,7 @@
 
   function updateTurret(turret) {
     const range = turret.x - player.x;
-    if (turret.chargeAt === undefined && range < 450 && range > 300) turret.chargeAt = time;
+    if (turret.chargeAt === undefined && range < 510 && range > 350) turret.chargeAt = time;
     if (turret.fired || turret.chargeAt === undefined || time - turret.chargeAt < .48) return;
     turret.fired = true;
     fireballs.push({ x: turret.x, y: ground - 43 });
@@ -289,20 +427,99 @@
       o = { type, x, w: enemyTypes[type].width, h: enemyTypes[type].height };
     }
     obstacles.push(o);if(Math.random()<.78)loot.push({x:x+34,y:ground-92-Math.random()*35,r:9,cell:Math.random()<.55?3:4});}
-  function drawObstacle(o){if (o.type === 'turret') { drawTurret(o); return; }if (enemyTypes[o.type]) { drawEnemy(o); return; }if(o.type==='gap'){ctx.fillStyle='#080e0c';ctx.fillRect(o.x,ground,o.w,32);ctx.fillStyle='#44513d';ctx.fillRect(o.x,ground,o.w,4);return}const cell={stump:7,bramble:6,wall:8}[o.type];atlasDraw(cell,o.x,ground-o.h,o.w,o.h,props);if(!props.complete||!props.naturalWidth){ctx.fillStyle=o.type==='bramble'?'#59613c':'#6d6554';ctx.fillRect(o.x,ground-o.h,o.w,o.h)}}
+  function drawObstacle(o){
+    if (o.type === 'climbwall') {
+      const y = ground - o.h;
+      ctx.fillStyle = '#3e4555';
+      ctx.fillRect(o.x, y, o.w, o.h);
+      ctx.fillStyle = '#9da684';
+      ctx.fillRect(o.x - 3, y, o.w + 6, 4);
+      for (let offset = 14; offset < o.h; offset += 14) {
+        ctx.fillStyle = '#272e37';
+        ctx.fillRect(o.x, y + offset, o.w, 2);
+        ctx.fillStyle = '#89977f';
+        ctx.fillRect(o.x + 2, y + offset - 5, 6, 3);
+      }
+      if (wallGrip === o) {
+        ctx.fillStyle = '#fff1a8';
+        ctx.font = 'bold 14px system-ui';
+        ctx.fillText('↑ WALL JUMP', o.x - 85, y - 10);
+      }
+      return;
+    }
+    if (o.type === 'turret') { drawTurret(o); return; }if (enemyTypes[o.type]) { drawEnemy(o); return; }if(o.type==='gap'){const pit=ctx.createLinearGradient(0,ground,0,H);pit.addColorStop(0,'#101922');pit.addColorStop(1,'#050910');ctx.fillStyle=pit;ctx.fillRect(o.x,ground,o.w,H-ground+200);ctx.fillStyle='#829071';ctx.fillRect(o.x,ground,3,12);ctx.fillRect(o.x+o.w-3,ground,3,12);return}const cell={stump:7,bramble:6,wall:8}[o.type];atlasDraw(cell,o.x,ground-o.h,o.w,o.h,props);if(!props.complete||!props.naturalWidth){ctx.fillStyle=o.type==='bramble'?'#59613c':'#6d6554';ctx.fillRect(o.x,ground-o.h,o.w,o.h)}}
   function emit(x,y,color,n=8,sparkle=false){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*150,vy:-Math.random()*120,life:.45,size:2+Math.random()*3,color,sparkle:sparkle&&i===0})}
-  function crash(){if(player.invuln>0)return;hearts--;player.invuln=1.3;player.speed=Math.max(.25,player.speed*.55);shake=.25;emit(player.x+18,player.y-30,'#e6b47d',14);$hearts.textContent='♥'.repeat(hearts)||'0';if(hearts<=0)end()}
-  function end(){running=false;best=Math.max(best,Math.floor(distance));bestNode.textContent=best;try{localStorage.setItem('gravegain2dD-best',String(best))}catch{}$('#title').innerHTML='THE ROAD<br>CLAIMS YOU';$('#copy').innerHTML=`You ran ${Math.floor(distance)}m and gathered ${gems} moonshards.<br>Your best run is ${best}m. Objectives completed: ${run.completed}.`;$('#start').textContent='RUN AGAIN';$overlay.classList.remove('hidden')}
+  function crash(){
+    if (!running || player.invuln > 0) return;
+    if (build.armor > 0) {
+      build.armor--;
+      player.invuln = .55;
+      emit(player.x + 18, player.y - 30, '#8ff5ed', 14);
+      record('ward');
+      return;
+    }
+    hearts--;player.invuln=1.3+(build.grace||0);player.speed *= .72;shake=.25;emit(player.x+18,player.y-30,'#e6b47d',14);$hearts.textContent='♥'.repeat(hearts)||'0';if(hearts<=0)end()}
+  function end(){running=false;draftPanel.hidden=true;
+    const reward=GraveGainProgression.award(distance,run.completed,build);
+    GraveGainProgression.renderShop(shop);best=Math.max(best,Math.floor(distance));bestNode.textContent=best;try{localStorage.setItem('gravegain2dD-best',String(best))}catch{}$('#title').innerHTML='THE ROAD<br>CLAIMS YOU';$('#copy').innerHTML=`You ran ${Math.floor(distance)}m and gathered ${gems} moonshards.<br>Your best run is ${best}m. Objectives completed: ${run.completed}.<br>Earned ${reward} sigils for permanent upgrades.`;$('#start').textContent='RUN AGAIN';$overlay.classList.remove('hidden')}
   function renderIntro(){if(running)return;ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);drawBg(0);atlasDraw(0,player.x-18,ground-77,76,77)}
   atlas.addEventListener('load',renderIntro);
   props.addEventListener('load',renderIntro);
   addEventListener('blur',()=>{heldKeys.clear();input={x:0,y:0};pointer=null;$stick.style.transform='translate(0,0)'});
-  function loop(now){if(!running)return;ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.clearRect(0,0,W,H);const dt=Math.min((now-last)/1000,.04);last=now;time+=dt;distance+=dt*(100+player.speed*135);player.speed+=(Math.max(-.72,Math.min(1,input.x))*.95-player.speed*.36)*dt;player.speed=Math.max(-.72,Math.min(1,player.speed));const velocity=145+player.speed*105;stride+=dt*(6+velocity*.045);landing=Math.max(0,landing-dt);player.x=Math.max(148,Math.min(360,player.x+input.x*55*dt));player.vault=Math.max(0,player.vault-dt);if(input.y<-.33&&!player.jump){run.leavePlatform();player.vy=-440;player.jump=true;player.pose=1}const previousY = player.y;
+  function loop(now){if(!running)return;
+    if (!draftPanel.hidden) {
+      last = now;
+      requestAnimationFrame(loop);
+      return;
+    }
+    ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);ctx.clearRect(0,0,W,H);const dt=Math.min((now-last)/1000,.04);last=now;time+=dt;const targetSpeed = input.x > 0 ? 220 + (135 + (build.sprint || 0)) * input.x : 220 + 95 * input.x;
+    player.speed += (targetSpeed - player.speed) * (1 - Math.exp(-dt * (13 + (build.brake || 0))));
+    const velocity = wallGrip ? 0 : player.speed;
+    wallJumpLock = Math.max(0, wallJumpLock - dt);
+    distance += dt * velocity * .7;
+    stride += dt * (5 + velocity * .048);
+    landing = Math.max(0, landing - dt);
+    if (!wallGrip) player.x += (238 + input.x * 35 - player.x) * (1 - Math.exp(-dt * 9));
+    player.vault = Math.max(0, player.vault - dt);
+
+    const wantsJump = input.y < -.33;
+    if (wantsJump && !jumpHeld) jumpBuffer = .16;
+    jumpHeld = wantsJump;
+    if (!player.jump && player.y <= ground) coyote = .105;
+    if (wallGrip && jumpBuffer > 0) {
+      wallGrip = null;
+      wallJumpLock = .62;
+      player.vy = -755 - (build.wall || 0);
+      run.leavePlatform();
+      player.jump = true;
+      jumpBuffer = coyote = 0;
+    } else if ((wantsJump || jumpBuffer > 0) && coyote > 0 && !wallGrip) {
+      run.leavePlatform();
+      player.vy = -575 - (build.jump || 0);
+      player.jump = true;
+      jumpBuffer = coyote = 0;
+    }
+    jumpBuffer = Math.max(0, jumpBuffer - dt);
+    coyote = Math.max(0, coyote - dt);
+    const previousY = player.y;
     if (input.y > .36 && player.jump && player.vault === 0) player.vy = Math.max(player.vy, 380);
-    player.vy += 980 * dt;
+    player.vy += (player.vy < 0 ? 1130 : 1350) * dt;
+    if (wallGrip) player.vy = Math.min(105, Math.max(0, player.vy));
     player.y += player.vy * dt;
-    run.advance(distance, velocity * dt, W, ground, loot);
-    const floor = run.surface(previousY, player.y, player.x + 20, ground);
+    run.advance(distance, velocity * dt, W, ground, loot, obstacles);
+    const feetX = player.x + 20;
+    const floor = run.surface(previousY, player.y, feetX, ground);
+    const overPit = obstacles.some(o => o.type === 'gap' && feetX > o.x + 4 && feetX < o.x + o.w - 4);
+    if (overPit && floor.y === ground) floor.y = ground + 100;
+    if (player.y > ground + 72) {
+      crash();
+      player.y = ground - 88;
+      player.vy = -255;
+      player.jump = true;
+    }
+    const wallTop = obstacles.find(o => o.type === 'climbwall' && feetX >= o.x &&
+      feetX <= o.x + o.w && previousY <= ground - o.h && player.y >= ground - o.h);
+    if (wallTop && floor.y > ground - wallTop.h) floor.y = ground - wallTop.h;
     if (player.y >= floor.y && player.vy >= 0) {
       if (player.jump) landing = .09;
       player.y = floor.y;
@@ -328,9 +545,17 @@
         o.passed = true;
         if (o.hitAt === undefined) record('enemy');
       }
-    }obstacles=obstacles.filter(o=>o.x+o.w>-20);for(const c of loot)c.x-=velocity*dt;for(let i=loot.length-1;i>=0;i--){const c=loot[i];if(Math.abs(c.x-player.x)<34&&Math.abs(c.y-(player.y-32))<46){gems++;record('collect');$gems.textContent=gems;emit(c.x,c.y,'#efd87d',9,true);loot.splice(i,1)}else if(c.x<-20)loot.splice(i,1)}
+    }obstacles=obstacles.filter(o=>o.x+o.w>-20);for(const c of loot)c.x-=velocity*dt;for(let i=loot.length-1;i>=0;i--){const c=loot[i];if(Math.abs(c.x-player.x)<34+(build.magnet||0)&&Math.abs(c.y-(player.y-32))<46+(build.magnet||0)){gems++;record('collect');$gems.textContent=gems;emit(c.x,c.y,'#efd87d',9,true);loot.splice(i,1)}else if(c.x<-20)loot.splice(i,1)}
+    if (!wallGrip && wallJumpLock === 0) {
+      wallGrip = obstacles.find(o => o.type === 'climbwall' && player.y > ground - o.h + 3 &&
+        player.x + 38 >= o.x && player.x + 12 < o.x + o.w) || null;
+    }
+    if (wallGrip) {
+      player.x = wallGrip.x - 37;
+      player.jump = true;
+    }
     updateFireballs(dt, velocity);
-    const px=player.x+12;for(const o of obstacles){if(o.type==='turret'||o.vaulted||px+26<=o.x||px>=o.x+o.w)continue;
+    const px=player.x+12;for(const o of obstacles){if(o.type==='turret'||o.type==='climbwall'||o.vaulted||px+26<=o.x||px>=o.x+o.w)continue;
       const enemy = enemyTypes[o.type];
       if (enemy) {
         if (o.hitAt === undefined && player.y > ground - o.h - o.lift + 12 && player.y - 48 < ground - o.lift) {
@@ -342,8 +567,12 @@
         }
         continue;
       }
-      if(o.type==='gap'){if(player.y>ground-18)crash()}else if(player.y>ground-o.h+16){if(input.y<-.15&&player.vault<=0){player.vy=-350;player.jump=true;player.vault=VAULT_SECONDS;o.vaulted=true;record('vault');emit(player.x+24,ground,'#d9c780',7);$('#toast').classList.add('on');setTimeout(()=>$('#toast').classList.remove('on'),350)}else crash()}}
-    drawBg(dt);
+      if(o.type==='gap')continue;else if(player.y>ground-o.h+16){if(input.y<-.15&&player.vault<=0){player.vy=-350-(build.vault||0);player.jump=true;player.vault=VAULT_SECONDS;o.vaulted=true;record('vault');emit(player.x+24,ground,'#d9c780',7);$('#toast').classList.add('on');setTimeout(()=>$('#toast').classList.remove('on'),350)}else crash()}}
+    const desiredLift = Math.min(180, Math.max(0, 150 - player.y));
+    cameraLift += (desiredLift - cameraLift) * (1 - Math.exp(-dt * 10));
+    ctx.save();
+    ctx.translate(0, cameraLift);
+    drawBg(dt, velocity, cameraLift);
     ctx.save();
     if (shake > 0) {
       shake = Math.max(0, shake - dt);
@@ -360,6 +589,6 @@
       drawObstacle(o);
       ctx.restore();
     }for(const c of loot){ctx.shadowColor='#ffe3a0';ctx.shadowBlur=10;atlasDraw(c.cell,c.x-12,c.y-12+Math.sin(time*6+c.x*.03)*3,24,24,props);ctx.shadowBlur=0}
-    ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(player.x+18,ground+2,25,6,0,0,Math.PI*2);ctx.fill();const charCell=heroFrame();ctx.save();ctx.shadowColor='#a7e8d492';ctx.shadowBlur=12;if(!(player.invuln>0&&Math.floor(time*14)%2))atlasDraw(sliding ? 16 : charCell, player.x - 18, player.y - (sliding ? 38 : 77), 76, sliding ? 38 : 77);ctx.restore();for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;ctx.globalAlpha=Math.max(p.life*2,0);ctx.fillStyle=p.color;if(p.cell!==undefined)atlasDraw(p.cell,p.x-8,p.y-8,16,16,enemies,10);else if(p.sparkle)atlasDraw(5,p.x-12,p.y-12,24,24,props);else ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;if(p.life<=0)particles.splice(i,1)}$score.textContent=Math.floor(distance);ctx.restore();requestAnimationFrame(loop)}
+    ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(player.x+18,ground+2,25,6,0,0,Math.PI*2);ctx.fill();const charCell=wallGrip ? 13 : heroFrame();ctx.save();ctx.shadowColor='#a7e8d492';ctx.shadowBlur=12;if(!(player.invuln>0&&Math.floor(time*14)%2))atlasDraw(sliding ? 16 : charCell, player.x - 18, player.y - (sliding ? 38 : 77), 76, sliding ? 38 : 77);ctx.restore();for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;ctx.globalAlpha=Math.max(p.life*2,0);ctx.fillStyle=p.color;if(p.cell!==undefined)atlasDraw(p.cell,p.x-8,p.y-8,16,16,enemies,10);else if(p.sparkle)atlasDraw(5,p.x-12,p.y-12,24,24,props);else ctx.fillRect(p.x,p.y,p.size,p.size);ctx.globalAlpha=1;if(p.life<=0)particles.splice(i,1)}$score.textContent=Math.floor(distance);ctx.restore();ctx.restore();requestAnimationFrame(loop)}
   renderIntro();
 })();
