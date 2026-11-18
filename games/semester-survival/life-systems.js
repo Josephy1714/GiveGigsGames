@@ -274,6 +274,23 @@
       });
     }
 
+    function recordRelationship(personKey, changes, eventText) {
+      changes = changes || {};
+      return commit(function (s) {
+        const person = s.relationships[personKey];
+        if (!person) throw new Error('Unknown relationship: ' + personKey);
+        const affinity = Number.isFinite(changes.affinity) ? changes.affinity : 0;
+        const trust = Number.isFinite(changes.trust) ? changes.trust : 0;
+        person.affinity = clamp(person.affinity + affinity, 0, 100);
+        person.trust = clamp(person.trust + trust, 0, 100);
+        const event = String(eventText || 'Shared a conversation').slice(0, 160);
+        person.history.push({ day: DAYS[s.calendar.dayIndex], event: event });
+        if (person.history.length > 80) person.history.splice(0, person.history.length - 80);
+        addJournal(s, event + ' with ' + person.name + '.');
+        return { person: personKey, affinity: person.affinity, trust: person.trust };
+      });
+    }
+
     function submitAssessment(courseIndex, type, score) {
       if (type !== 'cat' && type !== 'exam') throw new Error('Assessment must be CAT or exam.');
       if (!Number.isInteger(courseIndex) || courseIndex < 0 || courseIndex >= state.academics.courses.length) throw new Error('Invalid course.');
@@ -327,7 +344,7 @@
     load();
     return Object.freeze({
       getState: getState, save: save, load: load, travel: travel, perform: perform,
-      submitAssessment: submitAssessment, completeSemester: completeSemester,
+      submitAssessment: submitAssessment, recordRelationship: recordRelationship, completeSemester: completeSemester,
       getTimetable: getTimetable, activities: clone(ACTIVITIES), days: DAYS.slice(),
       saveKey: SAVE_KEY
     });
