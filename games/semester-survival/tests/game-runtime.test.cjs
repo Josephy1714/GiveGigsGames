@@ -45,9 +45,9 @@ function fixture(){
   const interactables={},hotspots={};
   world.districts[district].places.forEach((place,index)=>{
    const anchor=district+'-'+place.id;interactables[place.id]={anchor};
-   hotspots[anchor]={x:index===0?100:500+index*5,y:index===0?100:250,width:40,height:40};
+   hotspots[anchor]={x:index===0?100:500+index*5,y:index===0?0:250,width:40,height:40};
   });
-  sceneManifest[district]={sceneId:'fixture-'+district,requiredAssetIds:[backgroundId],spawnPoints:{default:{x:120,y:120}},interactables:interactables,npcAnchors:[],render:{width:640,height:360,layers:[{id:'background',assetId:backgroundId,x:0,y:0,width:640,height:360,parallax:0}],hotspots:hotspots}};
+  sceneManifest[district]={sceneId:'fixture-'+district,requiredAssetIds:[backgroundId],spawnPoints:{default:{x:120,y:0}},interactables:interactables,npcAnchors:[],render:{width:640,height:360,layers:[{id:'background',assetId:backgroundId,x:0,y:0,width:640,height:360,parallax:0}],hotspots:hotspots}};
  });
  const clips={};global.SemesterCharacterRuntime.requiredClips.forEach(name=>{clips[name]={fps:8,playback:'loop',frames:[{x:0,y:0,width:16,height:16,pivotX:8,pivotY:16}]};});
  return{world,assetManifest:{version:1,scenes:assetScenes},sceneManifest,characterAtlas:{assetId:'character-atlas',manifest:{clips}}};
