@@ -1,0 +1,36 @@
+'use strict';
+const assert = require('node:assert/strict');
+require('../character-controller.js');
+const { createController } = globalThis.SemesterCharacterController;
+const c = createController();
+let s = c.snapshot();
+assert.equal(s.state, 'idle');
+for (let i=0;i<30;i++) s=c.update(1/60,{moveX:1});
+assert.ok(s.speed > 1.5);
+assert.ok(['walk','jog'].includes(s.state));
+for (let i=0;i<90;i++) s=c.update(1/60,{moveX:1,sprint:true});
+assert.equal(s.state,'sprint');
+assert.ok(s.stamina < 100);
+s=c.update(1/60,{moveX:1,jumpPressed:true});
+assert.equal(s.state,'jump-takeoff');
+let sawRise=false,sawApex=false,sawFall=false,sawLand=false;
+for (let i=0;i<120;i++) {
+  s=c.update(1/60,{moveX:1});
+  sawRise ||= s.state==='jump-rise';
+  sawApex ||= s.state==='jump-apex';
+  sawFall ||= s.state==='jump-fall';
+  sawLand ||= s.state==='land-recover';
+}
+assert.ok(sawRise && sawApex && sawFall && sawLand);
+for (let i=0;i<40;i++) s=c.update(1/60,{moveX:1});
+s=c.update(1/60,{moveX:1,slidePressed:true});
+assert.equal(s.state,'slide-start');
+for (let i=0;i<60;i++) s=c.update(1/60,{moveX:1});
+assert.ok(['land-recover','jog','sprint','walk'].includes(s.state));
+s=c.update(1/60,{moveX:0,dodgeDirection:-1});
+assert.equal(s.state,'dodge-left');
+assert.ok(s.x < 20);
+const reset=c.reset({x:3});
+assert.equal(reset.x,3);
+assert.equal(reset.state,'idle');
+console.log('character-controller tests passed');
