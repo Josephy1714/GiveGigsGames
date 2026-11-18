@@ -176,6 +176,12 @@
       return matches.length ? matches[matches.length - 1] : null;
     }
 
+    function getHotspotBounds(anchorId) {
+      if (!active || !active.scene.hotspots[anchorId]) return null;
+      const h = active.scene.hotspots[anchorId];
+      return Object.freeze({ x: h.x, y: h.y, width: h.width, height: h.height, centerX: h.x + h.width / 2, centerY: h.y + h.height / 2 });
+    }
+
     function focusInteractable(anchorId) {
       if (!active || !active.scene.hotspots[anchorId]) fail('Unknown authored interaction hotspot "' + anchorId + '".');
       focusedAnchor = anchorId;
@@ -190,7 +196,7 @@
       });
     }
 
-    return Object.freeze({ resize, mountScene, updateCamera, render, hitTest, focusInteractable, getState });
+    return Object.freeze({ resize, mountScene, updateCamera, render, hitTest, getHotspotBounds, focusInteractable, getState });
   }
 
   root.SemesterSceneRenderer = Object.freeze({ create, validateScene });
