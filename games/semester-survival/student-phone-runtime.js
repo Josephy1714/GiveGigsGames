@@ -42,6 +42,7 @@
       return snapshot();
     }
     function receiveEvent(event){if(services)services.receive(event);onEvent(event);return snapshot();}
+    function workOnAssignment(courseId){const index=life.getState().academics.courses.findIndex(course=>course.id===courseId);if(index<0)throw new Error('That course is not currently registered.');const result=life.perform('assignment',{courseIndex:index});onEvent(Object.freeze({type:'interaction:completed',activity:'assignment',action:'work-on-assignment',courseId:courseId,courseIndex:index}));return result;}
     function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}
     function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}
     function markRead(id,kind){if(!services)throw new Error('University services are not connected.');return services.markRead(id,kind);}
@@ -53,7 +54,7 @@
       return snapshot();
     }
     function destroy(){if(destroyed)return;setOpen(false);destroyed=true;}
-    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,receiveEvent:receiveEvent,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,destroy:destroy,sections:sections.slice()});
+    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,destroy:destroy,sections:sections.slice()});
   }
   root.SemesterStudentPhone=Object.freeze({create:create});
 })(typeof window!=='undefined'?window:globalThis);
