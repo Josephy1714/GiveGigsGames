@@ -11,3 +11,7 @@ An in-world interface with timetable, messages, tasks/notes, map, money and acad
 
 ## Menus and feedback
 Short deliberate transitions with reduced-motion fallback. Menus work with keyboard and touch and have a clear back path. Feedback shows action, result, reason and changed state. Pair icon, label and colour; never show an unverified success tick.
+
+## Contextual dialogue overlay
+
+Interaction prompts appear only near authored world hotspots. NPC conversations use a restrained lower-screen panel, clear speaker hierarchy, readable authored dialogue history, and touch-sized topic controls. Until owned portrait artwork is available, use a typographic monogram rather than a fabricated character portrait. All dialogue is rendered as text, never interpreted as markup.
