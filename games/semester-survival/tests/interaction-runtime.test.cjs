@@ -71,6 +71,7 @@ test('dialogue closes and releases the input context lock', () => {
   h.runtime.openDialogue('njeri');
   assert.equal(h.runtime.closeDialogue(), true);
   assert.equal(h.runtime.getDialogue(), null);
+  assert.equal(h.runtime.getNearby(), null);
   assert.deepEqual(h.context.at(-1), { dialogueOpen: false });
 });
 
