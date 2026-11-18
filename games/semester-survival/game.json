@@ -1,85 +1,57 @@
 {
-  "title": "Semester Survival: A University Life Adventure",
-  "slug": "semester-survival",
-  "description": "Explore a connected student neighbourhood across eight semesters. Build friendships, attend classes, manage money and shape your future.",
-  "genre": "Adventure / Life Simulation",
-  "tags": [
-    "HTML5",
-    "Adventure",
-    "Life Simulation",
-    "University",
-    "Student Life",
-    "Anime-inspired"
-  ],
-  "maker": {
-    "name": "Joseph Ombati & Antigravity",
-    "bio": "A collaboration between concept designer Joseph Ombati and Antigravity to create the ultimate premium university simulation running game.",
-    "url": "https://4weird.com",
-    "urlLabel": "4weird Games"
-  },
-  "credits": [
-    {
-      "name": "Joseph Ombati",
-      "role": "Concept & Design",
-      "avatar": "🎓",
-      "primary": true
+    "title": "Semester Survival",
+    "slug": "semester-survival",
+    "description": "Survive 8 chaotic semesters of lectures, exams, portal downs, and empty wallets to graduate without getting expelled!",
+    "genre": "Endless Runner",
+    "tags": ["HTML5", "3D", "Runner", "University", "Arcade"],
+    "maker": {
+        "name": "Joseph Ombati & Antigravity",
+        "bio": "A collaboration between concept designer Joseph Ombati and Antigravity to create the ultimate premium university simulation running game.",
+        "url": "https://4weird.com",
+        "urlLabel": "4weird Games"
     },
-    {
-      "name": "Antigravity",
-      "role": "Lead Developer & UI Designer",
-      "avatar": "🤖",
-      "primary": true,
-      "url": "https://4weird.com",
-      "urlLabel": "4weird"
-    }
-  ],
-  "controls": {
-    "keyboard": {
-      "A / D or Arrow Left / Right": "Walk and move through the neighbourhood",
-      "Shift": "Sprint while held",
-      "W / Arrow Up / Space": "Jump where supported",
-      "S / Arrow Down": "Slide where supported",
-      "E / Enter": "Interact with nearby people and objects",
-      "Tab": "Open or close student phone",
-      "Escape": "Pause or go back"
-    },
-    "touch": {
-      "swipe": "Swipe horizontally to move; swipe up to jump and down to slide; tap nearby people or objects to interact"
-    },
-    "mouse": {
-      "enabled": true,
-      "description": "Select phone tabs, dialogue choices and interface controls"
-    }
-  },
-  "instructions": "Begin at student residence, walk through the township to the university, interact with the people you meet and attend orientation. Use the student phone to check your timetable, tasks, map and academic record. This is an early playable vertical slice; the full eight-semester campaign is in production.",
-  "technical": {
-    "canvasSize": {
-      "width": "responsive",
-      "height": "responsive"
-    },
-    "targetFPS": 60,
-    "mobileOptimized": true,
-    "offline": true
-  },
-  "assets": {
-    "local": [
-      "index.html",
-      "game.css",
-      "adventure.js"
+    "credits": [
+        {
+            "name": "Joseph Ombati",
+            "role": "Concept & Design",
+            "avatar": "🎓",
+            "primary": true
+        },
+        {
+            "name": "Antigravity",
+            "role": "Lead Developer & UI Designer",
+            "avatar": "🤖",
+            "primary": true,
+            "url": "https://4weird.com",
+            "urlLabel": "4weird"
+        }
     ],
-    "legacyLocal": [
-      "sound.js",
-      "state.js",
-      "controls.js",
-      "renderer.js",
-      "ui.js",
-      "game.js"
-    ]
-  },
-  "meta": {
-    "version": "2.0.0",
-    "created": "2026-06-28",
-    "license": "Private - All Rights Reserved",
-    "status": "Vertical-slice prototype"
-  }
+    "controls": {
+        "keyboard": {
+            "A / D or Arrow Left / Right": "Switch Lanes",
+            "W or Arrow Up": "Jump over obstacles",
+            "S or Arrow Down": "Slide under obstacles",
+            "P or Escape": "Pause / Resume"
+        },
+        "touch": {
+            "swipe": "Swipe Left / Right / Up / Down",
+            "buttons": "Touch buttons on mobile screen"
+        },
+        "mouse": false
+    },
+    "instructions": "Navigate your student through three lanes to dodge academic threats like assignment deadlines, portal crashes, and stress while collecting coffee, lecture notes, and HELB loans. Complete objectives to pass the final exam/boss of each semester and advance. Survive all 8 semesters to graduate!",
+    "technical": {
+        "canvasSize": {"width": 800, "height": 600},
+        "targetFPS": 60,
+        "mobileOptimized": true
+    },
+    "assets": {
+        "external": ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"],
+        "local": ["sound.js", "state.js", "controls.js", "renderer.js", "ui.js", "game.js", "game.css"]
+    },
+    "meta": {
+        "version": "1.0.0",
+        "created": "2026-06-28",
+        "license": "Private - All Rights Reserved"
+    }
 }
