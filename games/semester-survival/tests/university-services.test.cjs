@@ -19,6 +19,7 @@ test('course registration enforces unique selection, credit limits and a single 
 });
 test('assignment deadlines persist and submissions update academic records',()=>{
  const {life,services,store,events}=setup(),first=services.getSnapshot().assignments[0];
+ life.perform('assignment');life.perform('assignment');
  const submitted=services.submitAssignment(first.id);
  assert.equal(submitted.assignment.status,'submitted');
  assert.ok(life.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
@@ -30,6 +31,7 @@ test('assignment deadlines persist and submissions update academic records',()=>
 });
 test('deadline reminders and late submission penalties are driven by simulation time',()=>{
  const {life,services,events}=setup(),assignment=services.getSnapshot().assignments[0];
+ life.perform('assignment');life.perform('assignment');
  for(let i=0;i<7;i++){life.perform('sleep');services.sync();}
  assert.ok(services.getSnapshot().notifications.some(n=>n.title==='Deadline approaching'));
  for(let i=7;i<25;i++){life.perform('sleep');services.sync();}
