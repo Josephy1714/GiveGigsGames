@@ -41,7 +41,7 @@
       if(open&&next==='finances')onEvent(Object.freeze({type:'budget:reviewed',cash:life.getState().finances.cash}));
       return snapshot();
     }
-    function receiveEvent(event){if(services)services.receive(event);onEvent(event);return snapshot();}
+    function receiveEvent(event){onEvent(event);return snapshot();}
     function workOnAssignment(courseId){const index=life.getState().academics.courses.findIndex(course=>course.id===courseId);if(index<0)throw new Error('That course is not currently registered.');const result=life.perform('assignment',{courseIndex:index});onEvent(Object.freeze({type:'interaction:completed',activity:'assignment',action:'work-on-assignment',courseId:courseId,courseIndex:index}));return result;}
     function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}
     function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}
