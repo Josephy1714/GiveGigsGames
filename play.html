@@ -6,24 +6,58 @@
     <meta name="theme-color" content="#07111d">
     <title>Play — GiveGigsGames</title>
     <link rel="stylesheet" href="/play.css">
-    <link rel="stylesheet" href="/play-layout.css">
     <script src="/games/catalog-data.js" defer></script>
     <script src="/game-route.js" defer></script>
     <script src="/play.js" defer></script>
   </head>
   <body>
     <header class="player-bar">
-      <a class="back-link" href="/ggg/" aria-label="Back to game select">← <span>Back to game select</span></a>
-      <h1 id="game-title">Loading game…</h1>
-      <div class="player-links"><a class="home-link" id="play-roadmap" hidden>Roadmap</a><a class="home-link" id="direct-link" hidden>Open directly</a></div>
+      <a class="player-action" href="/ggg/#all-games" aria-label="Back to game select"><span aria-hidden="true">←</span> Games</a>
+      <div class="player-identity">
+        <span id="game-icon" aria-hidden="true"></span>
+        <h1 id="game-title">Loading game…</h1>
+      </div>
+      <div class="player-actions">
+        <button class="player-action" id="open-game-info" type="button" aria-haspopup="dialog" hidden>Game info</button>
+        <button class="player-action" id="fullscreen-game" type="button" aria-label="Enter fullscreen" hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></svg>
+        </button>
+      </div>
     </header>
     <main class="player-content">
       <p id="player-error" role="alert" hidden></p>
-      <div id="player-loading" role="status" hidden>
-        <span id="loading-status">Loading game…</span>
-        <button id="retry-game" type="button" hidden>Retry</button>
+      <div id="player-loading" class="player-card" hidden>
+        <p id="loading-status" role="status">Loading game…</p>
+        <button class="player-action" id="retry-game" type="button" hidden>Retry</button>
       </div>
+      <section class="player-card hosted-game" id="hosted-game" aria-labelledby="hosted-title" hidden>
+        <span class="hosted-genre" id="hosted-genre"></span>
+        <h2 id="hosted-title"></h2>
+        <p id="hosted-description"></p>
+        <a class="player-action primary-action" id="hosted-link" target="_blank" rel="noopener noreferrer">Launch hosted game ↗</a>
+        <p class="player-note">Opens in a new tab.</p>
+      </section>
       <iframe id="game-frame" title="Game" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
     </main>
+    <dialog id="game-info" aria-labelledby="game-info-title">
+      <div class="info-heading">
+        <div>
+          <p class="hosted-genre" id="info-genre"></p>
+          <h2 id="game-info-title"></h2>
+        </div>
+        <form method="dialog"><button class="player-action" type="submit" aria-label="Close game info" autofocus>✕</button></form>
+      </div>
+      <p id="info-description"></p>
+      <section id="info-controls" aria-labelledby="controls-title" hidden>
+        <h3 id="controls-title">Controls</h3>
+        <p id="controls-copy"></p>
+      </section>
+      <nav class="info-actions" aria-label="Game links">
+        <a class="player-action" id="play-guide">Guide</a>
+        <a class="player-action" id="play-roadmap">Roadmap</a>
+        <a class="player-action" id="direct-link">Open directly</a>
+      </nav>
+    </dialog>
+    <p id="fullscreen-status" class="player-toast" role="status" hidden></p>
   </body>
 </html>

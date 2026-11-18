@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#101916">
 <title>GraveGain2dD — Moonlit Run</title>
+<link rel="stylesheet" href="../_shared/game-interface.css">
 <style>
 .keyboard-hint{display:none}
 [hidden]{display:none!important}
@@ -21,6 +22,9 @@
 
 #objective{z-index:1;border:1px solid #d1e9c333;background:#0b1722dc;padding:6px 10px;border-radius:8px}
 #overlay{z-index:2}
+#overlay #start{width:min(100%, 19rem);min-height:44px;justify-self:center}
+#upgrade-shop summary{min-height:44px;align-content:center}
+#draft-choices button{min-height:44px}
 @media(pointer:fine){#stickZone{display:none}.touch-hint{display:none}.keyboard-hint{display:inline}}
 
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1110;color:#eff3df;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}body{display:grid;place-items:center}.game{position:relative;width:min(100vw,177.78vh);height:min(100vh,56.25vw);overflow:hidden;background:#101916;isolation:isolate}canvas{width:100%;height:100%;display:block}.hud{position:absolute;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:clamp(10px,2vw,22px);pointer-events:none;text-shadow:0 2px 8px #07100c}.brand{font-size:clamp(12px,2vw,20px);font-weight:900;letter-spacing:.13em;color:#e3c778}.stats{display:flex;gap:clamp(10px,2vw,24px);font-size:clamp(11px,1.5vw,16px);font-weight:750}.overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:linear-gradient(90deg,#09110edb,#09110e66,#09110edb)}.overlay.hidden{display:none}.overlay h1{font-size:clamp(30px,7vw,68px);line-height:.96;margin:0 0 12px;color:#f1d88b;letter-spacing:.045em;text-shadow:0 3px 0 #734b3b}.overlay p{max-width:520px;margin:8px auto 20px;line-height:1.55;color:#d0d8ca;font-size:clamp(13px,2vw,17px)}button{font:inherit;color:#122019;background:#e4c979;border:0;border-radius:999px;padding:12px 25px;font-weight:850;box-shadow:0 4px 0 #806a38;cursor:pointer}.stick-zone{position:absolute;left:max(16px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));width:clamp(100px,18vw,150px);height:clamp(100px,18vw,150px);border-radius:50%;background:#c8ddc118;border:1px solid #d4e8cf44;touch-action:none;display:grid;place-items:center}.stick-ring{width:44%;height:44%;border-radius:50%;border:1px solid #d4e8cf40;position:absolute}.stick{width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9ec29a,#425f51);border:2px solid #d5e6c781;box-shadow:0 5px 16px #0008;transform:translate(0,0);position:relative}.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:clamp(10px,1.35vw,13px);color:#d9e2d0a8;white-space:nowrap;pointer-events:none}.toast{position:absolute;left:50%;top:20%;transform:translate(-50%,-10px);opacity:0;color:#ffe7a1;font-weight:900;letter-spacing:.12em;transition:.2s;pointer-events:none}.toast.on{opacity:1;transform:translate(-50%,0)}@media(orientation:portrait){.game{width:100vw;height:100vh}canvas{object-fit:cover}.hint{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 102px);left:18px;transform:none}}

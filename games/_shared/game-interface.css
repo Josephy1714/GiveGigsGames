@@ -1,0 +1,51 @@
+/* Keep each game's palette and layout while improving native control feedback. */
+html body :is(a[href], button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid #fff !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #101926 !important;
+}
+
+/* Build on the imported game families' existing menus and button classes. */
+body :is(.TEMPLATE-4weird-game-overlay, .friendslop-4weird-game-overlay, .screen-overlay, .studio-overlay, .menu-content.glass-panel, .launch-screen) {
+  overscroll-behavior: contain;
+  scrollbar-color: #8494aa transparent;
+}
+
+body :is(.TEMPLATE-4weird-game-overlay, .friendslop-4weird-game-overlay, .screen-overlay, .studio-overlay)
+  :is(button.btn-primary, button.btn-start, button.btn-secondary) {
+  min-height: 44px;
+  border-radius: 12px !important;
+}
+
+body :is(.TEMPLATE-4weird-game-overlay, .friendslop-4weird-game-overlay, .screen-overlay, .studio-overlay)
+  :is(button.btn-primary, button.btn-start, button.btn-secondary):active:not(:disabled) {
+  filter: brightness(.88);
+}
+
+#gg-game-select {
+  position: fixed;
+  z-index: 2147483647;
+  inset: max(8px, env(safe-area-inset-top)) auto auto max(8px, env(safe-area-inset-left));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #4e6580;
+  border-radius: 10px;
+  background: #111e30;
+  color: #eaf4ff;
+  font: 700 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 16px #0006;
+}
+
+#gg-game-select:hover { background: #263d54; border-color: #9abbdb; }
+#gg-game-select svg { width: 18px; height: 18px; flex: none; }
+
+@media (max-width: 520px), (max-height: 420px) {
+  #gg-game-select { padding: 0; }
+  #gg-game-select span { display: none; }
+}

@@ -1,7 +1,8 @@
 (() => {
-  const title = document.getElementById("game-title");
-  const frame = document.getElementById("game-frame");
-  const error = document.getElementById("player-error");
+  const byId = (id) => document.getElementById(id);
+  const title = byId("game-title");
+  const frame = byId("game-frame");
+  const error = byId("player-error");
   const game = window.GGGGameRoute?.resolve("play", window.GIVEGIGSGAMES_CATALOG?.games);
 
   if (!game) {
@@ -13,20 +14,32 @@
   }
 
   title.textContent = game.title;
+  byId("game-icon").textContent = game.emoji || "🎮";
   document.title = `${game.title} · GiveGigsGames`;
-  const roadmapLink = document.getElementById("play-roadmap");
-  roadmapLink.href = `/ggg/roadmap/${encodeURIComponent(game.slug)}`;
-  roadmapLink.hidden = false;
+  const slug = encodeURIComponent(game.slug);
+  const info = byId("game-info");
+  const infoButton = byId("open-game-info");
+  const direct = byId("direct-link");
+  byId("game-info-title").textContent = game.title;
+  byId("info-genre").textContent = game.genre;
+  byId("info-description").textContent = game.description;
+  byId("info-controls").hidden = !game.controls;
+  byId("controls-copy").textContent = game.controls || "";
+  byId("play-guide").href = `/ggg/guide/${slug}`;
+  byId("play-roadmap").href = `/ggg/roadmap/${slug}`;
+  direct.hidden = true;
+  if (typeof info.showModal === "function") {
+    infoButton.hidden = false;
+    infoButton.addEventListener("click", () => info.showModal());
+  }
+
   if (game.runtimeType === "external") {
     frame.hidden = true;
-    const direct = document.getElementById("direct-link");
-    direct.href = game.externalUrl;
-    direct.target = "_blank";
-    direct.rel = "noreferrer";
-    direct.textContent = "Launch hosted game ↗";
-    direct.hidden = false;
-    document.getElementById("loading-status").textContent = "This game is hosted on another site. Open it in a new tab to play.";
-    document.getElementById("player-loading").hidden = false;
+    byId("hosted-title").textContent = game.title;
+    byId("hosted-genre").textContent = game.genre;
+    byId("hosted-description").textContent = game.description;
+    byId("hosted-link").href = game.externalUrl;
+    byId("hosted-game").hidden = false;
     return;
   }
   if (!game.entrypoint) {
@@ -38,11 +51,32 @@
   }
   frame.title = game.title;
   const url = `/games/${game.entrypoint.split("/").map(encodeURIComponent).join("/")}`;
-  const direct = document.getElementById("direct-link");
-  const loading = document.getElementById("player-loading");
-  const status = document.getElementById("loading-status");
-  const retry = document.getElementById("retry-game");
+  const loading = byId("player-loading");
+  const status = byId("loading-status");
+  const retry = byId("retry-game");
+  const fullscreen = byId("fullscreen-game");
+  const fullscreenStatus = byId("fullscreen-status");
   let timeout;
+
+  if (document.fullscreenEnabled && typeof document.body.requestFullscreen === "function") {
+    fullscreen.hidden = false;
+    fullscreen.addEventListener("click", async () => {
+      fullscreenStatus.hidden = true;
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.body.requestFullscreen();
+      } catch {
+        fullscreenStatus.textContent = "Fullscreen is unavailable. Try opening the game directly.";
+        fullscreenStatus.hidden = false;
+      }
+    });
+    document.addEventListener("fullscreenchange", () => {
+      const label = document.fullscreenElement === document.body ? "Exit fullscreen" : "Enter fullscreen";
+      fullscreen.setAttribute("aria-label", label);
+      fullscreen.title = label;
+    });
+    fullscreen.title = "Enter fullscreen";
+  }
 
   function launch() {
     loading.hidden = false;
@@ -70,8 +104,7 @@
   });
   try {
     const recent = JSON.parse(localStorage.getItem("arcade:recent") || "[]");
-    const slug = game.slug;
-    localStorage.setItem("arcade:recent", JSON.stringify([slug, ...recent.filter((item) => item !== slug)].slice(0, 20)));
+    localStorage.setItem("arcade:recent", JSON.stringify([game.slug, ...recent.filter((item) => item !== game.slug)].slice(0, 20)));
   } catch {}
   launch();
 })();
