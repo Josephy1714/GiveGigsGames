@@ -88,11 +88,12 @@
         c.y += c.vy * dt;
         if (c.vy < -0.1 && c.state !== 'jump-fall') transition('jump-fall', 'descending');
         if (c.y <= 0) {
+          const impactVelocity = Math.abs(c.vy);
           c.y = 0;
           c.vy = 0;
           c.grounded = true;
           c.landTime = 0.16;
-          c.landStrength = clamp(Math.abs(c.vy) / CONFIG.jumpVelocity, 0.25, 1);
+          c.landStrength = clamp(impactVelocity / CONFIG.jumpVelocity, 0.25, 1);
           transition('land-recover', 'ground-contact');
         }
       }
