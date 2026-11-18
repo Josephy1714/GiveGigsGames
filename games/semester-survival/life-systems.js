@@ -180,7 +180,7 @@
         parsed.relationships = parsed.relationships || {};
         parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);
         parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;
-        parsed.academics.courses.forEach(function(course){course.assignmentProgress=Number.isFinite(course.assignmentProgress)?course.assignmentProgress:course.assignmentPoints||0;course.assignmentScoreTotal=0;course.assignmentCount=0;course.assignmentPoints=0;});
+        parsed.academics.courses.forEach(function(course){course.assignmentProgress=Number.isFinite(course.assignmentProgress)?course.assignmentProgress:course.assignmentPoints||0;if(!Number.isFinite(course.assignmentScoreTotal)){course.assignmentScoreTotal=0;course.assignmentCount=0;course.assignmentPoints=0;}else{course.assignmentCount=Number.isInteger(course.assignmentCount)?course.assignmentCount:0;}});
         parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
