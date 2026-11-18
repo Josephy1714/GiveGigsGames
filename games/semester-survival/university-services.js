@@ -20,7 +20,7 @@
    assignments.push({id:course.id+'-A1',courseId:course.id,title:'Coursework 1: Concepts and applications',kind:'assignment',createdAt:minute,dueAt:minute+(3+index)*1440,status:'open',score:null,submittedAt:null});
    assignments.push({id:course.id+'-P1',courseId:course.id,title:'Practical exercise and reflection',kind:'practical',createdAt:minute,dueAt:minute+(8+index)*1440,status:'open',score:null,submittedAt:null});
   });
-  return {version:VERSION,semester:semester,assignments:assignments,messages:[],notifications:[],reviewed:{},sequence:0};
+  return {version:VERSION,semester:semester,assignments:assignments,messages:[],notifications:[],reviewed:{},registrationChanged:false,sequence:0};
  }
  function create(options){
   options=options||{};const life=options.lifeEngine,storage=options.storage||(typeof localStorage!=='undefined'?localStorage:null);
@@ -81,7 +81,7 @@
      if(!existing.has(id))state.assignments.push({id:id,courseId:course.id,title:d.title,kind:d.kind,createdAt:life.getState().calendar.totalMinutes,dueAt:life.getState().calendar.totalMinutes+d.days*1440,status:'open',score:null,submittedAt:null});
     });
    });
-   notify('Registration updated','Your registered course load is now '+after.length+' courses.','academic');persist();
+   state.registrationChanged=true;notify('Registration updated','Your registered course load is now '+after.length+' courses.','academic');persist();
    emit({type:'courses:registered',previous:before,registered:after.map(c=>c.id),credits:result.result.credits});
    return result;
   }
