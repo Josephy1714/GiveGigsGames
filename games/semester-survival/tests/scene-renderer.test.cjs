@@ -74,3 +74,14 @@ test('rejects missing hotspots and missing assets rather than masking incomplete
   assert.throws(() => renderer.mountScene('bad', { district: 'campus', scene: { ...scene, hotspots: {} }, assets }), /no authored render hotspot/);
   assert.throws(() => renderer.focusInteractable('unknown'), /Unknown authored interaction hotspot/);
 });
+
+test('supports canvases without a writable style property and requires resize before drawing', () => {
+  const { calls } = fakeCanvas();
+  const contextOnly = { save() {}, restore() {}, setTransform() {}, clearRect() {}, translate() {}, scale() {}, drawImage() {}, beginPath() {}, rect() {}, clip() {} };
+  const canvas = { width: 0, height: 0, getContext: () => contextOnly };
+  const renderer = api.create({ canvas });
+  assert.throws(() => renderer.render(), /Resize the canvas before rendering/);
+  renderer.resize(640, 360, 1);
+  renderer.mountScene('campus-main', { district: 'campus', scene, assets });
+  assert.equal(renderer.render().drawnLayers, 2);
+});
