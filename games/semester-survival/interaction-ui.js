@@ -47,15 +47,31 @@
       const label = node('span', 'ss-interaction-ui__eyebrow', nearby.type === 'character' ? 'PERSON' : 'NEARBY');
       const title = node('strong', 'ss-interaction-ui__target', nearby.prompt || nearby.name || 'Interact');
       const hint = node('span', 'ss-interaction-ui__hint', 'E');
-      const action = button('Interact', 'ss-interaction-ui__button', function () {
-        activate({ interactPressed: true });
-      }, 'Interact with ' + (nearby.name || 'nearby target'));
-      action.appendChild(hint);
+      const actions = node('div', 'ss-interaction-ui__actions');
+      const actionLabels = {
+        sleep:'Rest',study:'Study', 'buy-meal':'Buy a meal','talk-vendor':'Talk to Mama Njeri',
+        'print-notes':'Print notes','bind-assignment':'Bind assignment','attend-lecture':'Attend lecture',
+        'ask-question':'Ask a question',socialize:'Socialise','meet-friend':'Meet a friend',
+        'talk-roommate':'Talk to roommate','lab-session':'Use the data lab','work-on-project':'Work on project',
+        'borrow-book':'Borrow a book','join-club':'Join a club','work-shift':'Start a work shift',
+        'travel-campus':'Travel to campus','travel-city':'Travel to the city','check-phone':'Open student phone',talk:'Talk'
+      };
+      const choices = Array.isArray(nearby.actions) ? nearby.actions : [];
+      choices.forEach(function(actionKey,index){
+        const action = button(actionLabels[actionKey] || actionKey.replace(/[-_]/g,' '), 'ss-interaction-ui__button', function(){
+          activate({interactPressed:true,interaction:actionKey});
+        }, (actionLabels[actionKey] || actionKey) + ' at ' + (nearby.name || 'nearby target'));
+        if(index===0){action.appendChild(hint);promptButton=action;}
+        actions.appendChild(action);
+      });
+      if(!choices.length){
+        const action = button('Interact', 'ss-interaction-ui__button', function(){activate({interactPressed:true});}, 'Interact with ' + (nearby.name || 'nearby target'));
+        action.appendChild(hint);actions.appendChild(action);promptButton=action;
+      }
       section.appendChild(label);
       section.appendChild(title);
-      section.appendChild(action);
+      section.appendChild(actions);
       host.appendChild(section);
-      promptButton = action;
     }
     function renderDialogue(dialogue) {
       const backdrop = node('section', 'ss-interaction-ui__dialogue');
