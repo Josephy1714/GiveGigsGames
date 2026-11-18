@@ -65,7 +65,7 @@
       calendar: { dayIndex: 0, week: 1, minuteOfDay: 7 * 60, totalMinutes: 0 },
       location: 'residence',
       condition: { energy: 90, hunger: 78, stress: 18, wellbeing: 75 },
-      finances: { cash: 2500, debt: 0, lifetimeEarned: 0, lifetimeSpent: 0 },
+      finances: { cash: 2500, debt: 0, lifetimeEarned: 0, lifetimeSpent: 0, transactions: [] },
       academics: { cumulativeGpa: 0, courses: makeCourses(1), transcript: [] },
       relationships: {
         roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
@@ -176,7 +176,7 @@
         if (!raw) return false;
         const parsed = JSON.parse(raw);
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
-        parsed.relationships = parsed.relationships || {};
+        parsed.relationships = parsed.relationships || {};\n        parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
           coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
@@ -245,10 +245,13 @@
         if (activity.money < 0) {
           s.finances.cash += activity.money;
           s.finances.lifetimeSpent += -activity.money;
+          s.finances.transactions.push({ id: id('txn'), day: DAYS[s.calendar.dayIndex], minute: s.calendar.totalMinutes, type: 'expense', category: activityKey, description: activity.label, amount: activity.money, balance: s.finances.cash });
         } else if (activity.money > 0) {
           s.finances.cash += activity.money;
           s.finances.lifetimeEarned += activity.money;
+          s.finances.transactions.push({ id: id('txn'), day: DAYS[s.calendar.dayIndex], minute: s.calendar.totalMinutes, type: 'income', category: activityKey, description: activity.label, amount: activity.money, balance: s.finances.cash });
         }
+        if (s.finances.transactions.length > 200) s.finances.transactions.splice(0, s.finances.transactions.length - 200);
         if (activityKey === 'lecture') {
           const course = s.academics.courses[(s.calendar.dayIndex + s.calendar.week) % s.academics.courses.length];
           course.attendance += 1;
