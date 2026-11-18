@@ -1,0 +1,133 @@
+/* Scoped Semester Survival interaction overlay. */
+.ss-interaction-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  color: #f5f2eb;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.ss-interaction-ui.is-active { pointer-events: none; }
+.ss-interaction-ui__prompt {
+  position: absolute;
+  left: 50%;
+  bottom: max(7%, env(safe-area-inset-bottom, 16px));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: min( min(560px, calc(100vw - 28px)), 92%);
+  padding: 12px 14px;
+  border: 1px solid rgba(218, 190, 132, .32);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(9, 17, 34, .94), rgba(18, 28, 48, .9));
+  box-shadow: 0 18px 54px rgba(0,0,0,.38);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+.ss-interaction-ui__eyebrow {
+  display: block;
+  color: #b8a77f;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+.ss-interaction-ui__target { font-size: .94rem; font-weight: 650; }
+.ss-interaction-ui__button, .ss-interaction-ui__choice, .ss-interaction-ui__end {
+  min-height: 44px;
+  border: 1px solid rgba(123, 174, 255, .4);
+  border-radius: 10px;
+  padding: 9px 14px;
+  color: #f7f9ff;
+  background: rgba(44, 89, 151, .32);
+  font: inherit;
+  font-size: .84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ss-interaction-ui__button { display: flex; align-items: center; gap: 10px; }
+.ss-interaction-ui__hint {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255,255,255,.36);
+  border-radius: 6px;
+  color: #d8e7ff;
+  font-size: .72rem;
+}
+.ss-interaction-ui__dialogue {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  padding: 20px;
+  background: linear-gradient(180deg, transparent 20%, rgba(3, 8, 18, .32) 55%, rgba(3, 8, 18, .72));
+  pointer-events: auto;
+}
+.ss-interaction-ui__panel {
+  width: min(760px, 100%);
+  max-height: min(68vh, 560px);
+  overflow: auto;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(218, 190, 132, .32);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(10, 19, 37, .98), rgba(17, 29, 49, .97));
+  box-shadow: 0 24px 80px rgba(0,0,0,.48);
+  backdrop-filter: blur(18px);
+}
+.ss-interaction-ui__header { display: flex; align-items: center; gap: 13px; }
+.ss-interaction-ui__monogram {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(218, 190, 132, .5);
+  border-radius: 14px;
+  color: #f0d9a7;
+  background: rgba(218, 190, 132, .1);
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.ss-interaction-ui__speaker { flex: 1; }
+.ss-interaction-ui__name { margin: 3px 0 0; font-size: 1.15rem; line-height: 1.2; }
+.ss-interaction-ui__close {
+  width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px; color: #e9edf5; background: rgba(255,255,255,.06);
+  font-size: 1.5rem; cursor: pointer;
+}
+.ss-interaction-ui__transcript {
+  max-height: 180px;
+  overflow: auto;
+  margin: 20px 0;
+  padding: 4px 0 4px 15px;
+  border-left: 2px solid rgba(218, 190, 132, .38);
+}
+.ss-interaction-ui__line { margin: 0 0 10px; color: #aeb9c9; font-size: .92rem; line-height: 1.65; }
+.ss-interaction-ui__line.is-current { color: #f4f0e8; }
+.ss-interaction-ui__choices { display: flex; flex-wrap: wrap; gap: 9px; }
+.ss-interaction-ui__choice { text-transform: capitalize; }
+.ss-interaction-ui__footer {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1);
+}
+.ss-interaction-ui__hint-text { color: #8997ab; font-size: .75rem; }
+.ss-interaction-ui__end { background: transparent; border-color: rgba(255,255,255,.16); }
+.ss-interaction-ui button:hover { border-color: #d8bd84; background-color: rgba(64, 101, 153, .48); }
+.ss-interaction-ui button:focus-visible { outline: 3px solid #f0d9a7; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .ss-interaction-ui__prompt { grid-template-columns: 1fr auto; gap: 8px; }
+  .ss-interaction-ui__prompt .ss-interaction-ui__eyebrow { grid-column: 1 / -1; }
+  .ss-interaction-ui__dialogue { padding: 10px; }
+  .ss-interaction-ui__panel { max-height: 76vh; padding: 16px; border-radius: 16px; }
+  .ss-interaction-ui__choices { display: grid; grid-template-columns: 1fr; }
+  .ss-interaction-ui__choice { text-align: left; }
+  .ss-interaction-ui__footer { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ss-interaction-ui__prompt, .ss-interaction-ui__panel { animation: ss-ui-enter 160ms ease-out both; }
+  @keyframes ss-ui-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+}
