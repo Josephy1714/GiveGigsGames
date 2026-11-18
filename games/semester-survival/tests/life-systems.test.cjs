@@ -30,3 +30,19 @@ poor.travel('township');
 assert.throws(()=>poor.perform('eat'),/Not enough cash/);
 assert.equal(poor.getState().finances.cash,0);
 console.log('life-systems tests passed');
+
+const relationshipStore = new Map();
+const legacy = systems.createNewGame();
+delete legacy.relationships.vendor;
+delete legacy.relationships.lecturer;
+relationshipStore.set(systems.saveKey, JSON.stringify(legacy));
+const migrated = systems.createEngine({
+  getItem:k=>relationshipStore.get(k)||null,
+  setItem:(k,v)=>relationshipStore.set(k,v)
+});
+assert.equal(migrated.getState().relationships.vendor.name,'Mama Njeri');
+assert.equal(migrated.getState().relationships.lecturer.name,'Dr. Mwangi');
+migrated.recordRelationship('vendor',{affinity:2,trust:3},'Discussed food budgeting');
+assert.equal(migrated.getState().relationships.vendor.affinity,12);
+assert.equal(migrated.getState().relationships.vendor.trust,8);
+assert.equal(migrated.getState().journal.at(-1).text,'Discussed food budgeting with Mama Njeri.');
