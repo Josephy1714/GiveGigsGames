@@ -41,7 +41,12 @@
       if(open&&next==='finances')onEvent(Object.freeze({type:'budget:reviewed',cash:life.getState().finances.cash}));
       return snapshot();
     }
-    function receiveEvent(event){if(services)services.receive(event);onEvent(event);return snapshot();}\n    function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}\n    function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}\n    function markRead(id,kind){if(!services)throw new Error('University services are not connected.');return services.markRead(id,kind);}\n    function reply(id,message){if(!services)throw new Error('University services are not connected.');return services.reply(id,message);}\n    function handleIntent(intent){
+    function receiveEvent(event){if(services)services.receive(event);onEvent(event);return snapshot();}
+    function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}
+    function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}
+    function markRead(id,kind){if(!services)throw new Error('University services are not connected.');return services.markRead(id,kind);}
+    function reply(id,message){if(!services)throw new Error('University services are not connected.');return services.reply(id,message);}
+    function handleIntent(intent){
       if(!intent)return snapshot();
       if(intent.phonePressed)toggle();
       if(intent.pausePressed&&open)setOpen(false);
