@@ -15,10 +15,9 @@ target.fire('keyup',event('d'));
 target.fire('keydown',event('Shift'));
 assert.equal(input.consume().sprint,true);
 target.fire('keyup',event('Shift'));
-target.fire('keydown',event(' ')); // physical Space is normalised by browsers as " "
+target.fire('keydown',{...event(' '),code:'Space'}); // browser reports key=" " and code="Space"
 const jump=input.consume();
-assert.equal(jump.jumpPressed,false); // unsupported alias must not trigger a jump
-target.fire('keydown',event('Space'));
+assert.equal(jump.jumpPressed,true);
 assert.equal(input.consume().jumpPressed,true);
 input.setContext({dialogueOpen:true});
 target.fire('keydown',event('a'));
