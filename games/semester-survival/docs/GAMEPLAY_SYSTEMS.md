@@ -14,3 +14,6 @@ NPC relationships change through dialogue, commitments, help, group work and eve
 
 ## Progression and fairness
 Eight semesters unlock spaces, responsibilities, activities and story threads. Persist choices, tasks, grades, relationships and inventory. Save data is versioned and resilient to malformed fields. Explain grade, fee, opportunity and relationship changes. Provide recovery after setbacks; no permanent failure from one obscure choice.
+
+## Authored campaign objectives
+Each semester is divided into story chapters with ordered, measurable objectives. Progress is driven by successful gameplay events—not by merely opening a menu or approaching a location. Objectives can require repeated actions or alternative valid routes, and completed progress persists between sessions. Semester transitions synchronize the chapter sequence with the academic campaign. Phone-only milestones must emit events only after the underlying action succeeds.
