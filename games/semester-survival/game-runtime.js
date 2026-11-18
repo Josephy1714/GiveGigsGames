@@ -29,8 +29,8 @@
   function make(tag,cls,parent){const el=doc.createElement(tag);if(cls)el.className=cls;if(parent)parent.appendChild(el);return el;}
   if(!shell){shell=make('section','ss-adventure-shell',host);shell.setAttribute('aria-label','Semester Survival adventure');}
   if(!canvas)canvas=make('canvas','ss-adventure-shell__canvas',shell);
-  if(!campaignRoot)campaignRoot=make('div','ss-adventure-shell__campaign',shell);
-  if(!interactionRoot)interactionRoot=make('div','ss-adventure-shell__interaction',shell);
+  if(!campaignRoot)campaignRoot=make('div','ss-campaign-ui',shell);
+  if(!interactionRoot)interactionRoot=make('div','ss-interaction-ui',shell);
   if(!phoneRoot)phoneRoot=make('div','ss-adventure-shell__phone',shell);
   const input=modules.input.createInputManager(options.inputTarget||shell,options.inputOptions||{});
   const renderer=modules.renderer.create({canvas:canvas,maxDevicePixelRatio:options.maxDevicePixelRatio||2});
@@ -38,7 +38,7 @@
   const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes});
   let disposed=false, lifecycle='created',frameHandle=null,lastFrameTime=0,lastError=null,resizeHandler=null;
   const subscribers=new Set();
-  let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI;
+  let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,visibilityHandler,escapeHandler;
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
   function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
@@ -147,7 +147,7 @@
    if(!previous||!world.districts[previous].exits.includes(destination))fail('No authored route connects the current district to that destination.');
    const result=await environment.enter(destination,{spawn:travelOptions&&travelOptions.spawn||'default'});
    try{const journey=life.travel(destination);const spawn=sceneManifest[destination].spawnPoints[(travelOptions&&travelOptions.spawn)||'default'];character.reset(spawn);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,minutes:journey.minutes},'runtime');return getState();}
-   catch(error){await environment.enter(previous,{spawn:'default'});throw error;}
+   catch(error){await environment.enter(previous,{spawn:'default'});const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
   function pause(){
    if(lifecycle!=='running')return getState();
@@ -175,11 +175,15 @@
   function destroy(){
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
+   doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
    phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();phone.destroy();services.destroy();
    if(character)character.dispose();else input.destroy();
    subscribers.clear();if(options.removeShellOnDestroy!==false&&shell&&shell.parentNode)shell.parentNode.removeChild(shell);
   }
   resizeHandler=resize;if(root.addEventListener)root.addEventListener('resize',resizeHandler);
+  escapeHandler=function(event){if(event.key==='Escape'&&lifecycle==='paused'){event.preventDefault();resume();}};
+  visibilityHandler=function(){if(doc.hidden&&lifecycle==='running')pause();};
+  doc.addEventListener('keydown',escapeHandler);doc.addEventListener('visibilitychange',visibilityHandler);
   resize();
   return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,destroy:destroy,resize:resize});
  }
