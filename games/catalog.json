@@ -405,31 +405,20 @@
     },
     {
       "slug": "semester-survival",
-      "title": "Semester Survival: A University Life Adventure",
-      "description": "Live eight semesters of university life. Explore student residence, township and campus, meet people, study, manage money and shape your future.",
-      "genre": "Adventure / Life Simulation",
+      "title": "Semester Survival",
+      "description": "Survive eight chaotic semesters to graduate.",
+      "genre": "Endless Runner",
       "tags": [
-        "Adventure",
-        "Life Simulation",
-        "University",
-        "Anime-inspired",
-        "Student Life"
+        "Arcade",
+        "3D",
+        "Runner",
+        "University"
       ],
       "emoji": "🎓",
       "featured": false,
       "recommended": false,
       "entrypoint": "semester-survival/index.html",
-      "runtimeType": "static",
-      "inputs": [
-        "keyboard",
-        "touch",
-        "mouse"
-      ],
-      "controls": "Desktop: A/D or arrows to move, Shift to sprint, Space/Up to jump, S/Down to slide, E to interact, Tab for student phone, Esc to pause. Mobile: swipe to move or jump/slide; tap nearby people and objects.",
-      "modes": [
-        "solo"
-      ],
-      "status": "preview"
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain5dA",
