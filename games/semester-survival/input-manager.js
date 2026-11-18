@@ -20,12 +20,12 @@
     function isEditable(event){const el=event.target;return el&&((EDITABLE.has(el.tagName))||el.isContentEditable);}
     function onKeyDown(e){
       if(destroyed||isEditable(e))return;
-      const key=e.key;
+      const key=e.code==='Space'?'Space':e.key;
       if(Object.values(KEY).some(keys=>keys.includes(key))){e.preventDefault();}
       if(!pressed.has(key))justPressed.add(key);
       pressed.add(key);
     }
-    function onKeyUp(e){pressed.delete(e.key);}
+    function onKeyUp(e){pressed.delete(e.code==='Space'?'Space':e.key);}
     function onBlur(){pressed.clear();justPressed.clear();pointer=null;touchAxis=0;}
     function onPointerDown(e){
       if(destroyed||e.pointerType==='mouse')return;
