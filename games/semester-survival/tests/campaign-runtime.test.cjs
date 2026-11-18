@@ -69,3 +69,21 @@ test('rejects malformed event input', () => {
   const h = harness();
   assert.throws(() => h.runtime.recordEvent(null), /must include a type/);
 });
+
+
+test('assessment objectives count distinct course submissions only', () => {
+  const h = harness(8);
+  const seeded = { version: 1, semester: 8, chapterIndex: 1, progress: {}, completed: [], revision: 0 };
+  h.map.set(globalThis.SemesterCampaignRuntime.saveKey, JSON.stringify(seeded));
+  const runtime = globalThis.SemesterCampaignRuntime.create({
+    lifeEngine: h.life,
+    storage: { getItem: k => h.map.get(k) || null, setItem: (k,v) => h.map.set(k,v) }
+  });
+  runtime.recordEvent({ type: 'assessment:submitted', assessment: 'cat', courseIndex: 0 });
+  runtime.recordEvent({ type: 'assessment:submitted', assessment: 'cat', courseIndex: 0 });
+  assert.equal(runtime.getState().steps[0].count, 1);
+  for (let courseIndex = 1; courseIndex < 5; courseIndex += 1) {
+    runtime.recordEvent({ type: 'assessment:submitted', assessment: 'cat', courseIndex });
+  }
+  assert.equal(runtime.getState().steps[0].complete, true);
+});
