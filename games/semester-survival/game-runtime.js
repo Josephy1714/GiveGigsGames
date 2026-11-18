@@ -25,13 +25,14 @@
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
   if(!options.assetManifest||!options.sceneManifest||!options.characterAtlas)fail('Adventure runtime requires credited local scene assets, authored scene layouts and a real character atlas. No placeholder art will be generated.');
-  let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null;
+  let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null,pauseButton=null;
   function make(tag,cls,parent){const el=doc.createElement(tag);if(cls)el.className=cls;if(parent)parent.appendChild(el);return el;}
   if(!shell){shell=make('section','ss-adventure-shell',host);shell.setAttribute('aria-label','Semester Survival adventure');}
   if(!canvas)canvas=make('canvas','ss-adventure-shell__canvas',shell);
   if(!campaignRoot)campaignRoot=make('div','ss-campaign-ui',shell);
   if(!interactionRoot)interactionRoot=make('div','ss-interaction-ui',shell);
   if(!phoneRoot)phoneRoot=make('div','ss-adventure-shell__phone',shell);
+  if(options.pauseControl!==false){pauseButton=make('button','ss-adventure-shell__pause',shell);pauseButton.type='button';pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause game');}
   const input=modules.input.createInputManager(options.inputTarget||shell,options.inputOptions||{});
   const renderer=modules.renderer.create({canvas:canvas,maxDevicePixelRatio:options.maxDevicePixelRatio||2});
   const life=modules.life.createEngine(storage);
@@ -72,6 +73,9 @@
   phoneUI=modules.phoneUI.mount(phoneRoot,phone);
   campaignUI=modules.campaignUI.create({root:campaignRoot,document:doc,campaignRuntime:campaign});
   interactionUI=modules.interactionUI.create({root:interactionRoot,document:doc,interactionRuntime:interaction,getPlayerPosition:getPosition});
+  function syncPauseButton(){if(!pauseButton)return;const paused=lifecycle==='paused';pauseButton.textContent=paused?'▶':'Ⅱ';pauseButton.setAttribute('aria-label',paused?'Resume game':'Pause game');pauseButton.setAttribute('aria-pressed',String(paused));}
+  function togglePause(){if(lifecycle==='running')pause();else if(lifecycle==='paused')resume();}
+  if(pauseButton)pauseButton.addEventListener('click',togglePause);
   function resize(){
    if(disposed)return null;
    const rect=host.getBoundingClientRect?host.getBoundingClientRect():{width:host.clientWidth||canvas.clientWidth||800,height:host.clientHeight||canvas.clientHeight||600};
@@ -136,7 +140,7 @@
     resize();
     character.render();
     interaction.refresh(getPosition());
-    lifecycle='running';input.setContext({paused:false});refreshUI();
+    lifecycle='running';input.setContext({paused:false});syncPauseButton();refreshUI();
     if(options.autoLoop!==false)startLoop();
     publish({type:'game:started',district:initialDistrict,semester:life.getState().campaign.semester},'runtime');
     return getState();
@@ -154,12 +158,12 @@
   }
   function pause(){
    if(lifecycle!=='running')return getState();
-   lifecycle='paused';stopFrameLoop();input.setContext({paused:true});publish({type:'game:paused'},'runtime');return getState();
+   lifecycle='paused';stopFrameLoop();input.setContext({paused:true});syncPauseButton();publish({type:'game:paused'},'runtime');return getState();
   }
   function resume(){
    if(disposed)fail('Adventure runtime has been disposed.');
    if(lifecycle!=='paused')return getState();
-   lifecycle='running';input.consume();input.setContext({paused:false});lastFrameTime=0;startLoop();publish({type:'game:resumed'},'runtime');return getState();
+   lifecycle='running';input.consume();input.setContext({paused:false});syncPauseButton();lastFrameTime=0;startLoop();publish({type:'game:resumed'},'runtime');return getState();
   }
   function submitAssessment(courseIndex,type,score){
    const result=life.submitAssessment(courseIndex,type,score);
@@ -192,7 +196,9 @@
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
    doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
-   phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();phone.destroy();services.destroy();
+   phone.destroy();services.destroy();phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
+   if(pauseButton)pauseButton.removeEventListener('click',togglePause);
+   phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
    if(character)character.dispose();else input.destroy();
    subscribers.clear();if(options.removeShellOnDestroy!==false&&shell&&shell.parentNode)shell.parentNode.removeChild(shell);
   }
