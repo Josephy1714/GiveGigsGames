@@ -51,3 +51,9 @@ The renderer letterboxes the authored scene viewport, caps device pixel ratio, c
 ## Student phone and academic portal
 
 `university-services.js` owns persisted coursework deadlines, submission lifecycle, authored inbox messages and notifications; it calls the life engine for actual course registration and assignment results. The life engine owns the active semester catalogue, prerequisite-aware registration, academic progress and a finance transaction ledger. `student-phone-runtime.js` exposes those services to the phone UI and forwards domain events. The host must forward dialogue, assessment and travel events into `phone.receiveEvent`, and route service events to campaign progression. `student-phone-ui.js` is a host-mounted, accessible and responsive overlay; Tab intent is already reserved by the input manager and `phoneOpen` blocks world movement. See [Student Phone](STUDENT_PHONE.md) for validation, data ownership and lifecycle.
+
+## Central adventure composition root
+
+`game-runtime.js` composes the browser game lifecycle and owns the requestAnimationFrame loop, event bus, pause/resume, visibility pause, travel transactions, UI mounting and disposal. It routes successful domain events once to university services and campaign progression. It requires a complete credited local scene manifest and authored character atlas before starting; missing art is a hard readiness failure, never a reason to invent placeholders. See [Game Runtime](GAME_RUNTIME.md).
+
+Coursework remains entirely inside the game. Players complete authored work sessions and submit using an in-game action. No PDF, Word document, file picker, attachment, external LMS or real-world upload is part of the design.
