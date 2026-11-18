@@ -17,4 +17,10 @@ Target stable 60 FPS on desktop and usable performance on mid-range phones. Cap 
 
 ## Environment scene orchestration
 
-`environment-runtime.js` owns district entry, reciprocal-route enforcement, spawn selection, scene mounting, interaction-anchor validation and environment diagnostics. The renderer supplies authored scene assets through a manifest; the runtime never fabricates missing environments or interaction anchors. A district may be present in world design while remaining unavailable in play until its authored scene is delivered. Integration tests must cover failed mounts, route restrictions, spawn validation and unavailable interactions.
+`environment-runtime.js` owns district entry, reciprocal-route enforcement, spawn selection, scene mounting, interaction-anchor validation and diagnostics. It requires an injected `scene-assets.js` pipeline. Every authored scene must declare one or more `requiredAssetIds`, and each ID must belong to that district in the validated asset manifest.
+
+District entry is asynchronous: `enter(districtId, options)` first validates the route and spawn, then awaits `prepareDistrict(districtId)`. Preparation preloads the district's local images, verifies the pipeline reports every required image as loaded, and confirms each asset is retrievable from the decoded cache. Only then may the renderer mount the scene. Renderer mounting is awaited; a failed mount leaves the previous logical district active. Concurrent transitions are rejected.
+
+A district without a scene manifest remains unavailable. A scene with missing or corrupt artwork reports a failed readiness state and cannot be entered. The runtime does not fabricate fallback scenes, assets, interaction anchors or spawn points. A district can be present in world design while remaining unavailable in play until its complete authored scene is delivered.
+
+Tests must cover asset ownership, missing/corrupt art, readiness gating, route/spawn checks, overlapping transitions, async renderer failures and unavailable interactions.
