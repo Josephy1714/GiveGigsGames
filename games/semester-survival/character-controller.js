@@ -30,7 +30,7 @@
       landTime: 0, landStrength: 0,
       gaitPhase: 0, stride: 0, speed: 0,
       blend: { walk: 0, jog: 0, sprint: 0, air: 0, slide: 0 },
-      actionLocked: false
+      actionLocked: false, takeoffFrame: false
     };
 
     function transition(next, reason) {
@@ -80,13 +80,15 @@
         c.grounded = false;
         c.coyote = 0;
         c.jumpBuffer = 0;
+        c.takeoffFrame = true;
         transition('jump-takeoff', 'jump-input');
       }
 
       if (!c.grounded) {
         c.vy = Math.max(-CONFIG.terminalFallSpeed, c.vy - CONFIG.gravity * dt);
         c.y += c.vy * dt;
-        if (c.vy < -0.1 && c.state !== 'jump-fall') transition('jump-fall', 'descending');
+        if (c.takeoffFrame) c.takeoffFrame = false;
+        else if (c.vy < -0.1 && c.state !== 'jump-fall') transition('jump-fall', 'descending');
         else if (c.vy > 0.1 && c.state !== 'jump-rise') transition('jump-rise', 'ascending');
         else if (Math.abs(c.vy) <= 0.45 && c.vy >= 0 && c.state !== 'jump-apex') transition('jump-apex', 'apex');
         if (c.y <= 0) {
@@ -156,7 +158,7 @@
       c.x = Number(position && position.x) || 0;
       c.y = 0; c.vx = 0; c.vy = 0; c.grounded = true;
       c.stamina = 100; c.slideTime = 0; c.slideCooldown = 0;
-      c.dodgeTime = 0; c.jumpBuffer = 0; c.coyote = CONFIG.coyoteTime;
+      c.dodgeTime = 0; c.jumpBuffer = 0; c.coyote = CONFIG.coyoteTime; c.takeoffFrame = false;
       c.landTime = 0; c.state = 'idle'; c.previousState = 'idle';
       c.gaitPhase = 0; c.stride = 0; c.speed = 0;
       Object.keys(c.blend).forEach(k => { c.blend[k] = 0; });
