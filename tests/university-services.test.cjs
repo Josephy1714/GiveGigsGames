@@ -25,7 +25,16 @@ test('assignment deadlines persist and submissions update academic records',()=>
  assert.equal(restored.getSnapshot().assignments.find(a=>a.id===first.id).status,'submitted');
  assert.throws(()=>restored.submitAssignment(first.id),/already been submitted/);
 });
-test('deadline reminders and late submission penalties are driven by simulation time',()=>{\n const {life,services,events}=setup(),assignment=services.getSnapshot().assignments[0];\n for(let i=0;i<10;i++)life.perform('sleep');\n assert.equal(services.getSnapshot().assignments.find(a=>a.id===assignment.id).status,'overdue');\n const result=services.submitAssignment(assignment.id);\n assert.equal(result.assignment.status,'submitted-late');\n assert.ok(result.assignment.score<=85);\n assert.ok(events.some(e=>e.type==='assignment:overdue'));\n});\ntest('dialogue and assessment events create authored inbox messages',()=>{
+test('deadline reminders and late submission penalties are driven by simulation time',()=>{
+ const {life,services,events}=setup(),assignment=services.getSnapshot().assignments[0];
+ for(let i=0;i<10;i++)life.perform('sleep');
+ assert.equal(services.getSnapshot().assignments.find(a=>a.id===assignment.id).status,'overdue');
+ const result=services.submitAssignment(assignment.id);
+ assert.equal(result.assignment.status,'submitted-late');
+ assert.ok(result.assignment.score<=85);
+ assert.ok(events.some(e=>e.type==='assignment:overdue'));
+});
+test('dialogue and assessment events create authored inbox messages',()=>{
  const {services}=setup();
  services.receive({type:'dialogue:opened',characterId:'amina'});
  services.receive({type:'dialogue:opened',characterId:'amina'});
