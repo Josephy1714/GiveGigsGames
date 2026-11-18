@@ -37,6 +37,7 @@ test('deadline reminders and late submission penalties are driven by simulation 
  const result=services.submitAssignment(assignment.id);
  assert.equal(result.assignment.status,'submitted-late');
  assert.ok(result.assignment.score<=85);
+ assert.equal(life.getState().academics.courses.find(c=>c.id===assignment.courseId).assignmentPoints,result.assignment.score);
  assert.ok(events.some(e=>e.type==='assignment:overdue'));
 });
 test('finance ledger records real spending and earnings',()=>{
