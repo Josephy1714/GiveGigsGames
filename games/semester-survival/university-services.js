@@ -59,6 +59,7 @@
    const result=life.recordAssignmentSubmission(a.courseId,a.id,submittedScore);
    a.status=late?'submitted-late':'submitted';a.score=submittedScore;a.submittedAt=life.getState().calendar.totalMinutes;persist();
    notify('Assignment submitted',a.title+' was submitted successfully.','success');
+   receive({type:'assignment:submitted',assignmentId:a.id,courseId:a.courseId,score:a.score,late:late});
    emit({type:'assignment:submitted',assignmentId:a.id,courseId:a.courseId,score:a.score,late:late});
    return {assignment:clone(a),result:result};
   }
