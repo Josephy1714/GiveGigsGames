@@ -57,8 +57,8 @@
       { id: 'plan-income', title: 'Plan your earnings', description: 'Review your budget after earning money.', match: { type: 'budget:reviewed' } }
     ],
     's3-deadlines': [
-      { id: 'assignment-one', title: 'Work on assignment one', description: 'Make progress on a course assignment.', match: { type: 'interaction:completed', activity: 'assignment' } },
-      { id: 'assignment-two', title: 'Work on another assignment', description: 'Complete another assignment work session.', match: { type: 'interaction:completed', activity: 'assignment' }, requiredCount: 2 }
+      { id: 'assignment-work', title: 'Prepare two assignments', description: 'Complete two focused assignment work sessions.', match: { type: 'interaction:completed', activity: 'assignment' }, requiredCount: 2 },
+      { id: 'assignment-submit', title: 'Submit both assignments', description: 'Record two distinct assignment submissions before their deadlines.', match: { type: 'assignment:submitted' }, requiredCount: 2, uniqueBy: 'assignmentId' }
     ],
     's4-results': [
       { id: 'results', title: 'Review your academic record', description: 'Open the academic results review in the student phone.', match: { type: 'academics:reviewed' } },
