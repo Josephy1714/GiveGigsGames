@@ -343,6 +343,7 @@
         course.assignmentScoreTotal=(course.assignmentScoreTotal||0)+points;
         course.assignmentCount=(course.assignmentCount||0)+1;
         course.assignmentPoints=Number((course.assignmentScoreTotal/course.assignmentCount).toFixed(1));
+        course.assignmentProgress=clamp((course.assignmentProgress||0)-30,0,100);
         addJournal(s,'Assignment submitted for '+course.name+'.');
         return {courseId:courseId,assignmentId:assignmentId,assignmentPoints:course.assignmentPoints};
       });
