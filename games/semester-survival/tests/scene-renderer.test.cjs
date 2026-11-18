@@ -85,3 +85,15 @@ test('supports canvases without a writable style property and requires resize be
   renderer.mountScene('campus-main', { district: 'campus', scene, assets });
   assert.equal(renderer.render().drawnLayers, 2);
 });
+
+test('exposes immutable authored hotspot bounds for interaction proximity', () => {
+  const { canvas } = fakeCanvas();
+  const renderer = api.create({ canvas });
+  renderer.resize(960, 540, 1);
+  renderer.mountScene('campus-main', { district: 'campus', scene, assets });
+  const bounds = renderer.getHotspotBounds('library-door');
+  assert.deepEqual({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, centerX: bounds.centerX, centerY: bounds.centerY },
+    { x: 600, y: 400, width: 180, height: 260, centerX: 690, centerY: 530 });
+  assert.equal(Object.isFrozen(bounds), true);
+  assert.equal(renderer.getHotspotBounds('missing'), null);
+});
