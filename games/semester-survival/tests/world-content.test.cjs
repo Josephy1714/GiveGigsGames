@@ -1,0 +1,10 @@
+'use strict';
+const assert = require('node:assert/strict');
+const world = require('../world-content.js');
+assert.equal(world.validate(), true);
+assert.deepEqual(Object.keys(world.districts).sort(), ['campus','city','residence','township']);
+assert.equal(world.semesterArcs.length, 8);
+assert.ok(world.semesterArcs.every((arc, i) => arc.semester === i + 1 && arc.chapters.length >= 3));
+assert.equal(world.characters.amina.name, 'Amina');
+assert.ok(world.districts.township.places.some(place => place.id === 'mama-njeri-kiosk'));
+console.log('world-content tests passed');
