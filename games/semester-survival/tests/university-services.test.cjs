@@ -11,7 +11,7 @@ function setup(){
 test('course registration enforces unique selection, credit limits and a single add-drop action',()=>{
  const {life,services,events}=setup(),catalog=life.getState().academics.catalog;
  const ids=[catalog[0].id,catalog[1].id,catalog[2].id,catalog[3].id,catalog[5].id];
- assert.throws(()=>services.registerCourses([ids[0],ids[0],ids[1]]),/twice/);
+ assert.throws(()=>services.registerCourses([ids[0],ids[0],ids[2],ids[3],ids[4]]),/twice/);
  assert.throws(()=>services.registerCourses(ids.slice(0,4)),/five courses/);
  services.registerCourses(ids);assert.equal(life.getState().academics.courses.length,5);
  assert.equal(services.getSnapshot().credits,15);assert.ok(events.some(e=>e.type==='courses:registered'));
