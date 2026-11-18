@@ -8,18 +8,20 @@ function setup(){
  const services=global.SemesterUniversityServices.create({lifeEngine:life,storage:store,onEvent:e=>events.push(e)});
  return{life,services,events,store};
 }
-test('course registration enforces unique course selection and credit limits',()=>{
- const {life,services,events}=setup(),ids=life.getState().academics.courses.slice(0,3).map(c=>c.id);
- services.registerCourses(ids);assert.equal(life.getState().academics.courses.length,3);
- assert.equal(services.getSnapshot().credits,9);assert.ok(events.some(e=>e.type==='courses:registered'));
+test('course registration enforces unique selection, credit limits and a single add-drop action',()=>{
+ const {life,services,events}=setup(),catalog=life.getState().academics.catalog;
+ const ids=[catalog[0].id,catalog[1].id,catalog[5].id];
  assert.throws(()=>services.registerCourses([ids[0],ids[0],ids[1]]),/twice/);
  assert.throws(()=>services.registerCourses(ids.slice(0,2)),/three and five/);
+ services.registerCourses(ids);assert.equal(life.getState().academics.courses.length,3);
+ assert.equal(services.getSnapshot().credits,9);assert.ok(events.some(e=>e.type==='courses:registered'));
+ assert.throws(()=>life.registerCourses(ids),/locked/);
 });
 test('assignment deadlines persist and submissions update academic records',()=>{
  const {life,services,store,events}=setup(),first=services.getSnapshot().assignments[0];
  const submitted=services.submitAssignment(first.id);
  assert.equal(submitted.assignment.status,'submitted');
- assert.ok(life.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
+ assert.ok(life.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);\n const reloaded=global.SemesterLifeSystems.createEngine(store);assert.ok(reloaded.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
  assert.ok(events.some(e=>e.type==='assignment:submitted'));
  const restored=global.SemesterUniversityServices.create({lifeEngine:life,storage:store});
  assert.equal(restored.getSnapshot().assignments.find(a=>a.id===first.id).status,'submitted');
