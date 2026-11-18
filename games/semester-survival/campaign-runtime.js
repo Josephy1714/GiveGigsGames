@@ -117,8 +117,8 @@
       { id: 'feedback', title: 'Respond to feedback', description: 'Consult Dr. Mwangi.', match: { type: 'dialogue:opened', characterId: 'mwangi' } }
     ],
     's8-finals': [
-      { id: 'cat', title: 'Complete outstanding CATs', description: 'Record CAT results across your courses.', match: { type: 'assessment:submitted', assessment: 'cat' }, requiredCount: 5 },
-      { id: 'exams', title: 'Complete final exams', description: 'Record exam results across your courses.', match: { type: 'assessment:submitted', assessment: 'exam' }, requiredCount: 5 }
+      { id: 'cat', title: 'Complete outstanding CATs', description: 'Record CAT results across your courses.', match: { type: 'assessment:submitted', assessment: 'cat' }, requiredCount: 5, uniqueBy: 'courseIndex' },
+      { id: 'exams', title: 'Complete final exams', description: 'Record exam results across your courses.', match: { type: 'assessment:submitted', assessment: 'exam' }, requiredCount: 5, uniqueBy: 'courseIndex' }
     ],
     's8-future': [
       { id: 'future', title: 'Prepare for what comes next', description: 'Attend an interview or record a graduation preparation event.', matchAny: [
@@ -151,7 +151,8 @@
       try {
         const saved = JSON.parse(storage.getItem(SAVE_KEY) || 'null');
         if (!saved || saved.version !== SAVE_VERSION || !Number.isInteger(saved.semester) ||
-            !Number.isInteger(saved.chapterIndex) || !Array.isArray(saved.completed) ||
+            !Number.isInteger(saved.chapterIndex) || saved.semester < 1 || saved.semester > 8 ||
+            saved.chapterIndex < 0 || saved.chapterIndex > (world.semesterArcs[saved.semester - 1] || { chapters: [] }).chapters.length || !Array.isArray(saved.completed) ||
             !saved.progress || typeof saved.progress !== 'object') return false;
         state = saved;
         return true;
@@ -180,13 +181,13 @@
     function getState() {
       syncSemester();
       const chapter = currentChapter();
-      if (!chapter) return Object.freeze({ semester: state.semester, chapterIndex: state.chapterIndex, chapter: null, steps: [], completed: state.completed.slice(), campaignComplete: state.semester === 8 });
+      if (!chapter) return Object.freeze({ semester: state.semester, chapterIndex: state.chapterIndex, chapter: null, steps: [], completed: state.completed.slice(), campaignComplete: state.semester === 8, semesterObjectivesComplete: true });
       const steps = stepsFor(chapter);
       return Object.freeze({
         semester: state.semester, chapterIndex: state.chapterIndex, chapter: clone(chapter),
         steps: clone(steps), completed: state.completed.slice(),
         completedSteps: steps.filter(function (step) { return step.complete; }).length,
-        totalSteps: steps.length, campaignComplete: false
+        totalSteps: steps.length, campaignComplete: false, semesterObjectivesComplete: false
       });
     }
     function recordEvent(event) {
@@ -202,7 +203,12 @@
         const rules = step.matchAny || (step.match ? [step.match] : []);
         if (!rules.some(function (rule) { return matches(event, rule); })) return;
         if (!state.progress[chapter.id]) state.progress[chapter.id] = {};
-        const progress = state.progress[chapter.id][step.id] || { count: 0, complete: false };
+        const progress = state.progress[chapter.id][step.id] || { count: 0, complete: false, seen: [] };
+        if (step.uniqueBy) {
+          const uniqueValue = event[step.uniqueBy];
+          if (uniqueValue === undefined || uniqueValue === null || progress.seen.includes(uniqueValue)) return;
+          progress.seen.push(uniqueValue);
+        }
         progress.count = Math.min(step.requiredCount || 1, progress.count + 1);
         progress.complete = progress.count >= (step.requiredCount || 1);
         state.progress[chapter.id][step.id] = progress;
