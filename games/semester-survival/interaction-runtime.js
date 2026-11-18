@@ -125,6 +125,7 @@
       if (!dialogue) return false;
       const characterId = dialogue.characterId;
       dialogue = null;
+      nearby = null;
       setDialogueContext(false);
       const event = Object.freeze({ type: 'dialogue:closed', characterId: characterId });
       onEvent(event);
