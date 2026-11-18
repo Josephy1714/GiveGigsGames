@@ -176,7 +176,9 @@
         if (!raw) return false;
         const parsed = JSON.parse(raw);
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
-        parsed.relationships = parsed.relationships || {};\n        parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);\n        parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
+        parsed.relationships = parsed.relationships || {};
+        parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);
+        parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
           coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
@@ -312,7 +314,10 @@
       if (new Set(courseIds).size !== courseIds.length) throw new Error('A course cannot be registered twice.');
       const current = state.academics.courses;
       const available = (state.academics.catalog || current).reduce(function(map, course){ map[course.id]=course; return map; }, {});
-      if (courseIds.some(function(courseId){ return !available[courseId]; })) throw new Error('One or more selected courses are not available in this semester catalogue.');\n      const completed = state.academics.transcript.map(function(result){return result.id;});\n      const blocked = courseIds.find(function(courseId){return (available[courseId].prerequisites||[]).some(function(required){return !completed.includes(required);});});\n      if (blocked) throw new Error('A prerequisite has not been completed for '+available[blocked].name+'.');
+      if (courseIds.some(function(courseId){ return !available[courseId]; })) throw new Error('One or more selected courses are not available in this semester catalogue.');
+      const completed = state.academics.transcript.map(function(result){return result.id;});
+      const blocked = courseIds.find(function(courseId){return (available[courseId].prerequisites||[]).some(function(required){return !completed.includes(required);});});
+      if (blocked) throw new Error('A prerequisite has not been completed for '+available[blocked].name+'.');
       const credits = courseIds.reduce(function(total, courseId){ return total + available[courseId].credits; }, 0);
       if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
       return commit(function(s){
@@ -368,7 +373,8 @@
           s.campaign.ending = gpa >= 3.5 && s.condition.wellbeing >= 45 ? 'honours-and-wellbeing' : gpa >= 2 ? 'resilient-graduate' : 'hard-earned-graduate';
         } else {
           s.campaign.semester += 1;
-          s.academics.catalog = makeCourseCatalog(s.campaign.semester);\n          s.academics.courses = makeCourses(s.campaign.semester);
+          s.academics.catalog = makeCourseCatalog(s.campaign.semester);
+          s.academics.courses = makeCourses(s.campaign.semester);
           s.calendar.week = 1;
           s.calendar.dayIndex = 0;
           s.calendar.minuteOfDay = 7 * 60;
