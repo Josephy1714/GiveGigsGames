@@ -34,6 +34,12 @@ test('deadline reminders and late submission penalties are driven by simulation 
  assert.ok(result.assignment.score<=85);
  assert.ok(events.some(e=>e.type==='assignment:overdue'));
 });
+test('finance ledger records real spending and earnings',()=>{
+ const {life}=setup();life.travel('township');life.perform('eat');life.perform('work');
+ const ledger=life.getState().finances.transactions;
+ assert.equal(ledger.length,2);assert.equal(ledger[0].type,'expense');assert.equal(ledger[1].type,'income');
+ assert.equal(ledger[0].balance,2380);assert.equal(ledger[1].balance,2830);
+});
 test('dialogue and assessment events create authored inbox messages',()=>{
  const {services}=setup();
  services.receive({type:'dialogue:opened',characterId:'amina'});
