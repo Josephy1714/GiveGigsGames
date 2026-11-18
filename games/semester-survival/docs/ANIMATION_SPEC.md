@@ -1,23 +1,114 @@
-# Animation Specification
+# Animation Production Specification
+
+This document defines a release-blocking quality standard. Movement is a core part of the game's identity. A character that merely changes poses or glides across the floor is not acceptable.
+
+## Animation principles
+- Motion must communicate weight, intent, balance, momentum and contact with the ground.
+- Every locomotion action has anticipation, execution, follow-through and recovery where physically appropriate.
+- The same character must preserve anatomy, proportions, costume, face and drawing style across all frames and camera angles.
+- Character animation is authored and reviewed as animation, not inferred from a static illustration.
+- Runtime must blend authored motion cleanly; procedural code may control timing, direction and secondary response but must not substitute for missing character artwork.
 
 ## Required movement states
-Idle, walk, jog, sprint, start, stop, turn-left, turn-right, jump-anticipation, jump-rise, jump-apex, jump-fall, land, slide-start, slide-loop, slide-recover, interact, sit, study, stumble, hit-reaction and rest.
+Idle, idle variants, walk, jog, sprint, acceleration, deceleration, start, stop, turn-left, turn-right, pivot, jump-anticipation, jump-takeoff, jump-rise, jump-apex, jump-fall, land-soft, land-hard, slide-start, slide-loop, slide-recover, crouch, dodge-left, dodge-right, stumble, trip-recovery, hit-reaction, interact, pickup, open-door, sit, stand, study, rest and transition-to/from-stairs.
 
-Transitions are authored and interruptible where sensible. Never snap from full sprint to idle without deceleration or deliberate interruption.
+State transitions must be authored, interruptible where sensible and selected from actual movement intent and grounded/airborne state. Never snap from full sprint to idle without deceleration or a deliberate interruption.
 
-## Locomotion
-- Walk: alternating foot plants, readable hip shift and counter-swinging arms.
-- Run: increased cadence, forward lean and feet that do not visibly skate.
-- Sprint: stronger forward intent, longer stride, increased secondary motion and controlled recovery on release.
-- Turn: plant outside foot, rotate hips/torso, redirect stride.
-- Jump: anticipation/compression, takeoff, rise, apex, fall, contact, landing compression and recovery.
-- Slide: lower centre of mass before travel; maintain contact/friction; rise through recovery.
-- Collision: directional anticipation/recoil, balance recovery and return to locomotion.
+## Leg mechanics and locomotion quality
 
-## Secondary motion
+### Walk
+- Clear alternating left/right foot plants with heel-to-toe roll where visible.
+- Opposite arm and leg counter-swing; hips and shoulders rotate subtly in opposition.
+- Support leg carries the body while the swing leg passes through; pelvis rises and falls naturally.
+- Feet remain planted during stance. Do not translate a planted foot with the body.
+- Stride length and cadence respond to speed rather than changing only the playback rate.
+
+### Jog and run
+- Distinct gait from walking: shorter ground contact, increased cadence, stronger arm drive and forward intent.
+- Foot strike, compression, push-off, flight and recovery are readable.
+- Knees lift and fold naturally; lower legs do not bicycle mechanically.
+- Keep the centre of mass over the support foot during contact. Prevent skating, toe clipping and feet passing through the ground.
+- Speed changes use acceleration/deceleration curves and blend stride length and cadence together.
+
+### Sprint
+- Stronger forward lean, more forceful push-off, longer stride and deliberate arm drive.
+- Shoulder, torso and pelvis respond to acceleration; head remains visually stable enough to read.
+- Backpack, shirt tails, hair and lanyard lag behind acceleration, then settle.
+- Releasing sprint triggers a believable deceleration and return to jog/walk, not an instant pose swap.
+
+### Starts, stops and turns
+- Start: weight shift, preparatory lean, first push-off and transition into the gait cycle.
+- Stop: shorten stride, plant, absorb momentum and settle into idle.
+- Sharp turn: lower centre of mass, plant an outside foot, rotate hips then torso, redirect the next step.
+- Tight pivot and broad running turn are separate actions.
+- Direction changes must affect velocity and facing coherently; no sideways foot skating or instant 180-degree rotation at full speed.
+
+## Jumping
+A jump is a complete action, not a vertical position offset alone:
+1. Anticipation: compress knees, lower centre of mass and prepare arm swing.
+2. Takeoff: extend through ankles, knees and hips; feet leave the ground in a readable sequence.
+3. Ascent: body follows a coherent arc; legs tuck or extend according to jump style.
+4. Apex: brief reduction in vertical velocity; pose remains alive, not frozen.
+5. Descent: prepare legs for landing and orient feet toward the surface.
+6. Contact: feet meet the ground at the correct time; knees and hips absorb impact.
+7. Recovery: torso and arms settle before returning to locomotion.
+
+Jump height and horizontal travel must match gameplay physics. Short hops, full jumps and falling recoveries must not all use the same animation. Landing on a slope or from a higher drop must not visibly penetrate or float above the floor.
+
+## Sliding, crouching and dodging
+- Slide-start: lower centre of mass before forward travel, with a readable leg tuck and controlled arm placement.
+- Slide-loop: maintain a stable low silhouette and consistent ground relationship; clothing and backpack respond to momentum.
+- Slide-recover: transfer weight through a planted foot, rise in stages and regain balance before full-speed running.
+- Crouch is a sustained controlled pose, not a scaled-down character.
+- Dodge uses a lateral weight shift, foot plant, torso counter-rotation and recovery step. Directional dodge animations must be distinct.
+- Slide and dodge must respect collision geometry and cannot pass through obstacles unless the gameplay explicitly permits it.
+
+## Stairs and uneven ground
+- Use step-aware foot placement and alternating lead legs.
+- Body height changes with each step; feet contact each tread without clipping.
+- Transitions between flat ground, stairs and slopes preserve momentum and facing.
+- Do not fake stair climbing by sliding the whole character vertically.
+
+## Secondary motion and facial acting
 Hair, loose clothing, lanyards and backpack straps lag behind acceleration and settle after stopping. Motion is subtle, deterministic and attached to the body.
+- Secondary motion follows the primary action; it must not look detached or randomly oscillate.
+- Facial expression and gaze respond to exertion, surprise, conversation and recovery.
+- Breathing may change after sprinting or exertion. Avoid exaggerated loops at rest.
+- Hands, fingers, wrists and shoe contacts must remain coherent across frames.
 
-## Timing and quality
-Animation is frame-rate independent. Use delta time, clamp large frame gaps and blend states. Prioritize stable foot contact and silhouette readability. For frame-by-frame assets, document frame rate, frame count, pivot, canvas size and licence.
+## Runtime controller and blending
+- Use delta time, clamp unusually large frame gaps and keep simulation independent of render frame rate.
+- Drive gait from measured character speed and grounded state, not from a fixed timer.
+- Blend between walk/jog/sprint by speed with hysteresis to prevent rapid state flicker.
+- Use foot-contact windows or equivalent foot-locking logic to reduce sliding during stance.
+- Separate facing direction, movement direction and camera direction.
+- Keep collision capsule/shape stable and separate from visual squash, lean and pose offsets.
+- Airborne and grounded transitions must be driven by physics/contact state, not animation duration alone.
+- Pause or safely resume animation when the tab loses visibility.
 
-No limb popping, idle foot sliding, floating contact, sudden scale changes, floor clipping, backwards run cycles or mismatched proportions.
+## Production asset delivery
+For every animation clip, record:
+- Character and costume version; clip name and intended use.
+- Source artwork/rig file and responsible creator.
+- Frame rate or rig sampling rate, frame count/duration and loop points.
+- Canvas dimensions, pivot/origin, ground line, scale and export format.
+- Required transitions and blend duration.
+- Licence/permission, source and final runtime file path.
+- Preview showing the clip at actual gameplay camera scale.
+
+Frame-by-frame assets must have consistent registration and transparent backgrounds. Rigged assets must include documented skeleton hierarchy, skin weights, constraints and tested deformation limits. Do not mix methods casually within one character.
+
+## Quality assurance and acceptance tests
+A movement set is rejected if any of the following occurs:
+- Feet skate during planted contact or visibly pass through the floor.
+- Legs switch, pop, twist unnaturally or change length between frames.
+- The body floats, snaps, teleports or changes scale during a transition.
+- Sprint-to-stop, jump-to-land or slide-to-run transitions are abrupt.
+- The character loses costume, facial or body consistency between clips.
+- Animation looks convincing only in a static frame but fails at actual gameplay speed.
+- Camera framing hides contact points or makes the movement unreadable.
+
+Review every clip at slow speed, normal speed and actual gameplay camera scale. Test at low and high frame rates. Test keyboard and touch input, rapid direction changes, repeated jump/slide inputs, interrupted actions, slopes/stairs and collisions. Record defects and fix them before marking the clip accepted.
+
+## Release gate
+No movement feature is called complete until its authored animation, controller integration, transitions, collision behavior and in-game review all pass. A concept sheet, placeholder pose, procedural stick-figure or a single looping run cycle does not pass this gate.
