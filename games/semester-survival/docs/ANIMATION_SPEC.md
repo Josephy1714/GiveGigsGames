@@ -112,3 +112,38 @@ Review every clip at slow speed, normal speed and actual gameplay camera scale. 
 
 ## Release gate
 No movement feature is called complete until its authored animation, controller integration, transitions, collision behavior and in-game review all pass. A concept sheet, placeholder pose, procedural stick-figure or a single looping run cycle does not pass this gate.
+
+
+## Runtime implementation contract
+
+The runtime adapter lives in `character-animation.js` and consumes the locomotion snapshot from `character-controller.js`. It is an atlas player, not an art generator.
+
+### Atlas metadata contract
+
+A delivered character atlas must be accompanied by metadata with this shape:
+
+```js
+{
+  clips: {
+    "idle": {
+      fps: 8,
+      playback: "loop",
+      frames: [
+        { x: 0, y: 0, width: 128, height: 192, pivotX: 64, pivotY: 184 }
+      ]
+    }
+  }
+}
+```
+
+- Frame rectangles are pixel coordinates in the decoded atlas.
+- Pivot coordinates are relative to each frame's top-left corner; default pivot is bottom-centre.
+- Playback is `loop`, `once` or `pingpong`.
+- Clip names must match the state mapping in `character-animation.js`, or be explicitly mapped by the integration layer.
+- The runtime rejects malformed rectangles, invalid frame rates and atlas overflow before playback.
+- Clip transitions crossfade only between authored frames. Horizontal facing mirrors the rendered frame; directional actions such as dodge-left and dodge-right must still have distinct authored clips.
+- A missing clip is surfaced as a missing-asset result. There is deliberately no fallback pose, geometric character or generated animation.
+
+### Current implementation boundary
+
+The controller-to-atlas adapter, deterministic frame sampling, crossfade, facing and canvas draw path are implemented and unit-tested. This does **not** mean character animation production is complete: the approved character atlas, model sheet, actual movement clips, transition clips and in-game visual review are still required release gates. Do not mark a clip accepted until its source artwork and runtime preview have been reviewed at gameplay scale.
