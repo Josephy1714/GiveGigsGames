@@ -1,7 +1,7 @@
 /* Student phone UI — accessible, data-driven DOM view. */
 (function(root){
   'use strict';
-  const LABELS={home:'Overview',timetable:'Timetable',courses:'Courses',academics:'Academic record',assignments:'Coursework',assessments:'CATs & exams',finances:'Wallet',messages:'People',map:'District map'};
+  const LABELS={home:'Overview',timetable:'Timetable',courses:'Courses',academics:'Academic record',assignments:'Coursework',assessments:'CATs & exams',finances:'Wallet',messages:'Inbox & people',map:'District map'};
   function mount(host,phone){
     if(!host||!phone)throw new Error('Student phone UI requires a host and phone runtime.');
     const doc=host.ownerDocument||document, shell=doc.createElement('section');
@@ -27,7 +27,7 @@
         const p=panel('Weekly teaching schedule');s.timetable.forEach(item=>{const row=el('article','student-phone__item');row.append(el('strong','',item.day),el('span','',item.start+'–'+item.end+' · '+item.course),el('small','',item.location));p.appendChild(row);});
       }else if(s.section==='courses'){
         const p=panel('Course registration');const selected=new Set(s.academics.courses.map(c=>c.id));const checks=[];
-        s.academics.courses.forEach(course=>{const row=el('label','student-phone__item');const check=el('input','');check.type='checkbox';check.checked=true;check.value=course.id;check.addEventListener('change',()=>{if(check.checked)selected.add(course.id);else selected.delete(course.id);});row.append(check,el('strong','',course.id+' · '+course.name),el('span','',course.credits+' credits'));p.appendChild(row);checks.push(check);});
+        s.academics.courses.forEach(course=>{const row=el('label','student-phone__item');const check=el('input','');check.type='checkbox';check.checked=true;check.value=course.id;check.addEventListener('change',()=>{if(check.checked)selected.add(course.id);else selected.delete(course.id);});row.append(check,el('strong','',course.id+' · '+course.name),el('span','',course.credits+' credits'+(course.prerequisites.length?' · Prerequisite: '+course.prerequisites.join(', '):'')));p.appendChild(row);checks.push(check);});
         const save=el('button','student-phone__action','Confirm course load');save.type='button';save.addEventListener('click',()=>{try{phone.registerCourses(Array.from(selected));render();}catch(error){status.textContent=error.message;}});p.appendChild(save);
         const status=el('p','student-phone__note','Select 3–5 courses. Registration validates the active semester catalogue and 9–15 credit limit.');p.appendChild(status);
       }else if(s.section==='academics'){
