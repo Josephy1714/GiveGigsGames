@@ -7,7 +7,7 @@
   function create(options){
     options=options||{};
     const life=options.lifeEngine, world=options.world||root.SemesterWorldContent;
-    const input=options.inputManager||null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
+    const input=options.inputManager||null, services=options.universityServices||null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
     if(!life||typeof life.getState!=='function'||!world||!world.districts)throw new Error('Student phone requires the life engine and authored world.');
     let open=false, section='home', destroyed=false;
     const sections=['home','timetable','courses','academics','assignments','assessments','finances','messages','map'];
@@ -22,7 +22,7 @@
         condition:s.condition,finances:s.finances,academics:s.academics,
         timetable:life.getTimetable(),relationships:people,
         district:district?{id:s.location,title:district.title,exits:district.exits,places:district.places.map(p=>({id:p.id,name:p.name,actions:p.actions}))}:null,
-        journal:(s.journal||[]).slice(-12)
+        journal:(s.journal||[]).slice(-12),university:services?services.getSnapshot():null
       });
     }
     function setOpen(value){
@@ -41,14 +41,14 @@
       if(open&&next==='finances')onEvent(Object.freeze({type:'budget:reviewed',cash:life.getState().finances.cash}));
       return snapshot();
     }
-    function handleIntent(intent){
+    function receiveEvent(event){if(services)services.receive(event);onEvent(event);return snapshot();}\n    function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}\n    function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}\n    function markRead(id,kind){if(!services)throw new Error('University services are not connected.');return services.markRead(id,kind);}\n    function reply(id,message){if(!services)throw new Error('University services are not connected.');return services.reply(id,message);}\n    function handleIntent(intent){
       if(!intent)return snapshot();
       if(intent.phonePressed)toggle();
       if(intent.pausePressed&&open)setOpen(false);
       return snapshot();
     }
     function destroy(){if(destroyed)return;setOpen(false);destroyed=true;}
-    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,destroy:destroy,sections:sections.slice()});
+    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,receiveEvent:receiveEvent,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,destroy:destroy,sections:sections.slice()});
   }
   root.SemesterStudentPhone=Object.freeze({create:create});
 })(typeof window!=='undefined'?window:globalThis);
