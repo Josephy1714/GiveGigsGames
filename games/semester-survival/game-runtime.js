@@ -38,7 +38,7 @@
   const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes});
   let disposed=false, lifecycle='created',frameHandle=null,lastFrameTime=0,lastError=null,resizeHandler=null;
   const subscribers=new Set();
-  let services,campaign,phone,environment,interaction,character,phoneUI,campaignUI,interactionUI;
+  let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI;
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
   function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
