@@ -304,6 +304,34 @@
       });
     }
 
+    function registerCourses(courseIds) {
+      if (!Array.isArray(courseIds) || courseIds.length < 3 || courseIds.length > 5) throw new Error('Register between three and five courses.');
+      if (new Set(courseIds).size !== courseIds.length) throw new Error('A course cannot be registered twice.');
+      const current = state.academics.courses;
+      const available = current.reduce(function(map, course){ map[course.id]=course; return map; }, {});
+      if (courseIds.some(function(courseId){ return !available[courseId]; })) throw new Error('One or more selected courses are not available in this semester catalogue.');
+      const credits = courseIds.reduce(function(total, courseId){ return total + available[courseId].credits; }, 0);
+      if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
+      return commit(function(s){
+        const byId=s.academics.courses.reduce(function(map,course){map[course.id]=course;return map;},{});
+        s.academics.courses=courseIds.map(function(courseId){return byId[courseId];});
+        addJournal(s,'Course registration updated: '+courseIds.length+' courses, '+credits+' credits.');
+        return {courseIds:courseIds.slice(),credits:credits};
+      });
+    }
+
+    function recordAssignmentSubmission(courseId, assignmentId, points) {
+      if (typeof courseId !== 'string' || !courseId || typeof assignmentId !== 'string' || !assignmentId) throw new Error('Course and assignment identifiers are required.');
+      if (!Number.isFinite(points) || points < 0 || points > 100) throw new Error('Assignment score must be between 0 and 100.');
+      return commit(function(s){
+        const course=s.academics.courses.find(function(item){return item.id===courseId;});
+        if(!course)throw new Error('That course is not currently registered.');
+        course.assignmentPoints=clamp(course.assignmentPoints+points,0,100);
+        addJournal(s,'Assignment submitted for '+course.name+'.');
+        return {courseId:courseId,assignmentId:assignmentId,assignmentPoints:course.assignmentPoints};
+      });
+    }
+
     function submitAssessment(courseIndex, type, score) {
       if (type !== 'cat' && type !== 'exam') throw new Error('Assessment must be CAT or exam.');
       if (!Number.isInteger(courseIndex) || courseIndex < 0 || courseIndex >= state.academics.courses.length) throw new Error('Invalid course.');
@@ -357,7 +385,7 @@
     load();
     return Object.freeze({
       getState: getState, save: save, load: load, travel: travel, perform: perform,
-      submitAssessment: submitAssessment, recordRelationship: recordRelationship, completeSemester: completeSemester,
+      submitAssessment: submitAssessment, registerCourses: registerCourses, recordAssignmentSubmission: recordAssignmentSubmission, recordRelationship: recordRelationship, completeSemester: completeSemester,
       getTimetable: getTimetable, activities: clone(ACTIVITIES), days: DAYS.slice(),
       saveKey: SAVE_KEY
     });
