@@ -21,7 +21,8 @@ test('assignment deadlines persist and submissions update academic records',()=>
  const {life,services,store,events}=setup(),first=services.getSnapshot().assignments[0];
  const submitted=services.submitAssignment(first.id);
  assert.equal(submitted.assignment.status,'submitted');
- assert.ok(life.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);\n const reloaded=global.SemesterLifeSystems.createEngine(store);assert.ok(reloaded.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
+ assert.ok(life.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
+ const reloaded=global.SemesterLifeSystems.createEngine(store);assert.ok(reloaded.getState().academics.courses.find(c=>c.id===first.courseId).assignmentPoints>0);
  assert.ok(events.some(e=>e.type==='assignment:submitted'));
  const restored=global.SemesterUniversityServices.create({lifeEngine:life,storage:store});
  assert.equal(restored.getSnapshot().assignments.find(a=>a.id===first.id).status,'submitted');
