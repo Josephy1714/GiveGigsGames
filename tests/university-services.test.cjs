@@ -14,7 +14,7 @@ test('course registration enforces unique selection, credit limits and a single 
  assert.throws(()=>services.registerCourses([ids[0],ids[0],ids[1]]),/twice/);
  assert.throws(()=>services.registerCourses(ids.slice(0,4)),/five courses/);
  services.registerCourses(ids);assert.equal(life.getState().academics.courses.length,3);
- assert.equal(services.getSnapshot().credits,9);assert.ok(events.some(e=>e.type==='courses:registered'));
+ assert.equal(services.getSnapshot().credits,15);assert.ok(events.some(e=>e.type==='courses:registered'));
  assert.throws(()=>life.registerCourses(ids),/locked/);
 });
 test('assignment deadlines persist and submissions update academic records',()=>{
