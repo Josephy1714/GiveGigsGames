@@ -16,10 +16,12 @@ For every final asset record exact path, author/source, licence, original URL, e
 
 The scene asset pipeline validates and preloads authored local images declared by a version-1 manifest. Each asset needs a unique ID, safe relative path, supported role (`background`, `layer`, `prop`, `character-atlas`), exact pixel dimensions, a maximum byte budget, and author/licence attribution. Remote URLs, absolute paths, traversal paths, duplicate IDs and uncredited assets are rejected.
 
+Each district scene manifest supplied to `environment-runtime.js` must declare a non-empty `requiredAssetIds` array. Every required ID must exist in the asset pipeline manifest and belong to that same district. This prevents a district from borrowing another district's asset to satisfy readiness.
+
 Example shape (illustrative only; it does not claim these files exist):
 
 ```js
-{
+const sceneAssets = {
   version: 1,
   scenes: {
     residence: {
@@ -34,7 +36,18 @@ Example shape (illustrative only; it does not claim these files exist):
       }]
     }
   }
-}
+};
+
+const sceneManifest = {
+  residence: {
+    sceneId: "residence-main",
+    requiredAssetIds: ["residence-room-background"],
+    spawnPoints: { default: "room-entry" },
+    interactables: {}
+  }
+};
 ```
 
-Preloading verifies decoded image dimensions and reports failures explicitly. A scene is not ready when any required image fails; no substitute image is generated. Declared byte budgets must also be checked against actual repository file sizes during release validation.
+Preloading verifies decoded image dimensions and reports failures explicitly. `environment-runtime.js` awaits this preload and verifies required assets are retrievable before asking the renderer to mount a district. A failed preload or mount does not activate the destination scene. No substitute image is generated. Declared byte budgets must also be checked against actual repository file sizes during release validation.
+
+No real district artwork has been supplied yet; the schema above is illustrative, not a claim that these image files exist or that any district is currently playable.
