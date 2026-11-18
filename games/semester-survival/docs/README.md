@@ -29,4 +29,4 @@ This directory is the production source of truth. Implementation decisions must 
 8. Never claim an asset is hand-drawn, animated or licensed unless its production/source supports that claim.
 9. Mark prototypes clearly; do not present placeholders as finished content.
 
-- STUDENT_PHONE.md — student phone, academic portal sections, data provenance and host integration.
+- STUDENT_PHONE.md — student phone, academic portal, registration, deadlines, inbox, notifications, finance ledger and host integration.
