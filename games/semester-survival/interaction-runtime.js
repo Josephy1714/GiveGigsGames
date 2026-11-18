@@ -34,6 +34,7 @@
     const input = options.inputManager || null;
     const onEvent = typeof options.onEvent === 'function' ? options.onEvent : function () {};
     const onTravel = typeof options.onTravel === 'function' ? options.onTravel : null;
+    const onPhone = typeof options.onPhone === 'function' ? options.onPhone : null;
     const npcAnchors = options.npcAnchors || {};
     const radius = Number.isFinite(options.interactionRadius) && options.interactionRadius > 0 ? options.interactionRadius : 72;
     if (!world || !world.districts || !environment || typeof environment.getPlaces !== 'function') fail('World content and environment runtime are required.');
@@ -54,9 +55,11 @@
       const list = [];
       environment.getPlaces().forEach(function (place) {
         if (!place.available || !place.anchor) return;
+        const actions = place.actions.filter(function(action){return Boolean(ACTIVITY_BY_ACTION[action]||DIALOGUE_BY_ACTION[action]||TRAVEL_BY_ACTION[action]||action==='check-phone');});
+        if (!actions.length) return;
         const bounds = renderer.getHotspotBounds(place.anchor);
         if (!bounds) return;
-        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: place.actions, radius: radius });
+        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: actions, radius: radius });
       });
       (npcAnchors[district] || []).forEach(function (npc) {
         if (!npc || !world.characters[npc.characterId] || typeof npc.anchor !== 'string') return;
@@ -154,6 +157,12 @@
       renderer.focusInteractable(nearby.anchor);
       if (DIALOGUE_BY_ACTION[action]) {
         return Object.freeze({ type: 'dialogue:state', dialogue: openDialogue(DIALOGUE_BY_ACTION[action]) });
+      }
+      if (action === 'check-phone') {
+        if (!onPhone) fail('The student phone is not connected.');
+        onPhone();
+        const phoneEvent = Object.freeze({ type: 'interaction:completed', district: currentDistrict(), placeId: place.id, action: action, activity: 'phone' });
+        onEvent(phoneEvent); lastResult = phoneEvent; return phoneEvent;
       }
       const destination = TRAVEL_BY_ACTION[action];
       if (destination) {
