@@ -168,6 +168,19 @@
    publish({type:'semester:completed',semester:result.graduated?8:life.getState().campaign.semester-1,gpa:result.gpa,graduated:result.graduated,ending:result.ending},'runtime');
    return result;
   }
+  function openPhone(){phone.setOpen(true);return getState();}
+  function closePhone(){phone.setOpen(false);return getState();}
+  function navigatePhone(section){phone.navigate(section);refreshUI();return getState();}
+  function interact(intent){return interaction.interact(getPosition(),intent||{interactPressed:true});}
+  function closeDialogue(){return interaction.interact(getPosition(),{closeDialogue:true});}
+  function chooseDialogueTopic(topic){return interaction.interact(getPosition(),{topic:topic});}
+  function receiveEvent(event){return publish(event,'runtime');}
+  function workOnAssignment(courseId){return phone.workOnAssignment(courseId);}
+  function submitAssignment(assignmentId){return phone.submitAssignment(assignmentId);}
+  function registerCourses(courseIds){return phone.registerCourses(courseIds);}
+  function markRead(id,kind){return phone.markRead(id,kind);}
+  function reply(messageId,message){return phone.reply(messageId,message);}
+  function getDiagnostics(){return Object.freeze({environment:environment.getDiagnostics(),assets:assets.getStatus(),scene:renderer.getState(),character:character?character.getState():null});}
   function subscribe(listener){if(typeof listener!=='function')fail('Event subscriber must be a function.');subscribers.add(listener);return function(){subscribers.delete(listener);};}
   function getState(){
    return Object.freeze({lifecycle:lifecycle,ready:lifecycle==='running'||lifecycle==='paused',paused:lifecycle==='paused',district:environment.getState().district,player:getPosition(),phone:phone.getSnapshot(),campaign:campaign.getState(),university:services.getSnapshot(),life:life.getState(),assets:assets.getStatus(),scene:renderer.getState(),error:lastError,atlasReady:atlasReady});
@@ -185,7 +198,7 @@
   visibilityHandler=function(){if(doc.hidden&&lifecycle==='running')pause();};
   doc.addEventListener('keydown',escapeHandler);doc.addEventListener('visibilitychange',visibilityHandler);
   resize();
-  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,destroy:destroy,resize:resize});
+  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,destroy:destroy,resize:resize});
  }
  root.SemesterAdventureRuntime=Object.freeze({create:create});
  if(root.document&&root.document.addEventListener){
