@@ -70,7 +70,9 @@
       relationships: {
         roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
         coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
-        classRep: { name: 'Wanjiku', affinity: 10, trust: 5, history: [] }
+        classRep: { name: 'Wanjiku', affinity: 10, trust: 5, history: [] },
+        vendor: { name: 'Mama Njeri', affinity: 10, trust: 5, history: [] },
+        lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] }
       },
       inventory: ['student-id', 'notebook', 'phone'],
       quests: [
@@ -174,6 +176,17 @@
         if (!raw) return false;
         const parsed = JSON.parse(raw);
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
+        parsed.relationships = parsed.relationships || {};
+        const relationshipDefaults = {
+          roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
+          coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
+          classRep: { name: 'Wanjiku', affinity: 10, trust: 5, history: [] },
+          vendor: { name: 'Mama Njeri', affinity: 10, trust: 5, history: [] },
+          lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] }
+        };
+        Object.keys(relationshipDefaults).forEach(function (key) {
+          if (!parsed.relationships[key]) parsed.relationships[key] = relationshipDefaults[key];
+        });
         assertState(parsed);
         state = parsed;
         return true;
