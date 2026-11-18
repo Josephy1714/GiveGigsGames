@@ -46,3 +46,8 @@ The renderer letterboxes the authored scene viewport, caps device pixel ratio, c
 ## Campaign progression and objective HUD
 
 `campaign-runtime.js` owns ordered chapter progression, per-step counts, completion events and a separate versioned local save. It consumes domain events from the host and authored chapter rules from `world-content.js`; it does not mutate academic records or simulate activities. `campaign-ui.js` renders a compact, collapsible objective checklist with semantic progress information. The host forwards successful interaction, travel, assessment and phone milestone events. See [Campaign Runtime](CAMPAIGN_RUNTIME.md).
+
+
+## Student phone and academic portal
+
+`student-phone-runtime.js` reads phone views from the life engine and authored world without duplicating simulation state. The host forwards its `academics:reviewed` and `budget:reviewed` events to the campaign runtime. `student-phone-ui.js` is a host-mounted, accessible and responsive overlay; Tab intent is already reserved by the input manager and `phoneOpen` blocks world movement. Coursework deadlines and incoming messages are not fabricated when no authoritative authored records exist. See [Student Phone](STUDENT_PHONE.md) for the section contract and lifecycle.
