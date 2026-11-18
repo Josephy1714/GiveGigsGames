@@ -179,7 +179,8 @@
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
         parsed.relationships = parsed.relationships || {};
         parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);
-        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;\n        parsed.academics.courses.forEach(function(course){course.assignmentProgress=Number.isFinite(course.assignmentProgress)?course.assignmentProgress:course.assignmentPoints||0;course.assignmentScoreTotal=Number.isFinite(course.assignmentScoreTotal)?course.assignmentScoreTotal:course.assignmentPoints||0;course.assignmentCount=Number.isInteger(course.assignmentCount)?course.assignmentCount:0;});
+        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;
+        parsed.academics.courses.forEach(function(course){course.assignmentProgress=Number.isFinite(course.assignmentProgress)?course.assignmentProgress:course.assignmentPoints||0;course.assignmentScoreTotal=0;course.assignmentCount=0;course.assignmentPoints=0;});
         parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
@@ -339,7 +340,9 @@
       return commit(function(s){
         const course=s.academics.courses.find(function(item){return item.id===courseId;});
         if(!course)throw new Error('That course is not currently registered.');
-        course.assignmentScoreTotal=(course.assignmentScoreTotal||0)+points;\n        course.assignmentCount=(course.assignmentCount||0)+1;\n        course.assignmentPoints=Number((course.assignmentScoreTotal/course.assignmentCount).toFixed(1));
+        course.assignmentScoreTotal=(course.assignmentScoreTotal||0)+points;
+        course.assignmentCount=(course.assignmentCount||0)+1;
+        course.assignmentPoints=Number((course.assignmentScoreTotal/course.assignmentCount).toFixed(1));
         addJournal(s,'Assignment submitted for '+course.name+'.');
         return {courseId:courseId,assignmentId:assignmentId,assignmentPoints:course.assignmentPoints};
       });
