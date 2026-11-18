@@ -54,7 +54,7 @@
    sync();const a=state.assignments.find(x=>x.id===id);if(!a)throw new Error('Assignment not found.');
    if(a.status==='submitted'||a.status==='submitted-late')throw new Error('This assignment has already been submitted.');
    const late=a.status==='overdue';
-   if(score===undefined){const course=life.getState().academics.courses.find(x=>x.id===a.courseId);score=Math.min(100,Math.round(45+(course.assignmentProgress||0)*0.35+(course.studyPoints||0)*0.25+(course.preparation||0)*0.2+(life.getState().condition.wellbeing||0)*0.1));}if(!Number.isFinite(score)||score<0||score>100)throw new Error('Score must be between 0 and 100.');
+   const course=life.getState().academics.courses.find(x=>x.id===a.courseId);if(!course)throw new Error('This course is no longer registered.');if((course.assignmentProgress||0)<30)throw new Error('Complete at least two focused assignment work sessions before submitting.');const score=Math.min(100,Math.round(45+course.assignmentProgress*0.35+(course.studyPoints||0)*0.25+(course.preparation||0)*0.2+(life.getState().condition.wellbeing||0)*0.1));
    const submittedScore=late?Math.max(0,score-15):score;
    const result=life.recordAssignmentSubmission(a.courseId,a.id,submittedScore);
    a.status=late?'submitted-late':'submitted';a.score=submittedScore;a.submittedAt=life.getState().calendar.totalMinutes;persist();
