@@ -43,7 +43,7 @@
     ]);
     return names.map(function (name, i) {
       return { id: 'S' + semester + '-U' + (i + 1), name: name, credits: i === 6 ? 2 : 3,
-        prerequisites: i === 5 ? ['S' + Math.max(1, semester - 1) + '-U2'] : i === 6 ? ['S' + Math.max(1, semester - 1) + '-U3'] : [] };
+        prerequisites: semester > 1 && i === 5 ? ['S' + (semester - 1) + '-U2'] : semester > 1 && i === 6 ? ['S' + (semester - 1) + '-U3'] : [] };
     });
   }
   function makeCourses(semester) {
