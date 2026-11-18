@@ -428,7 +428,8 @@
       "controls": "Desktop: A/D or arrows to move, Shift to sprint, Space/Up to jump, S/Down to slide, E to interact, Tab for student phone, Esc to pause. Mobile: swipe to move or jump/slide; tap nearby people and objects.",
       "modes": [
         "solo"
-      ]
+      ],
+      "status": "preview"
     },
     {
       "slug": "gravegain5dA",
