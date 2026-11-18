@@ -13,6 +13,7 @@
     'wash-clothes': 'nap', 'get-haircut': 'nap', 'borrow-book': 'library',
     'join-club': 'socialize', 'work-shift': 'work'
   });
+  const DIALOGUE_BY_ACTION = Object.freeze({ 'talk-roommate': 'brian', 'talk-vendor': 'njeri', 'consult-lecturer': 'mwangi' });
   const RELATIONSHIP_BY_CHARACTER = Object.freeze({
     brian: 'roommate', amina: 'coursemate', wanjiku: 'classRep'
   });
@@ -148,6 +149,9 @@
       const action = requested && place.actions.includes(requested) ? requested : (place.actions[0] || null);
       if (!action) fail('This place has no authored actions.');
       renderer.focusInteractable(nearby.anchor);
+      if (DIALOGUE_BY_ACTION[action]) {
+        return Object.freeze({ type: 'dialogue:state', dialogue: openDialogue(DIALOGUE_BY_ACTION[action]) });
+      }
       const activity = ACTIVITY_BY_ACTION[action];
       if (!activity) {
         const unsupported = Object.freeze({ type: 'interaction:unsupported', district: currentDistrict(), placeId: place.id, action: action, reason: 'No gameplay activity is mapped to this action yet.' });
