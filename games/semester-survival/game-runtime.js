@@ -58,7 +58,7 @@
   }
   services=modules.university.create({lifeEngine:life,storage:storage,onEvent:function(event){publish(event,'university-services');}});
   campaign=modules.campaign.create({world:world,lifeEngine:life,storage:storage,onEvent:function(event){publish(event,'campaign');}});
-  const controller=modules.controller.create(options.controllerOptions||{});
+  const controller=modules.controller.createController(options.controllerOptions||{});
   const environment=modules.environment.create({world:world,renderer:renderer,assetPipeline:assets,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'environment');}});
   const characterAtlas=options.characterAtlas;
   const atlasEntry=assets.manifestReport.find(function(item){return item.id===characterAtlas.assetId;});
