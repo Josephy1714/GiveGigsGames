@@ -205,6 +205,7 @@
         if (!state.progress[chapter.id]) state.progress[chapter.id] = {};
         const progress = state.progress[chapter.id][step.id] || { count: 0, complete: false, seen: [] };
         if (step.uniqueBy) {
+          progress.seen = Array.isArray(progress.seen) ? progress.seen : [];
           const uniqueValue = event[step.uniqueBy];
           if (uniqueValue === undefined || uniqueValue === null || progress.seen.includes(uniqueValue)) return;
           progress.seen.push(uniqueValue);
