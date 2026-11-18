@@ -312,6 +312,8 @@
     }
 
     function registerCourses(courseIds) {
+      if (state.academics.registrationLocked) throw new Error('Course registration is already locked for this semester.');
+      if (state.calendar.week > 1) throw new Error('The course add/drop window has closed for this semester.');
       if (!Array.isArray(courseIds) || courseIds.length < 3 || courseIds.length > 5) throw new Error('Register between three and five courses.');
       if (new Set(courseIds).size !== courseIds.length) throw new Error('A course cannot be registered twice.');
       const current = state.academics.courses;
