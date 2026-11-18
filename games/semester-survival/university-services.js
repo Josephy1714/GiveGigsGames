@@ -15,7 +15,7 @@
  }
  function create(options){
   options=options||{};const life=options.lifeEngine,storage=options.storage||(typeof localStorage!=='undefined'?localStorage:null);
-  const onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
+  const onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};\n  let lastSyncMinute=-1;
   if(!life||typeof life.getState!=='function'||typeof life.registerCourses!=='function'||typeof life.recordAssignmentSubmission!=='function')throw new Error('University services require the current life engine APIs.');
   const initial=life.getState();let state=makeState(initial.campaign.semester,initial.calendar.totalMinutes,initial.academics.courses);
   function persist(){if(!storage)return false;try{storage.setItem(KEY,JSON.stringify(state));return true;}catch(e){return false;}}
