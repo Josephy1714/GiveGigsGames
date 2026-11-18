@@ -42,3 +42,22 @@ Phone milestone events must only be emitted after the player actually completes 
 - Assessment and budget milestones must be forwarded by the host after their authoritative action succeeds.
 - The system is data-driven and can feed a mission HUD, journal, phone and future story-choice system.
 - This runtime is not yet connected to the original entrypoint or a production scene loop.
+
+## Objective HUD
+
+Load `campaign-ui.js` and `campaign-ui.css` after the campaign runtime. Mount a host overlay element with the `ss-campaign-ui` class:
+
+```js
+const campaignHud = SemesterCampaignUI.create({
+  root: document.querySelector('#semester-campaign-ui'),
+  campaignRuntime: campaign
+});
+
+// After every successful campaign.recordEvent(...):
+campaignHud.render();
+
+// On game teardown:
+campaignHud.destroy();
+```
+
+The HUD shows the active chapter, authored objective checklist, multi-step counts and completion progress. It can be collapsed to preserve the view. It does not create objectives or grant progress itself.
