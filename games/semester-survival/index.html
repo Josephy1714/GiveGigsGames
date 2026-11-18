@@ -26,6 +26,10 @@
 
     <!-- Base Styles -->
     <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="game-shell.css">
+    <link rel="stylesheet" href="interaction-ui.css">
+    <link rel="stylesheet" href="campaign-ui.css">
+    <link rel="stylesheet" href="student-phone-ui.css">
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
 
@@ -94,7 +98,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <!-- Main Game Container -->
     <main class="TEMPLATE-4weird-game-main">
         <!-- Game Canvas Frame -->
-        <div class="TEMPLATE-4weird-game-frame">
+        <div class="TEMPLATE-4weird-game-frame" id="semester-survival-adventure">
             <button class="TEMPLATE-4weird-fullscreen-btn" id="TEMPLATE-4weird-fullscreen-btn" title="Fullscreen (F) — Esc to exit">⛶ Fullscreen</button>
 
             <!-- Real-time game HUD -->
@@ -491,6 +495,24 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <script src="renderer.js"></script>
     <script src="ui.js"></script>
     <script src="game.js"></script>
+    <!-- Adventure systems are loaded as a coordinated, opt-in runtime. -->
+    <script src="life-systems.js"></script>
+    <script src="world-content.js"></script>
+    <script src="input-manager.js"></script>
+    <script src="character-controller.js"></script>
+    <script src="character-animation.js"></script>
+    <script src="character-runtime.js"></script>
+    <script src="scene-assets.js"></script>
+    <script src="scene-renderer.js"></script>
+    <script src="environment-runtime.js"></script>
+    <script src="interaction-runtime.js"></script>
+    <script src="interaction-ui.js"></script>
+    <script src="campaign-runtime.js"></script>
+    <script src="campaign-ui.js"></script>
+    <script src="university-services.js"></script>
+    <script src="student-phone-runtime.js"></script>
+    <script src="student-phone-ui.js"></script>
+    <script src="game-runtime.js"></script>
 
     <script>
         // Safe copyGameLink: the v1 source page has no runtime bridge, so keep
