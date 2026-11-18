@@ -26,6 +26,7 @@ const lowSave=systems.createNewGame();
 lowSave.finances.cash=0;
 const lowStore=new Map([[systems.saveKey,JSON.stringify(lowSave)]]);
 const poor=systems.createEngine({getItem:k=>lowStore.get(k)||null,setItem:(k,v)=>lowStore.set(k,v)});
+poor.travel('township');
 assert.throws(()=>poor.perform('eat'),/Not enough cash/);
 assert.equal(poor.getState().finances.cash,0);
 console.log('life-systems tests passed');
