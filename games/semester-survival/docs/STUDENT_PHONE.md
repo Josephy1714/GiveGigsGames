@@ -14,7 +14,7 @@ The phone's UI must never create fake grades, pretend to send a real-world email
 ## Functional features
 
 ### Course registration
-The active semester catalogue contains five core courses and two electives. Students can select three to five courses, within a 9–15 credit load. Duplicate courses are rejected, elective prerequisites are checked against completed transcript entries, and the add/drop action is locked after the first registration change for that semester. Newly registered courses receive clean academic progress records. The timetable is derived from the active registration.
+The active semester catalogue contains five core courses and two electives. Students select five courses from the semester catalogue, within a 13–15 credit load. This keeps the full-time academic structure aligned with the five-course CAT/exam campaign objectives. Duplicate courses are rejected, elective prerequisites are checked against completed transcript entries, and the add/drop action is locked after the first registration change for that semester. Newly registered courses receive clean academic progress records. The timetable is derived from the active registration.
 
 ### Coursework and deadlines
 Each registered course receives authored coursework and practical assignment records with due times measured against the simulation calendar. Deadline reminders and overdue notices are generated as simulation time advances. Submission is a real life-engine mutation and updates course assignment points. The submission score is calculated from recorded assignment work, study, preparation and wellbeing; the player cannot type an arbitrary grade. Late work can still be submitted with a 15-point penalty. Duplicate submissions are rejected.
