@@ -50,7 +50,7 @@
   function snapshot(){
    const s=life.getState();return clone({semester:state.semester,assignments:state.assignments,messages:state.messages,notifications:state.notifications,catalog:(s.academics.catalog||[]).map(c=>({id:c.id,name:c.name,credits:c.credits,prerequisites:c.prerequisites||[]})),registered:s.academics.courses.map(c=>({id:c.id,name:c.name,credits:c.credits})),registrationOpen:!s.academics.registrationLocked&&s.calendar.week===1,credits:s.academics.courses.reduce((n,c)=>n+c.credits,0),unreadMessages:state.messages.filter(m=>!m.read).length,unreadNotifications:state.notifications.filter(n=>!n.read).length});
   }
-  function submitAssignment(id,score){
+  function submitAssignment(id){
    sync();const a=state.assignments.find(x=>x.id===id);if(!a)throw new Error('Assignment not found.');
    if(a.status==='submitted'||a.status==='submitted-late')throw new Error('This assignment has already been submitted.');
    const late=a.status==='overdue';
