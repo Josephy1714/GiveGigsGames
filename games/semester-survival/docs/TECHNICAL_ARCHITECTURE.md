@@ -24,3 +24,9 @@ District entry is asynchronous: `enter(districtId, options)` first validates the
 A district without a scene manifest remains unavailable. A scene with missing or corrupt artwork reports a failed readiness state and cannot be entered. The runtime does not fabricate fallback scenes, assets, interaction anchors or spawn points. A district can be present in world design while remaining unavailable in play until its complete authored scene is delivered.
 
 Tests must cover asset ownership, missing/corrupt art, readiness gating, route/spawn checks, overlapping transitions, async renderer failures and unavailable interactions.
+
+## Authored scene compositor
+
+`scene-renderer.js` is the renderer adapter consumed by the environment runtime. The runtime passes its authored `render` descriptor, interaction anchors and decoded asset map to `mountScene`. The compositor validates the design viewport, every image layer, fit mode, z-order, parallax and hotspot bounds before committing a mounted scene. It draws only decoded assets; missing layers or hotspots fail closed.
+
+The renderer letterboxes the authored scene viewport, caps device pixel ratio, composites artwork in z-order, supports camera-follow parallax and hit-tests interaction hotspots in authored scene coordinates. Character animation atlases can be drawn through the existing animator interface in the same camera/world coordinate space. This renderer is an integration layer, not a replacement for commissioned illustrations, detailed environment art, animation atlases or visual review.
