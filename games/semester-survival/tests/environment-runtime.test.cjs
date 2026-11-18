@@ -65,8 +65,8 @@ test('enforces authored routes and spawn points before loading', async () => {
   pipeline.preloadDistrict = async id => { loads++; return original(id); };
   const runtime = context.SemesterEnvironmentRuntime.create({ world, sceneManifest: manifest, assetPipeline: pipeline });
   await runtime.enter('residence');
-  assert.throws(() => runtime.enter('city'), /No authored route/);
-  assert.throws(() => runtime.enter('township', { spawn: 'unknown' }), /Unknown spawn point/);
+  await assert.rejects(() => runtime.enter('city'), /No authored route/);
+  await assert.rejects(() => runtime.enter('township', { spawn: 'unknown' }), /Unknown spawn point/);
   assert.equal(loads, 1);
   assert.equal(runtime.getState().district, 'residence');
 });
