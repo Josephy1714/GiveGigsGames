@@ -34,3 +34,7 @@ The renderer letterboxes the authored scene viewport, caps device pixel ratio, c
 ## Character orchestration
 
 `character-runtime.js` composes the input intent manager, deterministic locomotion controller, authored atlas animator, and 2.5D scene renderer. The host owns frame scheduling; the runtime owns per-frame intent consumption, state-to-clip selection, camera follow, render payloads, reset, and input disposal. It requires authored animation clips and fails closed when a selected clip is missing. See [Character Runtime](CHARACTER_RUNTIME.md) for the dependency and lifecycle contract.
+
+## Interaction and dialogue orchestration
+
+`interaction-runtime.js` resolves player proximity against authored renderer hotspots, routes supported place actions into the life engine, and exposes authored NPC dialogue state for the host UI. Dialogue choices persist affinity/trust and journal history through `recordRelationship`. The renderer exposes read-only hotspot bounds; it does not synthesize target positions. See [Interaction Runtime](INTERACTION_RUNTIME.md) for integration and input contracts.
