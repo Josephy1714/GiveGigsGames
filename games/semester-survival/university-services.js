@@ -63,8 +63,9 @@
    if(a.status==='submitted'||a.status==='submitted-late')throw new Error('This assignment has already been submitted.');
    const late=a.status==='overdue';
    if(score===undefined){const course=life.getState().academics.courses.find(x=>x.id===a.courseId);score=Math.min(100,Math.round(45+(course.assignmentProgress||0)*0.35+(course.studyPoints||0)*0.25+(course.preparation||0)*0.2+(life.getState().condition.wellbeing||0)*0.1));}if(!Number.isFinite(score)||score<0||score>100)throw new Error('Score must be between 0 and 100.');
-   const result=life.recordAssignmentSubmission(a.courseId,a.id,score);
-   a.status=late?'submitted-late':'submitted';a.score=late?Math.max(0,score-15):score;a.submittedAt=life.getState().calendar.totalMinutes;persist();
+   const submittedScore=late?Math.max(0,score-15):score;
+   const result=life.recordAssignmentSubmission(a.courseId,a.id,submittedScore);
+   a.status=late?'submitted-late':'submitted';a.score=submittedScore;a.submittedAt=life.getState().calendar.totalMinutes;persist();
    notify('Assignment submitted',a.title+' was submitted successfully.','success');
    emit({type:'assignment:submitted',assignmentId:a.id,courseId:a.courseId,score:a.score,late:late});
    return {assignment:clone(a),result:result};
