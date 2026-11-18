@@ -42,3 +42,7 @@ The renderer letterboxes the authored scene viewport, caps device pixel ratio, c
 ## Contextual interaction UI
 
 `interaction-ui.js` is a host-mounted, accessible overlay for proximity prompts and authored NPC dialogue. It delegates all actions to `interaction-runtime.js`, inserts authored strings as text rather than HTML, supports touch buttons and Escape-to-close, and has an explicit destroy lifecycle. It does not own simulation timing or fabricate portraits. See [Interaction UI](INTERACTION_UI.md) for the host contract.
+
+## Campaign progression and objective HUD
+
+`campaign-runtime.js` owns ordered chapter progression, per-step counts, completion events and a separate versioned local save. It consumes domain events from the host and authored chapter rules from `world-content.js`; it does not mutate academic records or simulate activities. `campaign-ui.js` renders a compact, collapsible objective checklist with semantic progress information. The host forwards successful interaction, travel, assessment and phone milestone events. See [Campaign Runtime](CAMPAIGN_RUNTIME.md).
