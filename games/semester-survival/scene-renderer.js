@@ -57,6 +57,7 @@
     let active = null;
     let sceneId = null;
     let camera = { x: 0, y: 0 };
+    let viewport = { width: 0, height: 0, pixelRatio: 1 };
     let focusedAnchor = null;
     let lastFrame = Object.freeze({ drawnLayers: 0, sceneId: null });
 
@@ -67,9 +68,11 @@
       const dpr = clamp(Number(devicePixelRatio) || 1, 1, maxDpr);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      canvas.style = canvas.style || {};
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
+      if (canvas.style) {
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+      }
+      viewport = { width: width, height: height, pixelRatio: dpr };
       return Object.freeze({ width: width, height: height, pixelRatio: dpr });
     }
 
@@ -120,10 +123,11 @@
     function render(frame) {
       if (!active) fail('Cannot render before an authored scene is mounted.');
       frame = frame || {};
-      const pixelRatio = canvas.width / Math.max(1, Number.parseFloat(canvas.style && canvas.style.width) || canvas.width);
+      if (!viewport.width || !viewport.height) fail('Resize the canvas before rendering.');
+      const pixelRatio = viewport.pixelRatio;
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      const viewportWidth = Number.parseFloat(canvas.style && canvas.style.width) || canvas.width / pixelRatio;
-      const viewportHeight = Number.parseFloat(canvas.style && canvas.style.height) || canvas.height / pixelRatio;
+      const viewportWidth = viewport.width;
+      const viewportHeight = viewport.height;
       context.clearRect(0, 0, viewportWidth, viewportHeight);
       const scene = active.scene;
       const scale = Math.min(viewportWidth / scene.width, viewportHeight / scene.height);
