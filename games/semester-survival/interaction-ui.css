@@ -47,6 +47,8 @@
   cursor: pointer;
 }
 .ss-interaction-ui__button { display: flex; align-items: center; gap: 10px; }
+.ss-interaction-ui__actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.ss-interaction-ui__actions .ss-interaction-ui__button { min-height:40px; padding:8px 11px; font-size:.78rem; }
 .ss-interaction-ui__hint {
   display: inline-grid;
   place-items: center;
