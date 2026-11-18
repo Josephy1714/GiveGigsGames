@@ -315,7 +315,7 @@
     function registerCourses(courseIds) {
       if (state.academics.registrationLocked) throw new Error('Course registration is already locked for this semester.');
       if (state.calendar.week > 1) throw new Error('The course add/drop window has closed for this semester.');
-      if (!Array.isArray(courseIds) || courseIds.length < 3 || courseIds.length > 5) throw new Error('Register between three and five courses.');
+      if (!Array.isArray(courseIds) || courseIds.length !== 5) throw new Error('Register exactly five courses for the full-time semester load.');
       if (new Set(courseIds).size !== courseIds.length) throw new Error('A course cannot be registered twice.');
       const current = state.academics.courses;
       const available = (state.academics.catalog || current).reduce(function(map, course){ map[course.id]=course; return map; }, {});
@@ -324,7 +324,7 @@
       const blocked = courseIds.find(function(courseId){return (available[courseId].prerequisites||[]).some(function(required){return !completed.includes(required);});});
       if (blocked) throw new Error('A prerequisite has not been completed for '+available[blocked].name+'.');
       const credits = courseIds.reduce(function(total, courseId){ return total + available[courseId].credits; }, 0);
-      if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
+      if (credits < 13 || credits > 15) throw new Error('The semester credit load must be between 13 and 15 credits.');
       return commit(function(s){
         const byId=s.academics.courses.reduce(function(map,course){map[course.id]=course;return map;},{});
         s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,assignmentProgress:0,assignmentScoreTotal:0,assignmentCount:0,attendance:0,catScore:null,examScore:null,grade:null});});
