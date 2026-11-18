@@ -14,6 +14,7 @@
     'join-club': 'socialize', 'work-shift': 'work'
   });
   const DIALOGUE_BY_ACTION = Object.freeze({ 'talk-roommate': 'brian', 'talk-vendor': 'njeri', 'consult-lecturer': 'mwangi' });
+  const TRAVEL_BY_ACTION = Object.freeze({ 'travel-campus': 'campus', 'travel-city': 'city', 'travel-township': 'township', 'travel-residence': 'residence' });
   const RELATIONSHIP_BY_CHARACTER = Object.freeze({
     brian: 'roommate', amina: 'coursemate', wanjiku: 'classRep', njeri: 'vendor', mwangi: 'lecturer'
   });
@@ -32,6 +33,7 @@
     const life = options.lifeEngine;
     const input = options.inputManager || null;
     const onEvent = typeof options.onEvent === 'function' ? options.onEvent : function () {};
+    const onTravel = typeof options.onTravel === 'function' ? options.onTravel : null;
     const npcAnchors = options.npcAnchors || {};
     const radius = Number.isFinite(options.interactionRadius) && options.interactionRadius > 0 ? options.interactionRadius : 72;
     if (!world || !world.districts || !environment || typeof environment.getPlaces !== 'function') fail('World content and environment runtime are required.');
@@ -153,6 +155,20 @@
       if (DIALOGUE_BY_ACTION[action]) {
         return Object.freeze({ type: 'dialogue:state', dialogue: openDialogue(DIALOGUE_BY_ACTION[action]) });
       }
+      const destination = TRAVEL_BY_ACTION[action];
+      if (destination) {
+        if (!onTravel) {
+          const unavailable = Object.freeze({ type: 'interaction:unsupported', district: currentDistrict(), placeId: place.id, action: action, reason: 'The host has not connected district travel.' });
+          onEvent(unavailable); lastResult = unavailable; return unavailable;
+        }
+        return Promise.resolve().then(function () { return onTravel(destination); }).then(function (result) {
+          const travelled = Object.freeze({ type: 'interaction:completed', district: destination, placeId: place.id, action: action, activity: 'travel', destination: destination, result: result });
+          onEvent(travelled); lastResult = travelled; return travelled;
+        }).catch(function (error) {
+          const failed = Object.freeze({ type: 'interaction:failed', district: currentDistrict(), placeId: place.id, action: action, reason: error && error.message ? error.message : String(error) });
+          onEvent(failed); lastResult = failed; return failed;
+        });
+      }
       const activity = ACTIVITY_BY_ACTION[action];
       if (!activity) {
         const unsupported = Object.freeze({ type: 'interaction:unsupported', district: currentDistrict(), placeId: place.id, action: action, reason: 'No gameplay activity is mapped to this action yet.' });
@@ -174,5 +190,5 @@
     });
   }
 
-  root.SemesterInteractionRuntime = Object.freeze({ create: create, activityByAction: ACTIVITY_BY_ACTION });
+  root.SemesterInteractionRuntime = Object.freeze({ create: create, activityByAction: ACTIVITY_BY_ACTION, travelByAction: TRAVEL_BY_ACTION });
 })(typeof window !== 'undefined' ? window : globalThis);
