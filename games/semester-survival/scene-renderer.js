@@ -142,12 +142,15 @@
         context.restore();
       });
       if (frame.character && frame.character.animator && typeof frame.character.animator.render === 'function') {
+        context.save();
+        context.translate(-camera.x, -camera.y);
         frame.character.animator.render(
           context,
           Number(frame.character.x) || 0,
           Number(frame.character.y) || 0,
           Number(frame.character.scale) > 0 ? Number(frame.character.scale) : 1
         );
+        context.restore();
       }
       context.restore();
       lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, characterDrawn: Boolean(frame.character && frame.character.animator) });
