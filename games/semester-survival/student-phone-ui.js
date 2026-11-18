@@ -29,7 +29,7 @@
         const p=panel('Course registration');const selected=new Set(s.academics.courses.map(c=>c.id));const checks=[];
         s.academics.courses.forEach(course=>{const row=el('label','student-phone__item');const check=el('input','');check.type='checkbox';check.checked=true;check.value=course.id;check.addEventListener('change',()=>{if(check.checked)selected.add(course.id);else selected.delete(course.id);});row.append(check,el('strong','',course.id+' · '+course.name),el('span','',course.credits+' credits'+(course.prerequisites.length?' · Prerequisite: '+course.prerequisites.join(', '):'')));p.appendChild(row);checks.push(check);});
         const save=el('button','student-phone__action','Confirm course load');save.type='button';save.addEventListener('click',()=>{try{phone.registerCourses(Array.from(selected));render();}catch(error){status.textContent=error.message;}});p.appendChild(save);
-        const status=el('p','student-phone__note','Select 3–5 courses. Registration validates the active semester catalogue and 9–15 credit limit.');p.appendChild(status);
+        const status=el('p','student-phone__note','Select five courses. Registration validates the active semester catalogue, prerequisites and 13–15 credit load.');p.appendChild(status);
       }else if(s.section==='academics'){
         const p=panel('Academic standing');line(p,'Cumulative GPA',Number(s.academics.cumulativeGpa).toFixed(2));line(p,'Transcript entries',s.academics.transcript.length);line(p,'Semester',s.campaign.semester);s.academics.transcript.forEach(c=>{const row=el('article','student-phone__item');row.append(el('strong','',c.name),el('span','',c.score+'% · grade point '+c.gradePoint));p.appendChild(row);});
       }else if(s.section==='assignments'){
