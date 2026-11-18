@@ -50,11 +50,11 @@ test('maps landing recovery to the authored land-soft clip', () => {
   // Landing is represented by the controller's land-recover state and authored land-soft clip.
   const movement = { x: 0, y: 0, facing: 1, state: 'land-recover' };
   const controller = { update() { return movement; }, snapshot() { return movement; }, reset() { return movement; } };
-  const animator = { play(name) { calls.push(['landing-clip', name]); return { ok: true }; }, update() {}, snapshot() { return {}; }, render() {}, reset() {} };
+  const animator = { play(name) { h.calls.push(['landing-clip', name]); return { ok: true }; }, update() {}, snapshot() { return {}; }, render() {}, reset() {} };
   const renderer = { updateCamera() {}, render() {} };
   const runtime = globalThis.SemesterCharacterRuntime.create({ controller, animator, renderer, inputManager: { consume() { return {}; } } });
   runtime.update(1 / 60);
-  assert.ok(calls.some(c => c[0] === 'landing-clip' && c[1] === 'land-soft'));
+  assert.ok(h.calls.some(c => c[0] === 'landing-clip' && c[1] === 'land-soft'));
 });
 
 test('fails closed when the selected authored clip is unavailable', () => {
@@ -81,7 +81,7 @@ test('reset restores idle, position and frame counter; dispose blocks later upda
   const state = h.runtime.reset({ x: 12 });
   assert.equal(state.movement.x, 12);
   assert.equal(state.frameNumber, 0);
-  assert.equal(h.calls.at(-2)[0], 'camera');
+  assert.equal(h.calls.at(-1)[0], 'camera');
   h.runtime.dispose();
   assert.throws(() => h.runtime.update(1 / 60), /disposed/);
   assert.ok(h.calls.some(c => c[0] === 'input.destroy'));
