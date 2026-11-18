@@ -380,6 +380,7 @@
           s.campaign.semester += 1;
           s.academics.catalog = makeCourseCatalog(s.campaign.semester);
           s.academics.courses = makeCourses(s.campaign.semester);
+          s.academics.registrationLocked = false;
           s.calendar.week = 1;
           s.calendar.dayIndex = 0;
           s.calendar.minuteOfDay = 7 * 60;
