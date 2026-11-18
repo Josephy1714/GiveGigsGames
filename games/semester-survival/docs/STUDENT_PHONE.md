@@ -22,7 +22,7 @@ Each registered course receives authored coursework and practical assignment rec
 ### Inbox and notifications
 Messages are authored in-world communications triggered by supported events such as meeting a named NPC, submitting coursework, recording an assessment and arriving on campus. The inbox supports read state and in-game replies. Replies are local simulation messages, not external communications. Notification records are persisted and can be dismissed/read.
 
-The host must forward relevant domain events into `phone.receiveEvent(event)`. At minimum, forward `dialogue:opened`, `assessment:submitted`, `travel`, and `assignment:submitted`. The university-services `onEvent` callback should forward service events to the campaign runtime and any other host subscribers.
+The host must call `universityServices.sync()` after simulation time advances, including while the phone is closed, so deadline reminders and overdue transitions are not dependent on opening the UI. The host must forward relevant gameplay events into `phone.receiveEvent(event)`. At minimum, forward `dialogue:opened`, `assessment:submitted`, and `travel`. Assignment submission automatically creates its authored inbox response and emits `assignment:submitted`. The university-services `onEvent` callback should forward service events to the campaign runtime and any other host subscribers.
 
 ### Finance ledger
 Purchases and earnings performed through the life engine append transaction records with category, signed amount, time and resulting balance. The phone displays the latest ledger entries alongside current cash, debt and lifetime totals. Do not mutate balances from the phone UI.
