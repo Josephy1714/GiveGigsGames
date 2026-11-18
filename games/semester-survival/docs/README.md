@@ -30,3 +30,4 @@ This directory is the production source of truth. Implementation decisions must 
 9. Mark prototypes clearly; do not present placeholders as finished content.
 
 - STUDENT_PHONE.md — student phone, academic portal, registration, deadlines, inbox, notifications, finance ledger and host integration.
+- GAME_RUNTIME.md — central browser lifecycle, frame loop, event bus, travel, UI composition and in-game-only coursework policy.
