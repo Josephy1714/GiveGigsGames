@@ -94,7 +94,8 @@
       if (!Number.isFinite(s.condition[k]) || s.condition[k] < 0 || s.condition[k] > 100) throw new Error('Invalid condition: ' + k);
     });
     if (!Number.isFinite(s.finances.cash) || !Number.isFinite(s.finances.debt) || s.finances.debt < 0) throw new Error('Invalid finances.');
-    if (!Array.isArray(s.academics.courses) || !Array.isArray(s.academics.transcript) || !Array.isArray(s.academics.catalog)) throw new Error('Invalid academic record.');\n    if (!Array.isArray(s.finances.transactions)) throw new Error('Invalid finance ledger.');
+    if (!Array.isArray(s.academics.courses) || !Array.isArray(s.academics.transcript) || !Array.isArray(s.academics.catalog)) throw new Error('Invalid academic record.');
+    if (!Array.isArray(s.finances.transactions)) throw new Error('Invalid finance ledger.');
     return true;
   }
 
@@ -177,7 +178,8 @@
         const parsed = JSON.parse(raw);
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
         parsed.relationships = parsed.relationships || {};
-        parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);\n        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;
+        parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);
+        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;
         parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
@@ -322,7 +324,8 @@
       if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
       return commit(function(s){
         const byId=s.academics.courses.reduce(function(map,course){map[course.id]=course;return map;},{});
-        s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,attendance:0,catScore:null,examScore:null,grade:null});});\n        s.academics.registrationLocked=true;
+        s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,attendance:0,catScore:null,examScore:null,grade:null});});
+        s.academics.registrationLocked=true;
         addJournal(s,'Course registration updated: '+courseIds.length+' courses, '+credits+' credits.');
         return {courseIds:courseIds.slice(),credits:credits};
       });
