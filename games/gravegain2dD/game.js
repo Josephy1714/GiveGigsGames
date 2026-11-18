@@ -241,23 +241,24 @@
     for (let i = 0; i < 90; i++) {
       const seed = terrainHash(i + 901);
       const x = ((seed % W) - world * .025 % W + W) % W;
-      const y = 15 + ((seed >>> 10) % 250);
+      const y = 15 + ((seed >>> 10) % 360) - lift;
       ctx.fillStyle = i % 9 ? '#b9d7da65' : '#e6f7e4b0';
       ctx.fillRect(Math.floor(x), y, i % 9 ? 1 : 2, i % 9 ? 1 : 2);
     }
-    const halo = ctx.createRadialGradient(745, 120, 19, 745, 120, 144);
+    const moonY = 120 - lift * .92;
+    const halo = ctx.createRadialGradient(745, moonY, 19, 745, moonY, 144);
     halo.addColorStop(0, '#d5f9cd61');
     halo.addColorStop(1, '#d5f9cd00');
     ctx.fillStyle = halo;
-    ctx.fillRect(600, 0, 290, 265);
+    ctx.fillRect(600, moonY - 144, 290, 288);
     ctx.fillStyle = '#dce9c8';
     ctx.beginPath();
-    ctx.arc(745, 120, 41, 0, Math.PI * 2);
+    ctx.arc(745, moonY, 41, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#536c621f';
     for (const [dx, dy, radius] of [[-13, -14, 11], [18, -1, 9], [-4, 18, 12]]) {
       ctx.beginPath();
-      ctx.arc(745 + dx, 120 + dy, radius, 0, Math.PI * 2);
+      ctx.arc(745 + dx, moonY + dy, radius, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -568,7 +569,7 @@
         continue;
       }
       if(o.type==='gap')continue;else if(player.y>ground-o.h+16){if(input.y<-.15&&player.vault<=0){player.vy=-350-(build.vault||0);player.jump=true;player.vault=VAULT_SECONDS;o.vaulted=true;record('vault');emit(player.x+24,ground,'#d9c780',7);$('#toast').classList.add('on');setTimeout(()=>$('#toast').classList.remove('on'),350)}else crash()}}
-    const desiredLift = Math.min(180, Math.max(0, 150 - player.y));
+    const desiredLift = Math.max(0, 196 - player.y);
     cameraLift += (desiredLift - cameraLift) * (1 - Math.exp(-dt * 10));
     ctx.save();
     ctx.translate(0, cameraLift);
