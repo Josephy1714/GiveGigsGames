@@ -62,7 +62,8 @@ test('talk action opens authored NPC dialogue and applies relationship consequen
   assert.deepEqual(h.context.at(-1), { dialogueOpen: true });
   const next = h.runtime.interact({ x: 120, y: 120 }, { topic: 'budget' });
   assert.match(next.dialogue.line, /Plan your meals/);
-  assert.equal(h.relationships.at(-1).key, undefined); // Njeri has no tracked relationship slot in the current save schema
+  assert.equal(h.relationships.at(-1).key, 'vendor');
+  assert.deepEqual(h.relationships.at(-1).changes, { affinity: 1, trust: 1 });
 });
 
 test('dialogue closes and releases the input context lock', () => {
