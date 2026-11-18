@@ -10,7 +10,7 @@
     'ask-question': 'consultation', 'consult-lecturer': 'consultation',
     socialize: 'socialize', 'meet-friend': 'socialize', 'talk-roommate': 'socialize',
     'talk-vendor': 'socialize', 'lab-session': 'study', 'work-on-project': 'assignment',
-    'wash-clothes': 'nap', 'get-haircut': 'nap', 'borrow-book': 'library',
+    'borrow-book': 'library',
     'join-club': 'socialize', 'work-shift': 'work'
   });
   const DIALOGUE_BY_ACTION = Object.freeze({ 'talk-roommate': 'brian', 'talk-vendor': 'njeri', 'consult-lecturer': 'mwangi' });
@@ -54,13 +54,13 @@
         if (!place.available || !place.anchor) return;
         const bounds = renderer.getHotspotBounds(place.anchor);
         if (!bounds) return;
-        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: place.actions });
+        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: place.actions, radius: radius });
       });
       (npcAnchors[district] || []).forEach(function (npc) {
         if (!npc || !world.characters[npc.characterId] || typeof npc.anchor !== 'string') return;
         const bounds = renderer.getHotspotBounds(npc.anchor);
         if (!bounds) return;
-        list.push({ type: 'character', id: npc.characterId, name: world.characters[npc.characterId].name, anchor: npc.anchor, bounds: bounds, actions: ['talk'] });
+        list.push({ type: 'character', id: npc.characterId, name: world.characters[npc.characterId].name, anchor: npc.anchor, bounds: bounds, actions: ['talk'], radius: Number.isFinite(npc.radius) && npc.radius > 0 ? npc.radius : radius });
       });
       return list;
     }
@@ -83,7 +83,7 @@
       if (dialogue) { nearby = { type: 'dialogue', id: dialogue.characterId, name: dialogue.characterName, distance: 0, prompt: 'Conversation in progress' }; return getNearby(); }
       const found = candidates().map(function (item) {
         return Object.assign(item, { distance: distanceToRect(position, item.bounds) });
-      }).filter(function (item) { return item.distance <= radius; }).sort(function (a, b) { return a.distance - b.distance; });
+      }).filter(function (item) { return item.distance <= item.radius; }).sort(function (a, b) { return a.distance - b.distance; });
       nearby = found.length ? Object.freeze(Object.assign({}, found[0], {
         prompt: found[0].type === 'character' ? 'Talk to ' + found[0].name : 'Interact: ' + found[0].name
       })) : null;
