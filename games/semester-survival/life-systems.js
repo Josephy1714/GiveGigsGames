@@ -322,7 +322,7 @@
       if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
       return commit(function(s){
         const byId=s.academics.courses.reduce(function(map,course){map[course.id]=course;return map;},{});
-        s.academics.courses=courseIds.map(function(courseId){return byId[courseId];});
+        s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,attendance:0,catScore:null,examScore:null,grade:null});});
         addJournal(s,'Course registration updated: '+courseIds.length+' courses, '+credits+' credits.');
         return {courseIds:courseIds.slice(),credits:credits};
       });
