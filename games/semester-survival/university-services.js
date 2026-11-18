@@ -112,7 +112,7 @@
   }
   function destroy(){persist();}
   load();sync();
-  return Object.freeze({getSnapshot:snapshot,sync:sync,submitAssignment:submitAssignment,registerCourses:register,markRead:markRead,reply:reply,receive:receive,notify:notify,destroy:destroy,saveKey:KEY});
+  return Object.freeze({getSnapshot:function(){sync();return snapshot();},sync:sync,submitAssignment:submitAssignment,registerCourses:register,markRead:markRead,reply:reply,receive:receive,notify:notify,destroy:destroy,saveKey:KEY});
  }
  root.SemesterUniversityServices=Object.freeze({create:create,saveKey:KEY});
 })(typeof window!=='undefined'?window:globalThis);
