@@ -25,6 +25,11 @@
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
   if(!options.assetManifest||!options.sceneManifest||!options.characterAtlas)fail('Adventure runtime requires credited local scene assets, authored scene layouts and a real character atlas. No placeholder art will be generated.');
+  if(typeof options.sceneManifest!=='object'||Array.isArray(options.sceneManifest))fail('Authored scene manifest must be a district-keyed object.');
+  const validatedAssets=modules.assets.validate(options.assetManifest,{maxAssetBytes:options.maxAssetBytes});
+  const atlasEntry=validatedAssets.find(function(item){return item.id===options.characterAtlas.assetId;});
+  if(!atlasEntry||atlasEntry.role!=='character-atlas')fail('The character atlas id must reference a credited character-atlas asset in the local asset manifest.');
+  const atlasDistrict=atlasEntry.district;
   let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null,pauseButton=null;
   function make(tag,cls,parent){const el=doc.createElement(tag);if(cls)el.className=cls;if(parent)parent.appendChild(el);return el;}
   if(!shell){shell=make('section','ss-adventure-shell',host);shell.setAttribute('aria-label','Semester Survival adventure');}
@@ -62,9 +67,6 @@
   const controller=modules.controller.createController(options.controllerOptions||{});
   const environment=modules.environment.create({world:world,renderer:renderer,assetPipeline:assets,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'environment');}});
   const characterAtlas=options.characterAtlas;
-  const atlasEntry=assets.manifestReport.find(function(item){return item.id===characterAtlas.assetId;});
-  if(!atlasEntry||atlasEntry.role!=='character-atlas')fail('The character atlas id must reference a credited character-atlas asset in the local asset manifest.');
-  const atlasDistrict=atlasEntry.district;
   let atlasReady=false;
   const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,onEvent:function(event){publish(event,'student-phone');}});
   phone=phoneRuntime;
@@ -196,7 +198,7 @@
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
    doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
-   phone.destroy();services.destroy();phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
+   phone.destroy();services.destroy();
    if(pauseButton)pauseButton.removeEventListener('click',togglePause);
    phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
    if(character)character.dispose();else input.destroy();
