@@ -17,8 +17,8 @@
  function makeState(semester,minute,courses){
   const assignments=[];
   courses.forEach((course,index)=>{
-   assignments.push({id:'S'+semester+'-'+course.id+'-A1',courseId:course.id,title:'Coursework 1: Concepts and applications',kind:'assignment',createdAt:minute,dueAt:minute+(3+index)*1440,status:'open',score:null,submittedAt:null});
-   assignments.push({id:'S'+semester+'-'+course.id+'-P1',courseId:course.id,title:'Practical exercise and reflection',kind:'practical',createdAt:minute,dueAt:minute+(8+index)*1440,status:'open',score:null,submittedAt:null});
+   assignments.push({id:course.id+'-A1',courseId:course.id,title:'Coursework 1: Concepts and applications',kind:'assignment',createdAt:minute,dueAt:minute+(3+index)*1440,status:'open',score:null,submittedAt:null});
+   assignments.push({id:course.id+'-P1',courseId:course.id,title:'Practical exercise and reflection',kind:'practical',createdAt:minute,dueAt:minute+(8+index)*1440,status:'open',score:null,submittedAt:null});
   });
   return {version:VERSION,semester:semester,assignments:assignments,messages:[],notifications:[],reviewed:{},sequence:0};
  }
@@ -77,7 +77,7 @@
    const existing=new Set(state.assignments.map(a=>a.id));
    after.forEach((course,index)=>{
     [{suffix:'A1',days:3+index,title:'Coursework 1: Concepts and applications',kind:'assignment'},{suffix:'P1',days:8+index,title:'Practical exercise and reflection',kind:'practical'}].forEach(d=>{
-     const id='S'+state.semester+'-'+course.id.slice(course.id.lastIndexOf('-')+1)+'-'+d.suffix;
+     const id=course.id+'-'+d.suffix;
      if(!existing.has(id))state.assignments.push({id:id,courseId:course.id,title:d.title,kind:d.kind,createdAt:life.getState().calendar.totalMinutes,dueAt:life.getState().calendar.totalMinutes+d.days*1440,status:'open',score:null,submittedAt:null});
     });
    });
