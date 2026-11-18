@@ -122,12 +122,14 @@
    lifecycle='starting';lastError=null;
    try{
     const atlasResult=await assets.preloadDistrict(atlasDistrict);
+    if(disposed)fail('Adventure runtime was disposed while loading assets.');
     if(!atlasResult.ready)fail('Character atlas artwork failed to load: '+atlasResult.outcomes.filter(x=>x.status!=='loaded').map(x=>x.id).join(', '));
     const atlasImage=assets.getAsset(characterAtlas.assetId);atlasReady=true;
     const library=modules.animation.createClipLibrary(characterAtlas.manifest,atlasImage);
     const animator=modules.animation.createAnimator(library,options.animationOptions||{});
     character=modules.character.create({controller:controller,animator:animator,renderer:renderer,inputManager:input,clipLibrary:library,characterScale:options.characterScale||1,requiredClips:options.requiredClips});
     const prepared=await environment.enter(initialDistrict,{spawn:options.initialSpawn||'default'});
+    if(disposed)fail('Adventure runtime was disposed while mounting the starting scene.');
     if(prepared.status!=='ready')fail('Starting district did not become ready.');
     const scene=sceneManifest[initialDistrict],spawn=scene.spawnPoints[options.initialSpawn||'default'];
     character.reset(spawn);
@@ -138,7 +140,7 @@
     if(options.autoLoop!==false)startLoop();
     publish({type:'game:started',district:initialDistrict,semester:life.getState().campaign.semester},'runtime');
     return getState();
-   }catch(error){lastError=error&&error.message?error.message:String(error);lifecycle='failed';input.setContext({paused:true});onError(error);throw error;}
+   }catch(error){if(!disposed){lastError=error&&error.message?error.message:String(error);lifecycle='failed';input.setContext({paused:true});onError(error);}throw error;}
   }
   async function travelTo(destination,travelOptions){
    if(disposed||lifecycle!=='running')fail('Travel is only available while the adventure is running.');
@@ -146,6 +148,7 @@
    const previous=environment.getState().district;
    if(!previous||!world.districts[previous].exits.includes(destination))fail('No authored route connects the current district to that destination.');
    const result=await environment.enter(destination,{spawn:travelOptions&&travelOptions.spawn||'default'});
+   if(disposed)fail('Adventure runtime was disposed during district travel.');
    try{const journey=life.travel(destination);services.sync();const spawn=sceneManifest[destination].spawnPoints[(travelOptions&&travelOptions.spawn)||'default'];character.reset(spawn);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,minutes:journey.minutes},'runtime');return getState();}
    catch(error){await environment.enter(previous,{spawn:'default'});const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
@@ -156,7 +159,7 @@
   function resume(){
    if(disposed)fail('Adventure runtime has been disposed.');
    if(lifecycle!=='paused')return getState();
-   lifecycle='running';input.setContext({paused:false});lastFrameTime=0;startLoop();publish({type:'game:resumed'},'runtime');return getState();
+   lifecycle='running';input.consume();input.setContext({paused:false});lastFrameTime=0;startLoop();publish({type:'game:resumed'},'runtime');return getState();
   }
   function submitAssessment(courseIndex,type,score){
    const result=life.submitAssessment(courseIndex,type,score);
