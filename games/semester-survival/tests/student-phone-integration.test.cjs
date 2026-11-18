@@ -15,7 +15,7 @@ test('phone connects live coursework, inbox, course catalogue and finance record
  phone.receiveEvent({type:'dialogue:opened',characterId:'brian'});
  assert.equal(phone.getSnapshot().university.messages.length,1);
  const first=snapshot.university.assignments[0];
- life.perform('assignment');life.perform('assignment');
+ phone.workOnAssignment(first.courseId);phone.workOnAssignment(first.courseId);
  phone.submitAssignment(first.id);
  assert.equal(phone.getSnapshot().university.assignments.find(a=>a.id===first.id).status,'submitted');
  assert.ok(events.some(e=>e.type==='assignment:submitted'));
