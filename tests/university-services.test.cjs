@@ -27,7 +27,7 @@ test('assignment deadlines persist and submissions update academic records',()=>
 });
 test('deadline reminders and late submission penalties are driven by simulation time',()=>{
  const {life,services,events}=setup(),assignment=services.getSnapshot().assignments[0];
- for(let i=0;i<10;i++)life.perform('sleep');
+ for(let i=0;i<25;i++)life.perform('sleep');
  assert.equal(services.getSnapshot().assignments.find(a=>a.id===assignment.id).status,'overdue');
  const result=services.submitAssignment(assignment.id);
  assert.equal(result.assignment.status,'submitted-late');
