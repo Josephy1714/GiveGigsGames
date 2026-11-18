@@ -4,15 +4,6 @@
 (function(root){
  'use strict';
  const KEY='semester-survival.university.v1',VERSION=1;
- const CATALOG=[
-  {code:'FOUND',name:'Foundations of the Discipline',credits:3,semester:1,prerequisites:[]},
-  {code:'MATH',name:'Mathematical Methods',credits:3,semester:1,prerequisites:[]},
-  {code:'PROG',name:'Programming and Problem Solving',credits:3,semester:1,prerequisites:[]},
-  {code:'COMM',name:'Communication and Academic Practice',credits:3,semester:1,prerequisites:[]},
-  {code:'DATA',name:'Introduction to Data and Evidence',credits:3,semester:1,prerequisites:[]},
-  {code:'STAT',name:'Statistical Modelling',credits:3,semester:2,prerequisites:['MATH']},
-  {code:'ALGO',name:'Algorithms and Data Structures',credits:2,semester:2,prerequisites:['PROG']}
- ];
  function clone(v){return JSON.parse(JSON.stringify(v));}
  function makeState(semester,minute,courses){
   const assignments=[];
