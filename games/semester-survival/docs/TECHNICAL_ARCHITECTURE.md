@@ -38,3 +38,7 @@ The renderer letterboxes the authored scene viewport, caps device pixel ratio, c
 ## Interaction and dialogue orchestration
 
 `interaction-runtime.js` resolves player proximity against authored renderer hotspots, routes supported place actions into the life engine, and exposes authored NPC dialogue state for the host UI. Dialogue choices persist affinity/trust and journal history through `recordRelationship`. The renderer exposes read-only hotspot bounds; it does not synthesize target positions. See [Interaction Runtime](INTERACTION_RUNTIME.md) for integration and input contracts.
+
+## Contextual interaction UI
+
+`interaction-ui.js` is a host-mounted, accessible overlay for proximity prompts and authored NPC dialogue. It delegates all actions to `interaction-runtime.js`, inserts authored strings as text rather than HTML, supports touch buttons and Escape-to-close, and has an explicit destroy lifecycle. It does not own simulation timing or fabricate portraits. See [Interaction UI](INTERACTION_UI.md) for the host contract.
