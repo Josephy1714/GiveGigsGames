@@ -15,7 +15,7 @@
   });
   const DIALOGUE_BY_ACTION = Object.freeze({ 'talk-roommate': 'brian', 'talk-vendor': 'njeri', 'consult-lecturer': 'mwangi' });
   const RELATIONSHIP_BY_CHARACTER = Object.freeze({
-    brian: 'roommate', amina: 'coursemate', wanjiku: 'classRep'
+    brian: 'roommate', amina: 'coursemate', wanjiku: 'classRep', njeri: 'vendor', mwangi: 'lecturer'
   });
   function fail(message) { throw new Error(message); }
   function distanceToRect(point, rect) {
