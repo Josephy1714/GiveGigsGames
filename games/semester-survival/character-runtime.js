@@ -5,6 +5,7 @@
 (function (root) {
   'use strict';
 
+  const CLIP_BY_STATE = Object.freeze({ 'land-recover': 'land-soft' });
   const REQUIRED = Object.freeze([
     'idle', 'walk', 'jog', 'sprint', 'jump-takeoff', 'jump-rise',
     'jump-apex', 'jump-fall', 'land-soft', 'slide-start', 'slide-loop',
@@ -58,9 +59,11 @@
         slidePressed: lastInput.slidePressed,
         dodgeDirection: lastInput.dodgeDirection
       });
-      const played = animator.play(movement.state, movement.facing);
+      const clipName = CLIP_BY_STATE[movement.state] || movement.state;
+      const played = animator.play(clipName, movement.facing);
       if (!played || played.ok !== true) {
-        lastError = 'Required animation clip unavailable: ' + (played && played.missingClip || movement.state);
+        lastError = 'Required animation clip unavailable: ' + (played && played.missingClip || clipName);
+        renderer.updateCamera({ x: movement.x, y: movement.y + cameraOffsetY }, dt);
         animation = animator.snapshot();
         return getState();
       }
