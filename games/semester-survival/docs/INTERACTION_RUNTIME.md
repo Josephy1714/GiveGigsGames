@@ -51,3 +51,5 @@ The host calls `refresh(playerPosition)` during world updates and calls `interac
 ## Production boundary
 
 NPC anchor descriptors and place hotspots must be authored for each final scene. Until a scene provides a valid hotspot and decoded art, the corresponding target is unavailable. The original game entrypoint remains unchanged until the full game replacement and browser verification are ready.
+
+Closing a conversation clears the stale nearby-dialogue prompt. The host UI can then wait for the next proximity refresh before presenting another contextual action.
