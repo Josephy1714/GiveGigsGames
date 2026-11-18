@@ -220,6 +220,9 @@
         if (activityKey === 'print' && s.location !== 'township' && s.location !== 'campus') throw new Error('Find a printing shop on campus or in the township.');
         if (activityKey === 'work' && s.location !== 'township' && s.location !== 'city') throw new Error('Find a part-time shift in the township or city.');
         if (activityKey === 'sleep' && s.location !== 'residence') throw new Error('You can only sleep in your residence.');
+        if ((activityKey === 'eat' || activityKey === 'snack') && s.location !== 'township') throw new Error('Buy food from a township food vendor.');
+        if (activityKey === 'consultation' && s.location !== 'campus') throw new Error('Lecturer consultations take place on campus.');
+        if (activityKey === 'socialize' && !['residence', 'township', 'campus'].includes(s.location)) throw new Error('There is no available social space here.');
         if (s.condition.energy < 8 && activityKey !== 'sleep' && activityKey !== 'nap') throw new Error('You are exhausted. Rest before taking on another activity.');
         advanceTime(s, activity.minutes);
         s.condition.energy = clamp(s.condition.energy + activity.energy, 0, 100);
