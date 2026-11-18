@@ -55,6 +55,9 @@
       if (state.campaignComplete && !state.chapter) {
         card.appendChild(el('h2', 'ss-campaign-ui__title', 'Your story continues beyond campus'));
         card.appendChild(el('p', 'ss-campaign-ui__description', 'All authored chapters are complete.'));
+      } else if (!state.chapter && !state.campaignComplete) {
+        card.appendChild(el('h2', 'ss-campaign-ui__title', 'Semester objectives complete'));
+        card.appendChild(el('p', 'ss-campaign-ui__description', 'You have completed this semester’s story chapters. Finish your academic requirements to unlock the next chapter of university life.'));
       } else if (state.chapter) {
         card.appendChild(el('h2', 'ss-campaign-ui__title', state.chapter.title));
         card.appendChild(el('p', 'ss-campaign-ui__description', state.chapter.objective));
