@@ -6,7 +6,7 @@ The student phone is a playable university-life system, not a static mock dashbo
 
 - `life-systems.js` owns semester course catalogues, active registration, academic progress, scores, finances and the finance transaction ledger.
 - `university-services.js` owns assignment briefs/deadlines, submission lifecycle, inbox messages, notifications and registration-window state. It persists to `semester-survival.university.v1`.
-- `student-phone-runtime.js` exposes a narrow phone interface and forwards incoming game-domain events to university services.
+- `student-phone-runtime.js` exposes a narrow phone interface and emits phone actions to the central game event bus, which routes supported domain events to university services exactly once.
 - `student-phone-ui.js` renders accessible, text-safe controls and views. It does not calculate grades or mutate simulation state directly.
 
 The phone's UI must never create fake grades, pretend to send a real-world email, or imply that an unconnected system has run.
