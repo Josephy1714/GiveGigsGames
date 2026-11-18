@@ -46,3 +46,26 @@ migrated.recordRelationship('vendor',{affinity:2,trust:3},'Discussed food budget
 assert.equal(migrated.getState().relationships.vendor.affinity,12);
 assert.equal(migrated.getState().relationships.vendor.trust,8);
 assert.equal(migrated.getState().journal.at(-1).text,'Discussed food budgeting with Mama Njeri.');
+
+
+const academicLegacyStore = new Map();
+const academicLegacy = systems.createNewGame();
+delete academicLegacy.academics.catalog;
+delete academicLegacy.academics.registrationLocked;
+delete academicLegacy.finances.transactions;
+academicLegacy.academics.courses.forEach(course => {
+  course.assignmentPoints = 25;
+  delete course.assignmentProgress;
+  delete course.assignmentScoreTotal;
+  delete course.assignmentCount;
+});
+academicLegacyStore.set(systems.saveKey, JSON.stringify(academicLegacy));
+const academicMigrated = systems.createEngine({
+  getItem:k=>academicLegacyStore.get(k)||null,
+  setItem:(k,v)=>academicLegacyStore.set(k,v)
+});
+assert.equal(academicMigrated.getState().academics.catalog.length,7);
+assert.equal(academicMigrated.getState().academics.registrationLocked,false);
+assert.deepEqual(academicMigrated.getState().finances.transactions,[]);
+assert.equal(academicMigrated.getState().academics.courses[0].assignmentProgress,25);
+assert.equal(academicMigrated.getState().academics.courses[0].assignmentPoints,0);
