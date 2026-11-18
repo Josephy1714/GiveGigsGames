@@ -14,3 +14,7 @@ Use a namespaced, versioned localStorage key. Validate parsed values and provide
 
 ## Performance
 Target stable 60 FPS on desktop and usable performance on mid-range phones. Cap device pixel ratio, avoid unbounded particles, pool transient effects and pause simulation when hidden.
+
+## Environment scene orchestration
+
+`environment-runtime.js` owns district entry, reciprocal-route enforcement, spawn selection, scene mounting, interaction-anchor validation and environment diagnostics. The renderer supplies authored scene assets through a manifest; the runtime never fabricates missing environments or interaction anchors. A district may be present in world design while remaining unavailable in play until its authored scene is delivered. Integration tests must cover failed mounts, route restrictions, spawn validation and unavailable interactions.
