@@ -67,7 +67,7 @@
       });
       scenes[districtId] = {
         status: 'not-prepared', sceneId: source.sceneId, requiredAssetIds: requiredAssetIds,
-        spawnPoints: spawnPoints, interactables: interactables, error: null, preparation: null
+        spawnPoints: spawnPoints, interactables: interactables, render: source.render || null, error: null, preparation: null
       };
     });
 
@@ -155,6 +155,8 @@
             district: districtId,
             spawn: scene.spawnPoints[spawnId],
             previousDistrict: previous,
+            scene: scene.render,
+            interactables: scene.interactables,
             assets: Object.freeze(scene.requiredAssetIds.reduce(function (items, id) {
               items[id] = assetPipeline.getAsset(id);
               return items;
