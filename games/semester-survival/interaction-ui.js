@@ -65,7 +65,7 @@
       const panel = node('div', 'ss-interaction-ui__panel');
       const header = node('header', 'ss-interaction-ui__header');
       const monogram = node('div', 'ss-interaction-ui__monogram',
-        String(dialogue.characterName || '?').trim().split(/\\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
+        String(dialogue.characterName || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
       monogram.setAttribute('aria-hidden', 'true');
       const speaker = node('div', 'ss-interaction-ui__speaker');
       speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', 'IN CONVERSATION'));
