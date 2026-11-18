@@ -218,6 +218,7 @@ export class SpaceGameCore {
       window.addEventListener('resize', this.handleResize);
       window.addEventListener('keydown', this.handleKeyDown);
       window.addEventListener('keyup', this.handleKeyUp);
+      window.addEventListener('blur', this.clearFlightKeys);
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
       this.state.initialized = true;
@@ -259,6 +260,8 @@ export class SpaceGameCore {
   };
 
   handleKeyDown = (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.target?.closest?.('input, select, textarea, [contenteditable]')) return;
+    if (e.key.startsWith('Arrow')) e.preventDefault();
     this.keys[e.key.toLowerCase()] = true;
     if (this.planetSurface?.active) {
       if (e.key.toLowerCase() === 'e') { e.preventDefault(); this.interactPlanetSite(); }
@@ -303,6 +306,10 @@ export class SpaceGameCore {
 
   handleKeyUp = (e) => {
     this.keys[e.key.toLowerCase()] = false;
+  };
+
+  clearFlightKeys = () => {
+    this.keys = {};
   };
 
   createPlanetSurfacePanel() {
@@ -1177,6 +1184,7 @@ export class SpaceGameCore {
     window.removeEventListener('resize', this.handleResize);
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('blur', this.clearFlightKeys);
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     document.getElementById('planet-land-button')?.remove();
     document.getElementById('planet-surface-panel')?.remove();

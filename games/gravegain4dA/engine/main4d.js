@@ -393,6 +393,11 @@
                     if (touchSnap && touchSnap.buttons && touchSnap.buttons.jump) this.input.jumpPressed = true;
                     input = kb;
                     var aim = this.putt && this.putt.aim;
+                    if (aim && (kb.forward || kb.strafe)) {
+                        this.input.yaw = Math.atan2(kb.strafe, kb.forward);
+                        this.putt.setAim(kb.strafe, 0, kb.forward, 0);
+                        this.input.lastLookDelta = 0;
+                    }
                     if (aim && this.input.lastLookDelta) {
                         aim.x = Math.sin(this.input.yaw || 0);
                         aim.y = 0;

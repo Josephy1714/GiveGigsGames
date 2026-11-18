@@ -558,7 +558,8 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                     <span class="legend-key">1 - 4</span>
                 </div>
                 <div style="font-size: 0.65rem; color: var(--neon-cyan); margin-top: 8px; text-align: center; font-weight: 500;">
-                    *Steering overrides autopilot mode
+                    Steering takes over autopilot.
+                    <button type="button" id="btn-resume-autopilot">Resume autopilot</button>
                 </div>
             </div>
         </div>
@@ -593,6 +594,11 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             }
             document.getElementById('btn-launch-flight').addEventListener('click', () => {
                 launchScreen.classList.add('is-dismissed');
+                document.getElementById('starfield').focus({ preventScroll: true });
+            });
+            document.getElementById('btn-resume-autopilot').addEventListener('click', () => {
+                const flight = window.spaceGameCore?.flightDynamics;
+                if (flight) flight.manualFlight = false;
                 document.getElementById('starfield').focus({ preventScroll: true });
             });
             // Exit Button listener

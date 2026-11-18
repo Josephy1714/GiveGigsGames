@@ -1966,6 +1966,51 @@ class GameApp {
     this.shakeIntensity = Math.min(1.5, this.shakeIntensity + intensity);
   }
 
+  pollGamepad() {
+    let pad;
+    try {
+      pad = Array.from(navigator.getGamepads?.() || []).find((item) => item?.mapping === 'standard');
+    } catch (_) {
+      // Embedded runtimes can be denied access by the host's permissions policy.
+    }
+    const playing = this.state.currentState === GameState.PLAYING;
+    document.getElementById('gamepad-typing').hidden = !pad || !playing;
+    document.getElementById('gamepad-menu-hint').hidden = !pad;
+    if (!pad) {
+      this.gamepadButtons = null;
+      return;
+    }
+
+    const previous = this.gamepadButtons;
+    this.gamepadButtons = pad.buttons.map((button) => button.pressed);
+    const pressed = (index) => this.gamepadButtons[index] && !previous?.[index];
+    const confirm = pressed(0);
+
+    if (playing) {
+      if (pressed(9)) {
+        this.togglePause();
+        return;
+      }
+      const offset = (pressed(15) ? 1 : 0) - (pressed(14) ? 1 : 0) +
+        (pressed(13) ? 6 : 0) - (pressed(12) ? 6 : 0);
+      this.gamepadLetter = ((this.gamepadLetter || 0) + offset + 26) % 26;
+      const letter = String.fromCharCode(65 + this.gamepadLetter);
+      const display = document.getElementById('gamepad-letter');
+      if (display.textContent !== letter) display.textContent = letter;
+      if (confirm) this.typing.handleInput(letter, this.zombies);
+      if (pressed(1)) this.typing.dropTarget();
+      if (pressed(4)) this.useBomb();
+      if (pressed(5)) this.useFreeze();
+      if (pressed(3)) this.useShield();
+    } else if ((confirm || pressed(9)) && this.state.currentState === GameState.PAUSED) {
+      this.togglePause();
+    } else if (confirm && (this.isMenuHomeVisible() || this.state.currentState === GameState.GAME_OVER)) {
+      this.startGame();
+    } else if (confirm && this.state.currentState === GameState.GLOSSARY) {
+      document.getElementById('btn-next-wave')?.click();
+    }
+  }
+
   loop(timestamp) {
     // The rAF chain must never die: schedule the next frame FIRST so even a
     // throwing update/render below cannot freeze the game forever.
@@ -1975,6 +2020,7 @@ class GameApp {
       const dt = Math.min(0.1, Math.max(0, (timestamp - this.lastTime) / 1000));
       this.lastTime = timestamp;
 
+      this.pollGamepad();
       if (this.state.currentState === GameState.PLAYING) {
         this.update(dt);
       }

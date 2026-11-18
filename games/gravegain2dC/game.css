@@ -293,6 +293,18 @@
     display: none !important;
 }
 
+#charSelectScreen {
+    align-items: flex-start;
+    overflow-y: auto;
+}
+
+#charSelectScreen .character-flow {
+    box-sizing: border-box;
+    margin-block: auto;
+    flex-shrink: 0;
+    max-height: none;
+}
+
 .menu-content {
     width: 90%;
     max-width: 600px;

@@ -50,21 +50,17 @@ class InputManager {
         container.addEventListener('contextmenu', (e) => e.preventDefault());
 
         container.addEventListener('mousedown', (e) => {
-            // Bot/synthetic presses (virtual mouse, autoplay, playtests) must
-            // act as real attacks even without pointer lock, which embedded
-            // players and headless test windows routinely deny. Human first
-            // clicks still request pointer lock as before.
+            if (e.target.closest('button, a, input, select, textarea')) return;
             const botDriven = e.isTrusted === false ||
                 (window.GraveGainBotInput && window.GraveGainBotInput.isBotControl());
             if (document.pointerLockElement !== container && !botDriven) {
                 requestPointerLockSafely(container);
-            } else {
-                if (e.button === 0) {
-                    this.mouse.click = true;
-                } else if (e.button === 2) {
-                    this.mouse.isBlocking = true;
-                    this.mouse.rightClick = true;
-                }
+            }
+            if (e.button === 0) {
+                this.mouse.click = true;
+            } else if (e.button === 2) {
+                this.mouse.isBlocking = true;
+                this.mouse.rightClick = true;
             }
         });
 

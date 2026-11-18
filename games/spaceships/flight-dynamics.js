@@ -106,9 +106,12 @@ export class FlightDynamics {
     }
     if (touch.boost) ship.boostActive = true;
 
-    if (manualSteering) {
-      const currentForward = ship.vel.clone().normalize();
-      const right = new THREE.Vector3(0, 1, 0).cross(currentForward).normalize();
+    if (manualSteering) this.manualFlight = true;
+    if (this.manualFlight) {
+      const currentForward = ship.vel.lengthSq() > 0.1 ? ship.vel.clone().normalize() : cameraForward.clone().normalize();
+      const right = new THREE.Vector3(0, 1, 0).cross(currentForward);
+      if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
+      right.normalize();
       const up = currentForward.clone().cross(right).normalize();
 
       if (yawChange !== 0) currentForward.addScaledVector(right, yawChange * dt);

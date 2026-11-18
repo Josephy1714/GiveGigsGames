@@ -90,6 +90,7 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "lastwordszombies/index.html",
+      "inputs": ["touch", "keyboard", "gamepad"],
       "runtimeType": "static"
     },
     {

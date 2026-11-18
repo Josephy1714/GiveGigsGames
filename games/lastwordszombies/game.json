@@ -39,6 +39,13 @@
         "touch": {
             "keyboard": "Requires standard physical/virtual keyboard input"
         },
+        "gamepad": {
+            "D-pad": "Select a letter. Up and down move six letters at a time.",
+            "South button": "Start, type the selected letter, or advance",
+            "East button": "Clear the target lock",
+            "Menu": "Pause or resume",
+            "Left bumper / Right bumper / North button": "Shockwave bomb / Cryo freeze / Shield restore"
+        },
         "mouse": true
     },
     "instructions": "Rogue zombie units are breaching the containment grid! Type the first letter of an approaching unit's code to lock-on, then complete the full sequence to trigger payload overload. Runners are fast, brutes hit hard, ghosts weave, and a BOSS hunts you every 5th wave. Kills release shockwaves that stun nearby units. Spend powerups (1/2/3) when overwhelmed. Protect your shield integrity!",

@@ -183,6 +183,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                  the page to reveal it on focus, making the game jump vertically
                  every time the keyboard opened. -->
             <input type="text" id="mobile-game-input" class="mobile-typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="go" aria-label="Typing input">
+            <div id="gamepad-typing" hidden>D-pad selects a letter · A types · B clears lock <strong id="gamepad-letter">A</strong></div>
 
             <!-- Mobile Keyboard Floating Trigger -->
             <button type="button" id="mobile-keyboard-btn" class="mobile-keyboard-trigger" style="display: none;" title="Toggle Keyboard" aria-label="Toggle on-screen keyboard">⌨️ TYPE</button>
@@ -262,6 +263,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                         <button type="button" class="btn btn-secondary" id="btn-custom-settings" style="flex: 1; padding: 10px 15px;" aria-label="Open settings">⚙️ Settings</button>
                     </div>
                     <p class="menu-key-hint">Press <kbd>Enter</kbd> to start · <kbd>Esc</kbd> pauses · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> powerups</p>
+                    <p class="menu-key-hint" id="gamepad-menu-hint" hidden>Controller · A starts · Menu pauses</p>
                     
                     <div class="TEMPLATE-4weird-controls-hint" id="start-overlay-hint">
                         <p>Type matching characters to lock-on and overload invading zombies.</p>

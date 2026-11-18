@@ -820,6 +820,8 @@
         try {
             setText('gg2dbBannerTitle', title);
             setText('gg2dbBannerText', text);
+            var redeploy = el('gg2dbRedeploy');
+            if (redeploy) redeploy.hidden = !G.run?.over;
             var b = el('gg2dbBanner');
             if (b) b.className = 'on';
             if (G) G.bannerUntil = sticky ? 0 : performance.now() + 1900;
@@ -845,7 +847,11 @@
             setText('gg2dbAlt', p.altAmmo > 0 ? 'Grenade x' + p.altAmmo : 'Grenade --');
             setText('gg2dbObjective', s.objective);
             setText('gg2dbRescues', s.routeMode === 'wave' ? 'Wave ' + s.wave + ' active' : s.rescued + ' rescued · ' + s.lifeQueue.length + ' lives');
-            setText('gg2dbWaypoint', p.x < s.worldLength - 800 ? '➡️ ' + Math.floor(p.x / s.worldLength * 100) + '%' : '📡 EXTRACT');
+            var atExtraction = p.x >= s.worldLength - 800;
+            var rescueRequired = s.routeMode !== 'wave' && s.rescued === 0;
+            setText('gg2dbWaypoint', atExtraction
+                ? (rescueRequired ? 'RESCUE ONE CREW MEMBER TO EXTRACT' : '📡 EXTRACT')
+                : '➡️ ' + Math.floor(p.x / s.worldLength * 100) + '%');
         } catch (_) {}
     }
 
@@ -1157,6 +1163,7 @@
             }
         } catch (_) {}
         G.run = newRun({ buildId: buildId, mission: mission, gameMode: gameMode || 'real-time', routeMode: routeMode || 'roguelite', contentMode: contentMode || 'teens', seed: Math.floor(Date.now() % 2147483647) });
+        G.runCounted = false;
         G.gigglesSaveNotified = false;
         G.effects.length = 0;
         try { if (window.GigglesHelpDraft) setTimeout(function () { window.GigglesHelpDraft.present('gravegain2dB', G, null, true); }, 0); } catch (_) {}
@@ -1283,7 +1290,9 @@
                                     color: G.run.contentMode === 'kids' ? (spark % 2 ? '#a8e9ff' : '#d8f7a3') : G.run.contentMode === 'adult' ? (spark % 2 ? '#7f1d1d' : '#c1121f') : (spark % 2 ? '#ff725b' : '#f6ca77'), life: 0.25 + Math.random() * 0.28, max: 0.6 });
                             }
                         }
-                        if (ev[i].t === 'extract' || (G.run.over && !G.runCounted)) {
+                    }
+                    if (G.run.over) {
+                        if (!G.runCounted) {
                             G.runCounted = true;
                             var p = loadProfile();
                             p.wins += G.run.win ? 1 : 0;
@@ -1295,10 +1304,11 @@
                                 ' · damage taken ' + Math.ceil(G.run.player.damageTaken) + ' · accuracy ' + (G.run.shotsFired ? Math.round(G.run.kills / G.run.shotsFired * 100) : 0) +
                                 '% · time ' + G.run.time.toFixed(1) + 's · melee ' + G.run.meleeKills + ' · demolished ' + G.run.demolition +
                                 ' · clear sectors +' + G.run.slowBonus + (G.run.player.damageTaken === 0 ? ' · NO-HIT +125' : '') +
-                                ' · PB ' + (p.fastest ? p.fastest.toFixed(1) + 's' : '—') + ' · best score ' + p.best + '\nPRESS R TO REDEPLOY', true);
+                                ' · PB ' + (p.fastest ? p.fastest.toFixed(1) + 's' : '—') + ' · best score ' + p.best, true);
                         }
+                        G.acc = 0;
+                        break;
                     }
-                    if (G.run.over) { G.acc = 0; break; }
                 }
                 if (n >= 6) G.acc = 0;
             } else {
@@ -1318,6 +1328,9 @@
             G.effects = [];
             G.keys = { left: false, right: false, jump: false, fireHeld: false, alt: false, dash: false, interact: false, melee: false, ability: false, climb: false, swap: null, mx: 640, my: 270, aimingMouse: true, aimUp: false, aimDown: false, aimLeft: false, aimRight: false };
             var savedProfile = loadProfile(); if (savedProfile && BUILDS[savedProfile.buildId]) buildId = savedProfile.buildId;
+            el('gg2dbRedeploy').addEventListener('click', function () {
+                if (G.run && G.run.over) startRun(buildId, gameMode, contentMode, routeMode);
+            });
             var setupPages = Array.prototype.slice.call(document.querySelectorAll('[data-setup-page]'));
             var setupIndex = 0, racePick = el('gg2dbRacePick'), classPick = el('gg2dbClassPick');
             var setupBack = el('gg2dbSetupBack'), setupNext = el('gg2dbSetupNext'), setupStep = el('gg2dbSetupStep');
@@ -1378,7 +1391,7 @@
             window.addEventListener('fourweird-content-mode', function (event) { try { var mode = event && event.detail && event.detail.mode; if (!mode) return; contentMode = normalizeContentMode(mode); if (G.run) G.run.contentMode = contentMode; if (contentPick) for (var i = 0; i < contentPick.children.length; i++) contentPick.children[i].classList.toggle('sel', contentPick.children[i].getAttribute('data-content') === contentMode); } catch (_) {} });
             var go = el('gg2dbGoBtn');
             if (go) go.addEventListener('click', function () {
-                try { if (setupIndex !== 2) return; G.runCounted = false; startRun(buildId, gameMode, contentMode, routeMode); } catch (_) {}
+                try { if (setupIndex !== 2) return; startRun(buildId, gameMode, contentMode, routeMode); } catch (_) {}
             });
         var tb = el('gg2dbTouch');
         if (tb) tb.addEventListener('click', function (ev) {
@@ -1426,11 +1439,11 @@
                     else if (k === '1' && G.run) G.keys.swap = 'starter';
                     else if (k === '2' && G.run) G.keys.swap = 'pickup';
                     else if (k === 'Escape' || k === 'p' || k === 'P') {
-                        if (G.run && G.run.over) { G.runCounted = false; startRun(buildId, gameMode, contentMode, routeMode); return; }
+                        if (G.run && G.run.over) { startRun(buildId, gameMode, contentMode, routeMode); return; }
                         G.paused = !G.paused;
                         showBanner(G.paused ? 'PAUSED' : 'BREACH', G.paused ? 'Esc resume · controls in menu' : '', G.paused);
                         if (!G.paused) hideBanner();
-                    } else if ((k === 'r' || k === 'R' || k === 'Enter') && G.run && G.run.over) { G.runCounted = false; startRun(buildId, gameMode, contentMode, routeMode); }
+                    } else if ((k === 'r' || k === 'R' || k === 'Enter') && G.run && G.run.over) { startRun(buildId, gameMode, contentMode, routeMode); }
                 } catch (_) {}
             });
             document.addEventListener('keyup', function (ev) {
@@ -1472,7 +1485,9 @@
                         ev.preventDefault();
                     } catch (_) {}
                 }, { passive: false });
-                G.canvas.addEventListener('click', function () { try { hideBanner(); } catch (_) {} });
+                G.canvas.addEventListener('click', function () {
+                    if (!G.run?.over && !G.paused) hideBanner();
+                });
             }
             var fs = el('gg2dbFsBtn');
             if (fs) fs.addEventListener('click', function () {
