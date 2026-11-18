@@ -30,3 +30,7 @@ Tests must cover asset ownership, missing/corrupt art, readiness gating, route/s
 `scene-renderer.js` is the renderer adapter consumed by the environment runtime. The runtime passes its authored `render` descriptor, interaction anchors and decoded asset map to `mountScene`. The compositor validates the design viewport, every image layer, fit mode, z-order, parallax and hotspot bounds before committing a mounted scene. It draws only decoded assets; missing layers or hotspots fail closed.
 
 The renderer letterboxes the authored scene viewport, caps device pixel ratio, composites artwork in z-order, supports camera-follow parallax and hit-tests interaction hotspots in authored scene coordinates. Character animation atlases can be drawn through the existing animator interface in the same camera/world coordinate space. This renderer is an integration layer, not a replacement for commissioned illustrations, detailed environment art, animation atlases or visual review.
+
+## Character orchestration
+
+`character-runtime.js` composes the input intent manager, deterministic locomotion controller, authored atlas animator, and 2.5D scene renderer. The host owns frame scheduling; the runtime owns per-frame intent consumption, state-to-clip selection, camera follow, render payloads, reset, and input disposal. It requires authored animation clips and fails closed when a selected clip is missing. See [Character Runtime](CHARACTER_RUNTIME.md) for the dependency and lifecycle contract.
