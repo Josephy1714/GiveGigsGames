@@ -17,6 +17,9 @@
 - Personality conveyed through acting: observant, ambitious, sometimes tired or uncertain, warm with trusted friends. Do not lock the player into one emotional response or dialogue personality.
 - Customization may change approved palette/outfit variants, but must not break the base rig, pivots, collision shape or animation timing.
 
+## Deferred character maturity system
+Character maturity and visible age progression from first year through fourth year are explicitly deferred until the core premium game has been completed and accepted. The initial production build uses one consistent base-protagonist identity and does not simulate age, facial maturation, body-proportion changes or year-based redesign. When scheduled as a separate milestone, maturity must be designed as a coherent four-year visual progression with approved model sheets, wardrobe evolution, animation compatibility and story justification. Do not implement partial or automatic ageing in the current build.
+
 ## Runtime character asset requirements
 Each playable character needs:
 - Clean turnaround and proportion guide.
