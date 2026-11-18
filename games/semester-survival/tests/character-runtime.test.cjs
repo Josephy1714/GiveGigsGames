@@ -47,6 +47,14 @@ test('maps landing recovery to the authored land-soft clip', () => {
   h.setInput({ jumpPressed: true });
   h.runtime.update(1 / 60);
   assert.ok(h.calls.some(c => c[0] === 'animator.play' && c[1] === 'jump-takeoff'));
+  // Landing is represented by the controller's land-recover state and authored land-soft clip.
+  const movement = { x: 0, y: 0, facing: 1, state: 'land-recover' };
+  const controller = { update() { return movement; }, snapshot() { return movement; }, reset() { return movement; } };
+  const animator = { play(name) { calls.push(['landing-clip', name]); return { ok: true }; }, update() {}, snapshot() { return {}; }, render() {}, reset() {} };
+  const renderer = { updateCamera() {}, render() {} };
+  const runtime = globalThis.SemesterCharacterRuntime.create({ controller, animator, renderer, inputManager: { consume() { return {}; } } });
+  runtime.update(1 / 60);
+  assert.ok(calls.some(c => c[0] === 'landing-clip' && c[1] === 'land-soft'));
 });
 
 test('fails closed when the selected authored clip is unavailable', () => {
@@ -81,6 +89,13 @@ test('reset restores idle, position and frame counter; dispose blocks later upda
 
 test('validates required dependencies and optional atlas clip completeness', () => {
   assert.throws(() => globalThis.SemesterCharacterRuntime.create({}), /requires controller/);
-  const h = harness({ clipLibrary: { has(name) { return name !== 'sprint'; } } });
+  const h = harness();
+  assert.throws(() => globalThis.SemesterCharacterRuntime.create({
+    controller: { update() {}, snapshot() {}, reset() {} },
+    animator: { play() {}, update() {}, snapshot() {}, render() {}, reset() {} },
+    renderer: { updateCamera() {}, render() {} },
+    inputManager: { consume() {} },
+    clipLibrary: { has(name) { return name !== 'sprint'; } }
+  }), /missing clips: sprint/);
   assert.ok(h);
 });
