@@ -68,8 +68,22 @@ Contribute a game: [open a pull request](https://github.com/mattyjacks/GiveGigsG
 - `games/catalog-data.js` is generated from it so the root page works from `file://` without `fetch`.
 - The main library and tester default to a compact list, with a grid toggle, tag search, multi-tag any/all filters, and sorting by title, genre, first tag, or tag count.
 - `games/<slug>/` contains game files; `games/html/` and `games/shared/` contain centrally maintained support assets.
-- `tester/` is the searchable, iframe-based developer view.
+- `tester/` is the searchable, iframe-based developer view and Automated Gameplay Tester Studio.
 - `backup/mjgames1/` is a local ignored source snapshot and is not published.
+
+## Automated Gameplay Tester & AI Debugger (Web + Local)
+
+Open `/tester/` (or `/ggg/test/<slug>`) on the web or locally to debug any GiveGigsGames title, any arbitrary web game URL, or any desktop game program:
+
+- **Bring Your Own API Key (Web or Local)**: Enter an OpenRouter, OpenAI, Google Gemini, DeepSeek, Custom OpenAI-compatible, or local Ollama/LM Studio key in the browser UI (stored only in your browser's `localStorage`/`sessionStorage` and sent directly to the chosen provider), or run **100% offline with no API key** using per-game playbooks, reflex drivers (Overtake, FriendSlop, GraveGain series), GiveGigs BotScript rules, and DOM heuristics.
+- **Arbitrary Web Games & Desktop Programs**: Test any `http://`/`https://` web game URL, capture any browser tab or desktop game window via Browser Screen Capture (`getDisplayMedia`), or start the Local Companion Bridge for native Win32 input (`scripts/input_sim.py`), window screenshots, and static source audits:
+
+```sh
+npm run tester:bridge          # Serves the arcade + bridge on http://127.0.0.1:42069
+npm run tester:self-test       # Runs unit/integration checks on the tester engines
+node scripts/gameplay-tester.mjs --game gravegain2dD --steps 8
+node scripts/gameplay-tester.mjs --url https://example.com/game --steps 8
+```
 
 After editing the catalog, run:
 

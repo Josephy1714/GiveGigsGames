@@ -250,6 +250,7 @@
   function sortGames(list) {
     const mode = sort.value;
     return list.sort((a, b) => {
+      if (mode === "featured") return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || Number(Boolean(b.recommended)) - Number(Boolean(a.recommended)) || compare(a.title, b.title);
       if (mode === "size-desc") return (Number(b.packageBytes) || 0) - (Number(a.packageBytes) || 0) || compare(a.title, b.title);
       if (mode === "genre") return compare(a.genre || "", b.genre || "") || compare(a.title, b.title);
       if (mode === "tag") return compare(normalizedTags(a).sort(compare)[0] || "", normalizedTags(b).sort(compare)[0] || "") || compare(a.title, b.title);

@@ -15,35 +15,60 @@
 #upgrade-shop summary{cursor:pointer;color:#ead8a3}
 #permanent-upgrades div{display:flex;align-items:center;gap:10px;margin:6px 0;text-align:left;font-size:12px}
 #permanent-upgrades button:disabled{opacity:.56;cursor:default}
-#draft-panel{z-index:5}
+#draft-panel,#pause-panel{z-index:5}
 #draft-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 #draft-choices button{min-width:125px}
 #draft-choices small{display:block;margin-top:4px}
 
 #objective{z-index:1;border:1px solid #d1e9c333;background:#0b1722dc;padding:6px 10px;border-radius:8px}
 #overlay{z-index:2}
-#overlay #start{width:min(100%, 19rem);min-height:44px;justify-self:center}
+#overlay #start,#pause-panel button{width:min(100%, 19rem);min-height:44px;justify-self:center;margin:6px auto}
 #upgrade-shop summary{min-height:44px;align-content:center}
 #draft-choices button{min-height:44px}
+.hud-controls{display:flex;align-items:center;gap:8px;pointer-events:auto}
+.hud-btn{min-width:38px;min-height:38px;padding:6px 10px;border-radius:10px;background:#101d25cc;color:#eaf4ff;border:1px solid #46615e;box-shadow:none;font-size:13px;font-weight:700}
+.hud-btn:hover{background:#1b303c}
+.brand{margin-left:52px}
+#combo{color:#ffe7a1;font-weight:900;letter-spacing:.06em}
 @media(pointer:fine){#stickZone{display:none}.touch-hint{display:none}.keyboard-hint{display:inline}}
 
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1110;color:#eff3df;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}body{display:grid;place-items:center}.game{position:relative;width:min(100vw,177.78vh);height:min(100vh,56.25vw);overflow:hidden;background:#101916;isolation:isolate}canvas{width:100%;height:100%;display:block}.hud{position:absolute;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:clamp(10px,2vw,22px);pointer-events:none;text-shadow:0 2px 8px #07100c}.brand{font-size:clamp(12px,2vw,20px);font-weight:900;letter-spacing:.13em;color:#e3c778}.stats{display:flex;gap:clamp(10px,2vw,24px);font-size:clamp(11px,1.5vw,16px);font-weight:750}.overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:linear-gradient(90deg,#09110edb,#09110e66,#09110edb)}.overlay.hidden{display:none}.overlay h1{font-size:clamp(30px,7vw,68px);line-height:.96;margin:0 0 12px;color:#f1d88b;letter-spacing:.045em;text-shadow:0 3px 0 #734b3b}.overlay p{max-width:520px;margin:8px auto 20px;line-height:1.55;color:#d0d8ca;font-size:clamp(13px,2vw,17px)}button{font:inherit;color:#122019;background:#e4c979;border:0;border-radius:999px;padding:12px 25px;font-weight:850;box-shadow:0 4px 0 #806a38;cursor:pointer}.stick-zone{position:absolute;left:max(16px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));width:clamp(100px,18vw,150px);height:clamp(100px,18vw,150px);border-radius:50%;background:#c8ddc118;border:1px solid #d4e8cf44;touch-action:none;display:grid;place-items:center}.stick-ring{width:44%;height:44%;border-radius:50%;border:1px solid #d4e8cf40;position:absolute}.stick{width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9ec29a,#425f51);border:2px solid #d5e6c781;box-shadow:0 5px 16px #0008;transform:translate(0,0);position:relative}.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:clamp(10px,1.35vw,13px);color:#d9e2d0a8;white-space:nowrap;pointer-events:none}.toast{position:absolute;left:50%;top:20%;transform:translate(-50%,-10px);opacity:0;color:#ffe7a1;font-weight:900;letter-spacing:.12em;transition:.2s;pointer-events:none}.toast.on{opacity:1;transform:translate(-50%,0)}@media(orientation:portrait){.game{width:100vw;height:100vh}canvas{object-fit:cover}.hint{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 102px);left:18px;transform:none}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1110;color:#eff3df;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}body{display:grid;place-items:center}.game{position:relative;width:min(100vw,177.78vh);height:min(100vh,56.25vw);overflow:hidden;background:#101916;isolation:isolate}canvas{width:100%;height:100%;display:block}.hud{position:absolute;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:clamp(10px,2vw,22px);pointer-events:none;text-shadow:0 2px 8px #07100c}.brand{font-size:clamp(12px,2vw,20px);font-weight:900;letter-spacing:.13em;color:#e3c778}.stats{display:flex;align-items:center;gap:clamp(8px,1.8vw,20px);font-size:clamp(11px,1.5vw,16px);font-weight:750}.overlay{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:linear-gradient(90deg,#09110edb,#09110e66,#09110edb)}.overlay.hidden{display:none}.overlay h1{font-size:clamp(30px,7vw,68px);line-height:.96;margin:0 0 12px;color:#f1d88b;letter-spacing:.045em;text-shadow:0 3px 0 #734b3b}.overlay p{max-width:520px;margin:8px auto 20px;line-height:1.55;color:#d0d8ca;font-size:clamp(13px,2vw,17px)}button{font:inherit;color:#122019;background:#e4c979;border:0;border-radius:999px;padding:12px 25px;font-weight:850;box-shadow:0 4px 0 #806a38;cursor:pointer}.stick-zone{position:absolute;left:max(16px,env(safe-area-inset-left));bottom:max(16px,env(safe-area-inset-bottom));width:clamp(100px,18vw,150px);height:clamp(100px,18vw,150px);border-radius:50%;background:#c8ddc118;border:1px solid #d4e8cf44;touch-action:none;display:grid;place-items:center}.stick-ring{width:44%;height:44%;border-radius:50%;border:1px solid #d4e8cf40;position:absolute}.stick{width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9ec29a,#425f51);border:2px solid #d5e6c781;box-shadow:0 5px 16px #0008;transform:translate(0,0);position:relative}.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:clamp(10px,1.35vw,13px);color:#d9e2d0a8;white-space:nowrap;pointer-events:none}.toast{position:absolute;left:50%;top:20%;transform:translate(-50%,-10px);opacity:0;color:#ffe7a1;font-weight:900;letter-spacing:.12em;transition:.2s;pointer-events:none}.toast.on{opacity:1;transform:translate(-50%,0)}@media(orientation:portrait){.game{width:100vw;height:100vh}.hint{bottom:calc(max(16px,env(safe-area-inset-bottom)) + 102px);left:18px;transform:none}}
 </style>
 </head>
 <body>
 <main class="game" aria-label="GraveGain2dD endless runner">
 <canvas id="game" width="960" height="540"></canvas>
-<header class="hud"><div class="brand">GRAVEGAIN <span style="color:#f3eee0">2D</span></div><div class="stats"><span>✦ <b id="score">0</b> m</span><span>BEST <b id="best">0</b> m</span><span>◈ <b id="gems">0</b></span><span>♥ <b id="hearts">3</b></span></div></header>
-<p id="objective" aria-live="polite" style="position:absolute;top:44px;left:12px;margin:0;color:#fff1a8;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none"></p>
-<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault. Jump onto marked balconies for an upper route.<br>Keyboard: A brake, D sprint, W jump or vault, S slide or drop. Duck under turret fire. Push up again when Lira grabs a wall.</p><button id="start">BEGIN RUN</button><details id="upgrade-shop"><summary>Permanent upgrades</summary><div id="permanent-upgrades"></div></details></div>
+<header class="hud">
+  <div class="brand">GRAVEGAIN <span style="color:#f3eee0">2D</span></div>
+  <div class="stats">
+    <span>✦ <b id="score">0</b> m</span>
+    <span>BEST <b id="best">0</b> m</span>
+    <span>◈ <b id="gems">0</b></span>
+    <span id="combo" hidden>×1.0</span>
+    <span>♥ <b id="hearts">3</b></span>
+  </div>
+  <div class="hud-controls">
+    <button id="mute-btn" class="hud-btn" type="button" aria-label="Toggle sound">🔊</button>
+    <button id="pause-btn" class="hud-btn" type="button" aria-label="Pause game">⏸</button>
+  </div>
+</header>
+<p id="objective" aria-live="polite" style="position:absolute;top:52px;left:12px;margin:0;color:#fff1a8;font-size:12px;text-shadow:0 1px 4px #000;pointer-events:none"></p>
+<div id="overlay" class="overlay"><h1 id="title">MOONLIT<br>RUN</h1><p id="copy">One finger guides Lira through the forgotten grave road.<br>Push right to sprint, pull left to slow down, push up to leap or vault. Jump onto marked balconies for an upper route.<br>Keyboard: A brake, D sprint, W jump or vault, S slide or drop. Duck under turret fire &amp; low arches. Push up again when Lira grabs a wall.</p><button id="start">BEGIN RUN</button><details id="upgrade-shop"><summary>Permanent upgrades</summary><div id="permanent-upgrades"></div></details></div>
 <div id="draft-panel" class="overlay" role="dialog" aria-modal="true" aria-labelledby="draft-title" hidden>
   <h2 id="draft-title">Choose a run upgrade</h2>
   <div id="draft-choices"></div>
 </div>
+<div id="pause-panel" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+  <h2 id="pause-title">RUN PAUSED</h2>
+  <button id="resume-btn" type="button">RESUME</button>
+  <button id="restart-btn" type="button">RESTART RUN</button>
+</div>
 <div id="toast" class="toast">VAULT!</div>
 <div id="stickZone" class="stick-zone" aria-label="Movement joystick"><div class="stick-ring"></div><div id="stick" class="stick"></div></div>
-<div class="hint"><span class="touch-hint">UP TO JUMP · DOWN TO SLIDE</span><span class="keyboard-hint">A BRAKE · D SPRINT · W JUMP / VAULT · S SLIDE / DROP</span></div>
+<div class="hint"><span class="touch-hint">UP TO JUMP · DOWN TO SLIDE / DROP</span><span class="keyboard-hint">A BRAKE · D SPRINT · W JUMP / VAULT · S SLIDE / DROP · P PAUSE</span></div>
 </main>
+<script src="../_shared/game-select.js"></script>
+<script src="audio.js"></script>
 <script src="run-features.js"></script>
 <script src="progression.js"></script>
 <script src="game.js"></script>

@@ -17,11 +17,13 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "gravegain2dD/index.html",
+      "guideEntrypoint": "gravegain2dD/guide.html",
       "inputs": [
         "touch",
-        "keyboard"
+        "keyboard",
+        "gamepad"
       ],
-      "controls": "One-finger joystick: push right to accelerate, left to slow down, and up to jump or vault. Arrow keys or WASD on desktop.",
+      "controls": "One-finger joystick: push right to accelerate, left to slow down, up to jump or vault, down to slide or drop. Arrow keys, WASD, or gamepad on desktop.",
       "modes": [
         "solo"
       ],

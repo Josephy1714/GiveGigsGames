@@ -1,338 +1,131 @@
 (() => {
-  const cards = [
-  {
-    "name": "Leap · Initiate",
-    "stat": "jump",
-    "amount": 20,
-    "detail": "+20 higher jump impulse"
-  },
-  {
-    "name": "Leap · Adept",
-    "stat": "jump",
-    "amount": 32,
-    "detail": "+32 higher jump impulse"
-  },
-  {
-    "name": "Leap · Expert",
-    "stat": "jump",
-    "amount": 46,
-    "detail": "+46 higher jump impulse"
-  },
-  {
-    "name": "Leap · Master",
-    "stat": "jump",
-    "amount": 64,
-    "detail": "+64 higher jump impulse"
-  },
-  {
-    "name": "Climb · Initiate",
-    "stat": "wall",
-    "amount": 24,
-    "detail": "+24 more wall jump impulse"
-  },
-  {
-    "name": "Climb · Adept",
-    "stat": "wall",
-    "amount": 38,
-    "detail": "+38 more wall jump impulse"
-  },
-  {
-    "name": "Climb · Expert",
-    "stat": "wall",
-    "amount": 56,
-    "detail": "+56 more wall jump impulse"
-  },
-  {
-    "name": "Climb · Master",
-    "stat": "wall",
-    "amount": 76,
-    "detail": "+76 more wall jump impulse"
-  },
-  {
-    "name": "Reach · Initiate",
-    "stat": "magnet",
-    "amount": 8,
-    "detail": "+8 larger moonshard pickup radius"
-  },
-  {
-    "name": "Reach · Adept",
-    "stat": "magnet",
-    "amount": 13,
-    "detail": "+13 larger moonshard pickup radius"
-  },
-  {
-    "name": "Reach · Expert",
-    "stat": "magnet",
-    "amount": 19,
-    "detail": "+19 larger moonshard pickup radius"
-  },
-  {
-    "name": "Reach · Master",
-    "stat": "magnet",
-    "amount": 26,
-    "detail": "+26 larger moonshard pickup radius"
-  },
-  {
-    "name": "Ward · Initiate",
-    "stat": "armor",
-    "amount": 1,
-    "detail": "Block the next 1 hit"
-  },
-  {
-    "name": "Ward · Adept",
-    "stat": "armor",
-    "amount": 1,
-    "detail": "Block the next 1 hit"
-  },
-  {
-    "name": "Ward · Expert",
-    "stat": "armor",
-    "amount": 2,
-    "detail": "Block the next 2 hits"
-  },
-  {
-    "name": "Ward · Master",
-    "stat": "armor",
-    "amount": 2,
-    "detail": "Block the next 2 hits"
-  },
-  {
-    "name": "Sprint · Initiate",
-    "stat": "sprint",
-    "amount": 15,
-    "detail": "+15 higher top speed"
-  },
-  {
-    "name": "Sprint · Adept",
-    "stat": "sprint",
-    "amount": 24,
-    "detail": "+24 higher top speed"
-  },
-  {
-    "name": "Sprint · Expert",
-    "stat": "sprint",
-    "amount": 34,
-    "detail": "+34 higher top speed"
-  },
-  {
-    "name": "Sprint · Master",
-    "stat": "sprint",
-    "amount": 48,
-    "detail": "+48 higher top speed"
-  },
-  {
-    "name": "Vault · Initiate",
-    "stat": "vault",
-    "amount": 18,
-    "detail": "+18 more vault impulse"
-  },
-  {
-    "name": "Vault · Adept",
-    "stat": "vault",
-    "amount": 28,
-    "detail": "+28 more vault impulse"
-  },
-  {
-    "name": "Vault · Expert",
-    "stat": "vault",
-    "amount": 40,
-    "detail": "+40 more vault impulse"
-  },
-  {
-    "name": "Vault · Master",
-    "stat": "vault",
-    "amount": 56,
-    "detail": "+56 more vault impulse"
-  },
-  {
-    "name": "Recovery · Initiate",
-    "stat": "grace",
-    "amount": 0.18,
-    "detail": "+0.18 seconds of extra recovery after a hit"
-  },
-  {
-    "name": "Recovery · Adept",
-    "stat": "grace",
-    "amount": 0.29,
-    "detail": "+0.29 seconds of extra recovery after a hit"
-  },
-  {
-    "name": "Recovery · Expert",
-    "stat": "grace",
-    "amount": 0.42,
-    "detail": "+0.42 seconds of extra recovery after a hit"
-  },
-  {
-    "name": "Recovery · Master",
-    "stat": "grace",
-    "amount": 0.6,
-    "detail": "+0.6 seconds of extra recovery after a hit"
-  },
-  {
-    "name": "Control · Initiate",
-    "stat": "brake",
-    "amount": 2,
-    "detail": "+2 faster speed changes"
-  },
-  {
-    "name": "Control · Adept",
-    "stat": "brake",
-    "amount": 3,
-    "detail": "+3 faster speed changes"
-  },
-  {
-    "name": "Control · Expert",
-    "stat": "brake",
-    "amount": 5,
-    "detail": "+5 faster speed changes"
-  },
-  {
-    "name": "Control · Master",
-    "stat": "brake",
-    "amount": 7,
-    "detail": "+7 faster speed changes"
-  }
-];
+  const tiers = ['Initiate', 'Adept', 'Expert', 'Master'];
+  const statDefs = [
+    { stat: 'jump', title: 'Leap', amounts: [20, 32, 46, 64], unit: 'higher jump impulse' },
+    { stat: 'wall', title: 'Climb', amounts: [24, 38, 56, 76], unit: 'more wall jump impulse', capstone: 'Unlocks mid-air double jump after wall grip' },
+    { stat: 'magnet', title: 'Reach', amounts: [8, 13, 19, 26], unit: 'larger moonshard pickup radius', capstone: 'Pulls nearby upper-route shards automatically' },
+    { stat: 'armor', title: 'Ward', amounts: [1, 1, 2, 2], unit: 'hit warded', isHits: true },
+    { stat: 'sprint', title: 'Sprint', amounts: [15, 24, 34, 48], unit: 'higher top speed' },
+    { stat: 'vault', title: 'Vault', amounts: [18, 28, 40, 56], unit: 'more vault impulse', capstone: 'Vaulting shatters nearby fireballs' },
+    { stat: 'grace', title: 'Recovery', amounts: [0.18, 0.29, 0.42, 0.6], unit: 'seconds of extra recovery after a hit' },
+    { stat: 'brake', title: 'Control', amounts: [2, 3, 5, 7], unit: 'faster speed changes' }
+  ];
+
   const shop = [
-  [
-    "Moonwell",
-    "armor",
-    1,
-    12,
-    "Start each run with a ward"
-  ],
-  [
-    "Tailwind",
-    "sprint",
-    15,
-    12,
-    "Gain 15 sprint speed"
-  ],
-  [
-    "Fleetstep",
-    "brake",
-    3,
-    10,
-    "Change pace faster"
-  ],
-  [
-    "Silver Thread",
-    "magnet",
-    8,
-    10,
-    "Widen pickup reach by 8"
-  ],
-  [
-    "Owl Feather",
-    "jump",
-    24,
-    14,
-    "Gain 24 jump impulse"
-  ],
-  [
-    "Climber’s Knot",
-    "wall",
-    32,
-    14,
-    "Gain 32 wall jump impulse"
-  ],
-  [
-    "Vaulting Pin",
-    "vault",
-    24,
-    14,
-    "Gain 24 vault impulse"
-  ],
-  [
-    "Last Light",
-    "grace",
-    0.25,
-    14,
-    "Gain 0.25 seconds of recovery after hits"
-  ],
-  [
-    "First Pick",
-    "draft",
-    1,
-    16,
-    "Draft an upgrade at the start"
-  ],
-  [
-    "Grave Tithe",
-    "payout",
-    2,
-    16,
-    "Earn 2 extra sigils per completed contract"
-  ],
-  [
-    "Second Heart",
-    "health",
-    1,
-    20,
-    "Start with one extra heart"
-  ],
-  [
-    "Moon Dial",
-    "experience",
-    1,
-    18,
-    "Reach each draft one moonshard sooner"
-  ]
-];
-  const key = 'gravegain2dD-progression-v1';
-  let profile = { sigils: 0, owned: [] };
+    ['Moonwell', 'armor', 1, 12, 'Start each run with +1 ward', 3],
+    ['Tailwind', 'sprint', 15, 10, 'Gain +15 sprint speed per rank', 3],
+    ['Fleetstep', 'brake', 3, 10, 'Change pace faster', 3],
+    ['Silver Thread', 'magnet', 8, 10, 'Widen pickup reach by +8', 3],
+    ['Owl Feather', 'jump', 24, 12, 'Gain +24 jump impulse', 3],
+    ['Climber’s Knot', 'wall', 32, 12, 'Gain +32 wall jump impulse', 3],
+    ['Vaulting Pin', 'vault', 24, 12, 'Gain +24 vault impulse', 3],
+    ['Last Light', 'grace', 0.25, 12, 'Gain +0.25s recovery after hits', 3],
+    ['First Pick', 'draft', 1, 16, 'Draft an upgrade at the start', 1],
+    ['Grave Tithe', 'payout', 2, 14, 'Earn +2 extra sigils per contract', 3],
+    ['Second Heart', 'health', 1, 18, 'Start with +1 extra heart', 2],
+    ['Moon Dial', 'experience', 1, 16, 'Reach each draft 1 moonshard sooner', 2]
+  ];
+
+  const key = 'gravegain2dD-progression-v2';
+  const legacyKey = 'gravegain2dD-progression-v1';
+  let profile = { sigils: 0, ranks: {} };
+
   try {
     const saved = JSON.parse(localStorage.getItem(key));
-    if (saved && Number.isSafeInteger(saved.sigils) && saved.sigils >= 0 && Array.isArray(saved.owned)) {
-      profile = { sigils: saved.sigils, owned: [...new Set(saved.owned.filter(id => shop.some(item => item[1] === id)))] };
+    if (saved && Number.isSafeInteger(saved.sigils) && saved.sigils >= 0 && saved.ranks && typeof saved.ranks === 'object') {
+      const ranks = {};
+      for (const [, stat, , , , maxRank] of shop) {
+        const val = Number(saved.ranks[stat]) || 0;
+        if (val > 0) ranks[stat] = Math.min(maxRank, Math.floor(val));
+      }
+      profile = { sigils: saved.sigils, ranks };
+    } else {
+      const legacy = JSON.parse(localStorage.getItem(legacyKey));
+      if (legacy && Number.isSafeInteger(legacy.sigils) && legacy.sigils >= 0) {
+        const ranks = {};
+        if (Array.isArray(legacy.owned)) {
+          for (const id of legacy.owned) {
+            if (shop.some(item => item[1] === id)) ranks[id] = 1;
+          }
+        }
+        profile = { sigils: legacy.sigils, ranks };
+      }
     }
   } catch {}
+
   function save() {
     try { localStorage.setItem(key, JSON.stringify(profile)); } catch {}
   }
+
   function createBuild() {
-    const build = {};
+    const build = { draftRanks: {}, capstones: {} };
     for (const [, stat, amount] of shop) {
-      if (profile.owned.includes(stat)) build[stat] = amount;
+      const rank = profile.ranks[stat] || 0;
+      if (rank > 0) build[stat] = amount * rank;
     }
     return build;
   }
+
   function draft(build) {
-    const available = [...cards];
+    build.draftRanks = build.draftRanks || {};
+    build.capstones = build.capstones || {};
+    const pool = [...statDefs];
     const choices = [];
-    while (choices.length < 3) {
-      const index = Math.floor(Math.random() * available.length);
-      const [card] = available.splice(index, 1);
-      if (choices.some(choice => choice.stat === card.stat)) continue;
-      choices.push(card);
+    while (choices.length < 3 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      const [def] = pool.splice(idx, 1);
+      const currentTier = Math.min(3, build.draftRanks[def.stat] || 0);
+      const amount = def.amounts[currentTier];
+      const tierName = tiers[currentTier];
+      const isMaster = currentTier === 3 && def.capstone && !build.capstones[def.stat];
+      const detail = def.isHits
+        ? `Block the next ${amount} hit${amount > 1 ? 's' : ''}`
+        : `+${amount} ${def.unit}${isMaster ? ` · Capstone: ${def.capstone}` : ''}`;
+
+      choices.push({
+        name: `${def.title} · ${tierName}`,
+        stat: def.stat,
+        amount,
+        detail,
+        apply() {
+          build[def.stat] = (build[def.stat] || 0) + amount;
+          build.draftRanks[def.stat] = Math.min(3, (build.draftRanks[def.stat] || 0) + 1);
+          if (currentTier === 3 && def.capstone) {
+            build.capstones[def.stat] = true;
+          }
+        }
+      });
     }
-    return choices.map(card => ({
-      ...card,
-      apply() { build[card.stat] = (build[card.stat] || 0) + card.amount; }
-    }));
+    return choices;
   }
-  function award(distance, contracts, build) {
-    const reward = Math.floor(distance / 230) + contracts * (3 + (build.payout || 0));
+
+  function award(distance, contracts, build, bonusSigils = 0) {
+    const reward = Math.floor(distance / 210) + contracts * (3 + (build.payout || 0)) + bonusSigils;
     profile.sigils += reward;
     save();
     return reward;
   }
+
   function renderShop(container) {
     container.replaceChildren();
     const heading = document.createElement('h2');
     heading.textContent = `Permanent upgrades · ${profile.sigils} sigils`;
     container.append(heading);
-    for (const [name, stat, , cost, detail] of shop) {
+
+    for (const [name, stat, , baseCost, detail, maxRank] of shop) {
+      const rank = profile.ranks[stat] || 0;
+      const maxed = rank >= maxRank;
+      const cost = baseCost + rank * Math.round(baseCost * 0.65);
       const button = document.createElement('button');
-      const owned = profile.owned.includes(stat);
-      button.disabled = owned || profile.sigils < cost;
-      button.textContent = `${name} · ${owned ? 'Owned' : cost + ' sigils'}`;
+      button.disabled = maxed || profile.sigils < cost;
+      const rankLabel = maxRank > 1 ? ` (${rank}/${maxRank})` : '';
+      button.textContent = `${name}${rankLabel} · ${maxed ? 'Maxed' : cost + ' sigils'}`;
       button.title = detail;
       button.setAttribute('aria-label', `${button.textContent}. ${detail}`);
       button.addEventListener('click', () => {
-        if (profile.sigils < cost || profile.owned.includes(stat)) return;
+        if (maxed || profile.sigils < cost) return;
         profile.sigils -= cost;
-        profile.owned.push(stat);
+        profile.ranks[stat] = rank + 1;
         save();
         renderShop(container);
       });
@@ -343,5 +136,6 @@
       container.append(row);
     }
   }
+
   window.GraveGainProgression = { createBuild, draft, award, renderShop };
 })();
