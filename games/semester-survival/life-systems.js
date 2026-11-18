@@ -48,7 +48,7 @@
   }
   function makeCourses(semester) {
     return makeCourseCatalog(semester).slice(0, 5).map(function (course) {
-      return Object.assign({}, course, { studyPoints: 0, preparation: 0, assignmentPoints: 0,
+      return Object.assign({}, course, { studyPoints: 0, preparation: 0, assignmentPoints: 0, assignmentProgress: 0, assignmentScoreTotal: 0, assignmentCount: 0,
         attendance: 0, catScore: null, examScore: null, grade: null });
     });
   }
@@ -179,7 +179,7 @@
         if (parsed.schemaVersion !== SAVE_VERSION) return false;
         parsed.relationships = parsed.relationships || {};
         parsed.academics.catalog = Array.isArray(parsed.academics.catalog) ? parsed.academics.catalog : makeCourseCatalog(parsed.campaign.semester);
-        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;
+        parsed.academics.registrationLocked = !!parsed.academics.registrationLocked;\n        parsed.academics.courses.forEach(function(course){course.assignmentProgress=Number.isFinite(course.assignmentProgress)?course.assignmentProgress:course.assignmentPoints||0;course.assignmentScoreTotal=Number.isFinite(course.assignmentScoreTotal)?course.assignmentScoreTotal:course.assignmentPoints||0;course.assignmentCount=Number.isInteger(course.assignmentCount)?course.assignmentCount:0;});
         parsed.finances.transactions = Array.isArray(parsed.finances.transactions) ? parsed.finances.transactions : [];
         const relationshipDefaults = {
           roommate: { name: 'Brian', affinity: 20, trust: 10, history: [] },
@@ -274,7 +274,7 @@
         }
         if (activity.assignment) {
           const course = s.academics.courses[options.courseIndex || 0];
-          if (course) course.assignmentPoints = clamp(course.assignmentPoints + activity.assignment, 0, 100);
+          if (course) course.assignmentProgress = clamp((course.assignmentProgress || 0) + activity.assignment, 0, 100);
         }
         if (activity.relationship) {
           const key = options.person || 'coursemate';
@@ -326,7 +326,7 @@
       if (credits < 9 || credits > 15) throw new Error('The semester credit load must be between 9 and 15 credits.');
       return commit(function(s){
         const byId=s.academics.courses.reduce(function(map,course){map[course.id]=course;return map;},{});
-        s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,attendance:0,catScore:null,examScore:null,grade:null});});
+        s.academics.courses=courseIds.map(function(courseId){return byId[courseId] || Object.assign({},s.academics.catalog.find(function(course){return course.id===courseId;}),{studyPoints:0,preparation:0,assignmentPoints:0,assignmentProgress:0,assignmentScoreTotal:0,assignmentCount:0,attendance:0,catScore:null,examScore:null,grade:null});});
         s.academics.registrationLocked=true;
         addJournal(s,'Course registration updated: '+courseIds.length+' courses, '+credits+' credits.');
         return {courseIds:courseIds.slice(),credits:credits};
@@ -339,7 +339,7 @@
       return commit(function(s){
         const course=s.academics.courses.find(function(item){return item.id===courseId;});
         if(!course)throw new Error('That course is not currently registered.');
-        course.assignmentPoints=clamp(course.assignmentPoints+points,0,100);
+        course.assignmentScoreTotal=(course.assignmentScoreTotal||0)+points;\n        course.assignmentCount=(course.assignmentCount||0)+1;\n        course.assignmentPoints=Number((course.assignmentScoreTotal/course.assignmentCount).toFixed(1));
         addJournal(s,'Assignment submitted for '+course.name+'.');
         return {courseId:courseId,assignmentId:assignmentId,assignmentPoints:course.assignmentPoints};
       });
