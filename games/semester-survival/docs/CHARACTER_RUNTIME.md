@@ -1,0 +1,36 @@
+# Character Runtime Integration
+
+## Purpose
+
+`character-runtime.js` is the orchestration boundary between the deterministic locomotion controller, authored sprite-atlas animator, input intent manager, and 2.5D scene renderer. It does not own a requestAnimationFrame loop, load remote content, or synthesize character artwork.
+
+## Construction
+
+The host constructs the four dependencies and passes them to `SemesterCharacterRuntime.create`:
+
+- `controller`: `update(delta, intent)`, `snapshot()`, `reset(position)`
+- `animator`: `play(clip, facing)`, `update(delta)`, `snapshot()`, `render(context, x, y, scale)`, `reset()`
+- `renderer`: `updateCamera(target, delta)`, `render(frame)`
+- `inputManager`: `consume()`; optional `destroy()`
+
+Optional settings are `characterScale`, `cameraOffsetY`, `requiredClips`, and `clipLibrary`. When a clip library is supplied, all required locomotion/action clips are validated before runtime creation. There is no placeholder fallback.
+
+## Frame contract
+
+The host calls `update(delta)` once per simulation frame, then `render()` when drawing. Update consumes one normalized input intent, advances locomotion, selects the authored clip, advances animation, and follows the character with the camera. The host retains control of frame scheduling and canvas resizing.
+
+The runtime clamps simulation delta to 50 ms. The controller and animator retain their own deterministic limits. `render()` passes the animator and world position to the scene renderer; only decoded atlas pixels can appear.
+
+## Animation mapping
+
+Most controller state names map directly to clip names. The controller's `land-recover` state maps to the authored `land-soft` clip. A missing selected clip blocks character rendering and is surfaced through `getState().error`; movement/camera diagnostics remain available. This is intentional: missing production art must be visible as a build defect, not hidden with a fake pose.
+
+## Lifecycle
+
+- `reset(position)` resets movement, animation and camera tracking to idle at the requested X position.
+- `getState()` returns movement, animation, last input, frame count, readiness and error.
+- `dispose()` prevents further updates/renders and releases the input manager's event listeners.
+
+## Current scope boundary
+
+This is a reusable integration runtime, not yet the shipped playable game. The game entrypoint is intentionally unchanged until authored character atlases, environment scenes, interactions, UI, and the complete game loop are integrated and browser-tested.
