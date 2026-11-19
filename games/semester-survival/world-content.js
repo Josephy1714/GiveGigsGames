@@ -311,4 +311,6 @@
     semesterArcs: semesterArcs,
     validate: validate
   });
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.SemesterWorldContent;
 })(typeof window !== 'undefined' ? window : globalThis);
