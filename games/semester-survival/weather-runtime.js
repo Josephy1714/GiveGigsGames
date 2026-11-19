@@ -133,13 +133,30 @@
       }
       return Object.freeze(result);
     }
+    function assessExposure(exposure) {
+      if (!current) throw new Error('Weather must be updated before assessing exposure.');
+      if (!['indoor', 'sheltered', 'outdoor'].includes(exposure)) throw new Error('Unknown weather exposure: ' + exposure);
+      const intensity = current.precipitation;
+      if (exposure === 'indoor' || intensity < 0.4) return Object.freeze({ exposure: exposure, advisory: null, shelterRecommended: false, precipitation: intensity });
+      if (exposure === 'outdoor' && intensity >= 0.7) return Object.freeze({ exposure: exposure, advisory: 'Heavy rain is affecting this outdoor area. Consider moving to a nearby sheltered place.', shelterRecommended: true, precipitation: intensity });
+      if (exposure === 'outdoor' && intensity >= 0.4) return Object.freeze({ exposure: exposure, advisory: 'Rain is falling in this outdoor area. A covered route or shelter may be more comfortable.', shelterRecommended: true, precipitation: intensity });
+      if (exposure === 'sheltered' && intensity >= 0.7) return Object.freeze({ exposure: exposure, advisory: 'Heavy rain is reaching exposed edges. Stay under cover where possible.', shelterRecommended: false, precipitation: intensity });
+      return Object.freeze({ exposure: exposure, advisory: null, shelterRecommended: false, precipitation: intensity });
+    }
+    function getNpcWeatherState(exposure, scheduledOutdoors) {
+      const assessment = assessExposure(exposure);
+      if (exposure === 'indoor') return 'staying-indoors';
+      if (assessment.precipitation >= 0.7) return scheduledOutdoors ? 'seeking-shelter' : 'staying-under-cover';
+      if (assessment.precipitation >= 0.4 && exposure === 'outdoor') return 'reducing-outdoor-activity';
+      return 'normal';
+    }
     function setDistrict(value) {
       if (typeof value !== 'string' || !DISTRICT_MODIFIERS.hasOwnProperty(value)) throw new Error('Unknown weather district: ' + value);
       district = value;
       lastKey = null;
     }
     function destroy() { disposed = true; current = null; lastKey = null; }
-    return Object.freeze({ update: update, getState: getState, getRenderState: getRenderState, forecast: forecast, setDistrict: setDistrict, destroy: destroy });
+    return Object.freeze({ update: update, getState: getState, getRenderState: getRenderState, forecast: forecast, assessExposure: assessExposure, getNpcWeatherState: getNpcWeatherState, setDistrict: setDistrict, destroy: destroy });
   }
 
   root.SemesterWeatherRuntime = Object.freeze({ create: create, seasons: SEASONS, conditions: WEATHER });
