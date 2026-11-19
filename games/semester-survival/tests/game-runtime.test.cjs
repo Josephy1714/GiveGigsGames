@@ -32,7 +32,7 @@ class ElementMock{
  remove(){if(this.parentNode)this.parentNode.removeChild(this);}
  focus(){}
  getBoundingClientRect(){return{width:960,height:540};}
- getContext(){return this.context||(this.context={globalAlpha:1,setTransform(){},clearRect(){},save(){},restore(){},translate(){},scale(){},drawImage(){},beginPath(){},rect(){},clip(){}});}
+ getContext(){return this.context||(this.context={globalAlpha:1,setTransform(){},clearRect(){},save(){},restore(){},translate(){},scale(){},drawImage(){},beginPath(){},rect(){},clip(){},fillRect(){},moveTo(){},lineTo(){},stroke(){}});}
 }
 function makeDocument(){return{hidden:false,listeners:{},createElement(tag){return new ElementMock(tag,this);},addEventListener(type,fn){this.listeners[type]=fn;},removeEventListener(type){delete this.listeners[type];}};}
 function fixture(){
