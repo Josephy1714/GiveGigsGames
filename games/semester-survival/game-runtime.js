@@ -69,7 +69,7 @@
   const environment=modules.environment.create({world:world,renderer:renderer,assetPipeline:assets,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'environment');}});
   const characterAtlas=options.characterAtlas;
   let atlasReady=false;
-  const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,onEvent:function(event){publish(event,'student-phone');}});
+  const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,weatherRuntime:weather,onEvent:function(event){publish(event,'student-phone');}});
   phone=phoneRuntime;
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,onEvent:function(event){publish(event,'interaction');}});
   character=null;
