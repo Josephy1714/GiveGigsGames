@@ -46,8 +46,8 @@
       if (!dt) return snapshot();
       const axis = clamp(Number(input.moveX) || 0, -1, 1);
       const depthAxis = clamp(Number(input.moveY) || 0, -1, 1);
-      const wantsSprint = !!input.sprint && c.stamina > 0 && Math.abs(axis) > 0.05;
-      const targetSpeed = wantsSprint ? CONFIG.sprintSpeed : (Math.abs(axis) > 0.05 ? CONFIG.jogSpeed : 0);
+      const wantsSprint = !!input.sprint && c.stamina > 0 && (Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05);
+      const targetSpeed = wantsSprint ? CONFIG.sprintSpeed : ((Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05) ? CONFIG.jogSpeed : 0);
       const horizontalTarget = axis * targetSpeed;
 
       c.slideCooldown = Math.max(0, c.slideCooldown - dt);
@@ -117,7 +117,7 @@
       if (Number.isFinite(depthBounds.min)) c.depth = Math.max(depthBounds.min, c.depth);
       if (Number.isFinite(depthBounds.max)) c.depth = Math.min(depthBounds.max, c.depth);
       if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
-      c.speed = Math.abs(c.vx);
+      c.speed = Math.hypot(c.vx, c.vDepth);
       if (Math.abs(c.vx) > 0.12) c.facing = Math.sign(c.vx);
       if (wantsSprint && c.grounded && c.slideTime === 0) c.stamina = clamp(c.stamina - CONFIG.staminaDrain * dt, 0, 100);
       else c.stamina = clamp(c.stamina + CONFIG.staminaRecovery * dt, 0, 100);
