@@ -95,6 +95,25 @@
       header.appendChild(speaker);
       header.appendChild(close);
 
+      const stage = dialogue.stage;
+      if (stage && Array.isArray(stage.participants)) {
+        const stagePanel = node('section', 'ss-interaction-ui__stage');
+        stagePanel.setAttribute('aria-label', 'Conversation participants and speaking turns');
+        stagePanel.appendChild(node('span', 'ss-interaction-ui__stage-label', 'SCENE BLOCKING · TEXT PREVIEW'));
+        const cast = node('div', 'ss-interaction-ui__stage-cast');
+        stage.participants.forEach(function (person) {
+          const actor = node('div', 'ss-interaction-ui__stage-actor' + (person.role === 'speaking' ? ' is-speaking' : ' is-listening'));
+          const mark = node('span', 'ss-interaction-ui__stage-mark', String(person.name || '?').trim().split(/\\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
+          mark.setAttribute('aria-hidden', 'true');
+          const identity = node('span', 'ss-interaction-ui__stage-identity');
+          identity.appendChild(node('strong', 'ss-interaction-ui__stage-name', person.name));
+          identity.appendChild(node('small', 'ss-interaction-ui__stage-role', person.role === 'speaking' ? 'Speaking · ' + person.expression : 'Listening · attentive'));
+          actor.appendChild(mark); actor.appendChild(identity); cast.appendChild(actor);
+        });
+        stagePanel.appendChild(cast);
+        panel.appendChild(stagePanel);
+      }
+
       const transcript = node('div', 'ss-interaction-ui__transcript');
       transcript.setAttribute('aria-live', 'polite');
       const entries = Array.isArray(dialogue.historyEntries) ? dialogue.historyEntries : (Array.isArray(dialogue.history) ? dialogue.history.map(function (line) { return { speakerName: dialogue.characterName, text: line }; }) : [{ speakerName: dialogue.characterName, text: dialogue.line }]);
