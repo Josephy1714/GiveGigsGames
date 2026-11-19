@@ -21,7 +21,9 @@
   function createController(options) {
     options = options || {};
     let depthBounds = options.depthBounds || { min: -120, max: 120 };
+    let xBounds = options.xBounds || { min: 0, max: 1920 };
     if (!depthBounds || !Number.isFinite(depthBounds.min) || !Number.isFinite(depthBounds.max) || depthBounds.min >= depthBounds.max) errorDepthBounds();
+    if (!xBounds || !Number.isFinite(xBounds.min) || !Number.isFinite(xBounds.max) || xBounds.min >= xBounds.max) throw new Error('X bounds require finite min and max values with min less than max.');
     function errorDepthBounds() { throw new Error('Depth bounds require finite min and max values with min less than max.'); }
     const c = {
       x: 0, y: 0, depth: 0, vx: 0, vy: 0, vDepth: 0,
@@ -49,9 +51,12 @@
       if (!dt) return snapshot();
       const axis = clamp(Number(input.moveX) || 0, -1, 1);
       const depthAxis = clamp(Number(input.moveY) || 0, -1, 1);
+      const inputMagnitude = Math.hypot(axis, depthAxis);
+      const moveX = inputMagnitude > 1 ? axis / inputMagnitude : axis;
+      const moveY = inputMagnitude > 1 ? depthAxis / inputMagnitude : depthAxis;
       const wantsSprint = !!input.sprint && c.stamina > 0 && (Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05);
       const targetSpeed = wantsSprint ? CONFIG.sprintSpeed : ((Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05) ? CONFIG.jogSpeed : 0);
-      const horizontalTarget = axis * targetSpeed;
+      const horizontalTarget = moveX * targetSpeed;
 
       c.slideCooldown = Math.max(0, c.slideCooldown - dt);
       c.jumpBuffer = input.jumpPressed ? CONFIG.jumpBuffer : Math.max(0, c.jumpBuffer - dt);
@@ -78,7 +83,7 @@
         c.vx = approach(c.vx, horizontalTarget, (Math.abs(horizontalTarget) > Math.abs(c.vx) ? acceleration : braking) * dt);
       }
 
-      const depthTarget = depthAxis * (input.sprint && c.stamina > 0 ? CONFIG.sprintSpeed : CONFIG.jogSpeed);
+      const depthTarget = moveY * targetSpeed;
       const depthAcceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
       const depthBraking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
       c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? depthAcceleration : depthBraking) * dt);
@@ -115,6 +120,8 @@
         c.x += c.dodgeDirection * 3.4 * dt;
       }
       c.x += c.vx * dt;
+      c.x = Math.max(xBounds.min, Math.min(xBounds.max, c.x));
+      if ((c.x === xBounds.min && c.vx < 0) || (c.x === xBounds.max && c.vx > 0)) c.vx = 0;
       c.depth += c.vDepth * dt;
       c.depth = Math.max(depthBounds.min, Math.min(depthBounds.max, c.depth));
       if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
@@ -166,6 +173,14 @@
       };
     }
 
+    function setXBounds(bounds) {
+      if (!bounds || !Number.isFinite(bounds.min) || !Number.isFinite(bounds.max) || bounds.min >= bounds.max) throw new Error('X bounds require finite min and max values with min less than max.');
+      xBounds = { min: bounds.min, max: bounds.max };
+      c.x = clamp(c.x, xBounds.min, xBounds.max);
+      if ((c.x === xBounds.min && c.vx < 0) || (c.x === xBounds.max && c.vx > 0)) c.vx = 0;
+      return Object.freeze({ min: xBounds.min, max: xBounds.max });
+    }
+
     function setDepthBounds(bounds) {
       if (!bounds || !Number.isFinite(bounds.min) || !Number.isFinite(bounds.max) || bounds.min >= bounds.max) errorDepthBounds();
       depthBounds = { min: bounds.min, max: bounds.max };
@@ -186,7 +201,7 @@
       return snapshot();
     }
 
-    return Object.freeze({ update, snapshot, reset, setDepthBounds });
+    return Object.freeze({ update, snapshot, reset, setDepthBounds, setXBounds });
   }
 
   root.SemesterCharacterController = Object.freeze({ createController, config: CONFIG });
