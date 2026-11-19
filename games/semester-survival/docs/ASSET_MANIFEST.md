@@ -52,3 +52,7 @@ const sceneManifest = {
 Preloading verifies decoded image dimensions and reports failures explicitly. `environment-runtime.js` awaits this preload and verifies required assets are retrievable before asking the renderer to mount a district. A failed preload or mount does not activate the destination scene. No substitute image is generated. Declared byte budgets must also be checked against actual repository file sizes during release validation.
 
 No real district artwork has been supplied yet; the schema above is illustrative, not a claim that these image files exist or that any district is currently playable.
+
+## Authored NPC navigation graph
+
+A scene may optionally define `navigation: { nodes, edges }`. Every node has a unique `id` and references an existing NPC or place hotspot via `anchor`. Every edge references two different declared node IDs and may set `bidirectional: false` for a one-way traversal. The environment rejects unknown anchors, duplicate IDs/anchors, self-edges and invalid edge references. The renderer then verifies every node resolves to an actual hotspot in the decoded scene. NPC path planning uses breadth-first search over this graph and obtains waypoint coordinates from renderer hotspot bounds; it never guesses positions or draws a substitute route. Scenes without a navigation graph remain valid but NPC navigation reports `navigation-not-authored`.
