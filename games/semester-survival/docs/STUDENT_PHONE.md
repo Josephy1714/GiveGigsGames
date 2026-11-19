@@ -47,3 +47,9 @@ Coursework is a gameplay loop, not a real document workflow. Do not add a file i
 ## Weather forecast
 
 The Weather section reads the same deterministic weather runtime used by the rendered world. It shows current conditions, seasonal context, district, time, daylight, wind and precipitation, followed by a three-day morning/afternoon forecast. Forecast review emits an in-game event. It is not a real-world meteorological service and does not require internet access.
+
+## Interactive Nairobi world map
+
+The Map section presents the four authored districts—Student Residence, Township, University Campus and Nairobi City—as a connected district network. It identifies the current district, distinguishes directly connected routes from unavailable destinations, and lists the current district's places and direct exits. Travel buttons call the central runtime's cinematic `travelTo` transaction; the phone closes before travel begins so the runtime's modal guard is respected. The runtime revalidates the route and route-specific arrival spawn, mounts the destination before committing travel, and synchronizes the world systems.
+
+Travel currently advances the simulation clock and consumes a small amount of energy and hunger. It does not charge cash: the current life-system travel function has no fare mutation. The map must not display invented fares or route durations. Unconnected districts are shown as unavailable from the current location, not as clickable fast travel. This map is a district overview and travel interface; detailed local map geometry and live GPS are not implied.
