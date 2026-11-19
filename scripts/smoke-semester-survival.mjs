@@ -16,6 +16,10 @@ try {
     return runtime && runtime.getState().ready === true;
   }, null, { timeout: 30000 });
 
+  assert.equal(await page.locator("[data-ss-play]").count(), 1, "A visible start screen should be mounted");
+  assert.equal(await page.locator("[data-ss-fullscreen]").count(), 1, "A fullscreen control should be mounted");
+  await page.locator("[data-ss-play]").click();
+
   const runtimeState = await page.evaluate(() => {
     const runtime = window.SemesterAdventureRuntimeInstance;
     const state = runtime.getState();
@@ -73,7 +77,17 @@ try {
     const runtime = window.SemesterAdventureRuntimeInstance;
     return runtime && runtime.getState().ready === true;
   }, null, { timeout: 30000 });
+  assert.equal(await mobile.locator("[data-ss-play]").count(), 1, "Mobile start screen should be mounted");
+  assert.equal(await mobile.locator("[data-ss-action=right]").count(), 1, "Mobile right control should be mounted");
+  await mobile.locator("[data-ss-play]").click();
   const mobileBefore = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  const rightButton = await mobile.locator("[data-ss-action=right]").boundingBox();
+  await mobile.mouse.move(rightButton.x + rightButton.width / 2, rightButton.y + rightButton.height / 2);
+  await mobile.mouse.down();
+  await mobile.waitForTimeout(350);
+  await mobile.mouse.up();
+  const heldButtonAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  assert.ok(heldButtonAfter > mobileBefore, "Holding the on-screen right control should move Jay");
   await mobile.evaluate(() => {
     const canvas = document.querySelector(".ss-adventure-shell__canvas");
     const options = { bubbles: true, pointerId: 7, pointerType: "touch", isPrimary: true };
@@ -90,6 +104,10 @@ try {
     canvas.dispatchEvent(new PointerEvent("pointerup", { ...options, clientX: 190, clientY: 230 }));
   });
   await mobile.waitForTimeout(180);
+  await mobile.locator("[data-ss-action=jump]").click();
+  await mobile.waitForTimeout(180);
+  const buttonJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
+  assert.ok(buttonJump > 0, "The on-screen jump control should trigger a jump");
   const mobileJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
   assert.ok(mobileJump > 0, "Upward touch swipe should trigger a real jump");
   await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.destroy());
