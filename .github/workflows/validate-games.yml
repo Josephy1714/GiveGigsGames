@@ -17,7 +17,9 @@ jobs:
         with:
           node-version: 22
       - name: Check generated offline catalog
-        run: node scripts/build-browser-catalog.mjs --check
+        run: |
+          node scripts/build-browser-catalog.mjs
+          git diff --exit-code -- games/catalog-data.js
       - name: Enforce per-game 10 MB limit
         run: node scripts/check-game-sizes.mjs
       - name: Check downloaded-folder entrypoints
