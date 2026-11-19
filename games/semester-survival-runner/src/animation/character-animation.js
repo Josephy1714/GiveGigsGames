@@ -8,9 +8,10 @@
   const DEFAULTS = Object.freeze({ transitionSeconds: 0.12, maxDelta: 0.1 });
   const STATE_CLIPS = Object.freeze({
     idle: 'idle', walk: 'walk', jog: 'jog', sprint: 'sprint',
-    'jump-takeoff': 'jump-takeoff', 'jump-rise': 'jump-rise',
-    'jump-apex': 'jump-apex', 'jump-fall': 'jump-fall',
-    'land-recover': 'land-soft', 'slide-start': 'slide-start',
+    'jump-takeoff': 'jump-running', 'jump-rise': 'jump-running',
+    'jump-apex': 'jump-running', 'jump-fall': 'jump-running',
+    'fall': 'fall-accidental', 'land-recover': 'get-up-recovery',
+    'slide-start': 'slide-start',
     'slide-loop': 'slide-loop', 'dodge-left': 'dodge-left',
     'dodge-right': 'dodge-right'
   });
@@ -204,7 +205,7 @@
     // Jay's uploaded jump sheets contain the complete crouch-to-air-to-landing
     // action. Keep that authored sequence intact instead of demanding invented
     // takeoff/rise/apex/fall sheets.
-    if (state.indexOf('jump-') === 0 || state === 'land-recover') {
+    if (state.indexOf('jump-') === 0) {
       const jumpClip = moving && has('jump-running') ? 'jump-running' : 'jump-standing';
       if (has(jumpClip)) return jumpClip;
     }

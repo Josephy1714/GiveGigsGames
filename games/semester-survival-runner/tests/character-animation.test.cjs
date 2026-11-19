@@ -10,7 +10,11 @@ function fixture() {
     idle: { fps: 2, playback: 'loop', frames: [frame(0), frame(16)] },
     jog: { fps: 4, playback: 'loop', frames: [frame(32), frame(48), frame(64)] },
     jump: { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
-    turn: { fps: 2, playback: 'pingpong', frames: [frame(0), frame(16), frame(32)] }
+    turn: { fps: 2, playback: 'pingpong', frames: [frame(0), frame(16), frame(32)] },
+    'jump-running': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
+    'jump-standing': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
+    'fall-accidental': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
+    'get-up-recovery': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] }
   }};
   return { image, manifest, library: animation.createClipLibrary(manifest, image) };
 }
@@ -70,6 +74,16 @@ test('controller binding maps movement states to authored clip names', () => {
   const missing = binding.update(0.016, { state: 'slide-start', facing: 1 });
   assert.equal(missing.ok, false);
   assert.equal(missing.missingClip, 'slide-start');
+});
+
+
+test('state resolver uses the real landing and recovery clips in the atlas', () => {
+  const { library } = fixture();
+  assert.equal(animation.resolveStateClip('jump-rise', { speed: 8 }, library), 'jump-running');
+  assert.equal(animation.resolveStateClip('jump-rise', { speed: 0 }, library), 'jump-standing');
+  assert.equal(animation.resolveStateClip('land-recover', { speed: 8 }, library), 'get-up-recovery');
+  assert.equal(animation.resolveStateClip('fall', { speed: 0 }, library), 'fall-accidental');
+  assert.equal(animation.resolveStateClip('slide-start', { speed: 8 }, library), 'slide-start');
 });
 
 test('canvas renderer draws atlas frames at the supplied world anchor', () => {
