@@ -76,7 +76,7 @@
       const light = daylight(minute) * (condition === 'storm' ? 0.72 : condition === 'rain' ? 0.84 : condition === 'cloudy' ? 0.9 : 1);
       return Object.freeze({
         condition: condition, label: profile.label, season: season.id, seasonLabel: season.label,
-        district: targetDistrict, week: week, dayIndex: dayIndex, timeOfDay: minute,
+        district: targetDistrict, week: week, dayIndex: dayIndex, timeOfDay: minute, timeBlock: block,
         light: clamp(light, 0.08, 1), precipitation: profile.precipitation,
         wind: profile.wind, fog: clamp(profile.fog + cityHaze, 0, 0.35),
         cloud: profile.cloud
@@ -87,7 +87,7 @@
       if (!calendar || !Number.isFinite(calendar.minuteOfDay)) throw new Error('Weather update requires the in-game calendar.');
       district = targetDistrict || district;
       const next = describe(calendar, district);
-      const key = [next.week, next.dayIndex, Math.floor(next.timeOfDay / 60 / 2), next.district, next.condition].join(':');
+      const key = [next.week, next.dayIndex, next.timeBlock, next.district, next.condition].join(':');
       if (key !== lastKey) {
         const previous = current;
         current = next;
