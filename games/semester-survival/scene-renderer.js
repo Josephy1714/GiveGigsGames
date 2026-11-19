@@ -98,6 +98,11 @@
         const anchorId = anchors[placeId].anchor;
         if (!validated.hotspots[anchorId]) fail('Interactable "' + placeId + '" has no authored render hotspot "' + anchorId + '".');
       });
+      (payload.npcAnchors || []).forEach(function (npc) {
+        if (!npc || typeof npc.anchor !== 'string' || !validated.hotspots[npc.anchor]) {
+          fail('NPC "' + (npc && npc.characterId || 'unknown') + '" has no authored render hotspot.');
+        }
+      });
       active = Object.freeze({ id: id, district: payload.district, scene: validated, assets: payload.assets });
       sceneId = id;
       focusedAnchor = null;
