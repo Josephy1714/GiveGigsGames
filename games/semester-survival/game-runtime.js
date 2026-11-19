@@ -54,7 +54,7 @@
   function drainNpcAnimationEvents(){
    if(!npcActors||typeof npcActors.drainAnimationEvents!=='function')return;
    npcActors.drainAnimationEvents().forEach(function(marker){
-    publish({type:'character:animation-event',characterId:marker.characterId,clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event},'character-animation');
+    publishAnimationEvent({type:'character:animation-event',characterId:marker.characterId,clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event});
    });
   }
   function refreshUI(){
@@ -69,6 +69,12 @@
    try{onEvent(event);}catch(error){onError(error);}
    subscribers.forEach(function(listener){try{listener(event);}catch(error){onError(error);}});
    refreshUI();
+   return event;
+  }
+  function publishAnimationEvent(event){
+   if(!event||event.type!=='character:animation-event')return event;
+   try{onEvent(event);}catch(error){onError(error);}
+   subscribers.forEach(function(listener){try{listener(event);}catch(error){onError(error);}});
    return event;
   }
   services=modules.university.create({lifeEngine:life,storage:storage,onEvent:function(event){publish(event,'university-services');}});
@@ -113,7 +119,7 @@
     const characterState=character.getState(),intent=characterState.input||{},position=getPosition();
     if(typeof character.drainAnimationEvents==='function'){
      character.drainAnimationEvents().forEach(function(marker){
-      publish({type:'character:animation-event',characterId:'jay',clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event,frameNumber:characterState.frameNumber},'character-animation');
+      publishAnimationEvent({type:'character:animation-event',characterId:'jay',clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event,frameNumber:characterState.frameNumber});
      });
     }
     const zoneState=gameplayZones.update(position,dt);controller.setMovementModifiers(zoneState.modifiers);
