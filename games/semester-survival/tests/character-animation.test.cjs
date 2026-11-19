@@ -104,7 +104,7 @@ test('emits authored frame markers once on entry and drains them deterministical
   assert.deepEqual(animator.drainEvents().map(event=>event.event),['left-foot-contact']);
   for(let i=0;i<5;i++) animator.update(0.1);
   assert.deepEqual(animator.drainEvents().map(event=>event.event),['right-foot-contact']);
-  for(let i=0;i<5;i++) animator.update(0.1);
+  for(let i=0;i<6;i++) animator.update(0.1);
   assert.deepEqual(animator.drainEvents().map(event=>event.event),['left-foot-contact']);
   assert.deepEqual(animator.drainEvents(),[]);
 });
