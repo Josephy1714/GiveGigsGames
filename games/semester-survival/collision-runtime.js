@@ -48,7 +48,7 @@
    if(d<1e-8){dx=1;dz=0;d=1;}
    return {nx:dx/d,nz:dz/d,penetration:sum-d};
   }
-  function moveCircle(position,delta,radius,actorId){
+  function moveCircle(position,delta,radius,actorId,deltaTime){
    if(disposed)fail('Collision world is disposed.');
    if(!position||!delta||![position.x,position.depth,delta.x,delta.depth,radius].every(Number.isFinite)||radius<=0)fail('Actor collision movement requires finite position, displacement and positive radius.');
    actorId=String(actorId||'actor');const maxStep=Math.max(0.05,radius*0.45),steps=Math.max(1,Math.min(24,Math.ceil(Math.hypot(delta.x,delta.depth)/maxStep)));
@@ -71,9 +71,9 @@
    const previous=active.get(actorId)||new Set(),current=new Set(touched.keys());
    touched.forEach(function(item,id){
     const c=item.collider,enter=!previous.has(id),normal=item.normal;
-    const impact=Math.max(0,-(delta.x*normal.x+delta.depth*normal.depth));
+    const impact=Math.max(0,-(delta.x*normal.x+delta.depth*normal.depth)/Math.max(0.001,Number.isFinite(deltaTime)&&deltaTime>0?deltaTime:1));
     if(enter)onEvent(Object.freeze({type:'collision:enter',actorId,colliderId:id,material:c.material,effect:c.effect,normal}));
-    if(impact>0.15)onEvent(Object.freeze({type:'collision:impact',actorId,colliderId:id,material:c.material,effect:c.effect,intensity:clamp(impact/5,0,1),position:Object.freeze({x:x,depth:z}),normal}));
+    if(enter&&impact>0.15)onEvent(Object.freeze({type:'collision:impact',actorId,colliderId:id,material:c.material,effect:c.effect,intensity:clamp(impact/8,0,1),impactSpeed:impact,position:Object.freeze({x:x,depth:z}),normal}));
    });
    previous.forEach(function(id){if(!current.has(id))onEvent(Object.freeze({type:'collision:exit',actorId,colliderId:id}));});
    if(current.size)active.set(actorId,current);else active.delete(actorId);
