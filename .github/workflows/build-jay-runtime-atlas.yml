@@ -43,6 +43,7 @@ jobs:
           git diff --cached --quiet || git commit -m "Build Jay runtime atlas with slide animation"
           git fetch origin "$GITHUB_REF_NAME"
           git rebase "origin/$GITHUB_REF_NAME"
+          rm -rf games/semester-survival-runner/assets/processed/jay-staging
           node scripts/build-browser-catalog.mjs
           git add games/catalog-data.js
           git diff --cached --quiet || git commit -m "Refresh arcade catalog after Jay atlas build"
