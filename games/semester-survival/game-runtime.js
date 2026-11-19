@@ -50,7 +50,7 @@
   let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,weather,npcSchedules,npcNavigation,npcActors,lipSync,visibilityHandler,escapeHandler;
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
-  function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
+  function getPosition(){const state=character?character.getState():null;if(!state)return null;const movement=state.movement||{};const layout=renderer.getLayout();const groundY=layout&&Number.isFinite(layout.groundY)?layout.groundY:0;const depthScale=layout&&Number.isFinite(layout.depthScale)?layout.depthScale:1;return{x:movement.x,y:groundY-(Number(movement.depth)||0)*depthScale-(Number(movement.y)||0),depth:movement.depth,vertical:movement.y};}
   function drainNpcAnimationEvents(){
    if(!npcActors||typeof npcActors.drainAnimationEvents!=='function')return;
    npcActors.drainAnimationEvents().forEach(function(marker){
