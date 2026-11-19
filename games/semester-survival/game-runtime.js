@@ -51,6 +51,12 @@
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
   function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
+  function drainNpcAnimationEvents(){
+   if(!npcActors||typeof npcActors.drainAnimationEvents!=='function')return;
+   npcActors.drainAnimationEvents().forEach(function(marker){
+    publish({type:'character:animation-event',characterId:marker.characterId,clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event},'character-animation');
+   });
+  }
   function refreshUI(){
    if(phoneUI)phoneUI.render();
    if(campaignUI)campaignUI.render();
@@ -127,6 +133,7 @@
     npcSchedules.update(life.getState().calendar,environment.getState().district);
     npcNavigation.update();
      npcActors.update(dt);
+     drainNpcAnimationEvents();
      lipSync.update();
     renderer.setAtmosphere(weather.getRenderState());
     character.render(npcActors.getRenderables());
@@ -171,6 +178,7 @@
     npcSchedules.update(life.getState().calendar,initialDistrict);
     npcNavigation.update();
      npcActors.update(0);
+    drainNpcAnimationEvents();
     renderer.setAtmosphere(weather.getRenderState());
     resize();
     character.render();
