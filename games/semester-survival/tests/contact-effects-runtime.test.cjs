@@ -36,3 +36,15 @@ test('rejects invalid or uncredited-by-schema contact geometry and materials',()
  assert.throws(()=>runtime.setSurfaces('campus',[{id:'same',type:'circle',x:0,depth:0,radius:1,material:'stone'},{id:'same',type:'circle',x:2,depth:0,radius:1,material:'stone'}]),/unique authored id/);
  runtime.destroy();
 });
+
+
+test('uses authored foot offsets and facing to resolve the actual contact point',()=>{
+ const runtime=api.create();runtime.setSurfaces('campus',[{id:'tile',type:'aabb',minX:0,maxX:20,minDepth:0,maxDepth:20,material:'stone'}]);
+ const marker={event:'left-foot-contact',offsetX:8,offsetDepth:4};
+ assert.equal(runtime.resolve(marker,{x:-10,depth:0},'jay',1),null);
+ const contact=runtime.resolve(marker,{x:-10,depth:0},'jay',-1);
+ assert.equal(contact.position.x,-18);
+ assert.equal(contact.position.depth,4);
+ assert.equal(contact.facing,-1);
+ runtime.destroy();
+});
