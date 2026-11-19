@@ -7,7 +7,7 @@
   const KEY = Object.freeze({
     left:['ArrowLeft','a','A'], right:['ArrowRight','d','D'],
     jump:['Space','ArrowUp','w','W'], slide:['ArrowDown','s','S'],
-    sprint:['Shift'], interact:['e','E','Enter'], phone:['Tab'], pause:['Escape']
+    sprint:['Shift'], depthForward:['i','I'], depthBack:['k','K'], interact:['e','E','Enter'], phone:['Tab'], pause:['Escape']
   });
   function createInputManager(target, options){
     options=options||{};
