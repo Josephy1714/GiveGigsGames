@@ -30,7 +30,7 @@ test('routine decisions follow in-game time and expose offscreen presence honest
  assert.equal(amina.visualReady,false);
  assert.equal(amina.movementReady,false);
  const later=runtime.update({week:1,dayIndex:1,minuteOfDay:14*60},'campus');
- assert.equal(later.find(npc=>npc.characterId==='amina').targetPlaceId,'library');
+ assert.equal(later.find(npc=>npc.characterId==='amina').targetPlaceId,'student-commons');
  assert.equal(later.find(npc=>npc.characterId==='amina').presence,'in-active-district');
  runtime.destroy();weather.destroy();
 });
