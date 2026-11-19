@@ -7,7 +7,7 @@ require('../npc-schedule-runtime.js');
 test('authored schedules cover every named NPC and reference real world places',()=>{
  const world=global.SemesterWorldContent;
  const schedules=global.SemesterNpcScheduleRuntime.routines;
- assert.deepEqual(Object.keys(schedules).sort(),['amina','brian','mwangi','njeri','wanjiku'].sort());
+ assert.deepEqual(Object.keys(schedules).sort(),['amina','brian','einstein','ernest','mwangi','njeri','sumeya','wanjiku'].sort());
  for(const [characterId,slots] of Object.entries(schedules)){
   assert.ok(world.characters[characterId]);
   assert.ok(slots.length>=4);
