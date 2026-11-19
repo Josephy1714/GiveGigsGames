@@ -30,3 +30,13 @@ Folder strictly below 10,000,000 bytes. No remote scripts, fonts, images, audio 
 - Disconnected graphs and missing graph/anchors return explicit unavailable states.
 - Offscreen NPCs never receive fabricated local positions.
 - No NPC is marked visually ready or movement ready until production artwork, actor controller integration, collision/path review and in-game animation QA are complete.
+
+## Collision and contact acceptance
+
+- Invalid, duplicate or unsupported collider definitions fail closed.
+- High-speed movement cannot pass through authored static walls.
+- Circle and segment contacts resolve without tunnelling; wall tangents remain traversable.
+- Contact enter/impact/exit events carry the authored material/effect and finite impact position/intensity.
+- Spawn points and narrow routes are reviewed against collider clearance.
+- Collision geometry is overlaid against final commissioned scene artwork; no geometry is accepted solely from guessed background-image bounds.
+- A scene with no colliders is not described as collision-complete.
