@@ -35,7 +35,7 @@ try {
   await page.locator("#pause-modal.show").waitFor();
   const quitWired = await page.locator("#quit").evaluate(button => typeof button.onclick === "function");
   assert.equal(quitWired, true, "Quit button should have a click handler");
-  await page.evaluate(() => window.__runnerSmoke.endRun());
+  await page.locator("#quit").click();
   await page.waitForFunction(() => document.querySelector("#result-modal").classList.contains("show"), null, { timeout: 5000 });
   await page.locator("#back").click();
   await page.locator("#journey").waitFor({ state: "hidden" });
