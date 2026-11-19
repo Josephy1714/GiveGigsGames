@@ -84,7 +84,8 @@
         String(dialogue.characterName || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
       monogram.setAttribute('aria-hidden', 'true');
       const speaker = node('div', 'ss-interaction-ui__speaker');
-      speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', 'IN CONVERSATION'));
+      const speechState = dialogue.speech && dialogue.speech.status === 'speaking' ? 'VOICE · LIP-SYNC ACTIVE' : dialogue.speech && dialogue.speech.status === 'paused' ? 'VOICE PAUSED' : 'IN CONVERSATION';
+      speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', speechState));
       speaker.appendChild(node('h2', 'ss-interaction-ui__name', dialogue.characterName));
       const close = button('×', 'ss-interaction-ui__close', function () {
         activate({ closeDialogue: true });
@@ -130,7 +131,7 @@
       const nextSignature = JSON.stringify({
         nearby: nearby && { type: nearby.type, id: nearby.id, name: nearby.name, prompt: nearby.prompt },
         dialogue: dialogue && { characterId: dialogue.characterId, characterName: dialogue.characterName,
-          line: dialogue.line, topics: dialogue.topics, history: dialogue.history }
+          line: dialogue.line, topics: dialogue.topics, history: dialogue.history, speech: dialogue.speech && { status: dialogue.speech.status, viseme: dialogue.speech.viseme } }
       });
       if (nextSignature === signature) return;
       signature = nextSignature;
