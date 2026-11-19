@@ -172,7 +172,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const saved={d:g.d,bossAt:g.bossAt,bossActive:g.bossActive,bossQueue:g.bossQueue,bossClock:g.bossClock,bossLabel:g.bossLabel,bossNumber:g.bossNumber,spawn:g.spawn,obs:g.obs,energy:g.energy,inv:g.inv,hit:g.hit,t:g.t,speed:g.speed,lane:g.lane,jump:g.jump,slide:g.slide,bonus:g.bonus,pick:g.pick,coins:g.coins};
   g.d=820;g.bossAt=820;g.bossActive=false;g.bossQueue=[];g.spawn=10;g.obs=[];g.energy=100;g.inv=1;g.hit=false;g.t=0;g.speed=345;g.lane=1;g.jump=0;g.slide=0;g.bonus=[];g.pick=[];g.coins=0;
   tick(.01);
-  const result={active:!!g.bossActive,label:g.bossLabel,queued:g.bossQueue.length,number:g.bossNumber};
+  const result={active:!!g.bossActive,label:g.bossLabel,queued:g.bossQueue.length+g.obs.filter(o=>o.boss).length,number:g.bossNumber};
   Object.assign(g,saved);
   return result;
  },
