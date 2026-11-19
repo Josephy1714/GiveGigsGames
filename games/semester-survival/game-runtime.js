@@ -20,7 +20,7 @@
    animation:root.SemesterCharacterAnimation,character:root.SemesterCharacterRuntime,assets:root.SemesterSceneAssets,
    renderer:root.SemesterSceneRenderer,environment:root.SemesterEnvironmentRuntime,interaction:root.SemesterInteractionRuntime,
    interactionUI:root.SemesterInteractionUI,campaign:root.SemesterCampaignRuntime,campaignUI:root.SemesterCampaignUI,
-   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime
+   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime,zones:root.SemesterGameplayZones,zones:root.SemesterGameplayZones
   };
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
@@ -75,8 +75,9 @@
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,weatherRuntime:weather,onEvent:function(event){publish(event,'interaction');}});
   npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});
   const collisionWorld=modules.collision.create({onEvent:function(event){publish(event,'collision');}});
+  const gameplayZones=modules.zones.create({onEvent:function(event){publish(event,'gameplay-zones');}});
   controller.setCollisionWorld(collisionWorld);
-  function loadCollisionScene(district){const descriptor=sceneManifest[district]&&sceneManifest[district].collision;collisionWorld.setColliders(descriptor&&Array.isArray(descriptor.colliders)?descriptor.colliders:[]);}
+  function loadCollisionScene(district){const descriptor=sceneManifest[district]&&sceneManifest[district].collision;collisionWorld.setColliders(descriptor&&Array.isArray(descriptor.colliders)?descriptor.colliders:[]);const scene=sceneManifest[district]||{};gameplayZones.setDistrict(district,Array.isArray(scene.gameplayZones)?scene.gameplayZones:[]);controller.setMovementModifiers({});}
   character=null;
   phoneUI=modules.phoneUI.mount(phoneRoot,phone);
   campaignUI=modules.campaignUI.create({root:campaignRoot,document:doc,campaignRuntime:campaign});
@@ -97,6 +98,7 @@
    try{
     character.update(dt);
     const characterState=character.getState(),intent=characterState.input||{},position=getPosition();
+    const zoneState=gameplayZones.update(position,dt);controller.setMovementModifiers(zoneState.modifiers);
     if(intent.phonePressed){phone.handleIntent(intent);refreshUI();}
     if(intent.pausePressed){
      if(interaction.getState().dialogue)interaction.interact(position,{closeDialogue:true});
@@ -210,16 +212,16 @@
   function markRead(id,kind){return phone.markRead(id,kind);}
   function reply(messageId,message){return phone.reply(messageId,message);}
   function getWeatherForecast(){return weather.forecast(life.getState().calendar,environment.getState().district);}
-  function getDiagnostics(){return Object.freeze({environment:environment.getDiagnostics(),assets:assets.getStatus(),scene:renderer.getState(),character:character?character.getState():null,weather:weather.getState(),npcSchedules:npcSchedules.getDiagnostics(),npcNavigation:npcNavigation.getDiagnostics(),collision:collisionWorld.getDiagnostics()});}
+  function getDiagnostics(){return Object.freeze({environment:environment.getDiagnostics(),assets:assets.getStatus(),scene:renderer.getState(),character:character?character.getState():null,weather:weather.getState(),npcSchedules:npcSchedules.getDiagnostics(),npcNavigation:npcNavigation.getDiagnostics(),collision:collisionWorld.getDiagnostics(),gameplayZones:gameplayZones.getState()});}
   function subscribe(listener){if(typeof listener!=='function')fail('Event subscriber must be a function.');subscribers.add(listener);return function(){subscribers.delete(listener);};}
   function getState(){
-   return Object.freeze({lifecycle:lifecycle,ready:lifecycle==='running'||lifecycle==='paused',paused:lifecycle==='paused',district:environment.getState().district,player:getPosition(),phone:phone.getSnapshot(),campaign:campaign.getState(),university:services.getSnapshot(),life:life.getState(),assets:assets.getStatus(),scene:renderer.getState(),weather:weather.getState(),weatherForecast:getWeatherForecast(),npcs:npcSchedules.getState(),npcRoutes:npcNavigation.getState(),collision:collisionWorld.getDiagnostics(),error:lastError,atlasReady:atlasReady});
+   return Object.freeze({lifecycle:lifecycle,ready:lifecycle==='running'||lifecycle==='paused',paused:lifecycle==='paused',district:environment.getState().district,player:getPosition(),phone:phone.getSnapshot(),campaign:campaign.getState(),university:services.getSnapshot(),life:life.getState(),assets:assets.getStatus(),scene:renderer.getState(),weather:weather.getState(),weatherForecast:getWeatherForecast(),npcs:npcSchedules.getState(),npcRoutes:npcNavigation.getState(),collision:collisionWorld.getDiagnostics(),gameplayZones:gameplayZones.getState(),error:lastError,atlasReady:atlasReady});
   }
   function destroy(){
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
    doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
-   phone.destroy();services.destroy();npcNavigation.destroy();npcSchedules.destroy();weather.destroy();collisionWorld.destroy();
+   phone.destroy();services.destroy();npcNavigation.destroy();npcSchedules.destroy();weather.destroy();collisionWorld.destroy();gameplayZones.destroy();
    if(pauseButton)pauseButton.removeEventListener('click',togglePause);
    phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
    if(character)character.dispose();else input.destroy();
