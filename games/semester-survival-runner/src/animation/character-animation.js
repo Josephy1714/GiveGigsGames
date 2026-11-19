@@ -212,14 +212,10 @@
     const requested = STATE_CLIPS[state] || state;
     if (has(requested)) return requested;
 
-    // Slide and dodge remain controller movement mechanics, but Jay has no
-    // approved slide/dodge artwork yet. Use honest locomotion art until it exists.
+    // Never disguise a missing action with unrelated artwork. The caller can
+    // keep the gameplay action active while surfacing the missing authored clip.
     if (state === 'slide-start' || state === 'slide-loop' ||
-        state === 'dodge-left' || state === 'dodge-right') {
-      if (running && has('sprint')) return 'sprint';
-      if (moving && has('jog')) return 'jog';
-      if (has('walk')) return 'walk';
-    }
+        state === 'dodge-left' || state === 'dodge-right') return requested;
     return has('idle') ? 'idle' : requested;
   }
 
