@@ -124,3 +124,9 @@ test('rejects invalid scene manifests and duplicate required ids at construction
   const badNpc = { ...manifest, residence: { ...manifest.residence, npcAnchors: [{ characterId: 'unknown', anchor: 'npc-door' }] } };
   assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: badNpc, assetPipeline: makePipeline() }), /invalid authored NPC anchor/);
 });
+
+
+test('rejects navigation waypoints without mounted authored hotspot artwork',()=>{
+ const {canvas}=fakeCanvas();const renderer=api.create({canvas});renderer.resize(960,540,1);
+ assert.throws(()=>renderer.mountScene('bad-navigation',{district:'campus',scene,assets,navigation:{nodes:[{id:'missing',anchor:'not-in-scene'}],edges:[]}}),/no authored render hotspot/);
+});
