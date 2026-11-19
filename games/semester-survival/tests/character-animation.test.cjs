@@ -118,8 +118,9 @@ test('validates frame event marker metadata and does not repeat once-clip marker
     {x:16,y:0,width:16,height:32,events:['finish']}
   ]}}},image);
   const animator=animation.createAnimator(library);
-  animator.play('finish',1);animator.update(2);
+  animator.play('finish',1);
+  for(let i=0;i<6;i++) animator.update(0.1);
   assert.deepEqual(animator.drainEvents().map(event=>event.event),['start','finish']);
-  animator.update(2);
+  for(let i=0;i<6;i++) animator.update(0.1);
   assert.deepEqual(animator.drainEvents(),[]);
 });
