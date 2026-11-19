@@ -169,3 +169,8 @@ Atlas frames may declare an optional `events` array of non-empty string markers.
 ## Runtime event integration
 
 Atlas frame markers are queued by the animator on frame entry. The character runtime exposes them through `drainAnimationEvents()`, and the central adventure runtime publishes each drained marker as `character:animation-event`. Event payloads identify the character, clip, atlas frame index, marker name, and simulation frame. This is an event contract only: it does not synthesize footsteps, impacts, particles, or sound. Those effects require authored assets and dedicated consumers.
+
+
+### Authored contact-point offsets
+
+Frame events may remain simple strings or use descriptors such as `{ name: "left-foot-contact", offsetX: -9, offsetDepth: 4 }`. Offsets are finite gameplay-plane units, validated at atlas load, and are carried with the marker. The contact resolver mirrors local horizontal offsets by the actor's facing direction and tests the resulting foot/impact point against district contact surfaces. Legacy string markers remain supported with a zero offset. Offsets must be authored from reviewed character animation sheets, not guessed from a generic sprite size.
