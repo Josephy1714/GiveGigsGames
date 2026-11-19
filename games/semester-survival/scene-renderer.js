@@ -258,19 +258,22 @@
         context.restore();
       });
       drawAtmosphere(scene.width, scene.height);
-      if (frame.character && frame.character.animator && typeof frame.character.animator.render === 'function') {
+      const actors = (Array.isArray(frame.characters) ? frame.characters.slice() : []);
+      if (frame.character && frame.character.animator) actors.push(frame.character);
+      actors.sort(function (a, b) { return (Number(a.y) || 0) - (Number(b.y) || 0); });
+      let drawnCharacters = 0;
+      if (actors.length) {
         context.save();
         context.translate(-camera.x, -camera.y);
-        frame.character.animator.render(
-          context,
-          Number(frame.character.x) || 0,
-          Number(frame.character.y) || 0,
-          Number(frame.character.scale) > 0 ? Number(frame.character.scale) : 1
-        );
+        actors.forEach(function (actor) {
+          if (!actor || !actor.animator || typeof actor.animator.render !== 'function') return;
+          const drawn = actor.animator.render(context, Number(actor.x) || 0, Number(actor.y) || 0, Number(actor.scale) > 0 ? Number(actor.scale) : 1);
+          if (drawn && drawn.drawn) drawnCharacters++;
+        });
         context.restore();
       }
       context.restore();
-      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: Boolean(frame.character && frame.character.animator) });
+      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: Boolean(frame.character && frame.character.animator), npcCharactersDrawn: Math.max(0, drawnCharacters - (frame.character && frame.character.animator ? 1 : 0)), charactersDrawn: drawnCharacters });
       return lastFrame;
     }
 
