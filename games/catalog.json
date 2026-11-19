@@ -712,6 +712,34 @@
       "recommended": false,
       "entrypoint": "treasure-hunters/index.html",
       "runtimeType": "static"
+    },
+    {
+      "slug": "semester-survival-runner",
+      "title": "Semester Survival: The University Run",
+      "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
+      "genre": "Endless Runner",
+      "tags": [
+        "Endless Runner",
+        "2D",
+        "2.5D",
+        "University",
+        "Kenya",
+        "Mobile"
+      ],
+      "emoji": "🎓",
+      "featured": false,
+      "recommended": false,
+      "entrypoint": "semester-survival-runner/index.html",
+      "runtimeType": "static",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Swipe left/right to change lanes, swipe up to jump and down to slide. Keyboard: arrows or WASD; Escape to pause.",
+      "modes": [
+        "solo"
+      ],
+      "packageBytes": 31073
     }
   ]
 }
