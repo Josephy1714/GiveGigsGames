@@ -1,7 +1,7 @@
 name: Semester Survival runtime tests
 on:
   push:
-    branches: [semester-survival-premium-rebuild]
+    branches: [main]
     paths:
       - 'games/semester-survival/**'
       - '.github/workflows/semester-survival-tests.yml'
