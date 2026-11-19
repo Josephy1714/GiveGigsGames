@@ -20,7 +20,7 @@
    animation:root.SemesterCharacterAnimation,character:root.SemesterCharacterRuntime,assets:root.SemesterSceneAssets,
    renderer:root.SemesterSceneRenderer,environment:root.SemesterEnvironmentRuntime,interaction:root.SemesterInteractionRuntime,
    interactionUI:root.SemesterInteractionUI,campaign:root.SemesterCampaignRuntime,campaignUI:root.SemesterCampaignUI,
-   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI
+   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime
   };
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
@@ -44,7 +44,7 @@
   const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes,loadImage:options.loadImage});
   let disposed=false, lifecycle='created',frameHandle=null,lastFrameTime=0,lastError=null,resizeHandler=null;
   const subscribers=new Set();
-  let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,visibilityHandler,escapeHandler;
+  let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,weather,visibilityHandler,escapeHandler;
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
   function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
@@ -64,6 +64,7 @@
   }
   services=modules.university.create({lifeEngine:life,storage:storage,onEvent:function(event){publish(event,'university-services');}});
   campaign=modules.campaign.create({world:world,lifeEngine:life,storage:storage,onEvent:function(event){publish(event,'campaign');}});
+  weather=modules.weather.create({initialDistrict:initialDistrict,onEvent:function(event){publish(event,'weather');}});
   const controller=modules.controller.createController(options.controllerOptions||{});
   const environment=modules.environment.create({world:world,renderer:renderer,assetPipeline:assets,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'environment');}});
   const characterAtlas=options.characterAtlas;
@@ -103,6 +104,8 @@
      if(intent.interactPressed||intent.interaction)interaction.interact(position,intent);
     }
     services.sync();
+    weather.update(life.getState().calendar,environment.getState().district,dt);
+    renderer.setAtmosphere(weather.getRenderState());
     character.render();
     if(interactionUI)interactionUI.render(interaction.getState());
     return getState();
@@ -139,6 +142,8 @@
     if(prepared.status!=='ready')fail('Starting district did not become ready.');
     const scene=sceneManifest[initialDistrict],spawn=scene.spawnPoints[options.initialSpawn||'default'];
     character.reset(spawn);
+    weather.update(life.getState().calendar,initialDistrict,0);
+    renderer.setAtmosphere(weather.getRenderState());
     resize();
     character.render();
     interaction.refresh(getPosition());
@@ -160,7 +165,7 @@
    if(!destinationSpawns[spawnId])fail('Destination has no authored arrival spawn for this route: '+previous+' -> '+destination);
    await environment.enter(destination,{spawn:spawnId});
    if(disposed)fail('Adventure runtime was disposed during district travel.');
-   try{const journey=life.travel(destination);services.sync();character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
+   try{const journey=life.travel(destination);services.sync();weather.setDistrict(destination);weather.update(life.getState().calendar,destination,0);renderer.setAtmosphere(weather.getRenderState());character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
    catch(error){await environment.enter(previous,{spawn:'default'});const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
   function pause(){
@@ -194,16 +199,17 @@
   function registerCourses(courseIds){return phone.registerCourses(courseIds);}
   function markRead(id,kind){return phone.markRead(id,kind);}
   function reply(messageId,message){return phone.reply(messageId,message);}
-  function getDiagnostics(){return Object.freeze({environment:environment.getDiagnostics(),assets:assets.getStatus(),scene:renderer.getState(),character:character?character.getState():null});}
+  function getWeatherForecast(){return weather.forecast(life.getState().calendar,environment.getState().district);}
+  function getDiagnostics(){return Object.freeze({environment:environment.getDiagnostics(),assets:assets.getStatus(),scene:renderer.getState(),character:character?character.getState():null,weather:weather.getState()});}
   function subscribe(listener){if(typeof listener!=='function')fail('Event subscriber must be a function.');subscribers.add(listener);return function(){subscribers.delete(listener);};}
   function getState(){
-   return Object.freeze({lifecycle:lifecycle,ready:lifecycle==='running'||lifecycle==='paused',paused:lifecycle==='paused',district:environment.getState().district,player:getPosition(),phone:phone.getSnapshot(),campaign:campaign.getState(),university:services.getSnapshot(),life:life.getState(),assets:assets.getStatus(),scene:renderer.getState(),error:lastError,atlasReady:atlasReady});
+   return Object.freeze({lifecycle:lifecycle,ready:lifecycle==='running'||lifecycle==='paused',paused:lifecycle==='paused',district:environment.getState().district,player:getPosition(),phone:phone.getSnapshot(),campaign:campaign.getState(),university:services.getSnapshot(),life:life.getState(),assets:assets.getStatus(),scene:renderer.getState(),weather:weather.getState(),weatherForecast:getWeatherForecast(),error:lastError,atlasReady:atlasReady});
   }
   function destroy(){
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
    doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
-   phone.destroy();services.destroy();
+   phone.destroy();services.destroy();weather.destroy();
    if(pauseButton)pauseButton.removeEventListener('click',togglePause);
    phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
    if(character)character.dispose();else input.destroy();
@@ -214,7 +220,7 @@
   visibilityHandler=function(){if(doc.hidden&&lifecycle==='running')pause();};
   doc.addEventListener('keydown',escapeHandler);doc.addEventListener('visibilitychange',visibilityHandler);
   resize();
-  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,destroy:destroy,resize:resize});
+  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,getWeatherForecast:getWeatherForecast,destroy:destroy,resize:resize});
  }
  root.SemesterAdventureRuntime=Object.freeze({create:create});
  if(root.document&&root.document.addEventListener){
