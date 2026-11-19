@@ -266,6 +266,29 @@
         drawImageFit(image, layer);
         context.restore();
       }
+      function drawActorShadow(actor, actorScale) {
+        if (!actor || actor.shadow === false || typeof context.ellipse !== 'function') return;
+        const groundY = Number.isFinite(actor.groundY) ? actor.groundY : (Number(actor.y) || 0);
+        const jumpHeight = Math.max(0, groundY - (Number(actor.y) || 0));
+        const lift = clamp(jumpHeight / 150, 0, 1);
+        const shadowWidth = Number.isFinite(actor.shadowWidth) ? actor.shadowWidth : 34;
+        const shadowHeight = Number.isFinite(actor.shadowHeight) ? actor.shadowHeight : 8;
+        context.save();
+        context.globalAlpha *= (Number.isFinite(actor.shadowOpacity) ? clamp(actor.shadowOpacity, 0, 0.45) : 0.22) * (1 - lift * 0.58);
+        context.fillStyle = '#111827';
+        context.beginPath();
+        context.ellipse(Number(actor.x) || 0, groundY + 2, shadowWidth * actorScale * (1 + lift * 0.32), Math.max(2, shadowHeight * actorScale * (1 + lift * 0.18)), 0, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      }
+      function actorScaleFor(actor) {
+        const base = Number(actor && actor.scale) > 0 ? Number(actor.scale) : 1;
+        if (!actor || !Number.isFinite(actor.depth)) return base;
+        const range = scene.depthBounds.max - scene.depthBounds.min;
+        const normalized = clamp((actor.depth - scene.depthBounds.min) / range, 0, 1);
+        const perspective = 0.9 + normalized * 0.2;
+        return base * perspective;
+      }
       function drawActors() {
         if (actorsDrawn) return;
         actorsDrawn = true;
@@ -274,7 +297,9 @@
         context.translate(-camera.x, -camera.y);
         actors.forEach(function (actor) {
           if (!actor || !actor.animator || typeof actor.animator.render !== 'function') return;
-          const drawn = actor.animator.render(context, Number(actor.x) || 0, Number(actor.y) || 0, Number(actor.scale) > 0 ? Number(actor.scale) : 1);
+          const actorScale = actorScaleFor(actor);
+          drawActorShadow(actor, actorScale);
+          const drawn = actor.animator.render(context, Number(actor.x) || 0, Number(actor.y) || 0, actorScale);
           if (drawn && drawn.drawn) drawnCharacters++;
         });
         context.restore();
