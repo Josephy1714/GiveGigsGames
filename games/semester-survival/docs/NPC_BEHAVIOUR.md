@@ -15,3 +15,10 @@ Simulation state is not a rendered character. NPC actor snapshots explicitly rep
 - The Study Circle is an authored five-person group conversation at the Student Commons from 13:00 to 16:00 game time. It opens only when all five participant schedules match the gathering place and the place has a mounted authored hotspot. Its text dialogue and relationship outcomes are implemented; this does not create visible actors or physical group staging.
 - No crowd simulation, collision avoidance, visible group formations, facial animation, gestures, dialogue lip-sync or visible NPC sprites are claimed by this milestone.
 - NPC movement does not yet use a production collision mesh; scene navigation graph design must keep authored routes clear.
+
+
+## Authored NPC sprite rendering hook
+
+The NPC actor runtime accepts optional per-character authored animators. It advances the matching walk or idle clip using the actor's actual route state and facing, and exposes renderables only when the animator confirms that the required authored clip exists. The character runtime passes those renderables to the 2.5D scene compositor, which draws player and NPC sprites in ground-position order for depth-aware overlap. The game runtime accepts `npcAnimators` and optional `npcCharacterScales` at creation.
+
+No animator is fabricated. With no approved NPC atlases supplied, the runtime continues to report zero visually ready NPC actors and draws no substitute figures. Each NPC atlas must be independently approved, credited, loaded from the local asset manifest, and include at least real walk and idle clips before it can appear.
