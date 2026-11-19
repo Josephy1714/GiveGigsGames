@@ -96,16 +96,19 @@
 
       const transcript = node('div', 'ss-interaction-ui__transcript');
       transcript.setAttribute('aria-live', 'polite');
-      const history = Array.isArray(dialogue.history) ? dialogue.history : [dialogue.line];
-      history.forEach(function (line, index) {
-        const paragraph = node('p', 'ss-interaction-ui__line' + (index === history.length - 1 ? ' is-current' : ''), line);
-        transcript.appendChild(paragraph);
+      const entries = Array.isArray(dialogue.historyEntries) ? dialogue.historyEntries : (Array.isArray(dialogue.history) ? dialogue.history.map(function (line) { return { speakerName: dialogue.characterName, text: line }; }) : [{ speakerName: dialogue.characterName, text: dialogue.line }]);
+      entries.forEach(function (entry, index) {
+        const turn = node('article', 'ss-interaction-ui__turn' + (index === entries.length - 1 ? ' is-current' : '') + (entry.speakerId === 'jay' ? ' is-player' : ' is-npc'));
+        turn.appendChild(node('span', 'ss-interaction-ui__turn-speaker', entry.speakerName || dialogue.characterName));
+        turn.appendChild(node('p', 'ss-interaction-ui__line', entry.text || ''));
+        if (entry.expression) turn.setAttribute('data-expression', entry.expression);
+        transcript.appendChild(turn);
       });
       const choices = node('div', 'ss-interaction-ui__choices');
       choices.setAttribute('aria-label', 'Conversation topics');
-      (dialogue.topics || []).forEach(function (topic, index) {
-        const choice = button(topic.replace(/[-_]/g, ' '), 'ss-interaction-ui__choice', function () {
-          activate({ topic: topic });
+      (dialogue.choices && dialogue.choices.length ? dialogue.choices : (dialogue.topics || []).map(function (topic) { return { id: topic, label: topic.replace(/[-_]/g, ' ') }; })).forEach(function (item, index) {
+        const choice = button(item.label || item.id, 'ss-interaction-ui__choice', function () {
+          activate({ topic: item.id });
         });
         choices.appendChild(choice);
         if (index === 0) firstTopicButton = choice;
@@ -131,7 +134,7 @@
       const nextSignature = JSON.stringify({
         nearby: nearby && { type: nearby.type, id: nearby.id, name: nearby.name, prompt: nearby.prompt },
         dialogue: dialogue && { characterId: dialogue.characterId, characterName: dialogue.characterName,
-          line: dialogue.line, topics: dialogue.topics, history: dialogue.history, speech: dialogue.speech && { status: dialogue.speech.status, viseme: dialogue.speech.viseme } }
+          line: dialogue.line, topics: dialogue.topics, choices: dialogue.choices, history: dialogue.history, historyEntries: dialogue.historyEntries, speech: dialogue.speech && { status: dialogue.speech.status, viseme: dialogue.speech.viseme } }
       });
       if (nextSignature === signature) return;
       signature = nextSignature;
