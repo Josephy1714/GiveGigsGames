@@ -405,16 +405,16 @@
     },
     {
       "slug": "semester-survival",
-      "title": "Semester Survival",
-      "description": "Explore university life with Jay across residence, township, campus, and the city. Attend classes, meet people, manage student life, and build your path through the semester.",
+      "title": "Semester Survival: Jay's University Adventure",
+      "description": "Explore residence, township, campus and city as Jay in a 2.5D anime university-life adventure. Move, jump, meet people, complete university activities and build your student journey.",
       "genre": "Adventure",
       "tags": [
         "Adventure",
         "Life Simulation",
-        "University",
         "Anime",
+        "University",
         "2.5D",
-        "Mobile"
+        "Exploration"
       ],
       "emoji": "🎓",
       "featured": false,
@@ -425,7 +425,7 @@
         "touch",
         "keyboard"
       ],
-      "controls": "Explore with on-screen touch controls or keyboard. Move through the districts, interact with places and characters, and progress through university life.",
+      "controls": "WASD or arrow keys to move; Space or W to jump; Shift to sprint; E or Enter to interact; Tab for phone; Escape to pause. Touch: swipe to move and jump.",
       "modes": [
         "solo"
       ]
