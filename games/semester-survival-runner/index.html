@@ -176,6 +176,6 @@ recordExtras.forEach(([label,value])=>{
  $("#stats-grid").append(el);
 });
 $("#coins").textContent=n(save.coins);
-
+if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={endRun:()=>finish(true),state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0})};
 
 })();</script></body></html>
