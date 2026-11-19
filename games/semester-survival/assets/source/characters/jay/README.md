@@ -35,3 +35,6 @@ No guessed frame coordinates, synthetic replacement poses, procedural people or 
 ## Working branch
 
 Use `semester-survival-premium-rebuild`. Do not upload this work to `main` or merge the replacement game until the project owner explicitly approves the completed build.
+
+
+Atlas build automation is configured for this branch; source files remain preserved.
