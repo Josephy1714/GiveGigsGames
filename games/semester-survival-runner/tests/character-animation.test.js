@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-require('../character-animation.js');
+require('../src/animation/character-animation.js');
 
 const animation = globalThis.SemesterCharacterAnimation;
 const frame = { x: 0, y: 0, width: 16, height: 24 };
