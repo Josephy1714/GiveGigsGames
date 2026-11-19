@@ -56,3 +56,8 @@ No real district artwork has been supplied yet; the schema above is illustrative
 ## Authored NPC navigation graph
 
 A scene may optionally define `navigation: { nodes, edges }`. Every node has a unique `id` and references an existing NPC or place hotspot via `anchor`. Every edge references two different declared node IDs and may set `bidirectional: false` for a one-way traversal. The environment rejects unknown anchors, duplicate IDs/anchors, self-edges and invalid edge references. The renderer then verifies every node resolves to an actual hotspot in the decoded scene. NPC path planning uses breadth-first search over this graph and obtains waypoint coordinates from renderer hotspot bounds; it never guesses positions or draws a substitute route. Scenes without a navigation graph remain valid but NPC navigation reports `navigation-not-authored`.
+
+
+## User-directed Gemini artwork intake
+
+Gemini-generated artwork may enter the repository as a production candidate when the project owner has reviewed and approved the design and confirmed the applicable usage rights. Preserve the original exported PNGs in `assets/source/characters/<character-id>/`; do not overwrite source exports during atlas packing. Record the generating service, prompt revision, creator/submitting owner, source and usage-rights note. Generated source artwork is not automatically production-ready: it must pass identity continuity, anatomy, transparency, exact frame-grid, animation timing and in-game scale review. Never label generated work as hand-drawn or human-commissioned. Unapproved, inconsistent or low-quality outputs stay out of the runtime manifest.
