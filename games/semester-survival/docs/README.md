@@ -36,6 +36,7 @@ This directory is the production source of truth. Implementation decisions must 
 
 
 - NPC daily routines — authored schedule slots, weather-aware shelter destinations and explicit visual/pathing readiness gates.
+- contact-effects-runtime.js — authored surface regions and animation-driven material contact metadata.
 
 - NPC_BEHAVIOUR.md — daily routines, authored route-following simulation and NPC visual-production gates.
 - LIP_SYNC_AND_VOICE.md — human voice recordings, phoneme-aligned viseme tracks, synchronization runtime and production approval gates.
