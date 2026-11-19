@@ -129,7 +129,7 @@
       } else if (c.grounded && c.dodgeTime > 0) {
         // Preserve directional dodge state for the duration.
       } else if (c.grounded) {
-        const speed = Math.abs(c.vx);
+        const speed = c.speed;
         if (speed < 0.12) transition('idle', 'stopped');
         else if (wantsSprint && speed > 4.4) transition('sprint', 'speed-threshold');
         else if (speed > 2.7) transition('jog', 'speed-threshold');
