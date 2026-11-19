@@ -60,3 +60,15 @@ test('animator without required authored clips remains invisible',()=>{
  const runtime=global.SemesterNpcActorRuntime.create({world:{},scheduleRuntime:schedules,navigationRuntime:{getState:()=>[route]},animators:{brian:animator}});
  const actor=runtime.update(0.1)[0];assert.equal(actor.visualReady,false);assert.equal(runtime.getRenderables().length,0);runtime.destroy();
 });
+
+
+test('approved NPC animator frame markers retain character identity and drain once',()=>{
+ const schedules={getState:()=>[{characterId:'brian',name:'Brian',presence:'in-active-district',targetDistrict:'campus'}]};
+ const markerQueue=[];
+ const animator={hasClip:name=>name==='walk'||name==='idle',play:()=>({ok:true}),update(){markerQueue.push({clip:'walk',frameIndex:2,event:'right-foot-contact'});},drainEvents(){return markerQueue.splice(0,markerQueue.length);},render(){return {drawn:true};}};
+ const runtime=global.SemesterNpcActorRuntime.create({world:{},scheduleRuntime:schedules,navigationRuntime:{getState:()=>[route]},animators:{brian:animator}});
+ runtime.update(0.1);
+ assert.deepEqual(runtime.drainAnimationEvents(),[{characterId:'brian',clip:'walk',frameIndex:2,event:'right-foot-contact'}]);
+ assert.deepEqual(runtime.drainAnimationEvents(),[]);
+ runtime.destroy();
+});
