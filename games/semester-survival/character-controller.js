@@ -73,9 +73,12 @@
         const acceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
         const braking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
         c.vx = approach(c.vx, horizontalTarget, (Math.abs(horizontalTarget) > Math.abs(c.vx) ? acceleration : braking) * dt);
-        const depthTarget = depthAxis * targetSpeed;
-        c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? acceleration : braking) * dt);
       }
+
+      const depthTarget = depthAxis * (input.sprint && c.stamina > 0 ? CONFIG.sprintSpeed : CONFIG.jogSpeed);
+      const depthAcceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
+      const depthBraking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
+      c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? depthAcceleration : depthBraking) * dt);
 
       if (input.jumpPressed) c.jumpBuffer = CONFIG.jumpBuffer;
       if (c.jumpBuffer > 0 && (c.grounded || c.coyote > 0) && c.slideTime === 0) {
