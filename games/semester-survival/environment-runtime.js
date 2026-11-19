@@ -56,6 +56,21 @@
 
       const spawnPoints = Object.assign(Object.create(null), source.spawnPoints || {});
       if (!spawnPoints.default) fail('Scene "' + districtId + '" requires an authored default spawn point.');
+      Object.keys(spawnPoints).forEach(function (spawnId) {
+        const point = spawnPoints[spawnId];
+        if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.depth)) fail('Spawn point "' + spawnId + '" in ' + districtId + ' must provide finite x and depth coordinates.');
+        const playerBounds = source.render && source.render.playerBounds;
+        const depthBounds = source.render && source.render.depthBounds;
+        if (playerBounds && (point.x < playerBounds.minX || point.x > playerBounds.maxX)) fail('Spawn point "' + spawnId + '" in ' + districtId + ' lies outside authored horizontal player bounds.');
+        if (depthBounds && (point.depth < depthBounds.min || point.depth > depthBounds.max)) fail('Spawn point "' + spawnId + '" in ' + districtId + ' lies outside authored depth bounds.');
+        spawnPoints[spawnId] = Object.freeze({ x: point.x, depth: point.depth });
+      });
+      if (source.npcAnchors !== undefined && !Array.isArray(source.npcAnchors)) fail('Scene "' + districtId + '" npcAnchors must be an array.');
+      const npcAnchors = (source.npcAnchors || []).map(function (npc) {
+        if (!npc || !world.characters[npc.characterId] || typeof npc.anchor !== 'string' || !npc.anchor.trim()) fail('Scene "' + districtId + '" contains an invalid authored NPC anchor.');
+        if (npc.radius !== undefined && (!Number.isFinite(npc.radius) || npc.radius <= 0)) fail('NPC anchor "' + npc.characterId + '" has an invalid interaction radius.');
+        return Object.freeze({ characterId: npc.characterId, anchor: npc.anchor, radius: npc.radius });
+      });
       const interactables = Object.assign(Object.create(null), source.interactables || {});
       Object.keys(interactables).forEach(function (placeId) {
         const placeExists = world.districts[districtId].places.some(function (p) { return p.id === placeId; });
@@ -67,7 +82,7 @@
       });
       scenes[districtId] = {
         status: 'not-prepared', sceneId: source.sceneId, requiredAssetIds: requiredAssetIds,
-        spawnPoints: spawnPoints, interactables: interactables, render: source.render || null, error: null, preparation: null
+        spawnPoints: spawnPoints, interactables: interactables, npcAnchors: npcAnchors, render: source.render || null, error: null, preparation: null
       };
     });
 
@@ -157,6 +172,7 @@
             previousDistrict: previous,
             scene: scene.render,
             interactables: scene.interactables,
+            npcAnchors: scene.npcAnchors,
             assets: Object.freeze(scene.requiredAssetIds.reduce(function (items, id) {
               items[id] = assetPipeline.getAsset(id);
               return items;
