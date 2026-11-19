@@ -49,3 +49,19 @@ test('weather emits changes and rejects invalid district or disposed use',()=>{
  weather.destroy();
  assert.throws(()=>weather.update({week:1,dayIndex:0,minuteOfDay:0},'campus',0.1),/disposed/);
 });
+
+test('weather exposure gives transparent shelter advice and NPC behaviour states',()=>{
+ const weather=global.SemesterWeatherRuntime.create();
+ let heavy=null;
+ for(let week=10;week<=18&&!heavy;week++) for(let day=0;day<7&&!heavy;day++){
+   const state=weather.update({week,dayIndex:day,minuteOfDay:12*60},'campus',0.01);
+   if(state.precipitation>=0.7) heavy=state;
+ }
+ assert.ok(heavy);
+ assert.equal(weather.assessExposure('indoor').advisory,null);
+ assert.equal(weather.assessExposure('outdoor').shelterRecommended,true);
+ assert.equal(weather.getNpcWeatherState('outdoor',true),'seeking-shelter');
+ assert.equal(weather.getNpcWeatherState('indoor',true),'staying-indoors');
+ assert.throws(()=>weather.assessExposure('unknown'),/Unknown weather exposure/);
+ weather.destroy();
+});
