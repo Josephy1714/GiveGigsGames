@@ -1,57 +1,61 @@
 {
-    "title": "Semester Survival",
-    "slug": "semester-survival",
-    "description": "Survive 8 chaotic semesters of lectures, exams, portal downs, and empty wallets to graduate without getting expelled!",
-    "genre": "Endless Runner",
-    "tags": ["HTML5", "3D", "Runner", "University", "Arcade"],
-    "maker": {
-        "name": "Joseph Ombati & Antigravity",
-        "bio": "A collaboration between concept designer Joseph Ombati and Antigravity to create the ultimate premium university simulation running game.",
-        "url": "https://4weird.com",
-        "urlLabel": "4weird Games"
+  "title": "Semester Survival: Jay's University Run",
+  "slug": "semester-survival",
+  "description": "Run through the residence, Nairobi student township, university campus and city as Jay. Switch lanes, jump, slide, collect university rewards and survive eight semesters.",
+  "genre": "Endless Runner",
+  "tags": [
+    "HTML5",
+    "Endless Runner",
+    "University",
+    "Mobile",
+    "2.5D",
+    "Anime"
+  ],
+  "maker": {
+    "name": "Joseph Ombati",
+    "bio": "Creator and game director of Semester Survival: Jay's University Run.",
+    "url": "https://github.com/Josephy1714/GiveGigsGames",
+    "urlLabel": "GiveGigsGames"
+  },
+  "controls": {
+    "keyboard": {
+      "Arrow Left / A": "Switch one lane left",
+      "Arrow Right / D": "Switch one lane right",
+      "Arrow Up / Space": "Jump",
+      "Arrow Down / S": "Slide",
+      "Escape": "Pause"
     },
-    "credits": [
-        {
-            "name": "Joseph Ombati",
-            "role": "Concept & Design",
-            "avatar": "🎓",
-            "primary": true
-        },
-        {
-            "name": "Antigravity",
-            "role": "Lead Developer & UI Designer",
-            "avatar": "🤖",
-            "primary": true,
-            "url": "https://4weird.com",
-            "urlLabel": "4weird"
-        }
-    ],
-    "controls": {
-        "keyboard": {
-            "A / D or Arrow Left / Right": "Switch Lanes",
-            "W or Arrow Up": "Jump over obstacles",
-            "S or Arrow Down": "Slide under obstacles",
-            "P or Escape": "Pause / Resume"
-        },
-        "touch": {
-            "swipe": "Swipe Left / Right / Up / Down",
-            "buttons": "Touch buttons on mobile screen"
-        },
-        "mouse": false
+    "touch": {
+      "swipe": "Swipe left/right to change lanes, up to jump, down to slide"
     },
-    "instructions": "Navigate your student through three lanes to dodge academic threats like assignment deadlines, portal crashes, and stress while collecting coffee, lecture notes, and HELB loans. Complete objectives to pass the final exam/boss of each semester and advance. Survive all 8 semesters to graduate!",
-    "technical": {
-        "canvasSize": {"width": 800, "height": 600},
-        "targetFPS": 60,
-        "mobileOptimized": true
+    "mouse": false
+  },
+  "instructions": "Run through four university districts. Avoid desks, book stacks, crowded corridors, construction barriers and deadlines. Collect credits and timed power-ups. Progress through eight semesters.",
+  "technical": {
+    "canvasSize": {
+      "width": 1080,
+      "height": 1920
     },
-    "assets": {
-        "external": ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"],
-        "local": ["sound.js", "state.js", "controls.js", "renderer.js", "ui.js", "game.js", "game.css"]
-    },
-    "meta": {
-        "version": "1.0.0",
-        "created": "2026-06-28",
-        "license": "Private - All Rights Reserved"
-    }
+    "targetFPS": 60,
+    "mobileOptimized": true,
+    "rendering": "2.5D canvas endless runner"
+  },
+  "assets": {
+    "external": [],
+    "local": [
+      "runner.js",
+      "runner.css",
+      "assets/processed/jay-runtime/jay-atlas.json",
+      "assets/processed/jay-runtime/jay-atlas.png",
+      "assets/scenes/residence/district-blockout.svg",
+      "assets/scenes/township/district-blockout.svg",
+      "assets/scenes/campus/district-blockout.svg",
+      "assets/scenes/city/district-blockout.svg"
+    ]
+  },
+  "meta": {
+    "version": "3.0.0",
+    "license": "Private - All Rights Reserved",
+    "updated": "2026-11-19"
+  }
 }
