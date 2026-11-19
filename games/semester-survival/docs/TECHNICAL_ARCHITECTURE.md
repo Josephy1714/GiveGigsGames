@@ -25,6 +25,10 @@ A district without a scene manifest remains unavailable. A scene with missing or
 
 Tests must cover asset ownership, missing/corrupt art, readiness gating, route/spawn checks, overlapping transitions, async renderer failures and unavailable interactions.
 
+## Cinematic district travel
+
+`district-transition-ui.js` renders an accessible destination overlay with honest preparation and arrival phases, an indeterminate loading indicator, and reduced-motion support. The central runtime locks and flushes player input while the transition is active. Travel validates route and route-specific spawn first, then prepares and mounts the destination before committing the life-system journey, collision/gameplay zones, weather, NPC schedule/navigation state and player spawn. Failed scene mounting leaves the previous district active; a post-mount failure attempts to restore the previous district and the player's exact prior position. The overlay is always removed and controls are restored in a `finally` path. It never reports fabricated percentage progress or substitutes missing artwork.
+
 ## Authored scene compositor
 
 `scene-renderer.js` is the renderer adapter consumed by the environment runtime. The runtime passes its authored `render` descriptor, interaction anchors and decoded asset map to `mountScene`. The compositor validates the design viewport, every image layer, fit mode, z-order, parallax and hotspot bounds before committing a mounted scene. It draws only decoded assets; missing layers or hotspots fail closed.
