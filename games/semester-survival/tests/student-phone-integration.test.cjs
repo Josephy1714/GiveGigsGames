@@ -10,7 +10,7 @@ test('phone connects live coursework, inbox, course catalogue and finance record
  const storage=memory(),life=global.SemesterLifeSystems.createEngine(storage),events=[];
  const services=global.SemesterUniversityServices.create({lifeEngine:life,storage,onEvent:e=>events.push(e)});
  const weather=global.SemesterWeatherRuntime.create();weather.update(life.getState().calendar,'residence',0.016);
- const phone=global.SemesterStudentPhone.create({lifeEngine:life,world:global.SemesterWorldContent,universityServices:services,weatherRuntime:weather,onEvent:e=>events.push(e)});
+ const phone=global.SemesterStudentPhone.create({lifeEngine:life,world:global.SemesterWorldContent,universityServices:services,weatherRuntime:weather,onEvent:e=>{events.push(e);if(e.type==='dialogue:opened')services.receive(e);}});
  const snapshot=phone.getSnapshot();
  assert.equal(snapshot.university.catalog.length,7);
  assert.equal(snapshot.university.assignments.length,10);
