@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(require.resolve('../student-phone-runtime.js'), 'utf8');
 function fixture(){
-  const state={player:{displayName:'Student'},campaign:{semester:1},calendar:{dayIndex:0,week:1},location:'residence',condition:{energy:90,hunger:70,stress:10},finances:{cash:2500,debt:0,lifetimeEarned:0,lifetimeSpent:0},academics:{cumulativeGpa:0,courses:[{id:'S1-U1',name:'Maths',credits:3,assignmentPoints:0,catScore:null,examScore:null}],transcript:[]},relationships:{roommate:{name:'Brian',affinity:20,trust:10,history:[]}},journal:[]};
+  const state={player:{displayName:'Student'},campaign:{semester:1},calendar:{dayIndex:0,week:1,minuteOfDay:540},location:'residence',condition:{energy:90,hunger:70,stress:10},finances:{cash:2500,debt:0,lifetimeEarned:0,lifetimeSpent:0},academics:{cumulativeGpa:0,courses:[{id:'S1-U1',name:'Maths',credits:3,assignmentPoints:0,catScore:null,examScore:null}],transcript:[]},relationships:{roommate:{name:'Brian',affinity:20,trust:10,history:[]}},journal:[]};
   const life={getState:()=>JSON.parse(JSON.stringify(state)),getTimetable:()=>[{day:'Monday',start:'09:00',end:'11:00',course:'Maths',location:'Hall'}]};
   const world={districts:{residence:{title:'Residence',exits:['township'],places:[{id:'room',name:'Room',actions:['sleep']}]},township:{title:'Township',exits:['residence'],places:[]}}};
   return {state,life,world};
@@ -38,4 +38,14 @@ test('Tab intent toggles phone and pause closes it',()=>{
 test('destroy closes the phone and ignores later state changes',()=>{
  const f=fixture(),phone=load().create({lifeEngine:f.life,world:f.world});
  phone.setOpen(true);phone.destroy();assert.equal(phone.getSnapshot().open,false);
+});
+
+test('weather section exposes current conditions and a three-day forecast',()=>{
+ const f=fixture(),weather={getState:()=>({label:'Light drizzle',seasonLabel:'Long rains',district:'residence',timeOfDay:540,wind:.25,precipitation:.28,light:.8}),forecast:()=>[{week:1,dayIndex:0,season:'Long rains',morning:'Light drizzle',afternoon:'Rain'},{week:1,dayIndex:1,season:'Long rains',morning:'Cloudy',afternoon:'Rain'},{week:1,dayIndex:2,season:'Long rains',morning:'Clear skies',afternoon:'Light drizzle'}]};
+ const events=[],phone=load().create({lifeEngine:f.life,world:f.world,weatherRuntime:weather,onEvent:e=>events.push(e)});
+ phone.setOpen(true);const snapshot=phone.navigate('weather');
+ assert.equal(snapshot.weather.label,'Light drizzle');
+ assert.equal(snapshot.weatherForecast.length,3);
+ assert.equal(snapshot.weatherForecast[0].afternoon,'Rain');
+ assert.ok(events.some(e=>e.type==='weather:forecast-reviewed'));
 });
