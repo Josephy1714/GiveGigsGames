@@ -37,7 +37,7 @@
         { id: 'lecture-hall', name: 'Main Lecture Hall', actions: ['attend-lecture', 'ask-question'] , exposure: 'indoor' },
         { id: 'library', name: 'University Library', actions: ['study', 'borrow-book'] , exposure: 'indoor' },
         { id: 'data-lab', name: 'Computer and Data Lab', actions: ['lab-session', 'work-on-project'] , exposure: 'indoor' },
-        { id: 'student-commons', name: 'Student Commons', actions: ['socialize', 'join-club'] , exposure: 'indoor' },
+        { id: 'student-commons', name: 'Student Commons', actions: ['socialize', 'join-club', 'join-study-circle'] , exposure: 'indoor' },
         { id: 'administration', name: 'Student Administration', actions: ['check-fees', 'resolve-record'] , exposure: 'indoor' },
         { id: 'lecturer-office', name: 'Lecturer Offices', actions: ['consult-lecturer'] , exposure: 'indoor' }
       ]
@@ -151,6 +151,44 @@
     }
   };
 
+  const socialScenes = [
+    {
+      id: 'commons-study-circle', title: 'The Study Circle', district: 'campus', placeId: 'student-commons',
+      from: 780, to: 960, participants: ['amina', 'sumeya', 'einstein', 'ernest', 'wanjiku'], minParticipants: 5,
+      opening: [
+        { speakerId: 'amina', text: 'Thanks for coming. I thought we could make this revision session a little more organised.', expression: 'welcoming' },
+        { speakerId: 'sumeya', text: 'That sounds good. We can each bring a different way of approaching the difficult topics.', expression: 'thoughtful' },
+        { speakerId: 'einstein', text: 'I have a few examples where changing one assumption changes the whole result.', expression: 'animated' },
+        { speakerId: 'ernest', text: 'And we should leave room to build something together after exams.', expression: 'excited' },
+        { speakerId: 'wanjiku', text: 'Let us agree on a plan we can actually keep. Nobody needs another abandoned group chat.', expression: 'firm' }
+      ],
+      choices: [
+        {
+          id: 'divide-revision', label: 'Suggest dividing the revision topics',
+          turns: [
+            { speakerId: 'amina', text: 'I can prepare the statistics examples and share my working.', expression: 'bright' },
+            { speakerId: 'sumeya', text: 'I will take the concepts that need careful explanation and make a short guide.', expression: 'encouraging' },
+            { speakerId: 'einstein', text: 'I will test the examples and look for edge cases.', expression: 'focused' },
+            { speakerId: 'ernest', text: 'I can organise the shared notes so they are easy to follow.', expression: 'confident' },
+            { speakerId: 'wanjiku', text: 'Good. I will set a check-in time and make sure everyone knows their part.', expression: 'appreciative' }
+          ],
+          effects: { amina: { affinity: 2, trust: 2 }, sumeya: { affinity: 2, trust: 2 }, einstein: { affinity: 2, trust: 1 }, ernest: { affinity: 2, trust: 1 }, wanjiku: { affinity: 1, trust: 2 } }
+        },
+        {
+          id: 'share-challenges', label: 'Ask everyone which topic they find hardest',
+          turns: [
+            { speakerId: 'amina', text: 'For me, it is knowing when a statistical method is appropriate, not just memorising the formula.', expression: 'honest' },
+            { speakerId: 'sumeya', text: 'I want to get more confident explaining each step instead of jumping to the answer.', expression: 'reflective' },
+            { speakerId: 'einstein', text: 'I sometimes overcomplicate a problem. The simplest valid model is often the strongest.', expression: 'thoughtful' },
+            { speakerId: 'ernest', text: 'I need to practise consistently instead of waiting until the deadline is close.', expression: 'sheepish' },
+            { speakerId: 'wanjiku', text: 'Then we have a useful starting point. We can help each other without pretending we all struggle with the same thing.', expression: 'warm' }
+          ],
+          effects: { amina: { affinity: 2, trust: 3 }, sumeya: { affinity: 2, trust: 3 }, einstein: { affinity: 2, trust: 2 }, ernest: { affinity: 2, trust: 2 }, wanjiku: { affinity: 2, trust: 3 } }
+        }
+      ]
+    }
+  ];
+
   const semesterArcs = [
     {
       semester: 1, title: 'Finding Your Footing', theme: 'belonging and first routines',
@@ -248,6 +286,13 @@
         if (choice.effects && ['affinity', 'trust'].some(function (key) { return choice.effects[key] !== undefined && (!Number.isFinite(choice.effects[key]) || Math.abs(choice.effects[key]) > 25); })) throw new Error('Invalid relationship effect: ' + characterId + '/' + choice.id);
       });
     });
+    socialScenes.forEach(function (scene) {
+      if (!districts[scene.district] || !districts[scene.district].places.some(function (place) { return place.id === scene.placeId; })) throw new Error('Social scene references an unknown gathering place: ' + scene.id);
+      if (!Number.isInteger(scene.from) || !Number.isInteger(scene.to) || scene.from < 0 || scene.to > 1440 || scene.from >= scene.to) throw new Error('Social scene has an invalid time window: ' + scene.id);
+      if (!Array.isArray(scene.participants) || scene.participants.length < 2 || scene.participants.some(function (id) { return !characters[id]; })) throw new Error('Social scene has invalid participants: ' + scene.id);
+      if (!Array.isArray(scene.opening) || !scene.opening.length || scene.opening.some(function (turn) { return !characters[turn.speakerId] || typeof turn.text !== 'string' || !turn.text.trim(); })) throw new Error('Social scene has invalid opening dialogue: ' + scene.id);
+      if (!Array.isArray(scene.choices) || !scene.choices.length || scene.choices.some(function (choice) { return !choice.id || !choice.label || !Array.isArray(choice.turns) || !choice.turns.length || choice.turns.some(function (turn) { return !characters[turn.speakerId] || typeof turn.text !== 'string' || !turn.text.trim(); }); })) throw new Error('Social scene has invalid branching dialogue: ' + scene.id);
+    });
     if (semesterArcs.length !== 8) throw new Error('Campaign must contain eight semester arcs.');
     semesterArcs.forEach(function (arc, index) {
       if (arc.semester !== index + 1 || !arc.chapters.length) throw new Error('Invalid semester arc: ' + arc.semester);
@@ -262,6 +307,7 @@
   root.SemesterWorldContent = Object.freeze({
     districts: districts,
     characters: characters,
+    socialScenes: socialScenes,
     semesterArcs: semesterArcs,
     validate: validate
   });
