@@ -18,7 +18,12 @@ try {
 
   assert.equal(await page.locator("[data-ss-play]").count(), 1, "A visible start screen should be mounted");
   assert.equal(await page.locator("[data-ss-fullscreen]").count(), 1, "A fullscreen control should be mounted");
+  assert.equal(await page.locator("[data-ss-play-fullscreen]").count(), 1, "A fullscreen start option should be mounted");
   await page.locator("[data-ss-play]").click();
+  await page.locator("[data-ss-fullscreen]").click();
+  const immersive = await page.evaluate(() => Boolean(document.fullscreenElement) || document.getElementById("semester-survival-adventure").classList.contains("ss-game-immersive-fallback"));
+  assert.ok(immersive, "Fullscreen control should enter fullscreen or the immersive fallback");
+  await page.locator("[data-ss-fullscreen]").click();
 
   const runtimeState = await page.evaluate(() => {
     const runtime = window.SemesterAdventureRuntimeInstance;
