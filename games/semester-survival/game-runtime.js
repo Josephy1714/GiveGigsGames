@@ -73,7 +73,10 @@
   const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,weatherRuntime:weather,onEvent:function(event){publish(event,'student-phone');}});
   phone=phoneRuntime;
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,weatherRuntime:weather,onEvent:function(event){publish(event,'interaction');}});
-  npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});\n  const collisionWorld=modules.collision.create({onEvent:function(event){publish(event,'collision');}});\n  controller.setCollisionWorld(collisionWorld);\n  function loadCollisionScene(district){const descriptor=sceneManifest[district]&&sceneManifest[district].collision;collisionWorld.setColliders(descriptor&&Array.isArray(descriptor.colliders)?descriptor.colliders:[]);}
+  npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});
+  const collisionWorld=modules.collision.create({onEvent:function(event){publish(event,'collision');}});
+  controller.setCollisionWorld(collisionWorld);
+  function loadCollisionScene(district){const descriptor=sceneManifest[district]&&sceneManifest[district].collision;collisionWorld.setColliders(descriptor&&Array.isArray(descriptor.colliders)?descriptor.colliders:[]);}
   character=null;
   phoneUI=modules.phoneUI.mount(phoneRoot,phone);
   campaignUI=modules.campaignUI.create({root:campaignRoot,document:doc,campaignRuntime:campaign});
