@@ -712,6 +712,148 @@
       "recommended": false,
       "entrypoint": "treasure-hunters/index.html",
       "runtimeType": "static"
+    },
+    {
+      "slug": "global-fashion-model-life",
+      "title": "Global Fashion Model Life",
+      "description": "Build a modeling career, style looks from fashion collections, and pose your model in the studio.",
+      "genre": "Simulation",
+      "tags": [
+        "Fashion",
+        "3D"
+      ],
+      "emoji": "👗",
+      "status": "experimental",
+      "entrypoint": "global-fashion-model-life/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain1d",
+      "title": "GraveGain 1D: The Ley-Line March",
+      "description": "March east along a one-dimensional ley line and choose between turn-based tactics and real-time combat.",
+      "genre": "Action RPG",
+      "tags": [
+        "Roguelite",
+        "1D"
+      ],
+      "emoji": "⚔️",
+      "status": "experimental",
+      "entrypoint": "gravegain1d/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain1dB",
+      "title": "GraveGain 1D B: The Winding Ley-Line March",
+      "description": "Fight along a winding ley line with 3D character models and a choice of tactical or real-time combat.",
+      "genre": "Action RPG",
+      "tags": [
+        "Roguelite",
+        "1D"
+      ],
+      "emoji": "⚔️",
+      "status": "experimental",
+      "entrypoint": "gravegain1dB/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain2d",
+      "title": "GraveGain 2D",
+      "description": "Fight through procedurally generated dungeons and manage a starship hub in this dark fantasy action roguelike.",
+      "genre": "Action RPG",
+      "tags": [
+        "Roguelite",
+        "2D"
+      ],
+      "emoji": "🕯️",
+      "status": "experimental",
+      "entrypoint": "html/gravegain2d/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain3d",
+      "title": "GraveGain 3D",
+      "description": "Explore procedurally generated 3D dungeons, fight enemies, and manage a starship hub.",
+      "genre": "Action RPG",
+      "tags": [
+        "Roguelite",
+        "3D"
+      ],
+      "emoji": "💀",
+      "status": "experimental",
+      "entrypoint": "html/gravegain3d/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain3dB",
+      "title": "GraveGain 3D B",
+      "description": "Battle through procedurally generated 3D dungeons and visit the starship hub and its botany station.",
+      "genre": "Action RPG",
+      "tags": [
+        "Roguelite",
+        "3D"
+      ],
+      "emoji": "💀",
+      "status": "experimental",
+      "entrypoint": "gravegain3dB/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain3dC",
+      "title": "GraveGain 3D C: Arena FPS",
+      "description": "Fight through a 3D arena in this first-person GraveGain prototype.",
+      "genre": "Shooter",
+      "tags": [
+        "FPS",
+        "3D"
+      ],
+      "emoji": "🎯",
+      "status": "experimental",
+      "entrypoint": "gravegain3dC/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "gravegain4d",
+      "title": "GraveGain 4D",
+      "description": "Putt souls through hyperdungeons, shift along the W axis, and rewind time in a dark fantasy golf roguelike.",
+      "genre": "Sports",
+      "tags": [
+        "Golf",
+        "Roguelite",
+        "4D"
+      ],
+      "emoji": "⛳",
+      "status": "experimental",
+      "entrypoint": "gravegain4d/index.html",
+      "runtimeType": "static",
+      "guideEntrypoint": "gravegain4d/guide.html"
+    },
+    {
+      "slug": "gravegain5d",
+      "title": "GraveGain 5D: Multiverse Transcendence",
+      "description": "Play hypercube golf across six parallel universes while chaining hops and managing paradox.",
+      "genre": "Sports",
+      "tags": [
+        "Golf",
+        "Roguelite",
+        "5D"
+      ],
+      "emoji": "🌀",
+      "status": "experimental",
+      "entrypoint": "gravegain5d/index.html",
+      "runtimeType": "static"
+    },
+    {
+      "slug": "template-demo",
+      "title": "Template Demo",
+      "description": "Play a browser game demo that shows the standard features of the 4weird game template.",
+      "genre": "Arcade",
+      "tags": [
+        "Demo"
+      ],
+      "emoji": "🎮",
+      "status": "experimental",
+      "entrypoint": "html/template-demo/index.html",
+      "runtimeType": "static"
     }
   ]
 }

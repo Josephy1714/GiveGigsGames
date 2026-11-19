@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const catalogUrl = new URL("../games/catalog.json", import.meta.url);
 const outputUrl = new URL("../games/catalog-data.js", import.meta.url);
 const catalog = JSON.parse(await readFile(catalogUrl, "utf8"));
+const gamesRoot = fileURLToPath(new URL("./", catalogUrl));
 async function folderSize(folder) {
   let total = 0;
   for (const entry of await readdir(folder, { withFileTypes: true })) {
@@ -18,6 +19,7 @@ async function folderSize(folder) {
   return total;
 }
 const slugs = new Set();
+const registeredFolders = new Set();
 for (const game of catalog.games) {
   const fail = (message) => { throw new Error(`${game.slug || "(missing slug)"}: ${message}`); };
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(game.slug || "")) fail("Use letters, digits, and hyphens in the slug.");
@@ -41,6 +43,7 @@ for (const game of catalog.games) {
     const file = await stat(new URL(game.entrypoint, catalogUrl)).catch(() => null);
     if (!file?.isFile()) fail(`Create the missing entrypoint ${game.entrypoint}.`);
     const entrypointPath = fileURLToPath(new URL(game.entrypoint, catalogUrl));
+    registeredFolders.add(path.posix.dirname(game.entrypoint));
     game.packageBytes = await folderSize(path.dirname(entrypointPath));
     if (game.guideEntrypoint !== undefined) {
       if (!/^(?:[\w-]+\/)+[\w-]+\.html$/.test(game.guideEntrypoint)) fail("Use a relative HTML guide path inside games/.");
@@ -53,6 +56,29 @@ for (const game of catalog.games) {
     fail("Set runtimeType to static or external.");
   }
 }
+
+async function indexFolders(directory) {
+  const folders = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const index = await stat(path.join(directory, entry.name, "index.html")).catch(() => null);
+    if (index?.isFile()) folders.push(entry.name);
+  }
+  return folders;
+}
+
+const topLevelGames = await indexFolders(gamesRoot);
+const canonicalNames = new Set(topLevelGames.map((folder) => folder.toLowerCase()));
+// These legacy pages link to series whose games have their own packages.
+const seriesPages = new Set(["kouzi", "madi"]);
+const legacyGames = (await indexFolders(path.join(gamesRoot, "html")))
+  .filter((folder) => !canonicalNames.has(folder.toLowerCase()) && !seriesPages.has(folder))
+  .map((folder) => `html/${folder}`);
+const missing = [...topLevelGames, ...legacyGames].filter((folder) => !registeredFolders.has(folder));
+if (missing.length) {
+  throw new Error(`Register these game folders in games/catalog.json: ${missing.join(", ")}`);
+}
+
 const output = `/* Generated from catalog.json by scripts/build-browser-catalog.mjs. */\nwindow.GIVEGIGSGAMES_CATALOG = ${JSON.stringify(catalog).replace(/</g, "\\u003c")};\n`;
 
 if (process.argv.includes("--check")) {
