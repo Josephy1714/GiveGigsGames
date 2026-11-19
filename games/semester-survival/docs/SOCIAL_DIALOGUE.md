@@ -20,3 +20,9 @@ Branching choice data is authored for Brian, Amina, Sumeya, Einstein, Ernest, Wa
 - Ensure choices have transparent, bounded relationship consequences.
 - Preserve a usable text-only conversation when voice assets are absent.
 - Do not claim visible lip-sync or cinematic character staging until the approved assets are integrated and tested.
+
+## Authored group scene: The Study Circle
+
+The campus Student Commons hosts a scheduled five-person revision gathering from 13:00 to 16:00 in game time. Amina, Sumeya, Einstein, Ernest and Wanjiku must all have matching authored schedule targets before the scene can open. The opening exchanges and two player-directed branches are authored in `world-content.js`; each branch records Jay's choice, five speaker turns and bounded affinity/trust outcomes for the participants. The group dialogue uses the same safe speaker-attributed transcript UI. Voice playback is intentionally not started for all five lines at once; proper sequential group voice requires a cue/turn playback queue and approved recordings.
+
+The scene is a logic and text-interaction implementation. It does not imply that five visible actors, their blocking, facial acting, or group animation are production-ready. Those remain gated by authored navigation anchors, approved character artwork and animation integration.
