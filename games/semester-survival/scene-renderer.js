@@ -264,7 +264,7 @@
         context.restore();
       }
       context.restore();
-      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, characterDrawn: Boolean(frame.character && frame.character.animator) });
+      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: Boolean(frame.character && frame.character.animator) });
       return lastFrame;
     }
 
