@@ -81,9 +81,14 @@
       const characterTracks = voiceTracks[characterId] || {};
       const track = key === 'introduction' ? characterTracks.introduction : (characterTracks.topics && characterTracks.topics[key]);
       if (!track) { speech.stop(); return null; }
-      const started = speech.start(track);
-      if (started && typeof started.catch === 'function') started.catch(function () {});
-      return started;
+      try {
+        const started = speech.start(track);
+        if (started && typeof started.catch === 'function') started.catch(function () {});
+        return started;
+      } catch (error) {
+        onEvent(Object.freeze({ type: 'dialogue:voice-unavailable', characterId: characterId, topic: key, reason: error && error.message ? error.message : String(error) }));
+        return null;
+      }
     }
     function getDialogue() {
       if (!dialogue) return null;
