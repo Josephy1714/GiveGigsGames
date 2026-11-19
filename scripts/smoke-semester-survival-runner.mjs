@@ -38,6 +38,12 @@ try {
   assert.equal(boss.active, true, "Reaching the boss threshold should start a boss encounter");
   assert.equal(boss.queued, 3, "Each semester boss should launch a three-wave attack pattern");
   assert.ok(boss.label, "The boss encounter should identify the current semester challenge");
+  const bossClear = await page.evaluate(() => window.__runnerSmoke.probeBossClear());
+  assert.equal(bossClear.active, false, "A boss should end after its attack queue and obstacles are cleared");
+  assert.equal(bossClear.cleared, 1, "Clearing a boss should increment the boss-clear counter");
+  assert.equal(bossClear.coins, 55, "The first semester boss should award its 55-coin reward");
+  assert.equal(bossClear.energy, 52, "Clearing a boss should restore 12 energy");
+  assert.equal(bossClear.nextAt, 3050, "The next boss threshold should advance by 1,050 metres");
 
   await page.locator("#fullscreen").click();
   await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
