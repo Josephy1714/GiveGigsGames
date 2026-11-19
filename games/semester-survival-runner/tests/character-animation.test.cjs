@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const animation = require('../character-animation.js');
+require('../src/animation/character-animation.js');
+const animation = globalThis.SemesterCharacterAnimation;
 
 function fixture() {
   const image = { width: 128, height: 64 };
