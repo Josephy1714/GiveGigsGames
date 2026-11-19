@@ -19,7 +19,7 @@ Optional settings are `characterScale`, `cameraOffsetY`, `requiredClips`, and `c
 
 The host calls `update(delta)` once per simulation frame, then `render()` when drawing. Update consumes one normalized input intent, advances locomotion, selects the authored clip, advances animation, and follows the character with the camera. The host retains control of frame scheduling and canvas resizing.
 
-The runtime clamps simulation delta to 50 ms. Horizontal position, depth position and jump height remain independent. The renderer maps depth onto the authored ground plane and camera follow uses that combined screen position. The controller and animator retain their own deterministic limits. `render()` passes the animator and world position to the scene renderer; only decoded atlas pixels can appear.
+The runtime clamps simulation delta to 50 ms. Horizontal position, depth position and jump height remain independent. Each mounted scene can author `depthBounds`; the character runtime applies those limits before movement and spawn resets. The renderer maps depth onto the authored ground plane and camera follow uses that combined screen position. The controller and animator retain their own deterministic limits. `render()` passes the animator and world position to the scene renderer; only decoded atlas pixels can appear.
 
 ## Animation mapping
 
