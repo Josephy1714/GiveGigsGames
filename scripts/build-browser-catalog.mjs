@@ -74,7 +74,9 @@ const seriesPages = new Set(["kouzi", "madi", "semester-survival"]); // Retained
 const legacyGames = (await indexFolders(path.join(gamesRoot, "html")))
   .filter((folder) => !canonicalNames.has(folder.toLowerCase()) && !seriesPages.has(folder))
   .map((folder) => `html/${folder}`);
-const missing = [...topLevelGames, ...legacyGames].filter((folder) => !registeredFolders.has(folder));
+// Keep the retired Semester Survival source folder available for rollback without listing it as a second game.
+const retainedSourceFolders = new Set(["semester-survival"]);
+const missing = [...topLevelGames, ...legacyGames].filter((folder) => !retainedSourceFolders.has(folder) && !registeredFolders.has(folder));
 if (missing.length) {
   throw new Error(`Register these game folders in games/catalog.json: ${missing.join(", ")}`);
 }
