@@ -21,7 +21,7 @@
   function createController(options) {
     options = options || {};
     const c = {
-      x: 0, y: 0, vx: 0, vy: 0,
+      x: 0, y: 0, depth: 0, vx: 0, vy: 0, vDepth: 0,
       facing: 1, grounded: true,
       state: 'idle', previousState: 'idle',
       stamina: 100, slideTime: 0, slideCooldown: 0,
@@ -45,6 +45,7 @@
       const dt = clamp(Number.isFinite(delta) ? delta : 0, 0, CONFIG.maxFrameDelta);
       if (!dt) return snapshot();
       const axis = clamp(Number(input.moveX) || 0, -1, 1);
+      const depthAxis = clamp(Number(input.moveY) || 0, -1, 1);
       const wantsSprint = !!input.sprint && c.stamina > 0 && Math.abs(axis) > 0.05;
       const targetSpeed = wantsSprint ? CONFIG.sprintSpeed : (Math.abs(axis) > 0.05 ? CONFIG.jogSpeed : 0);
       const horizontalTarget = axis * targetSpeed;
@@ -72,6 +73,8 @@
         const acceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
         const braking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
         c.vx = approach(c.vx, horizontalTarget, (Math.abs(horizontalTarget) > Math.abs(c.vx) ? acceleration : braking) * dt);
+        const depthTarget = depthAxis * targetSpeed;
+        c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? acceleration : braking) * dt);
       }
 
       if (input.jumpPressed) c.jumpBuffer = CONFIG.jumpBuffer;
@@ -106,6 +109,11 @@
         c.x += c.dodgeDirection * 3.4 * dt;
       }
       c.x += c.vx * dt;
+      c.depth += c.vDepth * dt;
+      const depthBounds = options.depthBounds || { min: -120, max: 120 };
+      if (Number.isFinite(depthBounds.min)) c.depth = Math.max(depthBounds.min, c.depth);
+      if (Number.isFinite(depthBounds.max)) c.depth = Math.min(depthBounds.max, c.depth);
+      if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
       c.speed = Math.abs(c.vx);
       if (Math.abs(c.vx) > 0.12) c.facing = Math.sign(c.vx);
       if (wantsSprint && c.grounded && c.slideTime === 0) c.stamina = clamp(c.stamina - CONFIG.staminaDrain * dt, 0, 100);
@@ -141,7 +149,7 @@
 
     function snapshot() {
       return {
-        x: c.x, y: c.y, vx: c.vx, vy: c.vy,
+        x: c.x, y: c.y, depth: c.depth, vx: c.vx, vy: c.vy, vDepth: c.vDepth,
         facing: c.facing, grounded: c.grounded,
         state: c.state, previousState: c.previousState,
         stamina: Number(c.stamina.toFixed(2)),
@@ -156,7 +164,8 @@
 
     function reset(position) {
       c.x = Number(position && position.x) || 0;
-      c.y = 0; c.vx = 0; c.vy = 0; c.grounded = true;
+      c.depth = Number(position && position.depth) || 0;
+      c.y = 0; c.vx = 0; c.vy = 0; c.vDepth = 0; c.grounded = true;
       c.stamina = 100; c.slideTime = 0; c.slideCooldown = 0;
       c.dodgeTime = 0; c.jumpBuffer = 0; c.coyote = CONFIG.coyoteTime; c.takeoffFrame = false;
       c.landTime = 0; c.state = 'idle'; c.previousState = 'idle';
