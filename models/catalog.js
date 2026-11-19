@@ -713,4 +713,74 @@ window.GGG_MODEL_CATALOG = [
       }
     });
   }
+  // ========================
+  // GLOBAL FASHION MODEL LIFE
+  // ========================
+  window.GGG_MODEL_CATALOG.push({
+    id: 'gfml-fashion-model',
+    name: 'Fashion Model (Female)',
+    game: 'Global Fashion Model Life',
+    category: 'Characters',
+    tags: ['fashion', 'model', 'female', 'runway', 'character'],
+    description: 'Stylized 3D female fashion model in a bias-cut satin evening gown, sculpted waves, and heels.',
+    build: function createFashionModel(THREE) {
+      const group = new THREE.Group();
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xdba477, roughness: 0.58, metalness: 0.02 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x3b2327, roughness: 0.48, metalness: 0.05 });
+      const dressMat = new THREE.MeshStandardMaterial({ color: 0xbc718f, roughness: 0.32, metalness: 0.14 });
+      const shoeMat = new THREE.MeshStandardMaterial({ color: 0x221b28, roughness: 0.35, metalness: 0.15 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xe5be7c, roughness: 0.25, metalness: 0.82 });
+
+      // Head & neck
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.135, 24, 20), skinMat);
+      head.position.set(0, 1.56, 0);
+      head.scale.set(0.92, 1.12, 0.96);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.056, 0.14, 16), skinMat);
+      neck.position.set(0, 1.40, 0);
+
+      // Sculpted hair
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.148, 24, 20), hairMat);
+      hairCap.position.set(0, 1.59, -0.02);
+      hairCap.scale.set(1.02, 1.12, 1.06);
+      const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.36, 18), hairMat);
+      hairBack.position.set(0, 1.38, -0.07);
+      group.add(head, neck, hairCap, hairBack);
+
+      // Gold drop earrings
+      for (const side of [-1, 1]) {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 10), goldMat);
+        ear.position.set(side * 0.13, 1.51, 0);
+        ear.scale.set(0.7, 1.4, 0.7);
+        group.add(ear);
+      }
+
+      // Torso & satin gown
+      const bodice = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.105, 0.38, 20), dressMat);
+      bodice.position.set(0, 1.15, 0);
+      bodice.scale.set(1.15, 1, 0.78);
+      const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.24, 0.82, 24), dressMat);
+      skirt.position.set(0, 0.56, 0);
+      skirt.scale.set(1.12, 1, 0.86);
+      group.add(bodice, skirt);
+
+      // Arms
+      for (const side of [-1, 1]) {
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.028, 0.56, 14), skinMat);
+        arm.position.set(side * 0.21, 1.05, 0);
+        arm.rotation.z = side * 0.12;
+        group.add(arm);
+      }
+
+      // Legs & heels
+      for (const side of [-1, 1]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.034, 0.42, 14), skinMat);
+        leg.position.set(side * 0.08, 0.22, 0);
+        const heel = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.05, 0.15), shoeMat);
+        heel.position.set(side * 0.08, 0.025, 0.03);
+        group.add(leg, heel);
+      }
+
+      return group;
+    }
+  });
 })();

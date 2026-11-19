@@ -914,6 +914,31 @@
         "games/images/screenshots/treasure-hunters-2.jpg",
         "games/images/screenshots/treasure-hunters-3.jpg"
       ]
+    },
+    {
+      "slug": "global-fashion-model-life",
+      "title": "Global Fashion Model Life",
+      "description": "Create a 3D model, style makeup and garments, and launch a fashion career from New York or Metro Manila before booking work around the world.",
+      "genre": "Simulation",
+      "tags": [
+        "Fashion",
+        "Character Creator",
+        "3D",
+        "Life Simulation",
+        "Offline-friendly"
+      ],
+      "emoji": "?",
+      "status": "preview",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Click or tap to style your avatar and choose bookings. Drag the portrait to rotate. Press Space or tap the runway button to hit each cue.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static",
+      "entrypoint": "global-fashion-model-life/index.html"
     }
   ]
 }
