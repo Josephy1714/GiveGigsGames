@@ -33,6 +33,10 @@
         parallax: parallax, opacity: opacity, fit: fit
       });
     }).sort((a, b) => a.zIndex - b.zIndex);
+    const characterLayerZIndex = scene.characterLayerZIndex === undefined
+      ? (layers.length ? Math.max.apply(null, layers.map(function (layer) { return layer.zIndex; })) + 1 : 0)
+      : scene.characterLayerZIndex;
+    if (!Number.isFinite(characterLayerZIndex)) fail('Character layer z-index must be finite when supplied.');
     const hotspots = Object.create(null);
     Object.keys(scene.hotspots || {}).forEach(function (anchorId) {
       const item = scene.hotspots[anchorId];
@@ -73,6 +77,7 @@
       cameraBounds: Object.freeze({ minX: cameraBounds.minX, minY: cameraBounds.minY, maxX: cameraBounds.maxX, maxY: cameraBounds.maxY }),
       depthBounds: Object.freeze({ min: depthBounds.min, max: depthBounds.max }),
       playerBounds: Object.freeze({ minX: playerBounds.minX, maxX: playerBounds.maxX }),
+      characterLayerZIndex: characterLayerZIndex,
       layers: Object.freeze(layers), hotspots: Object.freeze(hotspots)
     });
   }
@@ -248,7 +253,11 @@
       context.save();
       context.translate(offsetX, offsetY);
       context.scale(scale, scale);
-      scene.layers.forEach(function (layer) {
+      const actors = (Array.isArray(frame.characters) ? frame.characters.slice() : []);
+      if (frame.character && frame.character.animator) actors.push(frame.character);
+      actors.sort(function (a, b) { return (Number(a.y) || 0) - (Number(b.y) || 0); });
+      let drawnCharacters = 0, actorsDrawn = false;
+      function drawLayer(layer) {
         const image = active.assets[layer.assetId];
         if (!image) fail('Decoded asset "' + layer.assetId + '" disappeared after scene mount.');
         context.save();
@@ -256,13 +265,11 @@
         context.translate(-camera.x * layer.parallax, -camera.y * layer.parallax);
         drawImageFit(image, layer);
         context.restore();
-      });
-      drawAtmosphere(scene.width, scene.height);
-      const actors = (Array.isArray(frame.characters) ? frame.characters.slice() : []);
-      if (frame.character && frame.character.animator) actors.push(frame.character);
-      actors.sort(function (a, b) { return (Number(a.y) || 0) - (Number(b.y) || 0); });
-      let drawnCharacters = 0;
-      if (actors.length) {
+      }
+      function drawActors() {
+        if (actorsDrawn) return;
+        actorsDrawn = true;
+        if (!actors.length) return;
         context.save();
         context.translate(-camera.x, -camera.y);
         actors.forEach(function (actor) {
@@ -272,6 +279,12 @@
         });
         context.restore();
       }
+      scene.layers.forEach(function (layer) {
+        if (layer.zIndex > scene.characterLayerZIndex) drawActors();
+        drawLayer(layer);
+      });
+      drawActors();
+      drawAtmosphere(scene.width, scene.height);
       context.restore();
       lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: Boolean(frame.character && frame.character.animator), npcCharactersDrawn: Math.max(0, drawnCharacters - (frame.character && frame.character.animator ? 1 : 0)), charactersDrawn: drawnCharacters });
       return lastFrame;
