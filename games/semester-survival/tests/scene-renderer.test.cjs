@@ -76,7 +76,7 @@ test('supports camera parallax and authored hotspot hit testing', () => {
   assert.equal(renderer.getState().camera.x, 240);
   assert.equal(renderer.getState().camera.y, 340);
   renderer.updateCamera({ x: 960, y: 540 }, 1 / 60);
-  assert.equal(renderer.hitTest(350, 230, 960, 540), 'library-door');
+  assert.equal(renderer.hitTest(150, 230, 960, 540), 'library-door');
   assert.equal(renderer.hitTest(20, 20, 960, 540), null);
   renderer.focusInteractable('library-door');
   assert.equal(renderer.getState().focusedAnchor, 'library-door');
