@@ -42,7 +42,7 @@
   }
   function update(){
    if(status!=='speaking'&&status!=='loading')return getState();
-   if(audio.ended){status='ended';animator.play('mouth-neutral');return getState();}
+   if(audio.ended){status='ended';index=-1;animator.play('mouth-neutral');return getState();}
    if(audio.paused)return getState();
    const time=Math.max(0,Number(audio.currentTime)||0);
    let next=-1;
