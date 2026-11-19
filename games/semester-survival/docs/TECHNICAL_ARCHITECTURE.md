@@ -65,3 +65,8 @@ Coursework remains entirely inside the game. Players complete authored work sess
 ## NPC schedules and weather-aware routine decisions
 
 `npc-schedule-runtime.js` owns authored daily schedule slots for the named cast. It validates every scheduled destination against `world-content.js`, evaluates each NPC's weather in that NPC's own district, and redirects exposed routines to explicitly authored indoor/sheltered destinations during heavy rain. It emits routine-change events and exposes schedule state through the central runtime. This is a decision layer only: it does not fabricate coordinates, sprites, portraits or animation. NPC visual/path movement readiness remains false until production art, scene anchors and navigation are delivered.
+
+
+## NPC navigation graph contract
+
+Scenes may provide a designer-authored navigation graph. Each node references an existing NPC or place hotspot anchor; each edge connects two declared node IDs. The environment validates node identity and edge references, and the renderer verifies that every waypoint has a real hotspot in the mounted authored scene. The NPC navigation runtime uses breadth-first routing and obtains waypoint coordinates only from mounted hotspot bounds. Missing graph data, disconnected routes or missing anchors remain explicit unavailable states; no coordinates, paths, collision geometry, character artwork or movement are invented. Route readiness is not actor movement: visual and movement readiness remain false until commissioned character assets, navigation collision review and an authored movement integration are complete.
