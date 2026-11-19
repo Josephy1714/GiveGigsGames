@@ -49,9 +49,9 @@ function fixture(){
    const anchor=district+'-'+place.id;interactables[place.id]={anchor};
    hotspots[anchor]={x:place.id==='matatu-stage'?520:(index===0?100:500+index*5),y:(index===0||place.id==='matatu-stage')?0:250,width:40,height:40};
   });
-  sceneManifest[district]={sceneId:'fixture-'+district,requiredAssetIds:[backgroundId],spawnPoints:{default:{x:120,depth:0},stage:{x:540,depth:0}},interactables:interactables,npcAnchors:[],render:{width:640,height:360,layers:[{id:'background',assetId:backgroundId,x:0,y:0,width:640,height:360,parallax:0}],hotspots:hotspots}};
+  sceneManifest[district]={sceneId:'fixture-'+district,requiredAssetIds:[backgroundId],contactSurfaces:[{id:'fixture-ground-'+district,type:'aabb',minX:0,maxX:640,minDepth:-120,maxDepth:120,material:'concrete',effect:'none'}],spawnPoints:{default:{x:120,depth:0},stage:{x:540,depth:0}},interactables:interactables,npcAnchors:[],render:{width:640,height:360,layers:[{id:'background',assetId:backgroundId,x:0,y:0,width:640,height:360,parallax:0}],hotspots:hotspots}};
  });
- const clips={};global.SemesterCharacterRuntime.requiredClips.forEach(name=>{clips[name]={fps:8,playback:'loop',frames:[{x:0,y:0,width:16,height:16,pivotX:8,pivotY:16}]};});
+ const clips={};global.SemesterCharacterRuntime.requiredClips.forEach(name=>{clips[name]={fps:8,playback:'loop',frames:[{x:0,y:0,width:16,height:16,pivotX:8,pivotY:16,events:name==='idle'?['left-foot-contact']:[]}]};});
  return{world,assetManifest:{version:1,scenes:assetScenes},sceneManifest,characterAtlas:{assetId:'character-atlas',manifest:{clips}}};
 }
 function memoryStorage(){const map=new Map();return{getItem:key=>map.get(key)||null,setItem:(key,value)=>map.set(key,value)};}
@@ -105,5 +105,24 @@ test('central runtime exposes live weather and a three-day forecast',async()=>{
  assert.equal(runtime.getWeatherForecast().length,3);
  await runtime.travelTo('township');
  assert.equal(runtime.getState().weather.district,'township');
+ runtime.destroy();
+});
+
+
+test('central runtime resolves authored animation contacts against district surface metadata',async()=>{
+ const doc=makeDocument(),host=new ElementMock('main',doc),events=[],assets=fixture();
+ const runtime=global.SemesterAdventureRuntime.create({...assets,host,document:doc,storage:memoryStorage(),autoLoop:false,loadImage:async(src,asset)=>({width:asset.width,height:asset.height,naturalWidth:asset.width,naturalHeight:asset.height})});
+ runtime.subscribe(event=>events.push(event));
+ await runtime.start();
+ runtime.update(1/60);
+ const contact=events.find(event=>event.type==='character:surface-contact');
+ assert.ok(contact);
+ assert.equal(contact.characterId,'jay');
+ assert.equal(contact.action,'footstep');
+ assert.equal(contact.material,'concrete');
+ assert.equal(contact.district,'residence');
+ assert.equal(runtime.getDiagnostics().contactEffects.surfaces,1);
+ await runtime.travelTo('township');
+ assert.equal(runtime.getDiagnostics().contactEffects.district,'township');
  runtime.destroy();
 });
