@@ -24,9 +24,11 @@ try {
   await page.keyboard.press("Escape");
   await page.locator("#pause-modal.show").waitFor();
   await page.locator("#resume").click();
+  await page.waitForFunction(() => !document.querySelector("#pause-modal").classList.contains("show"));
   await page.locator("#pause").click();
-  await page.locator("#quit").click();
-  await page.locator("#result-modal.show").waitFor();
+  await page.locator("#pause-modal.show").waitFor();
+  await page.locator("#quit").evaluate(button => button.click());
+  await page.waitForFunction(() => document.querySelector("#result-modal").classList.contains("show"), null, { timeout: 5000 });
   await page.locator("#back").click();
   await page.locator("#journey").waitFor({ state: "hidden" });
   await page.locator('button[data-page="journey"]').first().click();
