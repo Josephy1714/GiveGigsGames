@@ -153,9 +153,14 @@
    if(phone.getSnapshot().open||interaction.getState().dialogue)fail('Close the phone or current conversation before travelling.');
    const previous=environment.getState().district;
    if(!previous||!world.districts[previous].exits.includes(destination))fail('No authored route connects the current district to that destination.');
-   const result=await environment.enter(destination,{spawn:travelOptions&&travelOptions.spawn||'default'});
+   const destinationSpawns=sceneManifest[destination].spawnPoints;
+   const requestedSpawn=travelOptions&&travelOptions.spawn;
+   const routeSpawn='from-'+previous;
+   const spawnId=requestedSpawn||(destinationSpawns[routeSpawn]?routeSpawn:'default');
+   if(!destinationSpawns[spawnId])fail('Destination has no authored arrival spawn for this route: '+previous+' -> '+destination);
+   await environment.enter(destination,{spawn:spawnId});
    if(disposed)fail('Adventure runtime was disposed during district travel.');
-   try{const journey=life.travel(destination);services.sync();const spawn=sceneManifest[destination].spawnPoints[(travelOptions&&travelOptions.spawn)||'default'];character.reset(spawn);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,minutes:journey.minutes},'runtime');return getState();}
+   try{const journey=life.travel(destination);services.sync();character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
    catch(error){await environment.enter(previous,{spawn:'default'});const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
   function pause(){
