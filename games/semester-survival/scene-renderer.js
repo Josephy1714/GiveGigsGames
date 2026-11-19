@@ -44,12 +44,15 @@
     const depthScale = scene.depthScale === undefined ? 1 : scene.depthScale;
     if (!Number.isFinite(groundY) || groundY < 0 || groundY > scene.height) fail('Scene groundY must be inside the authored design viewport.');
     if (!Number.isFinite(depthScale) || depthScale <= 0 || depthScale > 10) fail('Scene depthScale must be positive and no greater than 10.');
+    const depthBounds = scene.depthBounds || { min: -120, max: 120 };
+    if (!depthBounds || !Number.isFinite(depthBounds.min) || !Number.isFinite(depthBounds.max) || depthBounds.min >= depthBounds.max) fail('Scene depthBounds are invalid.');
     const cameraBounds = scene.cameraBounds || { minX: 0, minY: 0, maxX: scene.width, maxY: scene.height };
     if (!cameraBounds || ![cameraBounds.minX,cameraBounds.minY,cameraBounds.maxX,cameraBounds.maxY].every(Number.isFinite) ||
         cameraBounds.minX > cameraBounds.maxX || cameraBounds.minY > cameraBounds.maxY) fail('Scene cameraBounds are invalid.');
     return Object.freeze({
       width: scene.width, height: scene.height, groundY: groundY, depthScale: depthScale,
       cameraBounds: Object.freeze({ minX: cameraBounds.minX, minY: cameraBounds.minY, maxX: cameraBounds.maxX, maxY: cameraBounds.maxY }),
+      depthBounds: Object.freeze({ min: depthBounds.min, max: depthBounds.max }),
       layers: Object.freeze(layers), hotspots: Object.freeze(hotspots)
     });
   }
@@ -199,7 +202,7 @@
     }
 
     function getLayout() {
-      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, groundY: active.scene.groundY, depthScale: active.scene.depthScale, cameraBounds: active.scene.cameraBounds }) : null;
+      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, groundY: active.scene.groundY, depthScale: active.scene.depthScale, depthBounds: active.scene.depthBounds, cameraBounds: active.scene.cameraBounds }) : null;
     }
 
     function getState() {
