@@ -7,10 +7,10 @@
   function create(options){
     options=options||{};
     const life=options.lifeEngine, world=options.world||root.SemesterWorldContent;
-    const input=options.inputManager||null, services=options.universityServices||null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
+    const input=options.inputManager||null, services=options.universityServices||null, weather=options.weatherRuntime||null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
     if(!life||typeof life.getState!=='function'||!world||!world.districts)throw new Error('Student phone requires the life engine and authored world.');
     let open=false, section='home', destroyed=false;
-    const sections=['home','timetable','courses','academics','assignments','assessments','finances','messages','map'];
+    const sections=['home','timetable','courses','academics','assignments','assessments','finances','messages','map','weather'];
     function snapshot(){
       const s=life.getState(), district=world.districts[s.location];
       const people=Object.keys(s.relationships||{}).map(key=>{
@@ -20,6 +20,7 @@
       return clone({
         open,section,player:s.player,campaign:s.campaign,calendar:s.calendar,location:s.location,
         condition:s.condition,finances:s.finances,academics:s.academics,
+        weather:weather?weather.getState():null,weatherForecast:weather?weather.forecast(s.calendar,s.location):[],
         timetable:life.getTimetable(),relationships:people,
         district:district?{id:s.location,title:district.title,exits:district.exits,places:district.places.map(p=>({id:p.id,name:p.name,actions:p.actions}))}:null,
         journal:(s.journal||[]).slice(-12),university:services?services.getSnapshot():null
@@ -37,6 +38,7 @@
     function navigate(next){
       if(!sections.includes(next))throw new Error('Unknown phone section: '+next);
       section=next;
+      if(open&&next==='weather')onEvent(Object.freeze({type:'weather:forecast-reviewed',district:life.getState().location}));
       if(open&&(next==='academics'||next==='courses'||next==='assessments'))onEvent(Object.freeze({type:'academics:reviewed',section:next,semester:life.getState().campaign.semester}));
       if(open&&next==='finances')onEvent(Object.freeze({type:'budget:reviewed',cash:life.getState().finances.cash}));
       return snapshot();
