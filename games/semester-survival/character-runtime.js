@@ -81,11 +81,12 @@
       return getState();
     }
 
-    function render() {
+    function render(npcRenderables) {
       if (disposed) throw new Error('Character runtime has been disposed.');
       if (lastError) return { rendered: false, reason: lastError };
       const result = renderer.render({
-        character: { x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y, depth: movement.depth, scale: scale, animator: animator }
+        character: { characterId: 'jay', x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y, depth: movement.depth, scale: scale, animator: animator },
+        characters: Array.isArray(npcRenderables) ? npcRenderables : []
       });
       return { rendered: true, frame: result, movement: movement, animation: animation };
     }
