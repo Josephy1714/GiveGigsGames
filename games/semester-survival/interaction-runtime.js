@@ -95,7 +95,7 @@
       if (!dialogue) return null;
       const latestTurn = dialogue.historyEntries.length ? dialogue.historyEntries[dialogue.historyEntries.length - 1] : null;
       const stageParticipants = dialogue.groupScene
-        ? dialogue.participants.slice()
+        ? [{ id: 'jay', name: 'Jay' }].concat(dialogue.participants)
         : [{ id: 'jay', name: 'Jay' }, { id: dialogue.characterId, name: dialogue.characterName }];
       const stage = Object.freeze({
         mode: 'authored-text-blocking',
@@ -119,8 +119,8 @@
         stage: stage,
         participants: Object.freeze((dialogue.participants || []).map(function (person) { return Object.freeze(Object.assign({}, person)); })),
         line: dialogue.line,
-        speakerId: dialogue.characterId,
-        speakerName: dialogue.characterName,
+        speakerId: latestTurn ? latestTurn.speakerId : dialogue.characterId,
+        speakerName: latestTurn ? latestTurn.speakerName : dialogue.characterName,
         topics: Object.freeze(dialogue.topics.slice()),
         choices: Object.freeze(dialogue.choices.map(function (choice) { return Object.freeze(Object.assign({}, choice)); })),
         history: Object.freeze(dialogue.history.slice()),
@@ -183,11 +183,12 @@
       });
       if (present.length < scene.minParticipants || present.length !== scene.participants.length) fail('The full study circle has not assembled yet.');
       const first = scene.opening[0];
+      const lastOpening = scene.opening[scene.opening.length - 1];
       dialogue = {
         groupScene: true, sceneId: scene.id, sceneTitle: scene.title,
-        characterId: first.speakerId, characterName: scene.title,
+        characterId: lastOpening.speakerId, characterName: scene.title,
         participants: scene.participants.map(function (id) { return { id: id, name: world.characters[id].name }; }),
-        line: first.text, topics: scene.choices.map(function (choice) { return choice.id; }),
+        line: lastOpening.text, topics: scene.choices.map(function (choice) { return choice.id; }),
         choices: scene.choices.map(function (choice) { return { id: choice.id, label: choice.label, kind: 'group' }; }),
         usedChoices: [],
         history: [], historyEntries: []
