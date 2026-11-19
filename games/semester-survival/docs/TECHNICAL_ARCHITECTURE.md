@@ -60,3 +60,8 @@ Coursework remains entirely inside the game. Players complete authored work sess
 ## Weather and atmospheric rendering
 
 `weather-runtime.js` derives deterministic local weather from the saved in-game calendar and active district. It exposes current conditions and a three-day forecast without network calls. `scene-renderer.js` accepts validated atmosphere state and composes daylight tint, cloud cover, fog and precipitation over the authored environment. The central runtime updates weather before rendering, refreshes it on district travel, emits weather-change events, and disposes the simulation with the game lifecycle. The first release of this system is visual/ambient only; gameplay penalties are not silently applied.
+
+
+## NPC schedules and weather-aware routine decisions
+
+`npc-schedule-runtime.js` owns authored daily schedule slots for the named cast. It validates every scheduled destination against `world-content.js`, evaluates each NPC's weather in that NPC's own district, and redirects exposed routines to explicitly authored indoor/sheltered destinations during heavy rain. It emits routine-change events and exposes schedule state through the central runtime. This is a decision layer only: it does not fabricate coordinates, sprites, portraits or animation. NPC visual/path movement readiness remains false until production art, scene anchors and navigation are delivered.
