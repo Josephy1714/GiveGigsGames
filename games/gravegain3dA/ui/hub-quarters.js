@@ -44,9 +44,17 @@
 
             const classGrid = document.getElementById('classGrid');
             if (classGrid) {
+                const classBlurbs = {
+                    warrior: 'Balanced melee fighter · Dash-cleave & heavy combo',
+                    tank: 'High HP & armor · Shield bash & shockwave slam',
+                    support: 'Aura & healing · Speed/regen boost & holy bolt',
+                    mage: 'Ranged arcane burst · Fireball & blink nova'
+                };
                 classGrid.innerHTML = Object.values(ClassType).map((cls, i) => {
-                    const c = ClassData[cls];
-                    return `<button type="button" class="class-btn ${cls === selectedClass ? 'selected' : ''}" data-class="${cls}" aria-pressed="${cls === selectedClass}"><strong>${c.title}</strong><small>${cls.toUpperCase()}</small></button>`;
+                    const c = ClassData[cls] || {};
+                    const blurb = c.desc || classBlurbs[cls] || cls.toUpperCase();
+                    const stats = (c.hp && c.dmg) ? `HP ${c.hp} · DMG ${c.dmg}` : cls.toUpperCase();
+                    return `<button type="button" class="class-btn ${cls === selectedClass ? 'selected' : ''}" data-class="${cls}" aria-pressed="${cls === selectedClass}"><strong>${c.title || cls}</strong><small style="display:block;opacity:0.85;margin-top:4px;font-weight:500;">${blurb}</small><small style="display:block;opacity:0.65;margin-top:2px;">${stats}</small></button>`;
                 }).join('');
 
                 classGrid.querySelectorAll('.class-btn').forEach(btn => {

@@ -9,7 +9,7 @@
             wall: 0x241f2d,
             accent: 0xb48a48,
             fog: 0x0b0812,
-            fogDensity: 0.018,
+            fogDensity: 0.0055,
             ambientSky: 0x584c73,
             ambientGround: 0x16121c,
             dirColor: 0xffdfb0
@@ -19,7 +19,7 @@
             wall: 0x1a2026,
             accent: 0xd97706,
             fog: 0x101317,
-            fogDensity: 0.020,
+            fogDensity: 0.0060,
             ambientSky: 0x64748b,
             ambientGround: 0x1b1510,
             dirColor: 0xffcfa0
@@ -29,7 +29,7 @@
             wall: 0x0f1821,
             accent: 0x2dd4bf,
             fog: 0x060c14,
-            fogDensity: 0.019,
+            fogDensity: 0.0058,
             ambientSky: 0x38bdf8,
             ambientGround: 0x091018,
             dirColor: 0xcbeafe
@@ -39,7 +39,7 @@
             wall: 0x241f18,
             accent: 0x84cc16,
             fog: 0x12100d,
-            fogDensity: 0.022,
+            fogDensity: 0.0068,
             ambientSky: 0x78716c,
             ambientGround: 0x1c1712,
             dirColor: 0xe7e5e4
@@ -312,10 +312,10 @@
             scene.background = new THREE.Color(pal.fog);
             scene.fog = new THREE.FogExp2(pal.fog, pal.fogDensity);
 
-            hemiLight = new THREE.HemisphereLight(pal.ambientSky, pal.ambientGround, 0.95);
+            hemiLight = new THREE.HemisphereLight(pal.ambientSky, pal.ambientGround, 1.35);
             worldRoot.add(hemiLight);
 
-            dirLight = new THREE.DirectionalLight(pal.dirColor, 1.35);
+            dirLight = new THREE.DirectionalLight(pal.dirColor, 1.65);
             dirLight.position.set(60, 38, 50);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 1024;
@@ -443,11 +443,12 @@
                 map: fogTex,
                 transparent: true,
                 depthWrite: false,
-                opacity: 0.92
+                opacity: 0.85
             }));
             fogPlane = new THREE.Mesh(fogGeo, fogMat);
-            fogPlane.position.set(worldW / 2, 5.4, worldH / 2);
-            fogPlane.renderOrder = 20;
+            // Keep fog on the ground plane so it never occludes the player or shifts with camera angle
+            fogPlane.position.set(worldW / 2, 0.08, worldH / 2);
+            fogPlane.renderOrder = 2;
             worldRoot.add(fogPlane);
             updateFogTexture(terrain);
         }
@@ -467,7 +468,7 @@
                     fogBytes[off] = 8;
                     fogBytes[off + 1] = 8;
                     fogBytes[off + 2] = 16;
-                    fogBytes[off + 3] = 148;
+                    fogBytes[off + 3] = 120;
                 } else {
                     fogBytes[off] = 4;
                     fogBytes[off + 1] = 3;

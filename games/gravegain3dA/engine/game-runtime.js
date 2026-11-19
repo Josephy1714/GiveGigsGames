@@ -1710,8 +1710,8 @@
                             this.weaponGroup.offHand.position.set(-1.0, -1.8, -4.5);
                             this.weaponGroup.offHand.rotation.set(0, 0, 0);
                         } else {
-                            this.weaponGroup.offHand.position.set(-3.2, -3.2, -6.0);
-                            this.weaponGroup.offHand.rotation.set(0, Math.PI / 6, 0);
+                            this.weaponGroup.offHand.position.set(-4.4, -4.6, -6.5);
+                            this.weaponGroup.offHand.rotation.set(0.25, Math.PI / 4, 0.15);
                         }
                     }
                 }

@@ -4,7 +4,7 @@
     // Input owns its pointer-lock request so it has no dependency on the
     // runtime's private helpers after code splitting.
     function requestPointerLockSafely(element) {
-        if (!element?.requestPointerLock || document.body.classList.contains('touch-enabled')) return;
+        if (!element?.requestPointerLock) return;
         try {
             const request = element.requestPointerLock();
             if (request && typeof request.catch === 'function') request.catch(() => {});
@@ -110,6 +110,11 @@ class InputManager {
                 this.mouse.aiming = true;
                 this.mouse.rightClick = true;
             }
+        });
+        container.addEventListener('click', (e) => {
+            if (e.isTrusted === false) return;
+            if (window.GraveGainBotInput && window.GraveGainBotInput.isBotControl()) return;
+            if (document.pointerLockElement !== container) requestPointerLockSafely(container);
         });
 
         // Programmatic look/attack for the virtual bot mouse. Routes through

@@ -58,8 +58,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 25px;
+    padding: 12px 135px 10px 135px;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
 .hud-group {
@@ -185,7 +186,9 @@
     aspect-ratio: 16 / 9;
     height: auto;
     min-height: 240px;
+    max-height: calc(100vh - 230px);
     max-width: 100%;
+    margin: 0 auto;
     background: #020205;
     border-radius: 12px;
     overflow: hidden;

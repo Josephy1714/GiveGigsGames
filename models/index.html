@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08131f">
+    <meta name="description" content="Shared 3D model library for GiveGigsGames: procedural Three.js models, ships, enemies, weapons, and worlds ready to copy into your projects.">
+    <title>GiveGigsGames — 3D Model Library</title>
+    <link rel="stylesheet" href="/models/models.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home">
+        <span class="brand-mark">GG</span>
+        <span>GiveGigs<span class="brand-light">Games</span></span>
+      </a>
+      <span class="host-label">3D MODEL LIBRARY</span>
+      <nav class="top-links">
+        <a class="top-link" href="/ggg/">Games Catalog</a>
+        <a class="top-link" href="/tester/">Tester ↗</a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">PROCEDURAL THREE.JS ASSETS</p>
+          <h1>Shared 3D Model Library</h1>
+          <p class="hero-sub">
+            Every procedural Three.js model from across GiveGigsGames — ships, zombies, skeletons, weapons, 4D hyper-entities, and world props. Inspect in 3D and copy standalone code for your own projects.
+          </p>
+        </div>
+        <div id="model-count" class="stats-pill">Loading models…</div>
+      </section>
+
+      <section class="controls" aria-label="Filter models">
+        <div class="search-wrap">
+          <input id="model-search" class="search-input" type="search" placeholder="Search models, games, or tags…" autocomplete="off">
+        </div>
+        <select id="game-filter" class="select-filter" aria-label="Filter by game">
+          <option value="all">All Games</option>
+        </select>
+      </section>
+
+      <div id="category-pills" class="category-pills" role="group" aria-label="Model categories"></div>
+
+      <section id="model-grid" class="model-grid" aria-live="polite"></section>
+    </main>
+
+    <!-- 3D Inspector & Code Modal -->
+    <div id="inspector-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <h2 id="modal-title" class="modal-title">Model Name</h2>
+            <div id="modal-meta" class="modal-meta">Game • Category</div>
+          </div>
+          <button id="modal-close" class="modal-close" type="button" aria-label="Close inspector">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="modal-viewport" class="modal-viewport">
+            <div class="viewport-toolbar">
+              <button id="toggle-rotate" class="tool-chip active" type="button">Auto-Rotate</button>
+              <button id="toggle-wireframe" class="tool-chip" type="button">Wireframe</button>
+              <button id="reset-camera" class="tool-chip" type="button">Reset View</button>
+            </div>
+          </div>
+          <div class="modal-code-pane">
+            <div class="code-header">
+              <span>Standalone Three.js Function</span>
+              <button id="modal-copy-btn" class="btn btn-primary" type="button" style="flex:0 0 auto;padding:0.35rem 0.75rem;">Copy Code</button>
+            </div>
+            <pre id="modal-code" class="code-pre"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/games/html/vendor/three-r128.min.js"></script>
+    <script src="/models/catalog.js"></script>
+    <script src="/models/app.js"></script>
+  </body>
+</html>

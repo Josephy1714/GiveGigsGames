@@ -3,7 +3,7 @@
    Pairs with aaa/50-hud-objectives.js, 60-hud-tutorial.js, 70-hud-runstats.js. */
 
 .aaa-objective {
-    position: absolute; top: 15px; right: 15px; z-index: 42; max-width: 250px;
+    position: absolute; top: 56px; right: 15px; z-index: 42; max-width: 250px;
     background: rgba(6,4,14,0.78); border: 1px solid rgba(255,204,76,0.35); border-left: 3px solid var(--grave-gold);
     border-radius: 8px; padding: 10px 12px; backdrop-filter: blur(8px);
     font-size: 0.78rem; line-height: 1.45; color: #fff; pointer-events: none;

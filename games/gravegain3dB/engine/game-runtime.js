@@ -1668,7 +1668,7 @@
         }
 
         selectWeapon(index) {
-            if (!this.weaponInventory.length || this.isTurnProcessing || this.weaponSwapTimer > 0) return;
+            if (!this.weaponInventory.length || this.isTurnProcessing) return;
             const next = (index + this.weaponInventory.length) % this.weaponInventory.length;
             if (next === this.activeWeaponIndex) return;
             if (this.weaponReloadTimer > 0) {
