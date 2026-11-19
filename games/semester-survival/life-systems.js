@@ -423,4 +423,6 @@
     saveKey: SAVE_KEY,
     version: SAVE_VERSION
   });
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = root.SemesterLifeSystems;
 })(typeof window !== 'undefined' ? window : globalThis);
