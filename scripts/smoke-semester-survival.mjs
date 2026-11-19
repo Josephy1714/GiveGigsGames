@@ -48,7 +48,7 @@ try {
   const jumpState = await page.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player);
   assert.ok(jumpState && jumpState.y > 0, "Space should trigger a real jump with positive vertical movement");
 
-  for (const district of ["township", "campus", "city", "residence"]) {
+  for (const district of ["township", "campus", "city", "township", "residence"]) {
     await page.evaluate(async districtName => {
       await window.SemesterAdventureRuntimeInstance.travelTo(districtName);
     }, district);
