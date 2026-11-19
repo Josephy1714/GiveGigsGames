@@ -56,6 +56,23 @@
   };
 
   const characters = {
+    jay: {
+      name: 'Jay', role: 'Protagonist', home: 'residence', traits: [],
+      introduction: 'Your university journey begins here.',
+      topics: {
+        identity: ['Jay is the player character. His choices, actions and relationships shape the story.']
+      },
+      visualProfile: {
+        status: 'design-baseline',
+        ageRange: 'adult university student, approximately 18–22 at first year',
+        skinTone: 'deep brown',
+        hair: 'short textured natural curls',
+        eyes: 'expressive dark eyes',
+        build: 'lean, active, natural student proportions',
+        outfit: 'open deep-blue overshirt, warm-white T-shirt, dark practical trousers, worn-in sneakers, dark backpack and simple wristwatch',
+        artRule: 'Keep one consistent identity across all views and animation states.'
+      }
+    },
     brian: {
       name: 'Brian', role: 'Roommate', home: 'residence', traits: ['practical', 'witty', 'protective'],
       introduction: 'You must be the new roommate. I’m Brian. Top bunk is mine, by the way.',
@@ -66,12 +83,39 @@
       }
     },
     amina: {
-      name: 'Amina', role: 'Coursemate', home: 'campus', traits: ['curious', 'ambitious', 'empathetic'],
+      name: 'Amina', role: 'Main Cast · Coursemate', home: 'campus', traits: ['curious', 'ambitious', 'empathetic'],
+      visualProfile: {
+        status: 'model-sheet-required',
+        clothing: 'Muslim-appropriate modest contemporary university clothing with a carefully designed hijab',
+        artRule: 'Beautiful, individual design; preserve hijab styling and outfit continuity across every view and animation.'
+      },
       introduction: 'Hey, you’re in my class, right? I’m Amina. Have you found the lecture hall yet?',
       topics: {
         study: ['Let’s compare notes after the lecture. I want to make sure I understood the examples.'],
         project: ['A good project starts with a question worth answering, not just a fancy title.'],
         personal: ['You do not have to figure out the whole degree this week. One step at a time.']
+      }
+    },
+    einstein: {
+      name: 'Einstein', role: 'Main Cast', home: 'campus', traits: [],
+      introduction: 'Hey, I’m Einstein. Good to finally meet you.',
+      topics: { introduction: ['Einstein is part of the main cast. His detailed personality and story are authored separately from his visual approval.'] },
+      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' }
+    },
+    ernest: {
+      name: 'Ernest', role: 'Main Cast', home: 'campus', traits: [],
+      introduction: 'What’s up? I’m Ernest.',
+      topics: { introduction: ['Ernest is part of the main cast. His detailed personality and story are authored separately from his visual approval.'] },
+      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' }
+    },
+    sumeya: {
+      name: 'Sumeya', role: 'Main Cast', home: 'campus', traits: [],
+      introduction: 'Hi, I’m Sumeya. It’s nice to meet you.',
+      topics: { introduction: ['Sumeya is part of the main cast. Her detailed personality and story are authored separately from her visual approval.'] },
+      visualProfile: {
+        status: 'model-sheet-required',
+        clothing: 'Muslim-appropriate modest contemporary university clothing with her own distinctive hijab styling',
+        artRule: 'Beautiful, individual design distinct from Amina; preserve hijab styling and outfit continuity across every view and animation.'
       }
     },
     wanjiku: {
