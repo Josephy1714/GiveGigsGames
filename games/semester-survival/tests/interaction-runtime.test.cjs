@@ -146,3 +146,15 @@ test('opening dialogue respects persisted relationship gates while retaining leg
  const d=rt.openDialogue('amina');assert.deepEqual(d.choices.map(c=>c.id),['unlocked','study']);
  assert.ok(!d.choices.some(c=>c.id==='locked'));
 });
+
+test('authored group scene opens only when every scheduled participant is present and records group turns',()=>{
+ const world={districts:{campus:{places:[{id:'student-commons',name:'Student Commons',actions:['join-study-circle']}] }},characters:{amina:{name:'Amina'},sumeya:{name:'Sumeya'}},socialScenes:[{id:'circle',title:'Study Circle',district:'campus',placeId:'student-commons',from:780,to:960,minParticipants:2,participants:['amina','sumeya'],opening:[{speakerId:'amina',text:'Let us begin.'},{speakerId:'sumeya',text:'I am ready.'}],choices:[{id:'plan',label:'Make a revision plan',turns:[{speakerId:'amina',text:'I will prepare examples.'},{speakerId:'sumeya',text:'I will make a summary.'}],effects:{amina:{affinity:2,trust:2},sumeya:{affinity:2,trust:2}}}]}]};
+ const state={location:'campus',calendar:{minuteOfDay:800},relationships:{coursemate:{affinity:10,trust:5},sumeya:{affinity:10,trust:5}}};const recorded=[];
+ const life={getState(){return state;},perform(){},recordRelationship(k,e,t){recorded.push({k,e,t});}};
+ const schedules={getState(){return ['amina','sumeya'].map(id=>({characterId:id,presence:'in-active-district',targetDistrict:'campus',targetPlaceId:'student-commons'}));}};
+ const env={getState(){return {district:'campus'};},getPlaces(){return [{id:'student-commons',available:true,anchor:'commons'}];}};
+ const renderer={getHotspotBounds(){return {x:0,y:0,width:50,height:50};},focusInteractable(){}};
+ const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,npcScheduleRuntime:schedules});
+ const opened=rt.openGroupDialogue('circle');assert.equal(opened.groupScene,true);assert.equal(opened.participants.length,2);
+ const next=rt.chooseTopic('plan');assert.deepEqual(next.historyEntries.slice(-3).map(x=>x.speakerName),['Jay','Amina','Sumeya']);assert.equal(recorded.length,2);
+});
