@@ -35,6 +35,7 @@
     const onEvent = typeof options.onEvent === 'function' ? options.onEvent : function () {};
     const onTravel = typeof options.onTravel === 'function' ? options.onTravel : null;
     const onPhone = typeof options.onPhone === 'function' ? options.onPhone : null;
+    const weather = options.weatherRuntime || null;
     const npcAnchors = options.npcAnchors || {};
     const radius = Number.isFinite(options.interactionRadius) && options.interactionRadius > 0 ? options.interactionRadius : 72;
     if (!world || !world.districts || !environment || typeof environment.getPlaces !== 'function') fail('World content and environment runtime are required.');
@@ -59,7 +60,7 @@
         if (!actions.length) return;
         const bounds = renderer.getHotspotBounds(place.anchor);
         if (!bounds) return;
-        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: actions, radius: radius });
+        list.push({ type: 'place', id: place.id, name: place.name, anchor: place.anchor, bounds: bounds, actions: actions, exposure: place.exposure, radius: radius });
       });
       (npcAnchors[district] || []).forEach(function (npc) {
         if (!npc || !world.characters[npc.characterId] || typeof npc.anchor !== 'string') return;
@@ -184,7 +185,12 @@
         onEvent(unsupported); lastResult = unsupported; return unsupported;
       }
       const result = life.perform(activity);
-      const event = Object.freeze({ type: 'interaction:completed', district: currentDistrict(), placeId: place.id, action: action, activity: activity, result: result });
+      const exposure = place.exposure || 'indoor';
+      const weatherAssessment = weather && typeof weather.assessExposure === 'function' ? weather.assessExposure(exposure) : null;
+      if (weatherAssessment && weatherAssessment.advisory) {
+        onEvent(Object.freeze({ type: 'weather:activity-advisory', district: currentDistrict(), placeId: place.id, exposure: exposure, message: weatherAssessment.advisory, shelterRecommended: weatherAssessment.shelterRecommended }));
+      }
+      const event = Object.freeze({ type: 'interaction:completed', district: currentDistrict(), placeId: place.id, action: action, activity: activity, result: result, weather: weatherAssessment });
       onEvent(event);
       lastResult = event;
       return event;
