@@ -43,3 +43,7 @@ Assignments are simulated activities. The player works on a course inside the ga
 ## Current integration boundary
 
 The central runtime API and its host wiring are committed, and the entry HTML loads its modules. It is intentionally not auto-started by default. The repository now contains authored geometry/layout contracts for all four districts, but does not yet contain the complete credited environment art pack or production character atlas. Until those assets exist and pass validation, the original entrypoint remains in place and the adventure runtime correctly fails closed rather than pretending the game is ready.
+
+## Dialogue voice integration
+
+Optional `dialogueVoiceTracks` maps character introductions and topic replies to local audio sources plus timestamped viseme cues. `dialogueMouthAtlas` supplies a credited local character-atlas asset and manifest containing `mouth-neutral` and the required viseme clips; it must be in the same preloaded district as the protagonist atlas. Alternatively, the host may inject `dialogueAudio` and `dialogueMouthAnimator`. Dialogue continues as text if voice or face assets are unavailable. The lip-sync runtime samples the audio playback clock and is paused/resumed/stopped with the game and conversation. The mouth renderer is not yet mounted to an approved NPC face because no final face atlases/voice recordings have been supplied; see [Lip-Sync and Voice](LIP_SYNC_AND_VOICE.md).
