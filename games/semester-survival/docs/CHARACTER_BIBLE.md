@@ -3,18 +3,20 @@
 ## Visual identity rules
 - Every recurring character has a signed-off model sheet before runtime animation: front, three-quarter, profile, back, expression range, outfit details, palette swatches and height comparison.
 - Keep head/body ratio, eye placement, jaw shape, hair silhouette, skin palette, outfit seams and accessories consistent across every view and frame.
-- Use a controlled hand-drawn anime line style with clean silhouette design, intentional cel shading and restrained highlights. Avoid glossy plastic skin, random gradients, over-rendered pores and inconsistent facial features.
+- Use a controlled 2D anime line style with clean silhouette design, intentional cel shading and restrained highlights. Avoid glossy plastic skin, random gradients, over-rendered pores and inconsistent facial features.
 - Hands are posed intentionally. Simplify a silhouette rather than inventing unreadable fingers.
 - Each character must remain recognizable at gameplay camera scale and in a small dialogue portrait.
-- Character art is authored as layered production artwork first, then exported to runtime atlases. A single generated illustration or concept sheet is not a finished animated character.
-- Reject AI-looking faces, inconsistent anatomy, synthetic texture artefacts, incoherent hands, random costume details and frame-to-frame identity drift. Do not use generative-image output as final production character or environment art; final assets require human-authored/commissioned artwork, source files, creator records and visual approval.
+- Character art is authored as layered production artwork first, then exported to runtime atlases. A single illustration or concept sheet is not a finished animated character.
+- Reject inconsistent anatomy, incoherent hands, synthetic texture artefacts, random costume details and frame-to-frame identity drift. Final assets require documented source/rights, visual approval and runtime review.
 
-## Player character — Jay (locked design baseline)
+## Player character — Jay (approved design baseline)
 - Role: Jay, the adult first-year Kenyan university student protagonist, approximately 18–22.
 - Build: lean, active, natural student proportions; not exaggerated superhero anatomy.
-- Appearance baseline: deep brown skin, short textured natural curls, expressive dark eyes and a distinct, readable hair silhouette.
-- Everyday outfit baseline: open deep-blue overshirt over a warm-white T-shirt, dark practical trousers, worn-in sneakers, dark backpack and a simple wristwatch.
+- Appearance: deep brown skin, short textured natural curls, expressive dark eyes and a distinct, readable hair silhouette.
+- Everyday outfit: open deep-blue overshirt over a warm-white T-shirt, dark practical trousers, worn-in sneakers, dark backpack and a simple wristwatch.
 - Silhouette priorities: hair, open overshirt, backpack and sneaker profile must remain identifiable in front, side and rear views.
+- Canonical reference: `assets/source/characters/jay/1795073501939.jpg` — four-view turnaround, approved by the project owner.
+- This turnaround locks Jay's current face, hair, proportions, outfit and accessories. Future artwork must match it unless a separately approved design update is made.
 - Personality conveyed through acting: observant, ambitious, sometimes tired or uncertain, warm with trusted friends. Do not lock the player into one emotional response or dialogue personality.
 - Customization may change approved palette/outfit variants, but must not break the base rig, pivots, collision shape or animation timing.
 
@@ -22,7 +24,7 @@
 
 The named main cast is Jay (protagonist), Amina, Einstein, Ernest and Sumeya. Existing supporting characters (including Brian, Wanjiku, Mama Njeri and Dr. Mwangi) remain part of the world and must not be silently removed or renamed.
 
-- **Jay:** use the locked player-character baseline above. The first-year appearance is the initial production identity; the separately deferred four-year maturity milestone remains unchanged.
+- **Jay:** the approved first-year model reference above is canonical. The separately deferred four-year maturity redesign remains unchanged.
 - **Amina:** Muslim character. Her approved design must use Muslim-appropriate modest contemporary clothing and a carefully designed hijab. Her visual identity must remain distinct and consistent.
 - **Sumeya:** Muslim character. Her approved design must use Muslim-appropriate modest contemporary clothing and her own distinctive hijab styling. She must not be a copy of Amina.
 - **Einstein and Ernest:** each requires an independently developed model sheet, silhouette, face, wardrobe and expression language. Do not invent or lock physical traits before their designs are approved.
@@ -60,4 +62,4 @@ Choices should express distinct human intentions, not paraphrases. Avoid stereot
 - Dialogue portraits and in-world models must represent the same character design.
 
 ## Approval gate
-A character is not marked production-ready until the turnaround, expression sheet, runtime animation set, export settings and in-game scale test have all been reviewed together. A concept image alone does not pass this gate.
+Jay's four-view turnaround is approved as his canonical design reference. The full character is not marked production-ready until expression coverage, runtime animation, export settings, creator/rights records and an in-game scale test have all been reviewed together.
