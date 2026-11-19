@@ -147,6 +147,7 @@
     const prepared=await environment.enter(initialDistrict,{spawn:options.initialSpawn||'default'});
     if(disposed)fail('Adventure runtime was disposed while mounting the starting scene.');
     if(prepared.status!=='ready')fail('Starting district did not become ready.');
+    loadCollisionScene(initialDistrict);
     const scene=sceneManifest[initialDistrict],spawn=scene.spawnPoints[options.initialSpawn||'default'];
     character.reset(spawn);
     weather.update(life.getState().calendar,initialDistrict,0);
@@ -174,7 +175,7 @@
    if(!destinationSpawns[spawnId])fail('Destination has no authored arrival spawn for this route: '+previous+' -> '+destination);
    await environment.enter(destination,{spawn:spawnId});
    if(disposed)fail('Adventure runtime was disposed during district travel.');
-   try{const journey=life.travel(destination);services.sync();weather.setDistrict(destination);weather.update(life.getState().calendar,destination,0);npcSchedules.update(life.getState().calendar,destination);npcNavigation.update();renderer.setAtmosphere(weather.getRenderState());character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
+   try{loadCollisionScene(destination);const journey=life.travel(destination);services.sync();weather.setDistrict(destination);weather.update(life.getState().calendar,destination,0);npcSchedules.update(life.getState().calendar,destination);npcNavigation.update();renderer.setAtmosphere(weather.getRenderState());character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
    catch(error){await environment.enter(previous,{spawn:'default'});loadCollisionScene(previous);const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
   }
   function pause(){
