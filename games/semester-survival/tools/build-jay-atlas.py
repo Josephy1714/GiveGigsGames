@@ -14,9 +14,9 @@ import hashlib, json, math
 from pathlib import Path
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[3]
-SOURCE = ROOT / "assets/source/characters/jay"
-OUT = ROOT / "assets/processed/jay-staging"
+GAME_ROOT = Path(__file__).resolve().parents[1]
+SOURCE = GAME_ROOT / "assets/source/characters/jay"
+OUT = GAME_ROOT / "assets/processed/jay-staging"
 SHEETS = {
     "idle": ("1795074192816.jpg", 4, 1, 8, "loop"),
     "walk": ("1795074517333.jpg", 4, 2, 10, "loop"),
