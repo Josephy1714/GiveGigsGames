@@ -54,9 +54,9 @@
       { id: 'south-garden-edge', type: 'segment', x1: 520, depth1: 138, x2: 3650, depth2: 138, radius: 9, material: 'stone', effect: 'none' }
     ],
     gameplayZones: [
-      { id: 'campus-central-walkway', shape: 'aabb', minX: 520, maxX: 3650, minDepth: -118, maxDepth: 118, effect: 'campus-track' },
-      { id: 'library-steps-crowd', shape: 'circle', x: 1535, depth: 48, radius: 76, effect: 'crowded-corridor' },
-      { id: 'rain-exposed-east-walk', shape: 'aabb', minX: 2700, maxX: 3160, minDepth: -118, maxDepth: 118, effect: 'wet-floor' }
+      { id: 'campus-central-walkway', type: 'aabb', minX: 520, maxX: 3650, minDepth: -118, maxDepth: 118, effect: 'campus-track' },
+      { id: 'library-steps-crowd', type: 'circle', x: 1535, depth: 48, radius: 76, effect: 'crowded-corridor' },
+      { id: 'rain-exposed-east-walk', type: 'aabb', minX: 2700, maxX: 3160, minDepth: -118, maxDepth: 118, effect: 'wet-floor' }
     ],
     spawnPoints: {
       default: { x: 250, depth: 0 }, fromTownship: { x: 190, depth: 0 },
