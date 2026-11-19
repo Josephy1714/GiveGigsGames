@@ -10,7 +10,7 @@ The host constructs the four dependencies and passes them to `SemesterCharacterR
 
 - `controller`: `update(delta, intent)`, `snapshot()`, `reset(position)`
 - `animator`: `play(clip, facing)`, `update(delta)`, `snapshot()`, `render(context, x, y, scale)`, `reset()`
-- `renderer`: `updateCamera(target, delta)`, `render(frame)`
+- `renderer`: `updateCamera(target, delta)`, `render(frame)`; optional `getLayout()` supplies the mounted scene ground line and depth scale
 - `inputManager`: `consume()`; optional `destroy()`
 
 Optional settings are `characterScale`, `cameraOffsetY`, `requiredClips`, and `clipLibrary`. When a clip library is supplied, all required locomotion/action clips are validated before runtime creation. There is no placeholder fallback.
@@ -19,7 +19,7 @@ Optional settings are `characterScale`, `cameraOffsetY`, `requiredClips`, and `c
 
 The host calls `update(delta)` once per simulation frame, then `render()` when drawing. Update consumes one normalized input intent, advances locomotion, selects the authored clip, advances animation, and follows the character with the camera. The host retains control of frame scheduling and canvas resizing.
 
-The runtime clamps simulation delta to 50 ms. The controller and animator retain their own deterministic limits. `render()` passes the animator and world position to the scene renderer; only decoded atlas pixels can appear.
+The runtime clamps simulation delta to 50 ms. Horizontal position, depth position and jump height remain independent. The renderer maps depth onto the authored ground plane and camera follow uses that combined screen position. The controller and animator retain their own deterministic limits. `render()` passes the animator and world position to the scene renderer; only decoded atlas pixels can appear.
 
 ## Animation mapping
 
@@ -27,7 +27,7 @@ Most controller state names map directly to clip names. The controller's `land-r
 
 ## Lifecycle
 
-- `reset(position)` resets movement, animation and camera tracking to idle at the requested X position.
+- `reset(position)` resets movement, animation and camera tracking to idle at the requested X/depth spawn position.
 - `getState()` returns movement, animation, last input, frame count, readiness and error.
 - `dispose()` prevents further updates/renders and releases the input manager's event listeners.
 
