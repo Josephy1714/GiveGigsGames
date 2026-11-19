@@ -81,7 +81,9 @@
       const characterTracks = voiceTracks[characterId] || {};
       const track = key === 'introduction' ? characterTracks.introduction : (characterTracks.topics && characterTracks.topics[key]);
       if (!track) { speech.stop(); return null; }
-      return speech.start(track);
+      const started = speech.start(track);
+      if (started && typeof started.catch === 'function') started.catch(function () {});
+      return started;
     }
     function getDialogue() {
       if (!dialogue) return null;
