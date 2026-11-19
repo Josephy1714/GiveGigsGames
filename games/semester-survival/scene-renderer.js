@@ -318,7 +318,7 @@
     }
 
     function getLayout() {
-      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, worldBounds: active.scene.worldBounds, groundY: active.scene.groundY, depthScale: active.scene.depthScale, depthBounds: active.scene.depthBounds, playerBounds: active.scene.playerBounds, cameraBounds: active.scene.cameraBounds }) : null;
+      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, worldBounds: active.scene.worldBounds, groundY: active.scene.groundY, depthScale: active.scene.depthScale, depthBounds: active.scene.depthBounds, playerBounds: active.scene.playerBounds, characterLayerZIndex: active.scene.characterLayerZIndex, cameraBounds: active.scene.cameraBounds }) : null;
     }
 
     function getState() {
