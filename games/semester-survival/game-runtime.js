@@ -20,7 +20,7 @@
    animation:root.SemesterCharacterAnimation,character:root.SemesterCharacterRuntime,assets:root.SemesterSceneAssets,
    renderer:root.SemesterSceneRenderer,environment:root.SemesterEnvironmentRuntime,interaction:root.SemesterInteractionRuntime,
    interactionUI:root.SemesterInteractionUI,campaign:root.SemesterCampaignRuntime,campaignUI:root.SemesterCampaignUI,
-   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime,zones:root.SemesterGameplayZones
+   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime,zones:root.SemesterGameplayZones,transitionUI:root.SemesterDistrictTransitionUI
   };
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
@@ -30,7 +30,7 @@
   const atlasEntry=validatedAssets.find(function(item){return item.id===options.characterAtlas.assetId;});
   if(!atlasEntry||atlasEntry.role!=='character-atlas')fail('The character atlas id must reference a credited character-atlas asset in the local asset manifest.');
   const atlasDistrict=atlasEntry.district;
-  let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null,pauseButton=null;
+  let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null,pauseButton=null,transitionUI=null;
   function make(tag,cls,parent){const el=doc.createElement(tag);if(cls)el.className=cls;if(parent)parent.appendChild(el);return el;}
   if(!shell){shell=make('section','ss-adventure-shell',host);shell.setAttribute('aria-label','Semester Survival adventure');}
   if(!canvas)canvas=make('canvas','ss-adventure-shell__canvas',shell);
@@ -38,6 +38,7 @@
   if(!interactionRoot)interactionRoot=make('div','ss-interaction-ui',shell);
   if(!phoneRoot)phoneRoot=make('div','ss-adventure-shell__phone',shell);
   if(options.pauseControl!==false){pauseButton=make('button','ss-adventure-shell__pause',shell);pauseButton.type='button';pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause game');}
+  transitionUI=modules.transitionUI.create({document:doc,host:shell});
   const input=modules.input.createInputManager(options.inputTarget||shell,options.inputOptions||{});
   const renderer=modules.renderer.create({canvas:canvas,maxDevicePixelRatio:options.maxDevicePixelRatio||2});
   const life=modules.life.createEngine(storage);
@@ -170,15 +171,50 @@
    if(phone.getSnapshot().open||interaction.getState().dialogue)fail('Close the phone or current conversation before travelling.');
    const previous=environment.getState().district;
    if(!previous||!world.districts[previous].exits.includes(destination))fail('No authored route connects the current district to that destination.');
-   const destinationSpawns=sceneManifest[destination].spawnPoints;
+   const destinationScene=sceneManifest[destination];
+   if(!destinationScene||!destinationScene.spawnPoints)fail('Destination scene has no authored spawn points.');
+   const destinationSpawns=destinationScene.spawnPoints;
    const requestedSpawn=travelOptions&&travelOptions.spawn;
    const routeSpawn='from-'+previous;
    const spawnId=requestedSpawn||(destinationSpawns[routeSpawn]?routeSpawn:'default');
    if(!destinationSpawns[spawnId])fail('Destination has no authored arrival spawn for this route: '+previous+' -> '+destination);
-   await environment.enter(destination,{spawn:spawnId});
-   if(disposed)fail('Adventure runtime was disposed during district travel.');
-   try{loadCollisionScene(destination);const journey=life.travel(destination);services.sync();weather.setDistrict(destination);weather.update(life.getState().calendar,destination,0);npcSchedules.update(life.getState().calendar,destination);npcNavigation.update();renderer.setAtmosphere(weather.getRenderState());character.reset(destinationSpawns[spawnId]);interaction.refresh(getPosition());publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');return getState();}
-   catch(error){await environment.enter(previous,{spawn:'default'});loadCollisionScene(previous);const priorSpawn=sceneManifest[previous].spawnPoints.default;character.reset(priorSpawn);throw error;}
+   const previousPosition=getPosition();
+   transitionUI.show(world.districts[destination].title);
+   try{
+    transitionUI.setPhase('Preparing destination','Checking local scene assets and arrival point…');
+    await environment.enter(destination,{spawn:spawnId});
+    if(disposed)fail('Adventure runtime was disposed during district travel.');
+    transitionUI.setPhase('Entering district','Mounting the authored environment and synchronizing gameplay…');
+    loadCollisionScene(destination);
+    character.reset(destinationSpawns[spawnId]);
+    const journey=life.travel(destination);
+    services.sync();
+    weather.setDistrict(destination);
+    weather.update(life.getState().calendar,destination,0);
+    npcSchedules.update(life.getState().calendar,destination);
+    npcNavigation.update();
+    renderer.setAtmosphere(weather.getRenderState());
+    interaction.refresh(getPosition());
+    publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');
+    transitionUI.setPhase('Arriving','You have arrived in '+world.districts[destination].title+'.');
+    return getState();
+   }catch(error){
+    if(!disposed&&environment.getState().district!==previous){
+     try{
+      transitionUI.setPhase('Restoring previous district','Returning to your last safe position…');
+      await environment.enter(previous,{spawn:'default'});
+      loadCollisionScene(previous);
+      if(previousPosition)character.reset(previousPosition);
+      weather.setDistrict(previous);
+      weather.update(life.getState().calendar,previous,0);
+      npcSchedules.update(life.getState().calendar,previous);
+      npcNavigation.update();
+      renderer.setAtmosphere(weather.getRenderState());
+      interaction.refresh(getPosition());
+     }catch(rollbackError){onError(rollbackError);}
+    }
+    throw error;
+   }finally{transitionUI.hide();}
   }
   function pause(){
    if(lifecycle!=='running')return getState();
@@ -221,7 +257,7 @@
    if(disposed)return;stopFrameLoop();lifecycle='disposed';disposed=true;
    if(resizeHandler&&root.removeEventListener)root.removeEventListener('resize',resizeHandler);
    doc.removeEventListener('keydown',escapeHandler);doc.removeEventListener('visibilitychange',visibilityHandler);
-   phone.destroy();services.destroy();npcNavigation.destroy();npcSchedules.destroy();weather.destroy();collisionWorld.destroy();gameplayZones.destroy();
+   transitionUI.destroy();phone.destroy();services.destroy();npcNavigation.destroy();npcSchedules.destroy();weather.destroy();collisionWorld.destroy();gameplayZones.destroy();
    if(pauseButton)pauseButton.removeEventListener('click',togglePause);
    phoneUI.destroy();campaignUI.destroy();interactionUI.destroy();
    if(character)character.dispose();else input.destroy();
