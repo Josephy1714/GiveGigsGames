@@ -44,9 +44,9 @@ try {
   assert.ok(after > before, `Jay should move right: before=${before}, after=${after}`);
 
   await page.keyboard.press("Space");
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(180);
   const jumpState = await page.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player);
-  assert.ok(jumpState, "Jay movement state should remain available after jumping");
+  assert.ok(jumpState && jumpState.y > 0, "Space should trigger a real jump with positive vertical movement");
 
   for (const district of ["township", "campus", "city", "residence"]) {
     await page.evaluate(async districtName => {
