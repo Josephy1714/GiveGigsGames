@@ -110,6 +110,12 @@
       return getState();
     }
 
+    function drainAnimationEvents() {
+      if (disposed) return Object.freeze([]);
+      if (typeof animator.drainEvents !== 'function') return Object.freeze([]);
+      return animator.drainEvents();
+    }
+
     function getState() {
       return Object.freeze({
         movement: movement,
@@ -127,7 +133,7 @@
       if (input && typeof input.destroy === 'function') input.destroy();
     }
 
-    return Object.freeze({ update, render, reset, getState, dispose });
+    return Object.freeze({ update, render, reset, getState, drainAnimationEvents, dispose });
   }
 
   root.SemesterCharacterRuntime = Object.freeze({ create, requiredClips: REQUIRED });
