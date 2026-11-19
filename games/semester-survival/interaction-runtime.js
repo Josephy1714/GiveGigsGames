@@ -36,6 +36,7 @@
     const onTravel = typeof options.onTravel === 'function' ? options.onTravel : null;
     const onPhone = typeof options.onPhone === 'function' ? options.onPhone : null;
     const weather = options.weatherRuntime || null;
+    const npcScheduleRuntime = options.npcScheduleRuntime || null;
     const speech = options.speechRuntime || null;
     const voiceTracks = options.voiceTracks || {};
     const npcAnchors = options.npcAnchors || {};
@@ -58,7 +59,7 @@
       const list = [];
       environment.getPlaces().forEach(function (place) {
         if (!place.available || !place.anchor) return;
-        const actions = place.actions.filter(function(action){return Boolean(ACTIVITY_BY_ACTION[action]||DIALOGUE_BY_ACTION[action]||TRAVEL_BY_ACTION[action]||action==='check-phone');});
+        const actions = place.actions.filter(function(action){return Boolean(ACTIVITY_BY_ACTION[action]||DIALOGUE_BY_ACTION[action]||TRAVEL_BY_ACTION[action]||action==='check-phone'||action==='join-study-circle');});
         if (!actions.length) return;
         const bounds = renderer.getHotspotBounds(place.anchor);
         if (!bounds) return;
@@ -95,6 +96,10 @@
       return Object.freeze({
         characterId: dialogue.characterId,
         characterName: dialogue.characterName,
+        sceneId: dialogue.sceneId || null,
+        sceneTitle: dialogue.sceneTitle || null,
+        groupScene: !!dialogue.groupScene,
+        participants: Object.freeze((dialogue.participants || []).map(function (person) { return Object.freeze(Object.assign({}, person)); })),
         line: dialogue.line,
         speakerId: dialogue.characterId,
         speakerName: dialogue.characterName,
@@ -144,8 +149,64 @@
       lastResult = event;
       return getDialogue();
     }
+    function openGroupDialogue(sceneId) {
+      const scene = (world.socialScenes || []).find(function (item) { return item.id === sceneId; });
+      if (!scene) fail('Unknown authored social scene: ' + sceneId);
+      if (currentDistrict() !== scene.district || life.getState().location !== scene.district) fail('This gathering is not in the current district.');
+      const calendar = life.getState().calendar || {};
+      if (calendar.minuteOfDay < scene.from || calendar.minuteOfDay >= scene.to) fail('The study circle is not scheduled at this time.');
+      const place = world.districts[scene.district].places.find(function (item) { return item.id === scene.placeId; });
+      const activePlace = (environment.getPlaces() || []).find(function (item) { return item.id === scene.placeId && item.available && item.anchor; });
+      if (!place || !activePlace || !renderer.getHotspotBounds(activePlace.anchor)) fail('The gathering place has no active authored interaction hotspot.');
+      if (!npcScheduleRuntime || typeof npcScheduleRuntime.getState !== 'function') fail('NPC schedule runtime is required for group gatherings.');
+      const schedules = npcScheduleRuntime.getState();
+      const present = scene.participants.filter(function (id) {
+        return schedules.some(function (npc) { return npc.characterId === id && npc.presence === 'in-active-district' && npc.targetDistrict === scene.district && npc.targetPlaceId === scene.placeId; });
+      });
+      if (present.length < scene.minParticipants || present.length !== scene.participants.length) fail('The full study circle has not assembled yet.');
+      const first = scene.opening[0];
+      dialogue = {
+        groupScene: true, sceneId: scene.id, sceneTitle: scene.title,
+        characterId: first.speakerId, characterName: scene.title,
+        participants: scene.participants.map(function (id) { return { id: id, name: world.characters[id].name }; }),
+        line: first.text, topics: scene.choices.map(function (choice) { return choice.id; }),
+        choices: scene.choices.map(function (choice) { return { id: choice.id, label: choice.label, kind: 'group' }; }),
+        history: [], historyEntries: []
+      };
+      scene.opening.forEach(function (turn) {
+        dialogue.history.push(turn.text);
+        dialogue.historyEntries.push({ speakerId: turn.speakerId, speakerName: world.characters[turn.speakerId].name, text: turn.text, expression: turn.expression || 'neutral' });
+      });
+      setDialogueContext(true);
+      const event = Object.freeze({ type: 'dialogue:group-opened', sceneId: scene.id, participants: Object.freeze(scene.participants.slice()) });
+      onEvent(event); lastResult = event;
+      return getDialogue();
+    }
+    function chooseGroupChoice(choiceId) {
+      if (!dialogue || !dialogue.groupScene) fail('No group conversation is currently open.');
+      const scene = (world.socialScenes || []).find(function (item) { return item.id === dialogue.sceneId; });
+      const choice = scene && scene.choices.find(function (item) { return item.id === choiceId; });
+      if (!choice || !dialogue.choices.some(function (item) { return item.id === choiceId; })) fail('That group conversation choice is not available.');
+      const label = choice.label;
+      dialogue.history.push(label);
+      dialogue.historyEntries.push({ speakerId: 'jay', speakerName: 'Jay', text: label, expression: 'speaking' });
+      choice.turns.forEach(function (turn) {
+        const speaker = world.characters[turn.speakerId];
+        dialogue.history.push(turn.text);
+        dialogue.historyEntries.push({ speakerId: turn.speakerId, speakerName: speaker.name, text: turn.text, expression: turn.expression || 'neutral' });
+        const relationshipKey = RELATIONSHIP_BY_CHARACTER[turn.speakerId];
+        const effect = choice.effects && choice.effects[turn.speakerId];
+        if (relationshipKey && effect && typeof life.recordRelationship === 'function') life.recordRelationship(relationshipKey, effect, 'Joined the ' + scene.title + ' discussion');
+        startVoice(turn.speakerId, turn.lineId || choiceId);
+      });
+      dialogue.line = choice.turns[choice.turns.length - 1].text;
+      const event = Object.freeze({ type: 'dialogue:group-choice', sceneId: scene.id, choiceId: choiceId, participants: Object.freeze(scene.participants.slice()) });
+      onEvent(event); lastResult = event;
+      return getDialogue();
+    }
     function chooseTopic(topic) {
       if (!dialogue) fail('No conversation is currently open.');
+      if (dialogue.groupScene) return chooseGroupChoice(topic);
       const character = world.characters[dialogue.characterId];
       const choice = dialogue.choices.find(function (item) { return item.id === topic; });
       if (!choice) fail('That conversation choice is not currently available.');
@@ -238,6 +299,10 @@
           onEvent(failed); lastResult = failed; return failed;
         });
       }
+      if (action === 'join-study-circle') {
+        try { return Object.freeze({ type: 'dialogue:group-state', dialogue: openGroupDialogue('commons-study-circle') }); }
+        catch (error) { const unavailable = Object.freeze({ type: 'interaction:unsupported', district: currentDistrict(), placeId: place.id, action: action, reason: error.message }); onEvent(unavailable); lastResult = unavailable; return unavailable; }
+      }
       const activity = ACTIVITY_BY_ACTION[action];
       if (!activity) {
         const unsupported = Object.freeze({ type: 'interaction:unsupported', district: currentDistrict(), placeId: place.id, action: action, reason: 'No gameplay activity is mapped to this action yet.' });
@@ -258,7 +323,7 @@
       return Object.freeze({ district: currentDistrict(), nearby: getNearby(), dialogue: getDialogue(), lastResult: lastResult });
     }
     return Object.freeze({
-      refresh: refresh, interact: interact, openDialogue: openDialogue,
+      refresh: refresh, interact: interact, openDialogue: openDialogue, openGroupDialogue: openGroupDialogue,
       chooseTopic: chooseTopic, closeDialogue: closeDialogue,
       getNearby: getNearby, getDialogue: getDialogue, getState: getState
     });
