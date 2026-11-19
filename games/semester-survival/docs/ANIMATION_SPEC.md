@@ -155,3 +155,7 @@ NPC navigation produces authored waypoint sequences only. The eventual actor con
 ## Collision-aware performance
 
 Animation must respond to actual collision/contact state, not visual overlap alone. A blocked run should plant and absorb weight; a shoulder brush should not use a full-body impact; a hard stop should settle through the feet and torso. Contact normals and material/effect tags are gameplay signals for authored animation and audiovisual reactions. Never fake collision by moving a sprite away from a wall while leaving the gameplay body embedded. Collision geometry and visual animation must be reviewed together at gameplay scale. See [Collision and Contact](COLLISION_AND_CONTACT.md).
+
+## Dialogue voice and phoneme-aligned mouth animation
+
+Dialogue voice uses a separate approved mouth atlas so speaking does not replace body locomotion. The lip-sync runtime samples the actual audio playback clock and selects manually aligned viseme clips. A mouth atlas must include a neutral pose and approved language-appropriate visemes; each line needs a licensed human voice recording and reviewed timestamp cue track. See [Lip-Sync and Voice](LIP_SYNC_AND_VOICE.md). Do not mark dialogue as lip-synced when any of these assets are missing.
