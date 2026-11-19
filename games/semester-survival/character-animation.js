@@ -195,13 +195,41 @@
     return Object.freeze({ play, update, snapshot, render, reset, drainEvents, hasClip: name => library.has(name) });
   }
 
-  function createControllerBinding(animator) {
+  function resolveStateClip(state, movement, library) {
+    const speed = movement && Number.isFinite(movement.speed) ? movement.speed : 0;
+    const moving = speed > 0.35;
+    const running = speed > 4.4;
+    const has = name => library && typeof library.has === 'function' && library.has(name);
+
+    // Jay's uploaded jump sheets contain the complete crouch-to-air-to-landing
+    // action. Keep that authored sequence intact instead of demanding invented
+    // takeoff/rise/apex/fall sheets.
+    if (state.indexOf('jump-') === 0 || state === 'land-recover') {
+      const jumpClip = moving && has('jump-running') ? 'jump-running' : 'jump-standing';
+      if (has(jumpClip)) return jumpClip;
+    }
+
+    const requested = STATE_CLIPS[state] || state;
+    if (has(requested)) return requested;
+
+    // Slide and dodge remain controller movement mechanics, but Jay has no
+    // approved slide/dodge artwork yet. Use honest locomotion art until it exists.
+    if (state === 'slide-start' || state === 'slide-loop' ||
+        state === 'dodge-left' || state === 'dodge-right') {
+      if (running && has('sprint')) return 'sprint';
+      if (moving && has('jog')) return 'jog';
+      if (has('walk')) return 'walk';
+    }
+    return has('idle') ? 'idle' : requested;
+  }
+
+  function createControllerBinding(animator, library) {
     return Object.freeze({
       update(delta, movementSnapshot) {
         if (!movementSnapshot || !movementSnapshot.state) {
           return { ok: false, reason: 'movement-snapshot-required' };
         }
-        const clipName = STATE_CLIPS[movementSnapshot.state] || movementSnapshot.state;
+        const clipName = resolveStateClip(movementSnapshot.state, movementSnapshot, library || { has: name => animator.hasClip(name) });
         const result = animator.play(clipName, movementSnapshot.facing);
         animator.update(delta);
         return Object.assign({}, result, { animation: animator.snapshot() });
