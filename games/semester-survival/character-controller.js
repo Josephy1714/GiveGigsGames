@@ -20,6 +20,9 @@
 
   function createController(options) {
     options = options || {};
+    let depthBounds = options.depthBounds || { min: -120, max: 120 };
+    if (!depthBounds || !Number.isFinite(depthBounds.min) || !Number.isFinite(depthBounds.max) || depthBounds.min >= depthBounds.max) errorDepthBounds();
+    function errorDepthBounds() { throw new Error('Depth bounds require finite min and max values with min less than max.'); }
     const c = {
       x: 0, y: 0, depth: 0, vx: 0, vy: 0, vDepth: 0,
       facing: 1, grounded: true,
@@ -113,9 +116,7 @@
       }
       c.x += c.vx * dt;
       c.depth += c.vDepth * dt;
-      const depthBounds = options.depthBounds || { min: -120, max: 120 };
-      if (Number.isFinite(depthBounds.min)) c.depth = Math.max(depthBounds.min, c.depth);
-      if (Number.isFinite(depthBounds.max)) c.depth = Math.min(depthBounds.max, c.depth);
+      c.depth = Math.max(depthBounds.min, Math.min(depthBounds.max, c.depth));
       if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
       c.speed = Math.hypot(c.vx, c.vDepth);
       if (Math.abs(c.vx) > 0.12) c.facing = Math.sign(c.vx);
@@ -165,6 +166,14 @@
       };
     }
 
+    function setDepthBounds(bounds) {
+      if (!bounds || !Number.isFinite(bounds.min) || !Number.isFinite(bounds.max) || bounds.min >= bounds.max) errorDepthBounds();
+      depthBounds = { min: bounds.min, max: bounds.max };
+      c.depth = clamp(c.depth, depthBounds.min, depthBounds.max);
+      if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
+      return Object.freeze({ min: depthBounds.min, max: depthBounds.max });
+    }
+
     function reset(position) {
       c.x = Number(position && position.x) || 0;
       c.depth = Number(position && position.depth) || 0;
@@ -177,7 +186,7 @@
       return snapshot();
     }
 
-    return Object.freeze({ update, snapshot, reset });
+    return Object.freeze({ update, snapshot, reset, setDepthBounds });
   }
 
   root.SemesterCharacterController = Object.freeze({ createController, config: CONFIG });
