@@ -34,3 +34,8 @@ When an actor supplies its authored depth value, the compositor applies a small 
 
 The effect is intentionally subtle and inexpensive for mobile canvas rendering. It does not replace approved character artwork, authored animation frames, environment lighting or a device-level visual review.
 
+
+
+## Render diagnostics and deterministic overlap
+
+Actors are depth-sorted by their rendered ground-space Y coordinate. Exact Y ties are resolved by X and then character ID, so overlap order is stable across frames and does not depend on the order NPC systems happen to provide actors. Frame diagnostics count only animator results that explicitly report `drawn: true`; `characterDrawn`, `npcCharactersDrawn` and `charactersDrawn` therefore describe successful sprite draws rather than merely supplied animator objects. These counters are diagnostic and do not imply that production character atlases have been delivered.
