@@ -107,10 +107,12 @@ render = function(){
 };
 const oldFinish = finish;
 finish = function(quit,why){
+ const semesterBefore=save.semester;
  if(g&&g.runPowerups)save.powerups=(save.powerups||0)+g.runPowerups;
  if(g&&g.d>0)save.assignments=(save.assignments||0)+Math.floor(g.d/300);
  oldFinish(quit,why);
- if(save.semester>8){save.graduated=true;saveNow();$("#result-title").textContent="YOU GRADUATED!";$("#result-message").textContent="Eight semesters conquered. Your degree is earned. Endless Alumni Mode is now unlocked.";}
+ if(save.semester>semesterBefore&&save.gpa<2){save.supps=(save.supps||0)+1;}
+ if(save.semester>8){save.graduated=true;saveNow();drawPages();$("#result-title").textContent="YOU GRADUATED!";$("#result-message").textContent="Eight semesters conquered. Your degree is earned. Endless Alumni Mode is now unlocked.";}
  else if(expandedFailures[why])$("#result-message").textContent=expandedFailures[why];
 };
 const oldDrawPages = drawPages;
