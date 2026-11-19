@@ -28,6 +28,24 @@ try {
   assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), Math.max(0, initialLane - 1), "Left input should change lanes");
   await page.keyboard.press("ArrowRight");
   assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), initialLane, "Right input should restore the lane");
+
+  // Exercise the actual touch handlers on the mobile-sized browser context.
+  const swipe = async (x1, y1, x2, y2) => page.evaluate(({ x1, y1, x2, y2 }) => {
+    const surface = document.querySelector("#game");
+    const start = new Touch({ identifier: 41, target: surface, clientX: x1, clientY: y1 });
+    const end = new Touch({ identifier: 41, target: surface, clientX: x2, clientY: y2 });
+    surface.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, changedTouches: [start], touches: [start] }));
+    surface.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [end], touches: [] }));
+  }, { x1, y1, x2, y2 });
+  const beforeTouchLane = await page.evaluate(() => window.__runnerSmoke.state().lane);
+  await swipe(310, 500, 90, 500);
+  assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), Math.max(0, beforeTouchLane - 1), "Left swipe should change lanes");
+  await swipe(180, 650, 180, 420);
+  assert.ok(await page.evaluate(() => window.__runnerSmoke.state().jump > 0), "Up swipe should trigger a jump");
+  await page.waitForFunction(() => window.__runnerSmoke.state().jump === 0);
+  await swipe(180, 420, 180, 650);
+  assert.ok(await page.evaluate(() => window.__runnerSmoke.state().slide > 0), "Down swipe should trigger a slide");
+  await page.waitForFunction(() => window.__runnerSmoke.state().slide === 0);
   await page.keyboard.press("ArrowDown");
   assert.ok(await page.evaluate(() => window.__runnerSmoke.state().slide > 0), "Down input should activate Jay's slide");
   await page.waitForFunction(() => window.__runnerSmoke.state().slide === 0);
