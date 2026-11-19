@@ -142,3 +142,5 @@
 .ss-interaction-ui__turn.is-player .ss-interaction-ui__turn-speaker { color:#9fc5ff; }
 .ss-interaction-ui__turn .ss-interaction-ui__line { margin:0; }
 .ss-interaction-ui__turn.is-current { background-color:rgba(218,190,132,.09); }
+
+.ss-interaction-ui__participants { display:block; margin-top:5px; color:#9eacc0; font-size:.68rem; line-height:1.5; }
