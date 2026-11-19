@@ -13,6 +13,7 @@ for (const file of [
   'world-content.js',
   'scene-assets.js',
   'environment-runtime.js',
+  'character-animation.js',
   'jay-atlas-manifest.js',
   'adventure-config.js'
 ]) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
