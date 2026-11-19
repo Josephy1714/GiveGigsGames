@@ -42,6 +42,9 @@
     }
 
     let movement = controller.snapshot();
+    function sceneLayout(){return typeof renderer.getLayout==='function'?renderer.getLayout():null;}
+    function groundY(){const layout=sceneLayout();return layout&&Number.isFinite(layout.groundY)?layout.groundY:0;}
+    function depthScale(){const layout=sceneLayout();return layout&&Number.isFinite(layout.depthScale)?layout.depthScale:1;}
     let animation = animator.snapshot();
     let lastInput = null;
     let lastError = null;
@@ -54,6 +57,7 @@
       lastInput = input.consume() || {};
       movement = controller.update(dt, {
         moveX: lastInput.moveX,
+        moveY: lastInput.moveY,
         sprint: lastInput.sprint,
         jumpPressed: lastInput.jumpPressed,
         slidePressed: lastInput.slidePressed,
@@ -63,7 +67,7 @@
       const played = animator.play(clipName, movement.facing);
       if (!played || played.ok !== true) {
         lastError = 'Required animation clip unavailable: ' + (played && played.missingClip || clipName);
-        renderer.updateCamera({ x: movement.x, y: movement.y + cameraOffsetY }, dt);
+        renderer.updateCamera({ x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y + cameraOffsetY }, dt);
         animation = animator.snapshot();
         return getState();
       }
@@ -78,7 +82,7 @@
       if (disposed) throw new Error('Character runtime has been disposed.');
       if (lastError) return { rendered: false, reason: lastError };
       const result = renderer.render({
-        character: { x: movement.x, y: movement.y, scale: scale, animator: animator }
+        character: { x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y, depth: movement.depth, scale: scale, animator: animator }
       });
       return { rendered: true, frame: result, movement: movement, animation: animation };
     }
@@ -94,7 +98,7 @@
         animation = animator.snapshot();
         lastError = null;
       }
-      renderer.updateCamera({ x: movement.x, y: movement.y + cameraOffsetY }, 0);
+      renderer.updateCamera({ x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y + cameraOffsetY }, 0);
       frameNumber = 0;
       return getState();
     }
