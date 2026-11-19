@@ -23,10 +23,11 @@ try {
   assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), Math.max(0, initialLane - 1), "Left input should change lanes");
   await page.keyboard.press("ArrowRight");
   assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), initialLane, "Right input should restore the lane");
-  await page.keyboard.press("Space");
-  assert.ok(await page.evaluate(() => window.__runnerSmoke.state().jump > 0), "Jump input should activate Jay's jump");
   await page.keyboard.press("ArrowDown");
   assert.ok(await page.evaluate(() => window.__runnerSmoke.state().slide > 0), "Down input should activate Jay's slide");
+  await page.waitForFunction(() => window.__runnerSmoke.state().slide === 0);
+  await page.keyboard.press("Space");
+  assert.ok(await page.evaluate(() => window.__runnerSmoke.state().jump > 0), "Jump input should activate Jay's jump");
   await page.keyboard.press("Escape");
   await page.locator("#pause-modal.show").waitFor();
   await page.locator("#resume").click();
