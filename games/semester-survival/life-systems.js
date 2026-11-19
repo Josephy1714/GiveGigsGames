@@ -72,7 +72,10 @@
         coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
         classRep: { name: 'Wanjiku', affinity: 10, trust: 5, history: [] },
         vendor: { name: 'Mama Njeri', affinity: 10, trust: 5, history: [] },
-        lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] }
+        lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] },
+        sumeya: { name: 'Sumeya', affinity: 10, trust: 5, history: [] },
+        einstein: { name: 'Einstein', affinity: 10, trust: 5, history: [] },
+        ernest: { name: 'Ernest', affinity: 10, trust: 5, history: [] },
       },
       inventory: ['student-id', 'notebook', 'phone'],
       quests: [
@@ -187,7 +190,10 @@
           coursemate: { name: 'Amina', affinity: 15, trust: 8, history: [] },
           classRep: { name: 'Wanjiku', affinity: 10, trust: 5, history: [] },
           vendor: { name: 'Mama Njeri', affinity: 10, trust: 5, history: [] },
-          lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] }
+          lecturer: { name: 'Dr. Mwangi', affinity: 5, trust: 5, history: [] },
+        sumeya: { name: 'Sumeya', affinity: 10, trust: 5, history: [] },
+        einstein: { name: 'Einstein', affinity: 10, trust: 5, history: [] },
+        ernest: { name: 'Ernest', affinity: 10, trust: 5, history: [] },
         };
         Object.keys(relationshipDefaults).forEach(function (key) {
           if (!parsed.relationships[key]) parsed.relationships[key] = relationshipDefaults[key];
