@@ -7,6 +7,7 @@
 - Hands are posed intentionally. Simplify a silhouette rather than inventing unreadable fingers.
 - Each character must remain recognizable at gameplay camera scale and in a small dialogue portrait.
 - Character art is authored as layered production artwork first, then exported to runtime atlases. A single generated illustration or concept sheet is not a finished animated character.
+- Reject AI-looking faces, inconsistent anatomy, synthetic texture artefacts, incoherent hands, random costume details and frame-to-frame identity drift. Do not use generative-image output as final production character or environment art; final assets require human-authored/commissioned artwork, source files, creator records and visual approval.
 
 ## Player character — locked design baseline
 - Role: first-year Kenyan university student; adult, approximately 18–22.
