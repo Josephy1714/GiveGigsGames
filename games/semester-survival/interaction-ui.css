@@ -133,3 +133,12 @@
   .ss-interaction-ui__prompt, .ss-interaction-ui__panel { animation: ss-ui-enter 160ms ease-out both; }
   @keyframes ss-ui-enter { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* Speaker-attributed conversation turns; expression metadata is ready for approved face art. */
+.ss-interaction-ui__turn { margin: 0 0 13px; padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,.035); }
+.ss-interaction-ui__turn.is-npc { border-left: 2px solid rgba(218,190,132,.62); }
+.ss-interaction-ui__turn.is-player { margin-left: clamp(12px, 9%, 72px); border-right: 2px solid rgba(123,174,255,.58); text-align: right; background: rgba(54,93,145,.13); }
+.ss-interaction-ui__turn-speaker { display:block; margin-bottom:4px; color:#b8a77f; font-size:.65rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+.ss-interaction-ui__turn.is-player .ss-interaction-ui__turn-speaker { color:#9fc5ff; }
+.ss-interaction-ui__turn .ss-interaction-ui__line { margin:0; }
+.ss-interaction-ui__turn.is-current { background-color:rgba(218,190,132,.09); }
