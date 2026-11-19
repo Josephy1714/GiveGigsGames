@@ -122,6 +122,15 @@ const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout
 if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  endRun:()=>finish(true),
  state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0}),
+ probePowerup:({lane=1,powerupLane=1,magnet=0,kind="COFFEE",type="food"}={})=>{
+  if(!g||!g.on)return null;
+  const saved={energy:g.energy,runPowerups:g.runPowerups,bonus:g.bonus,lane:g.lane,coins:g.coins,spawn:g.spawn,obs:g.obs,pick:g.pick,magnetRange:save.up.magnetRange,boost:g.boost};
+  g.energy=50;g.runPowerups=0;g.bonus=[{lane:powerupLane,z:.83,kind,type}];g.lane=lane;g.coins=0;g.spawn=10;g.obs=[];g.pick=[];save.up.magnetRange=magnet;
+  tick(.03);
+  const result={energy:g.energy,collected:g.runPowerups,remaining:g.bonus.length,coins:g.coins};
+  Object.assign(g,saved);save.up.magnetRange=saved.magnetRange;
+  return result;
+ },
  probeObstacle:({action="jump",jump=0,slide=0,lane=1,obstacleLane=1}={})=>{
   if(!g||!g.on)return null;
   const saved={energy:g.energy,hit:g.hit,inv:g.inv,obs:g.obs,pick:g.pick,spawn:g.spawn,jump:g.jump,slide:g.slide,lane:g.lane,d:g.d,coins:g.coins,t:g.t,speed:g.speed,shield:g.shield};
