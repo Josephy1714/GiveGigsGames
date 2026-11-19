@@ -40,19 +40,36 @@
           item.width <= 0 || item.height <= 0) fail('Hotspot "' + anchorId + '" requires positive authored bounds.');
       hotspots[anchorId] = Object.freeze({ x: item.x, y: item.y, width: item.width, height: item.height });
     });
+    const worldBounds = scene.worldBounds || { width: Math.max(scene.width, ...layers.map(layer => layer.x + layer.width)), height: Math.max(scene.height, ...layers.map(layer => layer.y + layer.height)) };
+    if (!worldBounds || !Number.isFinite(worldBounds.width) || !Number.isFinite(worldBounds.height) ||
+        worldBounds.width < scene.width || worldBounds.height < scene.height) fail('Scene worldBounds must contain the camera viewport.');
+    layers.forEach(function (layer) {
+      if (layer.x < 0 || layer.y < 0 || layer.x + layer.width > worldBounds.width || layer.y + layer.height > worldBounds.height) {
+        fail('Scene layer "' + layer.id + '" extends outside authored worldBounds.');
+      }
+    });
+    Object.keys(hotspots).forEach(function (anchorId) {
+      const hotspot = hotspots[anchorId];
+      if (hotspot.x < 0 || hotspot.y < 0 || hotspot.x + hotspot.width > worldBounds.width || hotspot.y + hotspot.height > worldBounds.height) {
+        fail('Hotspot "' + anchorId + '" extends outside authored worldBounds.');
+      }
+    });
     const groundY = scene.groundY === undefined ? scene.height * 0.82 : scene.groundY;
     const depthScale = scene.depthScale === undefined ? 1 : scene.depthScale;
-    if (!Number.isFinite(groundY) || groundY < 0 || groundY > scene.height) fail('Scene groundY must be inside the authored design viewport.');
+    if (!Number.isFinite(groundY) || groundY < 0 || groundY > worldBounds.height) fail('Scene groundY must be inside authored world bounds.');
     if (!Number.isFinite(depthScale) || depthScale <= 0 || depthScale > 10) fail('Scene depthScale must be positive and no greater than 10.');
     const depthBounds = scene.depthBounds || { min: -120, max: 120 };
-    const playerBounds = scene.playerBounds || { minX: 0, maxX: scene.width };
+    const playerBounds = scene.playerBounds || { minX: 0, maxX: worldBounds.width };
     if (!depthBounds || !Number.isFinite(depthBounds.min) || !Number.isFinite(depthBounds.max) || depthBounds.min >= depthBounds.max) fail('Scene depthBounds are invalid.');
-    if (!playerBounds || !Number.isFinite(playerBounds.minX) || !Number.isFinite(playerBounds.maxX) || playerBounds.minX >= playerBounds.maxX) fail('Scene playerBounds are invalid.');
-    const cameraBounds = scene.cameraBounds || { minX: 0, minY: 0, maxX: scene.width, maxY: scene.height };
+    if (!playerBounds || !Number.isFinite(playerBounds.minX) || !Number.isFinite(playerBounds.maxX) || playerBounds.minX >= playerBounds.maxX ||
+        playerBounds.minX < 0 || playerBounds.maxX > worldBounds.width) fail('Scene playerBounds are invalid or outside worldBounds.');
+    const cameraBounds = scene.cameraBounds || { minX: 0, minY: 0, maxX: worldBounds.width - scene.width, maxY: worldBounds.height - scene.height };
     if (!cameraBounds || ![cameraBounds.minX,cameraBounds.minY,cameraBounds.maxX,cameraBounds.maxY].every(Number.isFinite) ||
-        cameraBounds.minX > cameraBounds.maxX || cameraBounds.minY > cameraBounds.maxY) fail('Scene cameraBounds are invalid.');
+        cameraBounds.minX < 0 || cameraBounds.minY < 0 || cameraBounds.minX > cameraBounds.maxX || cameraBounds.minY > cameraBounds.maxY ||
+        cameraBounds.maxX + scene.width > worldBounds.width || cameraBounds.maxY + scene.height > worldBounds.height) fail('Scene cameraBounds are invalid or outside worldBounds.');
     return Object.freeze({
-      width: scene.width, height: scene.height, groundY: groundY, depthScale: depthScale,
+      width: scene.width, height: scene.height, worldBounds: Object.freeze({ width: worldBounds.width, height: worldBounds.height }),
+      groundY: groundY, depthScale: depthScale,
       cameraBounds: Object.freeze({ minX: cameraBounds.minX, minY: cameraBounds.minY, maxX: cameraBounds.maxX, maxY: cameraBounds.maxY }),
       depthBounds: Object.freeze({ min: depthBounds.min, max: depthBounds.max }),
       playerBounds: Object.freeze({ minX: playerBounds.minX, maxX: playerBounds.maxX }),
@@ -212,7 +229,7 @@
     }
 
     function getLayout() {
-      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, groundY: active.scene.groundY, depthScale: active.scene.depthScale, depthBounds: active.scene.depthBounds, playerBounds: active.scene.playerBounds, cameraBounds: active.scene.cameraBounds }) : null;
+      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, worldBounds: active.scene.worldBounds, groundY: active.scene.groundY, depthScale: active.scene.depthScale, depthBounds: active.scene.depthBounds, playerBounds: active.scene.playerBounds, cameraBounds: active.scene.cameraBounds }) : null;
     }
 
     function getState() {
