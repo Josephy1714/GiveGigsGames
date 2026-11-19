@@ -91,6 +91,7 @@
     let viewport = { width: 0, height: 0, pixelRatio: 1 };
     let focusedAnchor = null;
     let lastFrame = Object.freeze({ drawnLayers: 0, sceneId: null });
+    let atmosphere = null;
 
     function resize(width, height, devicePixelRatio) {
       if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
@@ -160,6 +161,71 @@
       context.restore();
     }
 
+    function setAtmosphere(value) {
+      if (value === null || value === undefined) { atmosphere = null; return null; }
+      if (typeof value !== 'object' || !['clear','cloudy','drizzle','rain','storm'].includes(value.condition) ||
+          !Number.isFinite(value.light) || value.light < 0 || value.light > 1 ||
+          !Number.isFinite(value.precipitation) || value.precipitation < 0 || value.precipitation > 1 ||
+          !Number.isFinite(value.wind) || value.wind < 0 || value.wind > 1 ||
+          !Number.isFinite(value.fog) || value.fog < 0 || value.fog > 1 ||
+          !Number.isFinite(value.timeOfDay) || value.timeOfDay < 0 || value.timeOfDay >= 1440) {
+        fail('Atmosphere state is invalid.');
+      }
+      atmosphere = Object.freeze({
+        condition: value.condition, light: value.light, precipitation: value.precipitation,
+        wind: value.wind, fog: value.fog, timeOfDay: value.timeOfDay,
+        phase: Number.isFinite(value.phase) ? value.phase : 0
+      });
+      return atmosphere;
+    }
+
+    function drawAtmosphere(width, height) {
+      if (!atmosphere) return;
+      const a = atmosphere;
+      const daylight = Math.max(0, Math.min(1, a.light));
+      const darkness = 1 - daylight;
+      if (darkness > 0.02) {
+        context.save();
+        context.globalAlpha = Math.min(0.58, darkness * 0.68);
+        context.fillStyle = '#101a35';
+        context.fillRect(0, 0, width, height);
+        context.restore();
+      }
+      if (a.condition === 'cloudy' || a.condition === 'drizzle' || a.condition === 'rain' || a.condition === 'storm') {
+        context.save();
+        context.globalAlpha = a.condition === 'storm' ? 0.14 : 0.075;
+        context.fillStyle = '#52647a';
+        context.fillRect(0, 0, width, height);
+        context.restore();
+      }
+      if (a.fog > 0.01) {
+        context.save();
+        context.globalAlpha = a.fog * 0.24;
+        context.fillStyle = '#cbd6dc';
+        context.fillRect(0, 0, width, height);
+        context.restore();
+      }
+      if (a.precipitation > 0) {
+        const count = Math.round(22 + a.precipitation * 88);
+        const phase = a.phase;
+        context.save();
+        context.globalAlpha = Math.min(0.78, 0.25 + a.precipitation * 0.55);
+        context.strokeStyle = a.condition === 'storm' ? '#c7d5e4' : '#dceaf2';
+        context.lineWidth = a.condition === 'drizzle' ? 0.8 : 1.25;
+        context.beginPath();
+        for (let i = 0; i < count; i += 1) {
+          const seed = (i * 73.17 + 19.31) % 997;
+          const x = (seed * 13.7 + phase * (a.wind * 160 + 70)) % width;
+          const y = (seed * 7.9 + phase * (a.condition === 'drizzle' ? 95 : 250)) % height;
+          const length = 4 + a.precipitation * 12;
+          context.moveTo(x, y);
+          context.lineTo(x - a.wind * 8 - 2, y + length);
+        }
+        context.stroke();
+        context.restore();
+      }
+    }
+
     function render(frame) {
       if (!active) fail('Cannot render before an authored scene is mounted.');
       frame = frame || {};
@@ -185,6 +251,7 @@
         drawImageFit(image, layer);
         context.restore();
       });
+      drawAtmosphere(scene.width, scene.height);
       if (frame.character && frame.character.animator && typeof frame.character.animator.render === 'function') {
         context.save();
         context.translate(-camera.x, -camera.y);
@@ -240,7 +307,7 @@
       });
     }
 
-    return Object.freeze({ resize, mountScene, updateCamera, render, hitTest, getHotspotBounds, focusInteractable, getLayout, getState });
+    return Object.freeze({ resize, mountScene, updateCamera, setAtmosphere, render, hitTest, getHotspotBounds, focusInteractable, getLayout, getState });
   }
 
   root.SemesterSceneRenderer = Object.freeze({ create, validateScene });
