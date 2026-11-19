@@ -53,7 +53,7 @@
         'print-notes':'Print notes','bind-assignment':'Bind assignment','attend-lecture':'Attend lecture',
         'ask-question':'Ask a question',socialize:'Socialise','meet-friend':'Meet a friend',
         'talk-roommate':'Talk to roommate','lab-session':'Use the data lab','work-on-project':'Work on project',
-        'borrow-book':'Borrow a book','join-club':'Join a club','work-shift':'Start a work shift',
+        'borrow-book':'Borrow a book','join-club':'Join a club','join-study-circle':'Join the study circle','work-shift':'Start a work shift',
         'travel-campus':'Travel to campus','travel-city':'Travel to the city','check-phone':'Open student phone',talk:'Talk'
       };
       const choices = Array.isArray(nearby.actions) ? nearby.actions : [];
