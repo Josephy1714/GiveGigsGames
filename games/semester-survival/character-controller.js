@@ -122,7 +122,7 @@
       const deltaX = c.vx * dt + dodgeDelta;
       const deltaDepth = c.vDepth * dt;
       if (collisionWorld && typeof collisionWorld.moveCircle === 'function') {
-        const resolved = collisionWorld.moveCircle({ x: c.x, depth: c.depth }, { x: deltaX, depth: deltaDepth }, collisionRadius, 'player');
+        const resolved = collisionWorld.moveCircle({ x: c.x, depth: c.depth }, { x: deltaX, depth: deltaDepth }, collisionRadius, 'player', dt);
         c.x = resolved.x; c.depth = resolved.depth;
         if (resolved.blockedX) c.vx = 0;
         if (resolved.blockedDepth) c.vDepth = 0;
