@@ -151,3 +151,7 @@ The controller-to-atlas adapter, deterministic frame sampling, crossfade, facing
 ## NPC path and animation handoff
 
 NPC navigation produces authored waypoint sequences only. The eventual actor controller must consume these routes using the same delta-time, acceleration, foot-contact, facing, obstacle and recovery standards as the player controller. It must not teleport between nodes or use generic procedural figures. Each recurring NPC needs an approved model sheet, costume-consistent animation atlas/rig, walk/turn/stop/idle/dialogue clips and reviewed transitions before visible movement is enabled. A route being computable is not evidence that a character can walk it convincingly.
+
+## Collision-aware performance
+
+Animation must respond to actual collision/contact state, not visual overlap alone. A blocked run should plant and absorb weight; a shoulder brush should not use a full-body impact; a hard stop should settle through the feet and torso. Contact normals and material/effect tags are gameplay signals for authored animation and audiovisual reactions. Never fake collision by moving a sprite away from a wall while leaving the gameplay body embedded. Collision geometry and visual animation must be reviewed together at gameplay scale. See [Collision and Contact](COLLISION_AND_CONTACT.md).
