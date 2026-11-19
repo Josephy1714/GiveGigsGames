@@ -107,8 +107,10 @@
       target = target || {};
       const dt = clamp(Number(delta) || 0, 0, 0.1);
       const factor = cameraSmoothing === 0 ? 1 : 1 - Math.pow(1 - cameraSmoothing, dt * 60);
-      if (Number.isFinite(target.x)) camera.x += (target.x - camera.x) * factor;
-      if (Number.isFinite(target.y)) camera.y += (target.y - camera.y) * factor;
+      const desiredX = Number.isFinite(target.x) ? target.x - active.scene.width / 2 : camera.x;
+      const desiredY = Number.isFinite(target.y) ? target.y - active.scene.height / 2 : camera.y;
+      camera.x += (desiredX - camera.x) * factor;
+      camera.y += (desiredY - camera.y) * factor;
       camera.x = clamp(camera.x, active.scene.cameraBounds.minX, active.scene.cameraBounds.maxX);
       camera.y = clamp(camera.y, active.scene.cameraBounds.minY, active.scene.cameraBounds.maxY);
       return Object.freeze({ x: camera.x, y: camera.y });
