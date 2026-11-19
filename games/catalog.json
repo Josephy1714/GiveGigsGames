@@ -406,19 +406,29 @@
     {
       "slug": "semester-survival",
       "title": "Semester Survival",
-      "description": "Survive eight chaotic semesters to graduate.",
-      "genre": "Endless Runner",
+      "description": "Explore university life with Jay across residence, township, campus, and the city. Attend classes, meet people, manage student life, and build your path through the semester.",
+      "genre": "Adventure",
       "tags": [
-        "Arcade",
-        "3D",
-        "Runner",
-        "University"
+        "Adventure",
+        "Life Simulation",
+        "University",
+        "Anime",
+        "2.5D",
+        "Mobile"
       ],
       "emoji": "🎓",
       "featured": false,
       "recommended": false,
       "entrypoint": "semester-survival/index.html",
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Explore with on-screen touch controls or keyboard. Move through the districts, interact with places and characters, and progress through university life.",
+      "modes": [
+        "solo"
+      ]
     },
     {
       "slug": "gravegain5dA",
