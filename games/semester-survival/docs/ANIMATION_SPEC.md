@@ -164,3 +164,8 @@ Dialogue voice uses a separate approved mouth atlas so speaking does not replace
 ## Authored frame event markers
 
 Atlas frames may declare an optional `events` array of non-empty string markers. The animator emits these markers when playback enters the corresponding frame and exposes them through `drainEvents()`, which returns and clears the pending queue. Markers are emitted in playback order, including loop and ping-pong revisits; one-shot clips do not repeat the final frame marker after completion. This provides a deterministic synchronization point for foot contacts, landing impacts, cloth/prop cues and authored effects. Marker names are data only: the host must explicitly map them to approved sound or visual effects. No sound, dust, particles or other effect is fabricated by the animation runtime.
+
+
+## Runtime event integration
+
+Atlas frame markers are queued by the animator on frame entry. The character runtime exposes them through `drainAnimationEvents()`, and the central adventure runtime publishes each drained marker as `character:animation-event`. Event payloads identify the character, clip, atlas frame index, marker name, and simulation frame. This is an event contract only: it does not synthesize footsteps, impacts, particles, or sound. Those effects require authored assets and dedicated consumers.
