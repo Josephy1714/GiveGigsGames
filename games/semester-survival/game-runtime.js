@@ -179,6 +179,8 @@
    const spawnId=requestedSpawn||(destinationSpawns[routeSpawn]?routeSpawn:'default');
    if(!destinationSpawns[spawnId])fail('Destination has no authored arrival spawn for this route: '+previous+' -> '+destination);
    const previousPosition=getPosition();
+   input.setContext({transitioning:true});
+   if(typeof input.reset==='function')input.reset();
    transitionUI.show(world.districts[destination].title);
    try{
     transitionUI.setPhase('Preparing destination','Checking local scene assets and arrival point…');
@@ -214,7 +216,7 @@
      }catch(rollbackError){onError(rollbackError);}
     }
     throw error;
-   }finally{transitionUI.hide();}
+   }finally{transitionUI.hide();input.setContext({transitioning:false});if(typeof input.reset==='function')input.reset();}
   }
   function pause(){
    if(lifecycle!=='running')return getState();
