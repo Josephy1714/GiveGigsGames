@@ -17,3 +17,9 @@ assert.equal(world.characters.sumeya.visualProfile.status, 'model-sheet-required
 assert.ok(['brian', 'wanjiku', 'njeri', 'mwangi'].every(id => world.characters[id]));
 assert.ok(world.districts.township.places.some(place => place.id === 'mama-njeri-kiosk'));
 console.log('world-content tests passed');
+
+for (const id of ['brian','amina','sumeya','einstein','ernest','wanjiku','njeri','mwangi']) {
+ const character = world.characters[id];
+ assert.ok(Array.isArray(character.conversationChoices) && character.conversationChoices.length >= 2, id + ' needs authored social choices');
+ assert.equal(new Set(character.conversationChoices.map(choice => choice.id)).size, character.conversationChoices.length);
+}
