@@ -121,6 +121,12 @@
           fail('NPC "' + (npc && npc.characterId || 'unknown') + '" has no authored render hotspot.');
         }
       });
+      if (payload.navigation) {
+        if (!Array.isArray(payload.navigation.nodes) || !Array.isArray(payload.navigation.edges)) fail('Authored navigation graph is invalid.');
+        payload.navigation.nodes.forEach(function (node) {
+          if (!node || !validated.hotspots[node.anchor]) fail('Navigation node "' + (node && node.id || 'unknown') + '" has no authored render hotspot.');
+        });
+      }
       active = Object.freeze({ id: id, district: payload.district, scene: validated, assets: payload.assets });
       sceneId = id;
       focusedAnchor = null;
