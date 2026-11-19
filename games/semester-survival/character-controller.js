@@ -6,9 +6,9 @@
   'use strict';
 
   const CONFIG = Object.freeze({
-    walkSpeed: 2.1, jogSpeed: 3.8, sprintSpeed: 5.8,
-    groundAcceleration: 15, groundDeceleration: 19, airAcceleration: 5,
-    jumpVelocity: 6.8, gravity: 18, terminalFallSpeed: 16,
+    walkSpeed: 150, jogSpeed: 250, sprintSpeed: 370,
+    groundAcceleration: 1050, groundDeceleration: 1320, airAcceleration: 360,
+    jumpVelocity: 420, gravity: 1200, terminalFallSpeed: 900,
     slideDuration: 0.82, slideCooldown: 0.35, dodgeDuration: 0.28,
     coyoteTime: 0.10, jumpBuffer: 0.12, maxFrameDelta: 1 / 20,
     staminaDrain: 13, staminaRecovery: 8
@@ -58,7 +58,7 @@
       const moveX = inputMagnitude > 1 ? axis / inputMagnitude : axis;
       const moveY = inputMagnitude > 1 ? depthAxis / inputMagnitude : depthAxis;
       const wantsSprint = !!input.sprint && c.stamina > 0 && (Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05);
-      const targetSpeed = (wantsSprint ? CONFIG.sprintSpeed : ((Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05) ? CONFIG.jogSpeed : 0)) * movementModifiers.speedMultiplier;
+      const targetSpeed = (wantsSprint ? CONFIG.sprintSpeed : (inputMagnitude > 0.05 ? (inputMagnitude < 0.75 ? CONFIG.walkSpeed : CONFIG.jogSpeed) : 0)) * movementModifiers.speedMultiplier;
       const horizontalTarget = moveX * targetSpeed;
 
       c.slideCooldown = Math.max(0, c.slideCooldown - dt);
@@ -69,9 +69,9 @@
 
       if (c.grounded && c.slideTime > 0) {
         c.slideTime = Math.max(0, c.slideTime - dt);
-        c.vx = approach(c.vx, 0, 1.9 * dt);
+        c.vx = approach(c.vx, 0, 190 * dt);
         if (c.slideTime === 0) transition(Math.abs(c.vx) > 0.3 ? 'land-recover' : 'idle', 'slide-complete');
-      } else if (input.slidePressed && c.grounded && c.slideCooldown === 0 && Math.abs(c.vx) > 1.6) {
+      } else if (input.slidePressed && c.grounded && c.slideCooldown === 0 && Math.abs(c.vx) > 125) {
         c.slideTime = CONFIG.slideDuration;
         c.slideCooldown = CONFIG.slideCooldown;
         c.vx *= 1.08;
@@ -119,7 +119,7 @@
         }
       }
 
-      const dodgeDelta = c.dodgeTime > 0 ? c.dodgeDirection * 3.4 * dt : 0;
+      const dodgeDelta = c.dodgeTime > 0 ? c.dodgeDirection * 210 * dt : 0;
       const deltaX = c.vx * dt + dodgeDelta;
       const deltaDepth = c.vDepth * dt;
       if (collisionWorld && typeof collisionWorld.moveCircle === 'function') {
@@ -145,13 +145,13 @@
         // Preserve directional dodge state for the duration.
       } else if (c.grounded) {
         const speed = c.speed;
-        if (speed < 0.12) transition('idle', 'stopped');
-        else if (wantsSprint && speed > 4.4) transition('sprint', 'speed-threshold');
-        else if (speed > 2.7) transition('jog', 'speed-threshold');
+        if (speed < 12) transition('idle', 'stopped');
+        else if (wantsSprint && speed > 320) transition('sprint', 'speed-threshold');
+        else if (speed > 180) transition('jog', 'speed-threshold');
         else transition('walk', 'speed-threshold');
       }
 
-      c.gaitPhase += (c.speed / 2.1) * dt * Math.PI * 2;
+      c.gaitPhase += (c.speed / CONFIG.walkSpeed) * dt * Math.PI * 2;
       c.stride = clamp(c.speed / CONFIG.sprintSpeed, 0, 1);
       const weights = c.blend;
       const targets = {
