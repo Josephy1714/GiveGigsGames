@@ -10,6 +10,7 @@ Each scene's `render` descriptor must contain:
 - `hotspots`: map from the exact interaction anchor ID to authored `x`, `y`, `width`, `height`.
 - `groundY` (optional): baseline for a character standing at depth zero; defaults to 82% of scene height.
 - `depthScale` (optional): vertical screen displacement per depth unit; must be greater than zero and at most 10.
+- `depthBounds` (optional): `{ min, max }` player depth limits for the district; defaults to -120 through 120.
 - `cameraBounds` (optional): `{ minX, minY, maxX, maxY }` camera limits in scene coordinates; defaults to the full design viewport.
 
 The player has independent horizontal and depth coordinates. The depth plane changes the character's screen-space ground position while jump height remains a separate vertical offset. I/K keyboard intent drives depth movement; camera follow uses the resulting ground position and clamps to authored camera bounds.
