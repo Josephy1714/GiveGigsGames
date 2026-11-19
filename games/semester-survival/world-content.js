@@ -80,7 +80,8 @@
         budget: ['Track your spending. Small things add up before the month ends.', 'I can show you where students get affordable meals.'],
         study: ['The library gets quieter after lunch. That is usually my best study window.'],
         personal: ['First week can feel strange. Give yourself time to settle in.']
-      }
+      },
+      conversationChoices: [{"id":"share-pressure","label":"Admit the week is getting heavy","response":"I get that. You don't have to pretend everything is sorted. Let's pick one thing to tackle tonight, then get some sleep.","expression":"concerned","effects":{"affinity":2,"trust":3}},{"id":"ask-routine","label":"Ask how he keeps a steady routine","response":"I keep it simple: class, food, one proper study block, then rest. When I try to do everything at once, nothing gets done.","expression":"encouraging","effects":{"affinity":1,"trust":2}},{"id":"ask-trust","label":"Ask for his honest opinion","response":"Honestly? You seem capable, but you put pressure on yourself. Let people help before things pile up.","requires":{"affinity":18},"expression":"serious","effects":{"affinity":2,"trust":4}}]
     },
     amina: {
       name: 'Amina', role: 'Main Cast · Coursemate', home: 'campus', traits: ['curious', 'ambitious', 'empathetic'],
@@ -94,19 +95,22 @@
         study: ['Let’s compare notes after the lecture. I want to make sure I understood the examples.'],
         project: ['A good project starts with a question worth answering, not just a fancy title.'],
         personal: ['You do not have to figure out the whole degree this week. One step at a time.']
-      }
+      },
+      conversationChoices: [{"id":"compare-notes","label":"Suggest comparing lecture notes","response":"That would help. I'll bring my notes from the examples, and we can check where our methods differ.","expression":"bright","effects":{"affinity":2,"trust":2}},{"id":"ask-project","label":"Ask what kind of project excites her","response":"Something useful to real people. I like when the data tells a story that would otherwise stay hidden.","expression":"curious","effects":{"affinity":2,"trust":1}},{"id":"personal-checkin","label":"Ask how she is settling in","response":"A little overwhelmed, if I'm honest, but excited too. It helps when classmates look out for one another.","requires":{"affinity":17},"expression":"soft","effects":{"affinity":2,"trust":3}}]
     },
     einstein: {
       name: 'Einstein', role: 'Main Cast', home: 'campus', traits: [],
       introduction: 'Hey, I’m Einstein. Good to finally meet you.',
       topics: { introduction: ['Einstein is part of the main cast. His detailed personality and story are authored separately from his visual approval.'] },
-      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' }
+      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' },
+      conversationChoices: [{"id":"ask-speciality","label":"Ask what he is working on","response":"I've been exploring how small assumptions change a model's results. The interesting part is discovering which assumption matters most.","expression":"animated","effects":{"affinity":2,"trust":1}},{"id":"challenge-idea","label":"Challenge him to explain it simply","response":"Fair challenge. If I can't explain the idea without hiding behind jargon, I probably don't understand it well enough yet.","expression":"amused","effects":{"affinity":1,"trust":2}}]
     },
     ernest: {
       name: 'Ernest', role: 'Main Cast', home: 'campus', traits: [],
       introduction: 'What’s up? I’m Ernest.',
       topics: { introduction: ['Ernest is part of the main cast. His detailed personality and story are authored separately from his visual approval.'] },
-      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' }
+      visualProfile: { status: 'awaiting-approved-model-sheet', artRule: 'Create a distinctive silhouette and identity; do not reuse another cast member’s face or proportions.' },
+      conversationChoices: [{"id":"ask-weekend","label":"Ask what he does outside class","response":"I try to get out, meet people and clear my head. University can't be lectures and deadlines every single day.","expression":"relaxed","effects":{"affinity":2,"trust":1}},{"id":"offer-collab","label":"Suggest building something together","response":"Now you're speaking my language. Bring an idea and let's see if we can turn it into something people can actually use.","expression":"excited","effects":{"affinity":2,"trust":2}}]
     },
     sumeya: {
       name: 'Sumeya', role: 'Main Cast', home: 'campus', traits: [],
@@ -116,7 +120,8 @@
         status: 'model-sheet-required',
         clothing: 'Muslim-appropriate modest contemporary university clothing with her own distinctive hijab styling',
         artRule: 'Beautiful, individual design distinct from Amina; preserve hijab styling and outfit continuity across every view and animation.'
-      }
+      },
+      conversationChoices: [{"id":"study-together","label":"Invite her to a focused study session","response":"I'd like that. A quiet session with clear goals sounds much better than pretending we can revise everything in one evening.","expression":"warm","effects":{"affinity":2,"trust":2}},{"id":"ask-interests","label":"Ask what she enjoys learning","response":"I enjoy finding the idea underneath a difficult problem. Once the pattern clicks, the whole topic feels different.","expression":"thoughtful","effects":{"affinity":2,"trust":1}},{"id":"ask-support","label":"Ask what helps when university gets stressful","response":"Having a plan helps, and so does being around people who listen without judging. We all need that sometimes.","requires":{"affinity":17},"expression":"gentle","effects":{"affinity":2,"trust":3}}]
     },
     wanjiku: {
       name: 'Wanjiku', role: 'Class Representative', home: 'campus', traits: ['organised', 'direct', 'fair'],
@@ -124,7 +129,8 @@
       topics: {
         deadlines: ['I post confirmed deadlines as soon as the department shares them. Do not rely on rumours.'],
         groupwork: ['Choose a group that communicates. A brilliant idea cannot rescue a team that disappears.']
-      }
+      },
+      conversationChoices: [{"id":"ask-confirmed","label":"Ask where official updates appear","response":"Use the department noticeboard and official class channels. If a date isn't confirmed there, treat it as unverified.","expression":"firm","effects":{"affinity":1,"trust":2}},{"id":"offer-help","label":"Offer to help organise the class","response":"I appreciate that. Clear communication makes everyone's semester easier. I'll let you know when we need another pair of hands.","expression":"appreciative","effects":{"affinity":2,"trust":3}}]
     },
     njeri: {
       name: 'Mama Njeri', role: 'Food Vendor', home: 'township', traits: ['warm', 'observant', 'business-minded'],
@@ -132,7 +138,8 @@
       topics: {
         budget: ['Plan your meals for the week. Buying whatever looks nice every day gets expensive.'],
         campus: ['The morning rush is real. If you are late, take something you can carry.']
-      }
+      },
+      conversationChoices: [{"id":"meal-plan","label":"Ask for an affordable weekly meal plan","response":"We can plan around what you have. A filling meal at the right time is better than spending little bits all day and still being hungry.","expression":"kind","effects":{"affinity":2,"trust":2}},{"id":"ask-township","label":"Ask what is useful around the township","response":"Learn the reliable places first: food, printing, transport and a shop for basics. It saves time and money.","expression":"knowing","effects":{"affinity":1,"trust":2}}]
     },
     mwangi: {
       name: 'Dr. Mwangi', role: 'Lecturer', home: 'campus', traits: ['demanding', 'measured', 'supportive'],
@@ -153,7 +160,8 @@
         { id: 's1-first-lecture', title: 'Names on the Register', objective: 'Attend the first lecture and introduce yourself to Amina.', location: 'campus', character: 'amina' },
         { id: 's1-budget', title: 'The Month Is Longer Than the Money', objective: 'Make a basic food and transport budget before spending again.', location: 'township', character: 'njeri' },
         { id: 's1-first-assessment', title: 'Show Your Working', objective: 'Prepare for and complete the first CAT in every registered course.', location: 'campus', character: 'mwangi' }
-      ]
+      ],
+      conversationChoices: [{"id":"show-method","label":"Ask how to improve your working","response":"Write each assumption, show the intermediate steps, and explain why the method applies. Correct reasoning matters as much as the final answer.","expression":"measured","effects":{"affinity":1,"trust":3}},{"id":"ask-feedback","label":"Ask for direct feedback","response":"Then be prepared to act on it. Bring a specific attempt next time, and we can identify exactly where your reasoning needs work.","requires":{"trust":8},"expression":"supportive","effects":{"affinity":1,"trust":4}}]
     },
     {
       semester: 2, title: 'Building a Rhythm', theme: 'habits and friendship',
