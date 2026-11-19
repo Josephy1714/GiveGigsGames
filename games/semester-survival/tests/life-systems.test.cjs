@@ -69,3 +69,14 @@ assert.equal(academicMigrated.getState().academics.registrationLocked,false);
 assert.deepEqual(academicMigrated.getState().finances.transactions,[]);
 assert.equal(academicMigrated.getState().academics.courses[0].assignmentProgress,25);
 assert.equal(academicMigrated.getState().academics.courses[0].assignmentPoints,0);
+
+const extendedRelationshipStore = new Map();
+const oldCastSave = systems.createNewGame();
+oldCastSave.relationships.sumeya = undefined;
+oldCastSave.relationships.einstein = undefined;
+oldCastSave.relationships.ernest = undefined;
+extendedRelationshipStore.set(systems.saveKey, JSON.stringify(oldCastSave));
+const extended = systems.createEngine({getItem:k=>extendedRelationshipStore.get(k)||null,setItem:(k,v)=>extendedRelationshipStore.set(k,v)});
+for (const [key,name] of [['sumeya','Sumeya'],['einstein','Einstein'],['ernest','Ernest']]) assert.equal(extended.getState().relationships[key].name,name);
+extended.recordRelationship('sumeya',{affinity:2,trust:3},'Shared a revision session');
+assert.equal(extended.getState().relationships.sumeya.affinity,12);
