@@ -3,6 +3,22 @@
 ## Locked presentation direction
 The game retains its 2.5D exploration camera. Its visual identity combines cinematic anime environmental composition with premium anime-game character readability and production discipline. High-resolution source art is authored for crisp presentation; runtime output scales to the device and must not assume every phone can render at native 4K.
 
+## User-approved visual reference direction
+The two campus images supplied by the user are the current environment-quality references:
+- **Reference A — landscaped institutional courtyard:** monumental but believable academic architecture, a clear central approach, layered flowering trees and planted beds, benches and human-scale details, warm natural daylight, soft atmospheric distance and cinematic depth.
+- **Reference B — contemporary campus walkway:** modern glass-and-metal academic buildings, a strong vanishing point, ordered tree planting, integrated seating and noticeboards, bright blue-sky daylight, crisp architectural edges, clean material response and polished anime-background finish.
+
+These are quality and composition references, not game assets and not permission to reproduce their exact buildings, signage or location. Translate the finish into a recognisably Kenyan university and Nairobi student world. Do not copy Japanese signage, cherry blossoms, foreign campus identity or ungrounded architecture. Every district needs its own locally credible design language.
+
+## Environment quality bar
+- Wide establishing composition with a readable focal destination and intentional foreground, midground and background separation.
+- Convincing perspective, architectural scale, coherent windows/doors/stairs, believable pavement and material transitions.
+- Rich but controlled vegetation, planted edges, benches, lamps, noticeboards and human-scale props where appropriate.
+- Natural light direction, soft contact shadows, atmospheric depth and consistent colour grading.
+- High detail must support navigation and storytelling; avoid visual noise, clutter, repeated copy-paste props and over-sharpened synthetic textures.
+- Human figures must be authored as consistent character assets, not baked-in anonymous AI crowds. NPCs and the player remain separate from environment plates.
+- Every weather/time variant preserves the same architecture, prop positions and camera geometry.
+
 ## Production principles
 - Character and environment artwork are separate, versioned deliverables.
 - Main cast: Jay, Amina, Einstein, Ernest and Sumeya. Existing supporting cast remains.
