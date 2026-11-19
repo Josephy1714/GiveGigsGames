@@ -86,7 +86,7 @@ test('rejects missing hotspots and missing assets rather than masking incomplete
   const { canvas } = fakeCanvas();
   const renderer = api.create({ canvas });
   assert.throws(() => renderer.mountScene('bad', { district: 'campus', scene, assets: { 'sky-art': assets['sky-art'] } }), /unavailable decoded asset/);
-  assert.throws(() => renderer.mountScene('bad', { district: 'campus', scene: { ...scene, hotspots: {} }, assets }), /no authored render hotspot/);
+  assert.throws(() => renderer.mountScene('bad', { district: 'campus', scene: { ...scene, hotspots: {} }, assets, interactables: { library: { anchor: 'library-door' } } }), /no authored render hotspot/);
   assert.throws(() => renderer.mountScene('bad-npc', { district: 'campus', scene, assets, npcAnchors: [{ characterId: 'brian', anchor: 'missing-npc' }] }), /no authored render hotspot/);
   assert.throws(() => renderer.focusInteractable('unknown'), /Unknown authored interaction hotspot/);
 });
