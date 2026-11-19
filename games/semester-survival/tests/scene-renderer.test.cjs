@@ -17,7 +17,7 @@ function fakeCanvas() {
     translate(...args) { calls.push(['translate', ...args]); },
     scale(...args) { calls.push(['scale', ...args]); },
     drawImage(...args) { calls.push(['drawImage', ...args]); },
-    beginPath() {}, rect() {}, clip() {}, fillRect(...args) { calls.push(['fillRect', ...args]); },
+    beginPath() {}, rect() {}, clip() {}, fill() { calls.push(['fill']); }, ellipse(...args) { calls.push(['ellipse', ...args]); }, fillRect(...args) { calls.push(['fillRect', ...args]); },
     moveTo(...args) { calls.push(['moveTo', ...args]); }, lineTo(...args) { calls.push(['lineTo', ...args]); }, stroke() { calls.push(['stroke']); }
   };
   return { canvas: { width: 0, height: 0, style: {}, getContext: () => ctx }, calls };
@@ -163,4 +163,30 @@ test('interleaves character sprites between authored background and foreground l
 });
 test('rejects a non-finite authored character layer depth',()=>{
  assert.throws(()=>api.validateScene(Object.assign({},scene,{characterLayerZIndex:NaN}),assets),/Character layer z-index must be finite/);
+});
+
+
+test('renders soft contact shadows and scales characters with authored depth',()=>{
+ const {canvas,calls}=fakeCanvas();const renderer=api.create({canvas,cameraSmoothing:0});
+ renderer.resize(960,540,1);renderer.mountScene('campus-main',{district:'campus',scene,assets});
+ const draws=[];
+ const actor=(id,depth)=>({x:100,y:700,groundY:702,depth,scale:1,animator:{render(ctx,x,y,scale){draws.push({id,scale});return {drawn:true};}}});
+ const result=renderer.render({characters:[actor('near',180),actor('far',-180)]});
+ const shadows=calls.filter(call=>call[0]==='ellipse');
+ assert.equal(shadows.length,2);
+ assert.ok(calls.filter(call=>call[0]==='fill').length>=2);
+ assert.ok(draws.find(item=>item.id==='near').scale>draws.find(item=>item.id==='far').scale);
+ assert.equal(result.charactersDrawn,2);
+});
+
+test('reduces contact shadow opacity as a character rises into a jump',()=>{
+ const {canvas,calls}=fakeCanvas();const renderer=api.create({canvas,cameraSmoothing:0});
+ renderer.resize(960,540,1);renderer.mountScene('campus-main',{district:'campus',scene,assets});
+ const animator={render(){return {drawn:true};}};
+ renderer.render({characters:[{x:120,y:700,groundY:700,animator},{x:180,y:520,groundY:700,animator}]});
+ const alphaCalls=calls.filter(call=>call[0]==='save');
+ assert.ok(alphaCalls.length>0);
+ const shadows=calls.filter(call=>call[0]==='ellipse');
+ assert.equal(shadows.length,2);
+ assert.ok(shadows[1][3]>shadows[0][3]);
 });
