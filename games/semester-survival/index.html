@@ -26,6 +26,11 @@
 
     <!-- Base Styles -->
     <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="game-shell.css">
+    <link rel="stylesheet" href="district-transition-ui.css">
+    <link rel="stylesheet" href="interaction-ui.css">
+    <link rel="stylesheet" href="campaign-ui.css">
+    <link rel="stylesheet" href="student-phone-ui.css">
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
 
@@ -94,7 +99,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <!-- Main Game Container -->
     <main class="TEMPLATE-4weird-game-main">
         <!-- Game Canvas Frame -->
-        <div class="TEMPLATE-4weird-game-frame">
+        <div class="TEMPLATE-4weird-game-frame" id="semester-survival-adventure">
             <button class="TEMPLATE-4weird-fullscreen-btn" id="TEMPLATE-4weird-fullscreen-btn" title="Fullscreen (F) — Esc to exit">⛶ Fullscreen</button>
 
             <!-- Real-time game HUD -->
@@ -451,20 +456,22 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <!-- Keyboard layout contents -->
                 <div class="controls-tab-content active" id="keyboard-controls-content">
                     <ul id="TEMPLATE-4weird-keyboard-controls-list">
-                        <li><span>Switch Lane</span> <kbd>A / D</kbd> or <kbd>← / →</kbd></li>
-                        <li><span>Jump Obstacle</span> <kbd>W</kbd> or <kbd>↑</kbd></li>
-                        <li><span>Slide Obstacle</span> <kbd>S</kbd> or <kbd>↓</kbd></li>
-                        <li><span>Pause Game</span> <kbd>P</kbd> or <kbd>Escape</kbd></li>
+                        <li><span>Move Jay</span> <kbd>W / A / S / D</kbd> or <kbd>Arrow Keys</kbd></li>
+                        <li><span>Jump</span> <kbd>Space</kbd> or <kbd>W</kbd></li>
+                        <li><span>Sprint</span> <kbd>Shift</kbd></li>
+                        <li><span>Interact</span> <kbd>E</kbd> or <kbd>Enter</kbd></li>
+                        <li><span>Student Phone</span> <kbd>Tab</kbd></li>
+                        <li><span>Pause</span> <kbd>Escape</kbd></li>
                     </ul>
                 </div>
 
                 <!-- Touch layout contents -->
                 <div class="controls-tab-content" id="touch-controls-content">
                     <ul id="TEMPLATE-4weird-touch-controls-list">
-                        <li><span>Switch Lane</span> <span>Swipe ◀/▶ or ◀ ▶ buttons</span></li>
-                        <li><span>Jump Obstacle</span> <span>Swipe ▲ / tap TOP half / ▲ button / 🎓 GPA button</span></li>
-                        <li><span>Slide Obstacle</span> <span>Swipe ▼ / tap BOTTOM half / ▼ button</span></li>
-                        <li><span>Pause Game</span> <span>Big ⏸ button (top-right)</span></li>
+                        <li><span>Move</span> <span>Swipe in the direction you want Jay to move</span></li>
+                        <li><span>Jump</span> <span>Swipe upward</span></li>
+                        <li><span>Interact</span> <span>Tap visible interaction prompts</span></li>
+                        <li><span>Pause</span> <span>Tap the pause control (top-right)</span></li>
                     </ul>
                 </div>
             </div>
@@ -491,6 +498,35 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <script src="renderer.js"></script>
     <script src="ui.js"></script>
     <script src="game.js"></script>
+    <!-- Adventure systems are loaded as a coordinated, opt-in runtime. -->
+    <script src="life-systems.js"></script>
+    <script src="world-content.js"></script>
+    <script src="input-manager.js"></script>
+    <script src="character-controller.js"></script>
+    <script src="character-animation.js"></script>
+    <script src="character-runtime.js"></script>
+    <script src="scene-assets.js"></script>
+    <script src="scene-renderer.js"></script>
+    <script src="environment-runtime.js"></script>
+    <script src="interaction-runtime.js"></script>
+    <script src="interaction-ui.js"></script>
+    <script src="campaign-runtime.js"></script>
+    <script src="campaign-ui.js"></script>
+    <script src="university-services.js"></script>
+    <script src="student-phone-runtime.js"></script>
+    <script src="student-phone-ui.js"></script>
+    <script src="weather-runtime.js"></script>
+    <script src="npc-schedule-runtime.js"></script>
+    <script src="npc-navigation-runtime.js"></script>\n    <script src="npc-actor-runtime.js"></script>
+    <script src="lip-sync-runtime.js"></script>
+    <script src="collision-runtime.js"></script>
+    <script src="gameplay-zones.js"></script>
+    <script src="contact-effects-runtime.js"></script>
+    <script src="district-transition-ui.js"></script>
+    <script src="jay-atlas-manifest.js"></script>
+    <script src="adventure-config.js"></script>
+    <script src="game-runtime.js"></script>
+    <style id="semester-adventure-active">#semester-survival-adventure{position:relative!important;isolation:isolate!important}.ss-adventure-shell{position:absolute;inset:0;z-index:2000;background:#101827;overflow:hidden;touch-action:none}.ss-adventure-shell__canvas{display:block;width:100%;height:100%;touch-action:none}.ss-adventure-shell__pause{position:absolute;right:16px;top:16px;z-index:30;border:1px solid #ffffff55;border-radius:12px;padding:10px 16px;background:#101827dd;color:white;font-size:20px}.ss-campaign-ui,.ss-interaction-ui,.ss-adventure-shell__phone{position:absolute;inset:0;z-index:20;pointer-events:none}.ss-campaign-ui button,.ss-interaction-ui button,.ss-adventure-shell__phone button{pointer-events:auto}#semester-survival-adventure>.TEMPLATE-4weird-gameCanvas,#semester-survival-adventure>#game-hud,#semester-survival-adventure>#mobile-top-actions,#semester-survival-adventure>.mobile-touch-controls,#semester-survival-adventure>.TEMPLATE-4weird-loading-screen,#semester-survival-adventure>.TEMPLATE-4weird-game-overlay{display:none!important}</style>
 
     <script>
         // Safe copyGameLink: the v1 source page has no runtime bridge, so keep
