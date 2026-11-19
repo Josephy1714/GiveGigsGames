@@ -15,4 +15,6 @@ The browser entrypoint loads this module before `game-runtime.js`. A host can bu
 const sceneManifest = SemesterDistrictLayouts.createSceneManifest(SemesterWorldContent);
 ```
 
+The renderer treats `render.width`/`height` as the camera viewport and `render.worldBounds` as the complete district dimensions. Camera limits, layers, hotspots and player bounds are validated against those distinct spaces. This prevents a long district from being squeezed into one screen and makes camera follow and parallax behave predictably.
+
 This module defines geometry and stable asset IDs only. It does **not** create or pretend to supply scene art. The matching local background, midground and foreground images still need to be authored, dimension-checked and credited in the asset manifest. The adventure remains fail-closed and opt-in until those assets and the real character atlas are ready.
