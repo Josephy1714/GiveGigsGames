@@ -1,7 +1,8 @@
 # Controls and UX
 
 ## Desktop
-- A / D or Left / Right: move/turn.
+- A / D or Left / Right: move across the scene.
+- I / K: move into and out of the scene on the depth plane.
 - W / Up / Space: jump only where supported.
 - S / Down: crouch/slide only where supported.
 - Shift: sprint while held; consumes energy where appropriate.
@@ -9,6 +10,8 @@
 - Tab: open/close student phone.
 - Esc: pause/back.
 - Mouse: select UI, dialogue and map destinations.
+
+Depth movement is independent of jumping. The controller keeps horizontal position, depth position and jump height as separate values; scene-specific depth bounds are enforced by the controller.
 
 Inputs are context-sensitive. A movement key must not trigger a world action while dialogue or phone UI is active.
 
