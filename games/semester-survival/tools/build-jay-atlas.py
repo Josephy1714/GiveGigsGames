@@ -122,6 +122,9 @@ def main():
         clips[name] = {"fps": fps, "playback": playback, "frames": entries,
                        "reviewStatus": "staging-unapproved", "source": source}
     atlas_path = OUT / "jay-atlas-staging.png"
+    # Runtime atlas is palette-quantized to keep the complete game package under the arcade 10 MB cap.
+    # Transparent alpha is retained; canvas rendering accepts indexed PNGs unchanged.
+    atlas = atlas.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
     atlas.save(atlas_path, optimize=True)
     manifest = {"schemaVersion": 1, "character": "jay", "status": "staging-unapproved",
                 "atlas": atlas_path.name, "atlasSize": list(atlas.size),
