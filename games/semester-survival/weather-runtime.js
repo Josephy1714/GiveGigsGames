@@ -133,18 +133,26 @@
       }
       return Object.freeze(result);
     }
-    function assessExposure(exposure) {
-      if (!current) throw new Error('Weather must be updated before assessing exposure.');
+    function getConditions(calendar, targetDistrict) {
+      if (!calendar) throw new Error('Weather conditions require the in-game calendar.');
+      const target = targetDistrict || district;
+      if (!Object.prototype.hasOwnProperty.call(DISTRICT_MODIFIERS, target)) throw new Error('Unknown weather district: ' + target);
+      return describe(calendar, target);
+    }
+    function assessExposure(exposure, weatherState) {
+      const activeWeather = weatherState || current;
+      if (!activeWeather) throw new Error('Weather must be updated before assessing exposure.');
       if (!['indoor', 'sheltered', 'outdoor'].includes(exposure)) throw new Error('Unknown weather exposure: ' + exposure);
-      const intensity = current.precipitation;
+      const intensity = activeWeather.precipitation;
       if (exposure === 'indoor' || intensity < 0.4) return Object.freeze({ exposure: exposure, advisory: null, shelterRecommended: false, precipitation: intensity });
       if (exposure === 'outdoor' && intensity >= 0.7) return Object.freeze({ exposure: exposure, advisory: 'Heavy rain is affecting this outdoor area. Consider moving to a nearby sheltered place.', shelterRecommended: true, precipitation: intensity });
       if (exposure === 'outdoor' && intensity >= 0.4) return Object.freeze({ exposure: exposure, advisory: 'Rain is falling in this outdoor area. A covered route or shelter may be more comfortable.', shelterRecommended: true, precipitation: intensity });
       if (exposure === 'sheltered' && intensity >= 0.7) return Object.freeze({ exposure: exposure, advisory: 'Heavy rain is reaching exposed edges. Stay under cover where possible.', shelterRecommended: false, precipitation: intensity });
       return Object.freeze({ exposure: exposure, advisory: null, shelterRecommended: false, precipitation: intensity });
     }
-    function getNpcWeatherState(exposure, scheduledOutdoors) {
-      const assessment = assessExposure(exposure);
+    function getNpcWeatherState(exposure, scheduledOutdoors, calendar, targetDistrict) {
+      const conditions = calendar && targetDistrict ? describe(calendar, targetDistrict) : current;
+      const assessment = assessExposure(exposure, conditions);
       if (exposure === 'indoor') return 'staying-indoors';
       if (assessment.precipitation >= 0.7) return scheduledOutdoors ? 'seeking-shelter' : 'staying-under-cover';
       if (assessment.precipitation >= 0.4 && exposure === 'outdoor') return 'reducing-outdoor-activity';
@@ -156,7 +164,7 @@
       lastKey = null;
     }
     function destroy() { disposed = true; current = null; lastKey = null; }
-    return Object.freeze({ update: update, getState: getState, getRenderState: getRenderState, forecast: forecast, assessExposure: assessExposure, getNpcWeatherState: getNpcWeatherState, setDistrict: setDistrict, destroy: destroy });
+    return Object.freeze({ update: update, getState: getState, getRenderState: getRenderState, forecast: forecast, getConditions: getConditions, assessExposure: assessExposure, getNpcWeatherState: getNpcWeatherState, setDistrict: setDistrict, destroy: destroy });
   }
 
   root.SemesterWeatherRuntime = Object.freeze({ create: create, seasons: SEASONS, conditions: WEATHER });
