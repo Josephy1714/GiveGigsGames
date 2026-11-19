@@ -5,12 +5,14 @@
 (function (root) {
   'use strict';
 
-  const WIDTH = 2880;
-  const HEIGHT = 1080;
+  const VIEW_WIDTH = 960;
+  const VIEW_HEIGHT = 540;
+  const WORLD_WIDTH = 2880;
+  const WORLD_HEIGHT = 1080;
   const GROUND = 850;
   const DEPTH = Object.freeze({ min: -120, max: 120 });
   const PLAYER = Object.freeze({ minX: 120, maxX: 2760 });
-  const CAMERA = Object.freeze({ minX: 0, minY: 0, maxX: 960, maxY: 0 });
+  const CAMERA = Object.freeze({ minX: 0, minY: 0, maxX: WORLD_WIDTH - VIEW_WIDTH, maxY: WORLD_HEIGHT - VIEW_HEIGHT });
 
   const definitions = {
     residence: {
@@ -111,7 +113,7 @@
       return {
         id: districtId + '-' + layer,
         assetId: assetId(districtId, layer),
-        x: 0, y: 0, width: WIDTH, height: HEIGHT,
+        x: 0, y: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT,
         zIndex: index, parallax: [0.18, 0.58, 1][index], fit: 'stretch'
       };
     });
@@ -129,7 +131,8 @@
         return { destination: destination, gate: definition.routes[destination], spawn: 'from-' + destination };
       }),
       render: {
-        width: WIDTH, height: HEIGHT, groundY: GROUND, depthScale: 0.72,
+        width: VIEW_WIDTH, height: VIEW_HEIGHT, worldBounds: { width: WORLD_WIDTH, height: WORLD_HEIGHT },
+        groundY: GROUND, depthScale: 0.72,
         depthBounds: DEPTH, playerBounds: PLAYER, cameraBounds: CAMERA,
         layers: layers, hotspots: hotspots
       }
