@@ -36,6 +36,7 @@ jobs:
           curl --fail --silent --retry 5 --retry-connrefused http://127.0.0.1:4173/index.html >/dev/null
           node scripts/smoke-arcade.mjs
           node scripts/smoke-semester-survival.mjs
+          node scripts/smoke-semester-survival-runner.mjs
       - name: Package the validated arcade
         run: git archive --format=zip --output=GiveGigsGames.zip HEAD
       - name: Retain the playable build
