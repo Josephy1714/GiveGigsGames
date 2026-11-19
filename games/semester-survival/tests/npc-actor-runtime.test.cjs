@@ -38,3 +38,25 @@ test('route changes rebase from the new authored start and large deltas are boun
  const actor=next.update(10)[0];assert.deepEqual(actor.position,{x:30,y:20});
  runtime.destroy();next.destroy();
 });
+
+test('approved NPC animators produce renderables and follow walk/idle clips',()=>{
+ const schedules={getState:()=>[{characterId:'brian',name:'Brian',presence:'in-active-district',targetDistrict:'campus'}]};
+ const navigation={getState:()=>[route]};
+ const played=[],updated=[];
+ const animator={hasClip:name=>name==='walk'||name==='idle',play:(name,facing)=>{played.push({name,facing});return {ok:true};},update:dt=>updated.push(dt),render(){return {drawn:true};}};
+ const runtime=global.SemesterNpcActorRuntime.create({world:{},scheduleRuntime:schedules,navigationRuntime:navigation,animators:{brian:animator}});
+ const actor=runtime.update(0.1)[0];
+ assert.equal(actor.visualReady,true);assert.equal(runtime.getRenderables().length,1);
+ assert.equal(played[0].name,'walk');assert.equal(updated.length,1);
+ for(let i=0;i<19;i++)runtime.update(0.1);
+ assert.equal(runtime.getState()[0].motion,'idle');
+ assert.equal(played[played.length-1].name,'idle');
+ assert.equal(runtime.getDiagnostics().visualActorsReady,1);
+ runtime.destroy();
+});
+test('animator without required authored clips remains invisible',()=>{
+ const schedules={getState:()=>[{characterId:'brian',name:'Brian',presence:'in-active-district',targetDistrict:'campus'}]};
+ const animator={hasClip:()=>false,play:()=>({ok:false}),update(){},render(){return {drawn:true};}};
+ const runtime=global.SemesterNpcActorRuntime.create({world:{},scheduleRuntime:schedules,navigationRuntime:{getState:()=>[route]},animators:{brian:animator}});
+ const actor=runtime.update(0.1)[0];assert.equal(actor.visualReady,false);assert.equal(runtime.getRenderables().length,0);runtime.destroy();
+});
