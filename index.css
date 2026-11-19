@@ -89,3 +89,18 @@
   padding: 6px 0;
   overflow-wrap: anywhere;
 }
+
+.featured-screenshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.featured-screenshots img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+}
