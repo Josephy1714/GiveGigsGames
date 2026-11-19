@@ -150,7 +150,30 @@ drawPages = function(){
   }
  });
 };
+
 drawPages();
-$("#play").onclick=start;$("#nav-play").onclick=start;
+save.characterUnlocks=Array.isArray(save.characterUnlocks)?save.characterUnlocks:[];
+$(".character").forEach((card,i)=>{
+ const unlocked=i===0||save.characterUnlocks.includes(i);
+ const price=160+i*85;
+ card.classList.toggle("locked",!unlocked);
+ card.style.borderColor=save.selectedCharacter===i?"#b9f4d4":"";
+ card.querySelector("small").textContent=save.selectedCharacter===i?"SELECTED":unlocked?"UNLOCKED":price+" ◈ · LOCKED";
+ card.onclick=()=>{
+  if(!unlocked){
+   if(save.coins<price){card.querySelector("small").textContent="NOT ENOUGH COINS";return;}
+   save.coins-=price;save.characterUnlocks.push(i);
+  }
+  save.selectedCharacter=i;saveNow();drawPages();
+ };
+});
+const recordExtras=[["POWER-UPS COLLECTED",n(save.powerups||0)],["ASSIGNMENTS COMPLETED",n(save.assignments||0)],["SUPP ALERTS",n(save.supps||0)],["ACADEMIC STATUS",save.graduated?"GRADUATE":"UNDERGRAD"]];
+recordExtras.forEach(([label,value])=>{
+ const el=document.createElement("article");el.className="stat";
+ el.innerHTML="<small>"+label+"</small><b>"+value+"</b>";
+ $("#stats-grid").append(el);
+});
+$("#coins").textContent=n(save.coins);
+
 
 })();</script></body></html>
