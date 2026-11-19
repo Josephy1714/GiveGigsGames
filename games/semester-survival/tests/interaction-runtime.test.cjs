@@ -179,3 +179,14 @@ test('group scene fails closed when a required participant is not scheduled at t
  const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,npcScheduleRuntime:schedules});
  assert.throws(()=>rt.openGroupDialogue('circle'),/full study circle has not assembled/);
 });
+
+test('dialogue stage identifies the current speaker and attentive listeners',()=>{
+ const h=harness();const opened=h.runtime.openDialogue('njeri');
+ assert.equal(opened.stage.mode,'authored-text-blocking');
+ assert.equal(opened.stage.participants.length,2);
+ assert.equal(opened.stage.participants.find(p=>p.id==='njeri').role,'speaking');
+ assert.equal(opened.stage.participants.find(p=>p.id==='jay').role,'listening');
+ const topic=opened.choices[0];const next=h.runtime.chooseTopic(topic.id);
+ assert.equal(next.stage.currentSpeakerId,'njeri');
+ assert.equal(next.stage.participants.find(p=>p.id==='njeri').role,'speaking');
+});
