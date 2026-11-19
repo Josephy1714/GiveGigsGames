@@ -41,7 +41,7 @@
   if(!phoneRoot)phoneRoot=make('div','ss-adventure-shell__phone',shell);
   if(options.pauseControl!==false){pauseButton=make('button','ss-adventure-shell__pause',shell);pauseButton.type='button';pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Pause game');}
   transitionUI=modules.transitionUI.create({document:doc,host:shell});
-  const input=modules.input.createInputManager(options.inputTarget||shell,options.inputOptions||{});
+  const input=modules.input.createInputManager(options.inputTarget||doc,options.inputOptions||{});
   const renderer=modules.renderer.create({canvas:canvas,maxDevicePixelRatio:options.maxDevicePixelRatio||2});
   const life=modules.life.createEngine(storage);
   const assets=modules.assets.create({manifest:options.assetManifest,maxAssetBytes:options.maxAssetBytes,loadImage:options.loadImage});
