@@ -45,6 +45,10 @@
         }
         if (frame.pivotX !== undefined && !Number.isFinite(frame.pivotX)) errors.push(name + ': invalid pivotX.');
         if (frame.pivotY !== undefined && !Number.isFinite(frame.pivotY)) errors.push(name + ': invalid pivotY.');
+        if (frame.events !== undefined && (!Array.isArray(frame.events) ||
+            frame.events.some(event => typeof event !== 'string' || !event.trim()))) {
+          errors.push(name + ': frame events must be non-empty strings.');
+        }
       });
     });
     return errors;
@@ -89,6 +93,8 @@
     let blendElapsed = 0;
     let facing = 1;
     let missing = null;
+    let lastEventFrame = -1;
+    const pendingEvents = [];
 
     function play(name, direction) {
       if (!library.has(name)) {
@@ -101,6 +107,8 @@
         previousElapsed = elapsed;
         current = { name };
         elapsed = 0;
+        lastEventFrame = -1;
+        pendingEvents.length = 0;
         blendElapsed = previous ? 0 : options.transitionSeconds;
       }
       if (direction === -1 || direction === 1) facing = direction;
@@ -109,7 +117,20 @@
 
     function update(delta) {
       const dt = Math.max(0, Math.min(Number(delta) || 0, options.maxDelta));
-      if (current) elapsed += dt;
+      if (current) {
+        elapsed += dt;
+        const clip = library.get(current.name);
+        const rawFrame = Math.floor(elapsed * clip.fps);
+        const last = lastEventFrame < 0 ? 0 : lastEventFrame + 1;
+        for (let raw = last; raw <= rawFrame; raw += 1) {
+          const resolved = resolveFrame(clip, raw / clip.fps);
+          const events = resolved.frame.events || [];
+          events.forEach(function (event) {
+            pendingEvents.push(Object.freeze({ clip: current.name, frameIndex: resolved.index, event: event }));
+          });
+        }
+        lastEventFrame = rawFrame;
+      }
       if (previous && blendElapsed < options.transitionSeconds) {
         previousElapsed += dt;
         blendElapsed = Math.min(options.transitionSeconds, blendElapsed + dt);
@@ -157,13 +178,19 @@
       return { drawn: true, clip: state.clip, frameIndex: state.frameIndex };
     }
 
+    function drainEvents() {
+      const events = pendingEvents.splice(0, pendingEvents.length);
+      return Object.freeze(events);
+    }
+
     function reset() {
       current = null; previous = null; elapsed = 0; previousElapsed = 0;
-      blendElapsed = 0; facing = 1; missing = null;
+      blendElapsed = 0; facing = 1; missing = null; lastEventFrame = -1;
+      pendingEvents.length = 0;
       return snapshot();
     }
 
-    return Object.freeze({ play, update, snapshot, render, reset, hasClip: name => library.has(name) });
+    return Object.freeze({ play, update, snapshot, render, reset, drainEvents, hasClip: name => library.has(name) });
   }
 
   function createControllerBinding(animator) {
