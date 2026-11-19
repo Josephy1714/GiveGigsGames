@@ -25,3 +25,10 @@ A later progression layer reached through a clear transport transition. Use it f
 
 ## Time and environmental storytelling
 NPCs may follow simplified schedules. Places should not appear populated at every hour. Noticeboards, posters, price boards, student work, room clutter and weather tell the story. If a schedule is not simulated, do not imply that it is.
+
+
+## NPC daily routines and weather response
+
+The authored schedule runtime gives Brian, Amina, Wanjiku, Mama Njeri and Dr. Mwangi time-based daily destinations across the existing districts. Each schedule references a real world place ID and is validated against the world catalogue. Weather is evaluated for each character's scheduled district, not merely the player's current district. During heavy rain, outdoor routines can redirect to an authored indoor or sheltered place.
+
+This milestone computes schedule intent and publishes routine-change events. It does not move character sprites, create portraits, or claim that NPCs are visibly present. The runtime explicitly reports visual and movement readiness as false until commissioned character artwork, scene anchors, pathing and authored animation clips are integrated.
