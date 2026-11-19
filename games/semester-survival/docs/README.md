@@ -42,4 +42,4 @@ This directory is the production source of truth. Implementation decisions must 
 - LIP_SYNC_AND_VOICE.md — human voice recordings, phoneme-aligned viseme tracks, synchronization runtime and production approval gates.
 - SOCIAL_DIALOGUE.md — authored branching choices, relationship gates, speaker turns and voice-line integration.
 
-- [Gemini artwork pipeline](GEMINI_ARTWORK_PIPELINE.md) — prompts, export requirements, GitHub handoff and runtime integration workflow.
+- [Original character artwork pipeline](CHARACTER_ARTWORK_PIPELINE.md) — approved model references, animation-sheet requirements, GitHub handoff and runtime atlas integration.
