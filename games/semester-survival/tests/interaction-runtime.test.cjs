@@ -115,3 +115,13 @@ test('dialogue starts the matching authored voice track and stops it when conver
  h.runtime.closeDialogue();
  assert.deepEqual(calls[2],['stop']);
 });
+
+test('text dialogue remains usable when voice playback or approved mouth art is unavailable',()=>{
+ const events=[];
+ const speechRuntime={start(){throw new Error('No approved mouth atlas.');},stop(){},getState(){return {status:'idle',available:false};}};
+ const h=harness({speechRuntime,voiceTracks:{njeri:{introduction:{id:'unavailable'}}}});
+ const dialogue=h.runtime.openDialogue('njeri');
+ assert.match(dialogue.line,/Karibu/);
+ assert.ok(events.length===0);
+ assert.equal(dialogue.speech.available,false);
+});
