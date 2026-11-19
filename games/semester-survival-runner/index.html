@@ -115,7 +115,7 @@ finish = function(quit,why){
  if(save.semester>8){save.graduated=true;saveNow();drawPages();$("#result-title").textContent="YOU GRADUATED!";$("#result-message").textContent="Eight semesters conquered. Your degree is earned. Endless Alumni Mode is now unlocked.";}
  else if(expandedFailures[why])$("#result-message").textContent=expandedFailures[why];
 };
-if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={endRun:()=>finish(true),state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0})};
+if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={endRun:()=>finish(true),state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0})};
 const oldDrawPages = drawPages;
 drawPages = function(){
  oldDrawPages();
