@@ -198,7 +198,7 @@
       return district.places.map(function (place) {
         const authored = scene.interactables[place.id] || null;
         return Object.freeze({
-          id: place.id, name: place.name, actions: place.actions.slice(),
+          id: place.id, name: place.name, actions: place.actions.slice(), exposure: place.exposure,
           available: Boolean(authored), anchor: authored ? authored.anchor : null,
           reason: authored ? null : 'Authored interaction anchor is not yet available.'
         });
