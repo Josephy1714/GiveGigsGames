@@ -14,7 +14,10 @@ function fixture() {
     'jump-running': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
     'jump-standing': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
     'fall-accidental': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
-    'get-up-recovery': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] }
+    'get-up-recovery': { fps: 4, playback: 'once', frames: [frame(80), frame(96)] },
+    'slide-start': { fps: 16, playback: 'once', frames: [frame(0), frame(16)] },
+    'slide-loop': { fps: 16, playback: 'loop', frames: [frame(32), frame(48), frame(64), frame(80)] },
+    'slide-recover': { fps: 16, playback: 'once', frames: [frame(96), frame(112)] }
   }};
   return { image, manifest, library: animation.createClipLibrary(manifest, image) };
 }
@@ -41,9 +44,9 @@ test('looping, once and pingpong clips resolve deterministically', () => {
 test('animator reports missing clips instead of substituting artwork', () => {
   const { library } = fixture();
   const animator = animation.createAnimator(library);
-  const result = animator.play('slide-start', 1);
+  const result = animator.play('dodge-left', 1);
   assert.equal(result.ok, false);
-  assert.equal(result.missingClip, 'slide-start');
+  assert.equal(result.missingClip, 'dodge-left');
   assert.equal(animator.snapshot().status, 'unbound');
 });
 
@@ -71,9 +74,9 @@ test('controller binding maps movement states to authored clip names', () => {
   const result = binding.update(0.016, { state: 'jog', facing: 1 });
   assert.equal(result.ok, true);
   assert.equal(result.clip, 'jog');
-  const missing = binding.update(0.016, { state: 'slide-start', facing: 1 });
-  assert.equal(missing.ok, false);
-  assert.equal(missing.missingClip, 'slide-start');
+  const slide = binding.update(0.016, { state: 'slide-start', facing: 1 });
+  assert.equal(slide.ok, true);
+  assert.equal(slide.clip, 'slide-start');
 });
 
 
@@ -150,4 +153,20 @@ test('supports authored foot contact offsets while preserving legacy string mark
  assert.deepEqual(animator.drainEvents().map(item=>({event:item.event,offsetX:item.offsetX,offsetDepth:item.offsetDepth})),[
   {event:'left-foot-contact',offsetX:-9,offsetDepth:4},{event:'cloth-swish',offsetX:0,offsetDepth:0}
  ]);
+});
+
+
+test('Jay slide sequence has distinct anticipation, loop and recovery clips', () => {
+  const { library } = fixture();
+  const animator = animation.createAnimator(library, { transitionSeconds: 0 });
+  const binding = animation.createControllerBinding(animator);
+  for (const state of ['slide-start', 'slide-loop', 'slide-recover']) {
+    const result = binding.update(0.016, { state, speed: 8, facing: 1 });
+    assert.equal(result.ok, true, state + ' must resolve to authored slide frames');
+    assert.equal(result.clip, state);
+    assert.equal(result.animation.status, 'ready');
+  }
+  assert.equal(library.get('slide-start').frames.length, 2);
+  assert.equal(library.get('slide-loop').frames.length, 4);
+  assert.equal(library.get('slide-recover').frames.length, 2);
 });
