@@ -77,7 +77,7 @@
   phone=phoneRuntime;
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,weatherRuntime:weather,npcScheduleRuntime:npcSchedules,speechRuntime:lipSync,voiceTracks:options.dialogueVoiceTracks||{},onEvent:function(event){publish(event,'interaction');}});
   npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});
-   npcActors=modules.npcActors.create({world:world,scheduleRuntime:npcSchedules,navigationRuntime:npcNavigation,onEvent:function(event){publish(event,'npc-actors');}});
+   npcActors=modules.npcActors.create({world:world,scheduleRuntime:npcSchedules,navigationRuntime:npcNavigation,animators:options.npcAnimators||{},characterScales:options.npcCharacterScales||{},onEvent:function(event){publish(event,'npc-actors');}});
    const dialogueAudio=options.dialogueAudio||(options.dialogueVoiceTracks?doc.createElement('audio'):null);
    if(dialogueAudio&&'preload' in dialogueAudio)dialogueAudio.preload='auto';
    lipSync=modules.lipSync.create({audio:dialogueAudio,animator:options.dialogueMouthAnimator||null});
@@ -124,7 +124,7 @@
      npcActors.update(dt);
      lipSync.update();
     renderer.setAtmosphere(weather.getRenderState());
-    character.render();
+    character.render(npcActors.getRenderables());
     if(interactionUI)interactionUI.render(interaction.getState());
     return getState();
    }catch(error){lastError=error&&error.message?error.message:String(error);lifecycle='failed';input.setContext({paused:true});stopFrameLoop();onError(error);return getState();}
