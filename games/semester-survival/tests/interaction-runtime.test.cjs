@@ -33,7 +33,8 @@ function harness(extra) {
   const weatherRuntime = { assessExposure(exposure) { return { exposure, advisory: 'Heavy rain: take shelter.', shelterRecommended: true, precipitation: 1 }; } };
   const runtime = globalThis.SemesterInteractionRuntime.create({
     world, environment, renderer, lifeEngine: life, inputManager: input, weatherRuntime,
-    npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] },\n    speechRuntime: extra.speechRuntime, voiceTracks: extra.voiceTracks
+    npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] },
+    speechRuntime: extra.speechRuntime, voiceTracks: extra.voiceTracks
   });
   return { runtime, events, focused, context, relationships };
 }
