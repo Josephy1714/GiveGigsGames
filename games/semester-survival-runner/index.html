@@ -47,6 +47,7 @@ Object.assign(save.up,{helb:0,stamina:0,magnetRange:0,revive:0});
 const oldSpawn = spawn;
 spawn = function(){
  oldSpawn();
+ if(g){g.bonus=g.bonus||[];if(Math.random()<.55){const rarity=Math.random()<.035?"legendary":Math.random()<.34?"academic":"food",pool=campusPickups[rarity],kind=pool[Math.floor(Math.random()*pool.length)];g.bonus.push({lane:Math.floor(Math.random()*3),z:-.12,type:rarity,kind});}}
  if(g && Math.random()<.42){
   const rarity=Math.random()<.035?"legendary":Math.random()<.34?"academic":"food";
   const pool=campusPickups[rarity],kind=pool[Math.floor(Math.random()*pool.length)];
@@ -64,6 +65,7 @@ start = function(){
 const oldTick = tick;
 tick = function(dt){
  if(!g||!g.on||g.paused)return;
+ if(g.bossAt===undefined)g.bossAt=820;if(g.bonus===undefined)g.bonus=[];
  oldTick(dt);
  if(!g||!g.on)return;
  g.bonus=g.bonus||[];
@@ -149,5 +151,6 @@ drawPages = function(){
  });
 };
 drawPages();
+$("#play").onclick=start;$("#nav-play").onclick=start;
 
 })();</script></body></html>
