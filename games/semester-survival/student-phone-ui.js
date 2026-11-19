@@ -1,7 +1,7 @@
 /* Student phone UI — accessible, data-driven DOM view. */
 (function(root){
   'use strict';
-  const LABELS={home:'Overview',timetable:'Timetable',courses:'Courses',academics:'Academic record',assignments:'Coursework',assessments:'CATs & exams',finances:'Wallet',messages:'Inbox & people',map:'District map'};
+  const LABELS={home:'Overview',timetable:'Timetable',courses:'Courses',academics:'Academic record',assignments:'Coursework',assessments:'CATs & exams',finances:'Wallet',messages:'Inbox & people',map:'District map',weather:'Weather'};
   function mount(host,phone){
     if(!host||!phone)throw new Error('Student phone UI requires a host and phone runtime.');
     const doc=host.ownerDocument||document, shell=doc.createElement('section');
@@ -45,6 +45,26 @@
           if(!m.read){const read=el('button','student-phone__action','Mark as read');read.type='button';read.addEventListener('click',()=>{phone.markRead(m.id,'message');render();});row.appendChild(read);}
           if(m.from!=='You'){const reply=el('button','student-phone__action','Reply');reply.type='button';reply.addEventListener('click',()=>{const field=el('textarea','student-phone__reply');field.maxLength=500;field.placeholder='Write a reply…';const send=el('button','student-phone__action','Send reply');send.type='button';send.addEventListener('click',()=>{try{phone.reply(m.id,field.value);render();}catch(error){row.appendChild(el('small','student-phone__note',error.message));}});row.append(field,send);});row.appendChild(reply);}p.appendChild(row);});}
         const rel=panel('Relationships');s.relationships.forEach(person=>{const row=el('article','student-phone__item');row.append(el('strong','',person.name),el('span','', 'Affinity '+person.affinity+' · Trust '+person.trust));person.history.forEach(h=>row.appendChild(el('small','',h.day+' · '+h.event)));rel.appendChild(row);});
+      }else if(s.section==='weather'){
+        const w=s.weather;
+        const p=panel('Current conditions');
+        if(w){
+          line(p,'Conditions',w.label);
+          line(p,'Season',w.seasonLabel);
+          line(p,'District',s.district?s.district.title:s.location);
+          line(p,'Time',String(Math.floor(w.timeOfDay/60)).padStart(2,'0')+':'+String(w.timeOfDay%60).padStart(2,'0'));
+          line(p,'Wind',Math.round(w.wind*100)+'%');
+          line(p,'Rain intensity',Math.round(w.precipitation*100)+'%');
+          line(p,'Daylight',Math.round(w.light*100)+'%');
+        }else p.appendChild(el('p','student-phone__note','Weather information will appear after the world simulation begins.'));
+        const forecast=panel('Three-day forecast');
+        (s.weatherForecast||[]).forEach((day,index)=>{
+          const row=el('article','student-phone__item');
+          const dayName=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][day.dayIndex]||'Day';
+          row.append(el('strong','',index===0?'Today':index===1?'Tomorrow':dayName+' · Week '+day.week),el('span','',day.season),el('small','', 'Morning: '+day.morning+' · Afternoon: '+day.afternoon));
+          forecast.appendChild(row);
+        });
+        forecast.appendChild(el('p','student-phone__note','Forecasts are generated from the in-game calendar. No internet connection is needed.'));
       }else if(s.section==='map'){
         const p=panel(s.district?s.district.title:'Current district');line(p,'Current location',s.location);(s.district?s.district.exits:[]).forEach(exit=>{const d=el('article','student-phone__item');d.append(el('strong','',exit),el('span','', (root.SemesterWorldContent.districts[exit]||{}).title||''));p.appendChild(d);});
         (s.district?s.district.places:[]).forEach(place=>{const d=el('article','student-phone__item');d.append(el('strong','',place.name),el('small','',place.actions.join(' · ')));p.appendChild(d);});
