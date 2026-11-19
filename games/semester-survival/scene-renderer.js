@@ -253,10 +253,18 @@
       context.save();
       context.translate(offsetX, offsetY);
       context.scale(scale, scale);
-      const actors = (Array.isArray(frame.characters) ? frame.characters.slice() : []);
-      if (frame.character && frame.character.animator) actors.push(frame.character);
-      actors.sort(function (a, b) { return (Number(a.y) || 0) - (Number(b.y) || 0); });
-      let drawnCharacters = 0, actorsDrawn = false;
+      const actors = (Array.isArray(frame.characters) ? frame.characters.map(function (actor) {
+        return { actor: actor, isPlayer: false };
+      }) : []);
+      if (frame.character && frame.character.animator) actors.push({ actor: frame.character, isPlayer: true });
+      actors.sort(function (a, b) {
+        const depthOrder = (Number(a.actor.y) || 0) - (Number(b.actor.y) || 0);
+        if (depthOrder) return depthOrder;
+        const xOrder = (Number(a.actor.x) || 0) - (Number(b.actor.x) || 0);
+        if (xOrder) return xOrder;
+        return String(a.actor.characterId || '').localeCompare(String(b.actor.characterId || ''));
+      });
+      let drawnCharacters = 0, playerDrawn = false, npcCharactersDrawn = 0, actorsDrawn = false;
       function drawLayer(layer) {
         const image = active.assets[layer.assetId];
         if (!image) fail('Decoded asset "' + layer.assetId + '" disappeared after scene mount.');
@@ -295,12 +303,17 @@
         if (!actors.length) return;
         context.save();
         context.translate(-camera.x, -camera.y);
-        actors.forEach(function (actor) {
+        actors.forEach(function (entry) {
+          const actor = entry.actor;
           if (!actor || !actor.animator || typeof actor.animator.render !== 'function') return;
           const actorScale = actorScaleFor(actor);
           drawActorShadow(actor, actorScale);
           const drawn = actor.animator.render(context, Number(actor.x) || 0, Number(actor.y) || 0, actorScale);
-          if (drawn && drawn.drawn) drawnCharacters++;
+          if (drawn && drawn.drawn) {
+            drawnCharacters++;
+            if (entry.isPlayer) playerDrawn = true;
+            else npcCharactersDrawn++;
+          }
         });
         context.restore();
       }
@@ -311,7 +324,7 @@
       drawActors();
       drawAtmosphere(scene.width, scene.height);
       context.restore();
-      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: Boolean(frame.character && frame.character.animator), npcCharactersDrawn: Math.max(0, drawnCharacters - (frame.character && frame.character.animator ? 1 : 0)), charactersDrawn: drawnCharacters });
+      lastFrame = Object.freeze({ drawnLayers: scene.layers.length, sceneId: sceneId, weather: atmosphere ? atmosphere.condition : null, characterDrawn: playerDrawn, npcCharactersDrawn: npcCharactersDrawn, charactersDrawn: drawnCharacters });
       return lastFrame;
     }
 
