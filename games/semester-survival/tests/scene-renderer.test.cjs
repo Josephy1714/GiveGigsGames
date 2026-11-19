@@ -96,9 +96,9 @@ test('supports canvases without a writable style property and requires resize be
   const contextOnly = { save() {}, restore() {}, setTransform() {}, clearRect() {}, translate() {}, scale() {}, drawImage() {}, beginPath() {}, rect() {}, clip() {} };
   const canvas = { width: 0, height: 0, getContext: () => contextOnly };
   const renderer = api.create({ canvas });
+  renderer.mountScene('campus-main', { district: 'campus', scene, assets });
   assert.throws(() => renderer.render(), /Resize the canvas before rendering/);
   renderer.resize(640, 360, 1);
-  renderer.mountScene('campus-main', { district: 'campus', scene, assets });
   assert.equal(renderer.render().drawnLayers, 2);
 });
 
