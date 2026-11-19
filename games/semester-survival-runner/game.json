@@ -1,0 +1,49 @@
+{
+  "title": "Semester Survival: The University Run",
+  "slug": "semester-survival",
+  "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
+  "genre": "Endless Runner",
+  "tags": [
+    "Endless Runner",
+    "2D",
+    "2.5D",
+    "University",
+    "Kenya",
+    "Mobile"
+  ],
+  "maker": {
+    "name": "Joseph Ombati",
+    "bio": "Creator and Game Director of Semester Survival.",
+    "url": "https://github.com/Josephy1714/GiveGigsGames"
+  },
+  "controls": {
+    "keyboard": {
+      "Arrows / WASD": "Move, jump and slide",
+      "Escape": "Pause"
+    },
+    "touch": {
+      "swipe": "Left/right to change lanes, up to jump, down to slide"
+    }
+  },
+  "technical": {
+    "canvasSize": {
+      "width": 540,
+      "height": 960
+    },
+    "targetFPS": 60,
+    "mobileOptimized": true,
+    "rendering": "2.5D Canvas with Jay sprite atlas"
+  },
+  "assets": {
+    "external": [],
+    "local": [
+      "index.html",
+      "assets/processed/jay-runtime/jay-atlas.json",
+      "assets/processed/jay-runtime/jay-atlas.png"
+    ]
+  },
+  "meta": {
+    "version": "0.1.0",
+    "license": "Private - All Rights Reserved"
+  }
+}
