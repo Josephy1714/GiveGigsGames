@@ -73,7 +73,7 @@
       }
       animation = animator.update(dt);
       lastError = null;
-      renderer.updateCamera({ x: movement.x, y: movement.y + cameraOffsetY }, dt);
+      renderer.updateCamera({ x: movement.x, y: groundY() - movement.depth * depthScale() - movement.y + cameraOffsetY }, dt);
       frameNumber += 1;
       return getState();
     }
