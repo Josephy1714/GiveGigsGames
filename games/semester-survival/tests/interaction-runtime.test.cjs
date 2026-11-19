@@ -137,3 +137,12 @@ test('authored conversation choices carry relationship gates, speaker turns and 
  assert.deepEqual(relationships[0].changes,{affinity:3,trust:4});
  assert.throws(()=>rt.chooseTopic('locked'),/not currently available/);
 });
+
+test('opening dialogue respects persisted relationship gates while retaining legacy topics',()=>{
+ const world={districts:{township:{places:[]}},characters:{amina:{name:'Amina',introduction:'Hello.',topics:{study:['Legacy study response.']},conversationChoices:[{id:'unlocked',label:'Say hello',response:'Hello back.'},{id:'locked',label:'Ask something personal',response:'I trust you.',requires:{affinity:30}}]}}};
+ const state={location:'township',relationships:{coursemate:{affinity:15,trust:8}}};
+ const life={getState(){return state;},perform(){},recordRelationship(){}};
+ const rt=globalThis.SemesterInteractionRuntime.create({world,environment:{getState(){return {district:'township'};},getPlaces(){return []; }},renderer:{getHotspotBounds(){return null;},focusInteractable(){}},lifeEngine:life});
+ const d=rt.openDialogue('amina');assert.deepEqual(d.choices.map(c=>c.id),['unlocked','study']);
+ assert.ok(!d.choices.some(c=>c.id==='locked'));
+});
