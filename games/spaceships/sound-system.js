@@ -3,8 +3,9 @@ export class SpaceSoundSystem {
   constructor() {
     this.muted = true;
     this.ctx = null;
+    this.engineNodes = null;
   }
-  
+
   initContext() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -12,15 +13,89 @@ export class SpaceSoundSystem {
     }
   }
 
-  toggleMute() {
-    this.muted = !this.muted;
+  setMuted(muted) {
+    this.muted = Boolean(muted);
     if (!this.muted) {
       this.initContext();
       if (this.ctx && this.ctx.state === 'suspended') {
-        this.ctx.resume();
+        this.ctx.resume().catch(() => {});
       }
+    } else if (this.engineNodes) {
+      try {
+        this.engineNodes.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+      } catch {}
     }
     return this.muted;
+  }
+
+  unmute() {
+    return this.setMuted(false);
+  }
+
+  toggleMute() {
+    return this.setMuted(!this.muted);
+  }
+
+  destroy() {
+    this.ctx?.close().catch(() => {});
+    this.ctx = null;
+    this.engineNodes = null;
+  }
+
+  ensureEngineHum() {
+    if (!this.ctx || this.engineNodes) return;
+    try {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'triangle';
+      osc2.type = 'sawtooth';
+      osc1.frequency.value = 54;
+      osc2.frequency.value = 108;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 180;
+      filter.Q.value = 1.5;
+
+      gain.gain.value = 0;
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.start();
+      osc2.start();
+      this.engineNodes = { osc1, osc2, filter, gain };
+    } catch {}
+  }
+
+  updateEngineHum(throttle = 0.5, boosting = false, active = true) {
+    if (this.muted || !active) {
+      if (this.engineNodes && this.ctx) {
+        try {
+          this.engineNodes.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.08);
+        } catch {}
+      }
+      return;
+    }
+    try {
+      this.initContext();
+      if (!this.ctx || this.ctx.state === 'suspended') return;
+      this.ensureEngineHum();
+      if (!this.engineNodes) return;
+
+      const t = Math.max(0, Math.min(1.5, boosting ? 1.4 : throttle));
+      const baseFreq = 46 + t * 44;
+      const targetVol = 0.015 + Math.min(1.4, t) * 0.032;
+      const now = this.ctx.currentTime;
+      this.engineNodes.osc1.frequency.setTargetAtTime(baseFreq, now, 0.08);
+      this.engineNodes.osc2.frequency.setTargetAtTime(baseFreq * 2.01, now, 0.08);
+      this.engineNodes.filter.frequency.setTargetAtTime(140 + t * 240, now, 0.08);
+      this.engineNodes.gain.gain.setTargetAtTime(targetVol, now, 0.08);
+    } catch {}
   }
 
   playLaser() {
@@ -304,6 +379,90 @@ export class SpaceSoundSystem {
         gain.connect(ctx.destination);
         osc.start(start);
         osc.stop(start + dur);
+      });
+    } catch {}
+  }
+
+  playMissileLaunch() {
+    if (this.muted) return;
+    try {
+      this.initContext();
+      const ctx = this.ctx;
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(680, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.22);
+    } catch {}
+  }
+
+  playIonBlast() {
+    if (this.muted) return;
+    try {
+      this.initContext();
+      const ctx = this.ctx;
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(980, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(190, ctx.currentTime + 0.16);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.16);
+    } catch {}
+  }
+
+  playFlareDeploy() {
+    if (this.muted) return;
+    try {
+      this.initContext();
+      const ctx = this.ctx;
+      if (!ctx) return;
+      [780, 1040, 1320].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        const start = ctx.currentTime + idx * 0.04;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.045, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.1);
+      });
+    } catch {}
+  }
+
+  playDockChime() {
+    if (this.muted) return;
+    try {
+      this.initContext();
+      const ctx = this.ctx;
+      if (!ctx) return;
+      [440, 554.37, 659.25].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const start = ctx.currentTime + idx * 0.11;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.055, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.35);
       });
     } catch {}
   }

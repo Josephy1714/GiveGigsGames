@@ -395,6 +395,7 @@
 
                 if (!this.isPaused) {
                     this.update(dt);
+                    window.GraveGainEnemyVoxels.update(this.scene, dt);
                     this.render();
                 }
 
@@ -539,6 +540,7 @@
             this.torches = [];
 
             this.enemies.forEach(e => e.destroy());
+            window.GraveGainEnemyVoxels.clear(this.scene);
             this.enemies = [];
 
             this.props.forEach(p => p.destroy());
@@ -1216,7 +1218,7 @@
             return this.triggerMeleeAttack();
         }
 
-        applyHitToEnemy(enemy, baseDmg, dir) {
+        applyHitToEnemy(enemy, baseDmg, dir, impact) {
             const activeWpn = this.getActiveWeapon();
             let dmg = baseDmg * (activeWpn.dmgMult || 1.0);
             const dmgBonus = this.armoryRanks.damage ? (1.0 + this.armoryRanks.damage * 0.15) : 1.0;
@@ -1237,6 +1239,7 @@
             }
 
             enemy.hp -= dmg;
+            window.GraveGainEnemyVoxels.fracture(enemy, this.scene, dmg, dir, impact ? 'shot' : 'cut', impact);
             enemy.kx = dir.x * 160;
             enemy.ky = dir.z * 160;
 
@@ -1278,6 +1281,7 @@
                     const dist = Math.hypot(target.x - sourceEnemy.x, target.y - sourceEnemy.y);
                     if (dist < 200) {
                         target.hp -= dmg;
+                        window.GraveGainEnemyVoxels.fracture(target, this.scene, dmg);
                         this.vfx.spawnSparks(target.x, target.y, 0x38bdf8, 15);
                         this.combatText.spawnText(target.x, 20, target.y, `⚡${dmg}`, 'block');
                         hits++;
@@ -1341,6 +1345,7 @@
                 const dist = Math.hypot(e.x - x, e.y - y);
                 if (dist <= radius) {
                     e.hp -= dmg;
+                    window.GraveGainEnemyVoxels.fracture(e, this.scene, dmg, null, 'blast', { x, y: 12, z: y });
                     e.kx = (e.x - x) * 1.5;
                     e.ky = (e.y - y) * 1.5;
                     this.combatText.spawnText(e.x, 20, e.y, `${Math.round(dmg)}`, 'crit');
@@ -1602,7 +1607,7 @@
                             const dist = Math.hypot(e.x - p.x, e.y - p.z);
                             if (dist < e.radius + p.radius) {
                                 p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
+                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize(), { x: p.x, y: p.y, z: p.z });
                             }
                         });
                     } else {
@@ -1886,7 +1891,7 @@
                             const dist = Math.hypot(e.x - p.x, e.y - p.z);
                             if (dist < e.radius + p.radius) {
                                 p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
+                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize(), { x: p.x, y: p.y, z: p.z });
                             }
                         });
                     } else {
@@ -1938,14 +1943,16 @@
             // Update weapon viewmodel animation (Vermintide 2 style 3-hit combo + smooth guard)
             if (this.weaponGroup) {
                 const animDt = effectiveDt > 0 ? effectiveDt : dt * 1.5;
+                this.weaponBobPhase = ((this.weaponBobPhase || 0) + animDt * 3) % (Math.PI * 20);
                 if (this.comboResetTimer > 0) {
                     this.comboResetTimer -= animDt;
                     if (this.comboResetTimer <= 0) this.comboStep = 0;
                 }
 
                 const mh = this.weaponGroup.mainHand;
-                if (this.swingTime > 0 && mh) {
-                    this.swingTime -= animDt;
+                const wasSwinging = this.swingTime > 0;
+                this.swingTime = Math.max(0, this.swingTime - animDt);
+                if (wasSwinging && mh) {
                     const p = Math.min(1, Math.max(0, (this.swingDuration - this.swingTime) / this.swingDuration));
                     // Snappy ease-out swing curve
                     const snap = p < 0.25 ? (p / 0.25) : 1 - Math.pow((p - 0.25) / 0.75, 2);
@@ -1997,23 +2004,31 @@
                         mh.position.set(2.8 - raise * 2.0, -2.8 + raise * 1.8 - slam * 3.2, -6.5 - slam * 1.8);
                         mh.rotation.set(-Math.PI / 4 + raise * 0.6 - slam * 1.55, 0, -Math.PI / 7 + raise * 0.25);
                     }
+                    // Ease into the strike and return to the ready pose before chaining.
+                    const blend = Math.min(1, p / 0.12, (1 - p) / 0.3);
+                    mh.position.set(2.8 + (mh.position.x - 2.8) * blend,
+                        -2.8 + (mh.position.y + 2.8) * blend, -6.5 + (mh.position.z + 6.5) * blend);
+                    mh.rotation.set(-Math.PI / 4 + (mh.rotation.x + Math.PI / 4) * blend,
+                        style === 'spin' && p < 1 ? mh.rotation.y : mh.rotation.y * blend,
+                        -Math.PI / 7 + (mh.rotation.z + Math.PI / 7) * blend);
                 } else if (mh) {
                     // Idle breathing + figure-8 walk bobbing
-                    const t = Date.now() * 0.003;
+                    const idleBlend = 1 - Math.exp(-14 * animDt);
+                    const t = this.weaponBobPhase;
                     const isMoving = this.player && (Math.abs(this.player.vx || 0) > 10 || Math.abs(this.player.vy || 0) > 10);
                     const bobX = isMoving ? Math.cos(t * 2.2) * 0.28 : 0;
                     const bobY = isMoving ? Math.abs(Math.sin(t * 2.2)) * 0.32 : Math.sin(t) * 0.14;
-                    mh.position.x += (2.8 + bobX - mh.position.x) * Math.min(1, animDt * 14);
-                    mh.position.y += (-2.8 + bobY - mh.position.y) * Math.min(1, animDt * 14);
-                    mh.position.z += (-6.5 - mh.position.z) * Math.min(1, animDt * 14);
-                    mh.rotation.x += (-Math.PI / 4 - mh.rotation.x) * Math.min(1, animDt * 14);
-                    mh.rotation.y += (0 - mh.rotation.y) * Math.min(1, animDt * 14);
-                    mh.rotation.z += (-Math.PI / 7 - mh.rotation.z) * Math.min(1, animDt * 14);
+                    mh.position.x += (2.8 + bobX - mh.position.x) * idleBlend;
+                    mh.position.y += (-2.8 + bobY - mh.position.y) * idleBlend;
+                    mh.position.z += (-6.5 - mh.position.z) * idleBlend;
+                    mh.rotation.x += (-Math.PI / 4 - mh.rotation.x) * idleBlend;
+                    mh.rotation.y += (0 - mh.rotation.y) * idleBlend;
+                    mh.rotation.z += (-Math.PI / 7 - mh.rotation.z) * idleBlend;
                 }
 
                 if (this.weaponGroup.offHand) {
                     const oh = this.weaponGroup.offHand;
-                    const lerpAmt = Math.min(1, animDt * 16);
+                    const lerpAmt = 1 - Math.exp(-16 * animDt);
                     if (this.player.isBlocking) {
                         oh.position.x += (-1.0 - oh.position.x) * lerpAmt;
                         oh.position.y += (-1.8 - oh.position.y) * lerpAmt;
@@ -2036,9 +2051,10 @@
             // Occasional ember particles on non-potato presets.
             const dynamicLights = document.getElementById('settingsDynamicLights').checked;
             const gfxName = (this.gfxPreset && this.gfxPreset.name) || 'balanced';
+            this.torchPhase = ((this.torchPhase || 0) + dt * 8) % (Math.PI * 2);
             this.torches.forEach(t => {
                 if (!t.light) return;
-                const f = Math.sin(Date.now() * 0.008 + t.seed);
+                const f = Math.sin(this.torchPhase + t.seed);
                 t.light.intensity = dynamicLights ? t.baseIntensity + f * 0.4 : t.baseIntensity;
             });
             try {

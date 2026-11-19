@@ -85,8 +85,8 @@ let foodPulse = 0;
 const foodTypes = [
     { type: 'normal', color: '#ff0066', points: 10, chance: 0.6 },
     { type: 'bonus', color: '#ffff00', points: 25, chance: 0.2 },
-    { type: 'speed', color: '#00ffff', points: 15, chance: 0.1 },
-    { type: 'slow', color: '#00ff66', points: 10, chance: 0.1 }
+    { type: 'speed', symbol: '+', color: '#00ffff', points: 15, chance: 0.1 },
+    { type: 'slow', symbol: '−', color: '#00ff66', points: 10, chance: 0.1 }
 ];
 
 // Particles
@@ -463,6 +463,16 @@ function draw() {
     ctx.arc(foodX - 2, foodY - 2, foodSize / 5, 0, Math.PI * 2);
     ctx.fill();
     
+    if (ft.symbol) {
+        ctx.save();
+        ctx.fillStyle = '#08101e';
+        ctx.font = 'bold 13px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ft.symbol, foodX, foodY);
+        ctx.restore();
+    }
+
     // Snake body
     for (let i = snake.length - 1; i >= 0; i--) {
         const segment = snake[i];

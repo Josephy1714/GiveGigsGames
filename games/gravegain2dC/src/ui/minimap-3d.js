@@ -17,12 +17,15 @@
         panel.setAttribute('aria-label', 'Dungeon map');
         panel.innerHTML = '<div class="gg-minimap-head"><span>✦ DUNGEON MAP</span><button type="button" aria-label="Collapse map" aria-expanded="true">−</button></div>' +
             '<canvas width="192" height="192" aria-label="Explored dungeon rooms, player, enemies, and loot"></canvas>' +
-            '<div class="gg-minimap-foot"><span>◆ YOU</span><span>● FOE</span><span>◇ LOOT</span></div>';
+            '<div class="gg-minimap-foot"><span>◆ YOU</span><span>● FOE</span><span>◇ LOOT</span></div>' +
+            '<div class="gg-minimap-descent" role="status" hidden></div>';
         container.appendChild(panel);
 
         var canvas = panel.querySelector('canvas');
         var ctx = canvas.getContext('2d');
         var toggle = panel.querySelector('button');
+        var heading = panel.querySelector('.gg-minimap-head span');
+        var descentStatus = panel.querySelector('.gg-minimap-descent');
         toggle.addEventListener('click', function () {
             var collapsed = panel.classList.toggle('collapsed');
             toggle.textContent = collapsed ? '+' : '−';
@@ -33,7 +36,7 @@
         var elapsed = 0;
         var api = {
             panel: panel,
-            update: function (dt) {
+            update: function (dt, showDescent) {
                 elapsed += Math.max(0, Number(dt) || 0);
                 if (elapsed < 0.16) return;
                 elapsed = 0;
@@ -63,12 +66,14 @@
                     if (cell.secretWall && cell.secretDiscovered) ctx.fillStyle = '#c084fc';
                     if (cell.treasureRoom) ctx.fillStyle = '#8a642f';
                     if (cell.type === 'wall' && cell.roomId < 0) continue;
+                    ctx.globalAlpha = cell.visible ? 1 : 0.55;
                     ctx.fillRect(px, py, Math.ceil(scaleX), Math.ceil(scaleY));
                     if (cell.hazard) {
                         ctx.fillStyle = cell.hazard === 'fire' ? '#fb6846' : (cell.hazard === 'poison' ? '#a3e635' : '#67e8f9');
                         ctx.fillRect(px + scaleX * 0.3, py + scaleY * 0.3, Math.max(1, scaleX * 0.4), Math.max(1, scaleY * 0.4));
                     }
                 }
+                ctx.globalAlpha = 1;
 
                 (state.loot || []).forEach(function (loot) {
                     if (!loot || loot.picked) return;
@@ -102,12 +107,38 @@
                     ctx.fill();
                 });
 
-                var playerGrid = terrain.worldToGrid(state.player.x, state.player.z);
-                var playerX = (playerGrid.gx + 0.5) * scaleX;
-                var playerY = (playerGrid.gz + 0.5) * scaleY;
+                var descent = showDescent && terrain.safespaceRoom;
+                var descentCell = descent && terrain.getCell(descent.cx, descent.cz);
+                var status = '';
+                var locked = false;
+                if (descentCell && descentCell.explored) {
+                    locked = (state.enemies || []).some(function (enemy) {
+                        return enemy && enemy.type === 'boss' && !enemy.isDead && enemy.hp > 0;
+                    });
+                    var descentX = (descent.cx + 0.5) * scaleX;
+                    var descentY = (descent.cz + 0.5) * scaleY;
+                    status = locked ? 'Descent locked' : 'Descent open';
+                    ctx.fillStyle = '#070b12';
+                    ctx.fillRect(descentX - 5, descentY - 5, 10, 10);
+                    ctx.strokeStyle = locked ? '#fbbf24' : '#7dd3fc';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(descentX - 3, descentY - 1.5);
+                    ctx.lineTo(descentX, descentY + 2);
+                    ctx.lineTo(descentX + 3, descentY - 1.5);
+                    ctx.stroke();
+                }
+                if (descentStatus.textContent !== status) {
+                    descentStatus.hidden = !status;
+                    descentStatus.textContent = status;
+                    descentStatus.classList.toggle('locked', locked);
+                }
+
+                var playerX = state.player.x / terrain.tileSize * scaleX;
+                var playerY = state.player.z / terrain.tileSize * scaleY;
                 ctx.save();
                 ctx.translate(playerX, playerY);
-                ctx.rotate(state.player.angle || 0);
+                ctx.rotate((state.player.angle || 0) + Math.PI / 2);
                 ctx.fillStyle = '#86efac';
                 ctx.shadowColor = '#4ade80';
                 ctx.shadowBlur = 8;
@@ -121,7 +152,8 @@
                 ctx.restore();
 
                 var biome = String(terrain.biome || 'CRYPT').replace(/_/g, ' ').toUpperCase();
-                panel.querySelector('.gg-minimap-head span').textContent = '✦ ' + biome + ' · MAP';
+                var title = '✦ ' + biome + ' · MAP';
+                if (heading.textContent !== title) heading.textContent = title;
             }
         };
         return api;

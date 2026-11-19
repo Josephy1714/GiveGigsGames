@@ -402,6 +402,7 @@
 
                 if (!this.isPaused) {
                     this.update(dt);
+                    window.GraveGainEnemyVoxels.update(this.scene, dt);
                     this.render();
                 }
 
@@ -569,6 +570,7 @@
             this.torches = [];
 
             this.enemies.forEach(e => e.destroy());
+            window.GraveGainEnemyVoxels.clear(this.scene);
             this.enemies = [];
 
             this.props.forEach(p => p.destroy());
@@ -1209,7 +1211,8 @@
                     projectile.dead = true;
                     if (nearestHit.enemy) {
                         this.applyHitToEnemy(nearestHit.enemy, projectile.dmg,
-                            new THREE.Vector3(projectile.vx, 0, projectile.vz).normalize());
+                            new THREE.Vector3(projectile.vx, 0, projectile.vz).normalize(), 1, 0, null,
+                            { x: projectile.x, y: projectile.y, z: projectile.z }, 'shot');
                     } else {
                         this.breakProp(nearestHit.prop);
                     }
@@ -1258,7 +1261,8 @@
                 const distance = Math.hypot(enemy.x - projectile.x, enemy.y - projectile.z);
                 if (distance > radius || !this.hasBlastLineOfSight(projectile.x, projectile.z, enemy.x, enemy.y, projectile.y, 24)) return;
                 const falloff = 1 - distance / (radius * 1.5);
-                this.applyHitToEnemy(enemy, Math.round(projectile.dmg * Math.max(0.35, falloff)), new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize());
+                this.applyHitToEnemy(enemy, Math.round(projectile.dmg * Math.max(0.35, falloff)), new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize(),
+                    1, 0, null, { x: projectile.x, y: projectile.y, z: projectile.z }, 'blast');
             });
             this.props.forEach(prop => {
                 if (!prop.broken && Math.hypot(prop.x - projectile.x, prop.z - projectile.z) < radius &&
@@ -1892,13 +1896,14 @@
                     object = object.parent;
                 }
                 if (enemy) {
-                    const hit = hits.get(enemy) || { pellets: 0, headshots: 0, damageScale: 0 };
+                    const hit = hits.get(enemy) || { pellets: 0, headshots: 0, damageScale: 0, impact };
                     hit.pellets++;
                     hit.damageScale += this.getWeaponDamageScale(weapon, intersections[0].distance);
                     let hitPart = intersections[0].object;
                     while (hitPart && hitPart !== enemy.group3d) {
                         if (hitPart === enemy.skull) {
                             hit.headshots++;
+                            hit.impact = impact;
                             break;
                         }
                         hitPart = hitPart.parent;
@@ -1916,7 +1921,8 @@
                 forward,
                 hit.pellets,
                 hit.headshots,
-                weapon.id
+                weapon.id,
+                hit.impact
             ));
             this.triggerShockwaveCleave(this.player, forward, new Set(hits.keys()));
             const hasAdsRecoil = this.ads && Array.isArray(weapon.adsRecoilPattern);
@@ -1937,7 +1943,7 @@
             const cData = ClassData[this.player.classType];
             const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
             this.swingDuration = cData.attackSpeed / attackSpeedMultiplier;
-            this.swingTime = turnAction ? 0 : this.swingDuration;
+            this.swingTime = this.swingDuration;
             this.swingCombo = (this.swingCombo + 1) % 3;
 
             this.cameraController.applyPunch(0.04, -0.02);
@@ -2070,7 +2076,7 @@
             return directHits.size > 0;
         }
 
-        applyHitToEnemy(enemy, baseDmg, dir, hitUnits = 1, headshotUnits = 0, sourceWeapon = null) {
+        applyHitToEnemy(enemy, baseDmg, dir, hitUnits = 1, headshotUnits = 0, sourceWeapon = null, impact, kind = sourceWeapon ? 'shot' : 'cut') {
             if (!enemy || enemy.hp <= 0) return false;
             let dmg = baseDmg;
             const dmgBonus = this.armoryRanks.damage ? (1.0 + this.armoryRanks.damage * 0.15) : 1.0;
@@ -2095,6 +2101,7 @@
 
             const wasAlive = enemy.hp > 0;
             enemy.hp -= dmg;
+            window.GraveGainEnemyVoxels.fracture(enemy, this.scene, dmg, dir, kind, impact);
             enemy.kx = dir.x * 160;
             enemy.ky = dir.z * 160;
 
@@ -2150,6 +2157,7 @@
                     const dist = Math.hypot(target.x - sourceEnemy.x, target.y - sourceEnemy.y);
                     if (dist < 200) {
                         target.hp -= dmg;
+                        window.GraveGainEnemyVoxels.fracture(target, this.scene, dmg);
                         this.vfx.spawnSparks(target.x, target.y, 0x38bdf8, 15);
                         this.combatText.spawnText(target.x, 20, target.y, `⚡${dmg}`, 'block');
                         hits++;
@@ -2226,6 +2234,7 @@
                 const dist = Math.hypot(e.x - x, e.y - y);
                 if (dist <= radius) {
                     e.hp -= dmg;
+                    window.GraveGainEnemyVoxels.fracture(e, this.scene, dmg, null, 'blast', { x, y: 12, z: y });
                     e.kx = (e.x - x) * 1.5;
                     e.ky = (e.y - y) * 1.5;
                     this.combatText.spawnText(e.x, 20, e.y, `${Math.round(dmg)}`, 'crit');
@@ -2902,9 +2911,9 @@
                 const bobRate = sprinting ? 0.015 : (moving ? 0.011 : 0.003);
                 const aimStability = this.ads ? 0.2 : 1;
                 const bobAmount = (sprinting ? 0.28 : (moving ? 0.16 : 0.07)) * aimStability;
-                const weaponClockMs = this.weaponAnimTime * 1000;
-                const sway = moving ? Math.cos(weaponClockMs * bobRate * 0.5) * (sprinting ? 0.14 : 0.08) * aimStability : 0;
-                const idleBob = Math.sin(weaponClockMs * bobRate) * bobAmount;
+                this.weaponBobPhase = ((this.weaponBobPhase || 0) + animDt * bobRate * 1000) % (Math.PI * 4);
+                const sway = moving ? Math.cos(this.weaponBobPhase * 0.5) * (sprinting ? 0.14 : 0.08) * aimStability : 0;
+                const idleBob = Math.sin(this.weaponBobPhase) * bobAmount;
                 const bashDuration = 0.26;
                 this.weaponBashTimer = Math.max(0, this.weaponBashTimer - animDt);
                 const bashProgress = this.weaponBashTimer > 0
@@ -2915,7 +2924,7 @@
                     this.weaponGroup.position.set(baseX + sway + bashArc * 1.6, baseY + idleBob - bashArc * 1.4, this.weaponRecoil - bashArc * 2.4);
                     this.weaponGroup.rotation.set(0, -bashArc * 0.28, reloadDip * 0.08 + bashArc * 0.16);
                 } else if (this.swingTime > 0) {
-                    this.swingTime -= animDt;
+                    this.swingTime = Math.max(0, this.swingTime - animDt);
                     const progress = (this.swingDuration - this.swingTime) / this.swingDuration;
                     const arc = Math.sin(progress * Math.PI);
 
@@ -2953,16 +2962,15 @@
                         hand.position.y = pose.position.y + idleBob;
                         hand.rotation.copy(pose.rotation);
                     }
-                    if (this.weaponGroup.offHand) {
-                        // Raised in block position if blocking
-                        if (this.player.isBlocking) {
-                            this.weaponGroup.offHand.position.set(-1.0, -1.8, -4.5);
-                            this.weaponGroup.offHand.rotation.set(0, 0, 0);
-                        } else {
-                            this.weaponGroup.offHand.position.set(-3.2, -3.2, -6.0);
-                            this.weaponGroup.offHand.rotation.set(0, Math.PI / 6, 0);
-                        }
-                    }
+                }
+                if (this.weaponGroup.offHand) {
+                    const hand = this.weaponGroup.offHand;
+                    const blocking = this.player.isBlocking;
+                    const blend = 1 - Math.exp(-16 * animDt);
+                    hand.position.x += ((blocking ? -1 : -3.2) - hand.position.x) * blend;
+                    hand.position.y += ((blocking ? -1.8 : -3.2) - hand.position.y) * blend;
+                    hand.position.z += ((blocking ? -4.5 : -6) - hand.position.z) * blend;
+                    hand.rotation.y += ((blocking ? 0 : Math.PI / 6) - hand.rotation.y) * blend;
                 }
                 if (this.weaponGroup.boltHandle?.userData.idlePosition) {
                     const boltProgress = 1 - this.weaponBoltTimer / boltDuration;
@@ -2978,9 +2986,10 @@
             // Occasional ember particles on non-potato presets.
             const dynamicLights = document.getElementById('settingsDynamicLights').checked;
             const gfxName = (this.gfxPreset && this.gfxPreset.name) || 'balanced';
+            this.torchPhase = ((this.torchPhase || 0) + dt * 8) % (Math.PI * 2);
             this.torches.forEach(t => {
                 if (!t.light) return;
-                const f = Math.sin(Date.now() * 0.008 + t.seed);
+                const f = Math.sin(this.torchPhase + t.seed);
                 t.light.intensity = dynamicLights ? t.baseIntensity + f * 0.4 : t.baseIntensity;
             });
             try {

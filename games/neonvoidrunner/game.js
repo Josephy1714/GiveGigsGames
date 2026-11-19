@@ -318,14 +318,14 @@ function spawnObstacle() {
     const lane = Math.floor(Math.random() * laneCount);
     const types = ['block', 'spike', 'barrier'];
     const type = types[Math.floor(Math.random() * types.length)];
-    const colors = ['#ff0066', '#ff00ff', '#ff6600'];
-    
+    const colors = { block: '#ff0066', spike: '#ff6600', barrier: '#ff00ff' };
+
     obstacles.push({
         x: lane * laneWidth + laneWidth / 2 - 25,
         y: -60,
         width: 50,
         height: 50,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: colors[type],
         type: type
     });
 }
@@ -571,6 +571,7 @@ function draw() {
     ctx.shadowBlur = 0;
     
     // Obstacles
+    const obstacleSymbols = { block: '■', spike: '▲', barrier: '=' };
     obstacles.forEach(obs => {
         ctx.fillStyle = obs.color;
         ctx.shadowColor = obs.color;
@@ -593,6 +594,16 @@ function draw() {
             ctx.fillRect(obs.x, obs.y, obs.width, obs.height * 0.4);
             ctx.fillRect(obs.x, obs.y + obs.height * 0.6, obs.width, obs.height * 0.4);
         }
+        ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#101021';
+        ctx.fillRect(obs.x + 12, obs.y + 18, 26, 24);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 18px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(obstacleSymbols[obs.type], obs.x + obs.width / 2, obs.y + 30);
+        ctx.restore();
     });
     ctx.shadowBlur = 0;
     

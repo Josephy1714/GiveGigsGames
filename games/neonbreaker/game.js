@@ -108,6 +108,15 @@ const brickOffsetLeft = 30;
 
 // Power-ups
 let powerUps = [];
+const powerUpLabels = {
+    multiball: 'Multiball',
+    wide: 'Wider paddle',
+    laser: 'Laser bonus · +100 points',
+    life: 'Extra life',
+    slow: 'Slower ball'
+};
+let powerUpNotice = '';
+let powerUpNoticeTicks = 0;
 
 // Particles
 let particles = [];
@@ -245,6 +254,7 @@ function resetGame() {
         stuck: true
     }];
     powerUps = [];
+    powerUpNoticeTicks = 0;
     particles = [];
     createBricks();
 }
@@ -300,6 +310,7 @@ function createParticles(x, y, color, count = 10) {
 }
 
 function update() {
+    if (powerUpNoticeTicks > 0) powerUpNoticeTicks--;
     // Paddle movement — keyboard
     if (keys['ArrowLeft'] || keys['KeyA']) { paddle.x -= paddle.speed; usePointer = false; }
     if (keys['ArrowRight'] || keys['KeyD']) { paddle.x += paddle.speed; usePointer = false; }
@@ -479,6 +490,8 @@ function update() {
 }
 
 function applyPowerUp(type) {
+    powerUpNotice = powerUpLabels[type];
+    powerUpNoticeTicks = 90;
     switch (type) {
         case 'multiball':
             if (balls.length > 0 && !balls[0].stuck) {
@@ -606,6 +619,16 @@ function draw() {
     ctx.fillStyle = '#00ff66';
     ctx.textAlign = 'right';
     ctx.fillText(`LIVES: ${lives}`, canvas.width - 15, 25);
+
+    if (powerUpNoticeTicks > 0) {
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 20px system-ui, sans-serif';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#0a0a1a';
+        ctx.fillStyle = '#fff';
+        ctx.strokeText(powerUpNotice, canvas.width / 2, 54);
+        ctx.fillText(powerUpNotice, canvas.width / 2, 54);
+    }
     ctx.restore();
 }
 

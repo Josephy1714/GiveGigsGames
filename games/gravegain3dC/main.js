@@ -64,6 +64,8 @@ try {
     if (savedMap && MAPS[savedMap]) selectedMapId = savedMap;
 } catch { /* ignore */ }
 
+const frameBlend = (blendAt60Fps, dt) => 1 - Math.pow(1 - blendAt60Fps, dt * 60);
+
 const toColor3 = ([r, g, b]) => new BABYLON.Color3(r, g, b);
 
 function createScene() {
@@ -213,6 +215,71 @@ function createScene() {
     const friendlies = [];
     const enemies = [];
     const projectiles = [];
+    const voxelDebris = [];
+    const voxelSource = BABYLON.MeshBuilder.CreateBox('enemyVoxel', { size: 0.36 }, scene);
+    voxelSource.material = enemyMat;
+    voxelSource.isVisible = false;
+    voxelSource.isPickable = false;
+
+    function buildBotVoxels(root) {
+        const cells = [];
+        for (let y = -2; y <= 2; y++) {
+            for (let x = -1; x <= 1; x++) {
+                for (let z = -1; z <= 1; z++) {
+                    if (Math.abs(x) + Math.abs(z) + Math.max(0, Math.abs(y) - 1) > 2) continue;
+                    const cell = voxelSource.createInstance('botVoxel');
+                    cell.parent = root;
+                    cell.position.set(x * 0.36, y * 0.36, z * 0.36);
+                    cell.isPickable = false;
+                    cells.push(cell);
+                }
+            }
+        }
+        return cells;
+    }
+
+    function fractureBot(bot, damage, impact, blast) {
+        if (!(damage > 0)) return;
+        bot.hp -= damage;
+        bot.mesh.computeWorldMatrix(true);
+        const cells = bot.voxels.map(cell => {
+            cell.computeWorldMatrix(true);
+            return { cell, distance: BABYLON.Vector3.DistanceSquared(cell.getAbsolutePosition(), impact) };
+        });
+        cells.sort((a, b) => a.distance - b.distance);
+        const count = bot.hp <= 0 ? cells.length : Math.min(cells.length - 1,
+            Math.max(1, Math.ceil(cells.length * Math.min(0.45, damage / bot.maxHp) * (blast ? 0.85 : 0.55))));
+        const removed = new Set();
+        for (let i = 0; i < count; i++) {
+            const { cell } = cells[i];
+            cell.setParent(null);
+            const velocity = cell.position.subtract(impact);
+            const length = velocity.length();
+            if (length > 0) velocity.scaleInPlace((blast ? 13 : 5) / length);
+            velocity.y += 3 + Math.random() * 4;
+            voxelDebris.push({ cell, velocity, life: 0.65 + Math.random() * 0.35 });
+            removed.add(cell);
+        }
+        bot.voxels = bot.voxels.filter(cell => !removed.has(cell));
+        while (voxelDebris.length > 128) voxelDebris.shift().cell.dispose();
+    }
+
+    function updateVoxelDebris(dt) {
+        for (let i = voxelDebris.length - 1; i >= 0; i--) {
+            const chunk = voxelDebris[i];
+            chunk.life -= dt;
+            if (chunk.life <= 0) {
+                chunk.cell.dispose();
+                voxelDebris.splice(i, 1);
+                continue;
+            }
+            chunk.velocity.y -= GRAVITY * dt;
+            chunk.cell.position.addInPlace(chunk.velocity.scale(dt));
+            chunk.cell.rotation.x += 5 * dt;
+            chunk.cell.rotation.z += 3 * dt;
+            chunk.cell.scaling.setAll(Math.min(1, chunk.life * 5));
+        }
+    }
 
     function pickSpawn(list, idx = null) {
         const arr = list && list.length ? list : [[0, 0, 0]];
@@ -221,18 +288,24 @@ function createScene() {
 
     function createBot(team, spawnCoord) {
         const [sx, sy, sz] = spawnCoord;
-        const mesh = BABYLON.MeshBuilder.CreateCapsule(`${team}_bot`, { height: BOT_HEIGHT, radius: BOT_RADIUS }, scene);
+        const mesh = team === 'enemy'
+            ? new BABYLON.TransformNode('enemy_bot', scene)
+            : BABYLON.MeshBuilder.CreateCapsule('friendly_bot', { height: BOT_HEIGHT, radius: BOT_RADIUS }, scene);
         mesh.position.set(sx, sy + 1.1, sz);
-        mesh.material = team === 'friendly' ? heroMat : enemyMat;
-        mesh.isPickable = false;
+        if (team === 'friendly') {
+            mesh.material = heroMat;
+            mesh.isPickable = false;
+        }
         const maxHp = team === 'friendly' ? 100 + upgrades.maxHp * 25 : 90;
         return {
             team,
             mesh,
+            voxels: team === 'enemy' ? buildBotVoxels(mesh) : [],
             pos: new BABYLON.Vector3(sx, sy, sz),
             vel: new BABYLON.Vector3(0, 0, 0),
             hp: maxHp,
             maxHp,
+            gaitPhase: 0,
             fireTimer: Math.random() * 0.5,
             strafeDir: Math.random() < 0.5 ? 1 : -1,
             strafeTimer: 0.6 + Math.random() * 0.8,
@@ -248,6 +321,13 @@ function createScene() {
         const list = bot.team === 'friendly' ? currentMap.friendlySpawns : currentMap.enemySpawns;
         const [sx, sy, sz] = pickSpawn(list);
         bot.hp = bot.maxHp;
+        if (bot.team === 'enemy') {
+            bot.voxels.forEach(cell => cell.dispose());
+            bot.voxels = buildBotVoxels(bot.mesh);
+        }
+        bot.gaitPhase = 0;
+        bot.mesh.rotation.set(0, 0, 0);
+        bot.mesh.scaling.setAll(1);
         bot.pos.set(sx, sy, sz);
         bot.vel.set(0, 0, 0);
         bot.grounded = true;
@@ -271,6 +351,8 @@ function createScene() {
         friendlies.forEach(b => b.mesh.dispose());
         enemies.forEach(b => b.mesh.dispose());
         projectiles.forEach(p => p.mesh.dispose());
+        voxelDebris.forEach(chunk => chunk.cell.dispose());
+        voxelDebris.length = 0;
         friendlies.length = 0;
         enemies.length = 0;
         projectiles.length = 0;
@@ -707,8 +789,17 @@ function createScene() {
         }
         bot.vel.y -= GRAVITY * dt;
 
+        const startX = bot.pos.x;
+        const startZ = bot.pos.z;
         const phys = moveEntityWithMap(bot.pos, bot.vel, BOT_RADIUS, BOT_HEIGHT, dt, bot);
         bot.mesh.position.set(bot.pos.x, bot.pos.y + 1.1, bot.pos.z);
+        const distance = Math.hypot(bot.pos.x - startX, bot.pos.z - startZ);
+        bot.gaitPhase = (bot.gaitPhase + distance * 1.8) % (Math.PI * 2);
+        const stride = bot.grounded && distance > dt ? Math.sin(bot.gaitPhase) : 0;
+        const stretch = bot.grounded ? 1 + stride * 0.045 : 1.09;
+        const blend = frameBlend(0.22, dt);
+        bot.mesh.scaling.y = BABYLON.Scalar.Lerp(bot.mesh.scaling.y, stretch, blend);
+        bot.mesh.rotation.z = BABYLON.Scalar.Lerp(bot.mesh.rotation.z, stride * 0.12, blend);
 
         if (phys.hazardDmg > 0) bot.hp -= phys.hazardDmg;
         if (phys.fellInVoid || bot.hp <= 0) {
@@ -732,6 +823,7 @@ function createScene() {
 
     scene.onBeforeRenderObservable.add(() => {
         const dt = Math.min(0.05, engine.getDeltaTime() / 1000);
+        updateVoxelDebris(dt);
         if (mode === 'menu') {
             menuAngle += dt * 0.22;
             camera.position.set(Math.cos(menuAngle) * 44, 24, Math.sin(menuAngle) * 44);
@@ -795,7 +887,7 @@ function createScene() {
             camera.position.set(player.pos.x, player.pos.y + PLAYER_HEIGHT, player.pos.z);
 
             const horiz = Math.hypot(player.vel.x, player.vel.z);
-            camera.fov = BABYLON.Scalar.Lerp(camera.fov, 1.05 + Math.min(0.28, horiz * 0.01), 0.12);
+            camera.fov = BABYLON.Scalar.Lerp(camera.fov, 1.05 + Math.min(0.28, horiz * 0.01), frameBlend(0.12, dt));
         }
 
         // Update AI
@@ -813,7 +905,7 @@ function createScene() {
         if (mode === 'autobattler' && friendlies[0]) {
             const hero = friendlies[0];
             const targetCam = hero.mesh.position.add(new BABYLON.Vector3(0, 7, -13));
-            camera.position = BABYLON.Vector3.Lerp(camera.position, targetCam, 0.08);
+            camera.position = BABYLON.Vector3.Lerp(camera.position, targetCam, frameBlend(0.08, dt));
             camera.setTarget(hero.mesh.position);
             hpEl.textContent = Math.max(0, Math.round(hero.hp));
             livesEl.textContent = hero.lives;
@@ -845,13 +937,13 @@ function createScene() {
                 }
             }
 
-            let directHitEnemyIdx = -1;
+            let directHitEnemy = null;
             if (p.ownerTeam === 'friendly') {
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     if (BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position) < 1.35) {
-                        enemies[j].hp -= p.damage;
+                        directHitEnemy = enemies[j];
+                        fractureBot(directHitEnemy, p.damage, p.mesh.position, p.weapon.splash > 0);
                         hit = true;
-                        directHitEnemyIdx = j;
                         if (mode === 'player') playSfx(880, 0.05, 'sine', 0.05);
                         if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
                         break;
@@ -893,10 +985,10 @@ function createScene() {
                     }
                     if (p.ownerTeam === 'friendly') {
                         for (let j = enemies.length - 1; j >= 0; j--) {
-                            if (j === directHitEnemyIdx) continue;
+                            if (enemies[j] === directHitEnemy) continue;
                             const dist = BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position);
                             if (dist < p.weapon.splash) {
-                                enemies[j].hp -= p.damage * 0.6 * (1 - dist / p.weapon.splash);
+                                fractureBot(enemies[j], p.damage * 0.6 * (1 - dist / p.weapon.splash), p.mesh.position, true);
                                 if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
                             }
                         }

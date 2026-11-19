@@ -6,6 +6,7 @@ export class ParticleManager {
     this.scene = scene;
     this.particles = [];
     this.shieldImpacts = [];
+    this.temporaryMeshes = [];
     this.shieldImpactTexture = null;
   }
 
@@ -336,6 +337,23 @@ export class ParticleManager {
     this.shieldImpacts.push({ impact, life: 0.75, maxLife: 0.75 });
   }
 
+  spawnShieldImpactBloom(worldPoint, _normal = null) {
+    const texture = this.getShieldImpactTexture();
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      color: 0x8ef5ff,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const impact = new THREE.Sprite(material);
+    impact.position.copy(worldPoint);
+    impact.scale.set(9.5, 9.5, 1);
+    this.scene.add(impact);
+    this.shieldImpacts.push({ impact, life: 0.75, maxLife: 0.75 });
+  }
+
   update(dt) {
     // 1. Update particles
     const nextParticles = [];
@@ -429,6 +447,25 @@ export class ParticleManager {
       });
       this.floatingTexts = nextTexts;
     }
+
+    // 5. Update temporary meshes (tractor beams, ion rings, warp streaks)
+    if (this.temporaryMeshes && this.temporaryMeshes.length > 0) {
+      const nextTemp = [];
+      this.temporaryMeshes.forEach(item => {
+        item.life -= dt;
+        if (item.life <= 0) {
+          this.scene.remove(item.mesh);
+          item.mesh.geometry?.dispose();
+          item.mesh.material?.dispose();
+        } else {
+          const ratio = Math.max(0, item.life / item.maxLife);
+          if (item.expandRate) item.mesh.scale.addScalar(item.expandRate * dt);
+          if (item.mesh.material) item.mesh.material.opacity = ratio * (item.baseOpacity || 0.9);
+          nextTemp.push(item);
+        }
+      });
+      this.temporaryMeshes = nextTemp;
+    }
   }
 
   spawnFloatingText(worldPos, text, color = '#38bdf8', fontSize = 28) {
@@ -461,34 +498,98 @@ export class ParticleManager {
   spawnWarpStreaks(origin, forwardDir) {
     if (!this.scene) return;
     try {
-      const count = 35;
+      const count = 42;
       const positions = new Float32Array(count * 6);
       for (let i = 0; i < count; i++) {
-        const rad = 8 + Math.random() * 24;
+        const rad = 8 + Math.random() * 26;
         const angle = Math.random() * Math.PI * 2;
         const x = origin.x + Math.cos(angle) * rad;
         const y = origin.y + Math.sin(angle) * rad;
-        const z = origin.z + (Math.random() - 0.5) * 30;
+        const z = origin.z + (Math.random() - 0.5) * 32;
 
         positions[i * 6] = x;
         positions[i * 6 + 1] = y;
         positions[i * 6 + 2] = z;
-        positions[i * 6 + 3] = x + forwardDir.x * 55;
-        positions[i * 6 + 4] = y + forwardDir.y * 55;
-        positions[i * 6 + 5] = z + forwardDir.z * 55;
+        positions[i * 6 + 3] = x + forwardDir.x * 65;
+        positions[i * 6 + 4] = y + forwardDir.y * 65;
+        positions[i * 6 + 5] = z + forwardDir.z * 65;
       }
       const geom = new THREE.BufferGeometry();
       geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       const mat = new THREE.LineBasicMaterial({ color: 0x00f5ff, transparent: true, opacity: 0.95 });
       const lines = new THREE.LineSegments(geom, mat);
       this.scene.add(lines);
-
-      setTimeout(() => {
-        if (this.scene) this.scene.remove(lines);
-        geom.dispose();
-        mat.dispose();
-      }, 350);
+      this.temporaryMeshes.push({ mesh: lines, life: 0.35, maxLife: 0.35, baseOpacity: 0.95 });
     } catch {}
+  }
+
+  spawnTractorBeam(fromPos, toPos) {
+    if (!this.scene) return;
+    try {
+      const geom = new THREE.BufferGeometry().setFromPoints([fromPos, toPos]);
+      const mat = new THREE.LineBasicMaterial({
+        color: 0x34d399,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+      const line = new THREE.Line(geom, mat);
+      this.scene.add(line);
+      this.temporaryMeshes.push({ mesh: line, life: 0.08, maxLife: 0.08, baseOpacity: 0.85 });
+    } catch {}
+  }
+
+  spawnFlareBurst(pos, rearDir) {
+    if (!this.scene) return;
+    const count = 24;
+    const geom = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const velocities = [];
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = pos.x;
+      positions[i * 3 + 1] = pos.y;
+      positions[i * 3 + 2] = pos.z;
+      const spread = new THREE.Vector3(
+        (Math.random() - 0.5) * 1.4,
+        (Math.random() - 0.5) * 1.4,
+        (Math.random() - 0.5) * 1.4
+      ).addScaledVector(rearDir, 0.9).normalize();
+      velocities.push(spread.multiplyScalar(35 + Math.random() * 40));
+    }
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({
+      color: 0xfef08a,
+      size: 3.4,
+      transparent: true,
+      opacity: 1.0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const points = new THREE.Points(geom, mat);
+    this.scene.add(points);
+    this.particles.push({ points, velocities, alpha: 1.0, decay: 0.95 });
+  }
+
+  spawnIonRing(pos) {
+    if (!this.scene) return;
+    try {
+      const geom = new THREE.TorusGeometry(4, 0.35, 8, 24);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x818cf8,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+      });
+      const ring = new THREE.Mesh(geom, mat);
+      ring.position.copy(pos);
+      ring.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+      this.scene.add(ring);
+      this.temporaryMeshes.push({ mesh: ring, life: 0.4, maxLife: 0.4, baseOpacity: 0.9, expandRate: 12 });
+    } catch {}
+  }
+
+  spawnLootBurst(pos, colorHex = 0xfbbf24) {
+    this.spawnExplosion(pos, colorHex, 20);
   }
 
   spawnFireworks(origin, count = 28) {
@@ -497,9 +598,10 @@ export class ParticleManager {
       const colors = [0x10b981, 0x06b6d4, 0xf59e0b, 0xec4899, 0x8b5cf6];
       for (let f = 0; f < count; f++) {
         setTimeout(() => {
+          if (!this.scene) return;
           const offset = new THREE.Vector3((Math.random() - 0.5) * 60, 10 + Math.random() * 40, (Math.random() - 0.5) * 60);
           const color = colors[f % colors.length];
-          this.spawnExplosion(origin.clone().add(offset), 2.5);
+          this.spawnExplosion(origin.clone().add(offset), color, 28);
         }, f * 120);
       }
     } catch {}
@@ -525,6 +627,24 @@ export class ParticleManager {
         d.mesh.geometry?.dispose();
       });
       this.debris = [];
+    }
+
+    if (this.floatingTexts) {
+      this.floatingTexts.forEach(item => {
+        this.scene.remove(item.sprite);
+        item.material.dispose();
+        item.texture.dispose();
+      });
+      this.floatingTexts = [];
+    }
+
+    if (this.temporaryMeshes) {
+      this.temporaryMeshes.forEach(item => {
+        this.scene.remove(item.mesh);
+        item.mesh.geometry?.dispose();
+        item.mesh.material?.dispose();
+      });
+      this.temporaryMeshes = [];
     }
 
     this.shieldImpactTexture?.dispose();

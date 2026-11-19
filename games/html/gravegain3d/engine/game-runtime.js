@@ -367,6 +367,7 @@
 
                 if (!this.isPaused) {
                     this.update(dt);
+                    window.GraveGainEnemyVoxels.update(this.scene, dt);
                     this.render();
                 }
 
@@ -507,6 +508,7 @@
             this.torches = [];
 
             this.enemies.forEach(e => e.destroy());
+            window.GraveGainEnemyVoxels.clear(this.scene);
             this.enemies = [];
 
             this.props.forEach(p => p.destroy());
@@ -976,7 +978,7 @@
             return this.triggerMeleeAttack();
         }
 
-        applyHitToEnemy(enemy, baseDmg, dir) {
+        applyHitToEnemy(enemy, baseDmg, dir, impact) {
             let dmg = baseDmg;
             const dmgBonus = this.armoryRanks.damage ? (1.0 + this.armoryRanks.damage * 0.15) : 1.0;
             dmg *= dmgBonus;
@@ -991,6 +993,7 @@
             }
 
             enemy.hp -= dmg;
+            window.GraveGainEnemyVoxels.fracture(enemy, this.scene, dmg, dir, impact ? 'shot' : 'cut', impact);
             enemy.kx = dir.x * 160;
             enemy.ky = dir.z * 160;
 
@@ -1032,6 +1035,7 @@
                     const dist = Math.hypot(target.x - sourceEnemy.x, target.y - sourceEnemy.y);
                     if (dist < 200) {
                         target.hp -= dmg;
+                        window.GraveGainEnemyVoxels.fracture(target, this.scene, dmg);
                         this.vfx.spawnSparks(target.x, target.y, 0x38bdf8, 15);
                         this.combatText.spawnText(target.x, 20, target.y, `⚡${dmg}`, 'block');
                         hits++;
@@ -1095,6 +1099,7 @@
                 const dist = Math.hypot(e.x - x, e.y - y);
                 if (dist <= radius) {
                     e.hp -= dmg;
+                    window.GraveGainEnemyVoxels.fracture(e, this.scene, dmg, null, 'blast', { x, y: 12, z: y });
                     e.kx = (e.x - x) * 1.5;
                     e.ky = (e.y - y) * 1.5;
                     this.combatText.spawnText(e.x, 20, e.y, `${Math.round(dmg)}`, 'crit');
@@ -1356,7 +1361,7 @@
                             const dist = Math.hypot(e.x - p.x, e.y - p.z);
                             if (dist < e.radius + p.radius) {
                                 p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
+                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize(), { x: p.x, y: p.y, z: p.z });
                             }
                         });
                     } else {
@@ -1636,7 +1641,7 @@
                             const dist = Math.hypot(e.x - p.x, e.y - p.z);
                             if (dist < e.radius + p.radius) {
                                 p.dead = true;
-                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize());
+                                this.applyHitToEnemy(e, p.dmg, new THREE.Vector3(p.vx, 0, p.vz).normalize(), { x: p.x, y: p.y, z: p.z });
                             }
                         });
                     } else {
@@ -1688,8 +1693,9 @@
             // Update weapon viewmodel animation
             if (this.weaponGroup) {
                 const animDt = effectiveDt > 0 ? effectiveDt : dt * 1.5;
+                this.weaponBobPhase = ((this.weaponBobPhase || 0) + animDt * 3) % (Math.PI * 20);
                 if (this.swingTime > 0) {
-                    this.swingTime -= animDt;
+                    this.swingTime = Math.max(0, this.swingTime - animDt);
                     const progress = (this.swingDuration - this.swingTime) / this.swingDuration;
                     const arc = Math.sin(progress * Math.PI);
 
@@ -1700,20 +1706,19 @@
                     }
                 } else {
                     // Idle bobbing
-                    const idleBob = Math.sin(Date.now() * 0.003) * 0.15;
+                    const idleBob = Math.sin(this.weaponBobPhase) * 0.15;
                     if (this.weaponGroup.mainHand) {
                         this.weaponGroup.mainHand.position.y = -2.8 + idleBob;
                     }
-                    if (this.weaponGroup.offHand) {
-                        // Raised in block position if blocking
-                        if (this.player.isBlocking) {
-                            this.weaponGroup.offHand.position.set(-1.0, -1.8, -4.5);
-                            this.weaponGroup.offHand.rotation.set(0, 0, 0);
-                        } else {
-                            this.weaponGroup.offHand.position.set(-3.2, -3.2, -6.0);
-                            this.weaponGroup.offHand.rotation.set(0, Math.PI / 6, 0);
-                        }
-                    }
+                }
+                if (this.weaponGroup.offHand) {
+                    const hand = this.weaponGroup.offHand;
+                    const blocking = this.player.isBlocking;
+                    const blend = 1 - Math.exp(-16 * animDt);
+                    hand.position.x += ((blocking ? -1 : -3.2) - hand.position.x) * blend;
+                    hand.position.y += ((blocking ? -1.8 : -3.2) - hand.position.y) * blend;
+                    hand.position.z += ((blocking ? -4.5 : -6) - hand.position.z) * blend;
+                    hand.rotation.y += ((blocking ? 0 : Math.PI / 6) - hand.rotation.y) * blend;
                 }
             }
 
@@ -1721,9 +1726,10 @@
             // Occasional ember particles on non-potato presets.
             const dynamicLights = document.getElementById('settingsDynamicLights').checked;
             const gfxName = (this.gfxPreset && this.gfxPreset.name) || 'balanced';
+            this.torchPhase = ((this.torchPhase || 0) + dt * 8) % (Math.PI * 2);
             this.torches.forEach(t => {
                 if (!t.light) return;
-                const f = Math.sin(Date.now() * 0.008 + t.seed);
+                const f = Math.sin(this.torchPhase + t.seed);
                 t.light.intensity = dynamicLights ? t.baseIntensity + f * 0.4 : t.baseIntensity;
             });
             try {

@@ -345,15 +345,28 @@ function restartGame() {
 }
 
 function spawnEnemy() {
-    const lane = Math.floor(Math.random() * laneCount);
+    const spawnY = -80;
+    const carHeight = 70;
+    // Leave steering time between traffic groups, even if the player accelerates.
+    const steeringTicks = 18;
+    const maxApproachSpeed = Math.max(speed, 10) * 2;
+    const trafficWindow = carHeight + maxApproachSpeed * steeringTicks;
+    const occupiedLanes = new Set(enemies
+        .filter(enemy => enemy.y - spawnY < trafficWindow)
+        .map(enemy => enemy.lane));
+    if (occupiedLanes.size >= laneCount - 1) return;
+
+    const openLanes = Array.from({ length: laneCount }, (_, lane) => lane)
+        .filter(lane => !occupiedLanes.has(lane));
+    const lane = openLanes[Math.floor(Math.random() * openLanes.length)];
     const colors = ['#ff0066', '#ff00ff', '#ffff00', '#ff6600'];
     
     enemies.push({
         lane: lane,
         x: laneWidth * lane + laneWidth / 2 - 20,
-        y: -80,
+        y: spawnY,
         width: 40,
-        height: 70,
+        height: carHeight,
         color: colors[Math.floor(Math.random() * colors.length)],
         speed: speed * (0.7 + Math.random() * 0.4)
     });

@@ -226,7 +226,10 @@ function resumeGame() {
     gameLoop();
 }
 
-function gameOver() {
+function gameOver(reason = '') {
+    const reasonDisplay = document.getElementById('invaders-game-over-reason');
+    reasonDisplay.textContent = reason;
+    reasonDisplay.hidden = !reason;
     gameState = 'gameOver';
     
     if (score > highScore) {
@@ -431,7 +434,7 @@ function update() {
         
         // Check if enemy reached bottom
         if (enemy.y + enemy.height >= canvas.height - 20) {
-            gameOver();
+            gameOver("Invaders reached the bottom.");
             return;
         }
     });
@@ -479,7 +482,7 @@ function update() {
                 createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ff0066');
                 
                 if (lives <= 0) {
-                    gameOver();
+                    gameOver("You ran out of lives.");
                 }
             }
             return false;
@@ -504,7 +507,7 @@ function update() {
             if (idx > -1) enemies.splice(idx, 1);
             
             if (lives <= 0) {
-                gameOver();
+                gameOver("You ran out of lives.");
             }
         }
     });

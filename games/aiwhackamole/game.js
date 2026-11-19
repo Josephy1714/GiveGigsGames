@@ -732,7 +732,8 @@ function triggerWhack(hole, screenX, screenY) {
     } else {
         // Incorrectly whacked a good/aligned AI
         resetCombo();
-        score = Math.max(0, score - 200);
+        const pointsLost = Math.min(score, 200);
+        score -= pointsLost;
         if (!window.gameDebug?.godMode) {
             health = Math.max(0, health - 10);
         }
@@ -740,7 +741,8 @@ function triggerWhack(hole, screenX, screenY) {
         updateHealthBar();
         playSound('whack-good');
         whackHaptic('good');
-        createFloatingScore(screenX, screenY, '-200 Penalty!', 'bad');
+        const penalty = pointsLost ? ` · −${pointsLost} points` : '';
+        createFloatingScore(screenX, screenY, `Aligned AI hit${penalty}`, 'bad');
         spawnShockwave(screenX, screenY, false);
         shakeScreen(false);
         flashDamage();
