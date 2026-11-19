@@ -32,7 +32,7 @@ try {
   await card.getByRole("link", { name: "Game details" }).click();
   await page.getByRole("heading", { name: "Platform Wars: Phone vs Desktop" }).waitFor();
 
-  await page.getByRole("link", { name: "Back to game select" }).click();
+  await page.goto(`${baseUrl}/index.html#all-games`);
   await page.locator("#save-file-input").setInputFiles({
     name: "backup.txt",
     mimeType: "text/plain",
