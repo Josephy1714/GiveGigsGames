@@ -81,12 +81,13 @@
       const panel = node('div', 'ss-interaction-ui__panel');
       const header = node('header', 'ss-interaction-ui__header');
       const monogram = node('div', 'ss-interaction-ui__monogram',
-        String(dialogue.characterName || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
+        dialogue.groupScene ? 'SC' : String(dialogue.characterName || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
       monogram.setAttribute('aria-hidden', 'true');
       const speaker = node('div', 'ss-interaction-ui__speaker');
       const speechState = dialogue.speech && dialogue.speech.status === 'speaking' ? 'VOICE · LIP-SYNC ACTIVE' : dialogue.speech && dialogue.speech.status === 'paused' ? 'VOICE PAUSED' : 'IN CONVERSATION';
-      speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', speechState));
-      speaker.appendChild(node('h2', 'ss-interaction-ui__name', dialogue.characterName));
+      speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', dialogue.groupScene ? 'GROUP SCENE · ' + speechState : speechState));
+      speaker.appendChild(node('h2', 'ss-interaction-ui__name', dialogue.sceneTitle || dialogue.characterName));
+      if (dialogue.participants && dialogue.participants.length) speaker.appendChild(node('span', 'ss-interaction-ui__participants', dialogue.participants.map(function (person) { return person.name; }).join(' · ')));
       const close = button('×', 'ss-interaction-ui__close', function () {
         activate({ closeDialogue: true });
       }, 'Close conversation');
@@ -133,7 +134,7 @@
       const dialogue = state.dialogue || null;
       const nextSignature = JSON.stringify({
         nearby: nearby && { type: nearby.type, id: nearby.id, name: nearby.name, prompt: nearby.prompt },
-        dialogue: dialogue && { characterId: dialogue.characterId, characterName: dialogue.characterName,
+        dialogue: dialogue && { characterId: dialogue.characterId, characterName: dialogue.characterName, sceneId: dialogue.sceneId, sceneTitle: dialogue.sceneTitle, groupScene: dialogue.groupScene, participants: dialogue.participants,
           line: dialogue.line, topics: dialogue.topics, choices: dialogue.choices, history: dialogue.history, historyEntries: dialogue.historyEntries, speech: dialogue.speech && { status: dialogue.speech.status, viseme: dialogue.speech.viseme } }
       });
       if (nextSignature === signature) return;
