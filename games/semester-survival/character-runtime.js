@@ -55,6 +55,8 @@
       if (disposed) throw new Error('Character runtime has been disposed.');
       const dt = Math.max(0, Math.min(Number(delta) || 0, 1 / 20));
       lastInput = input.consume() || {};
+      const layout = sceneLayout();
+      if (layout && layout.depthBounds && typeof controller.setDepthBounds === 'function') controller.setDepthBounds(layout.depthBounds);
       movement = controller.update(dt, {
         moveX: lastInput.moveX,
         moveY: lastInput.moveY,
@@ -89,6 +91,8 @@
 
     function reset(position) {
       if (disposed) throw new Error('Character runtime has been disposed.');
+      const layout = sceneLayout();
+      if (layout && layout.depthBounds && typeof controller.setDepthBounds === 'function') controller.setDepthBounds(layout.depthBounds);
       movement = controller.reset(position || {});
       animator.reset();
       const played = animator.play('idle', movement.facing);
