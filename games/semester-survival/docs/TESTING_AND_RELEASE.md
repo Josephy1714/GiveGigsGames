@@ -21,3 +21,12 @@ Folder strictly below 10,000,000 bytes. No remote scripts, fonts, images, audio 
 - [ ] Metadata/catalogue match actual genre.
 - [ ] Offline and package-size checks pass.
 - [ ] PR includes controls, screenshots/clip and tests performed.
+
+## NPC navigation acceptance
+
+- Every navigation node resolves to an authored hotspot in the mounted scene.
+- Every edge references valid, distinct nodes; directed edges remain directed.
+- Route planner returns a shortest path through authored edges and never invents a shortcut.
+- Disconnected graphs and missing graph/anchors return explicit unavailable states.
+- Offscreen NPCs never receive fabricated local positions.
+- No NPC is marked visually ready or movement ready until production artwork, actor controller integration, collision/path review and in-game animation QA are complete.
