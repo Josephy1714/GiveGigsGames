@@ -6,5 +6,14 @@ assert.deepEqual(Object.keys(world.districts).sort(), ['campus','city','residenc
 assert.equal(world.semesterArcs.length, 8);
 assert.ok(world.semesterArcs.every((arc, i) => arc.semester === i + 1 && arc.chapters.length >= 3));
 assert.equal(world.characters.amina.name, 'Amina');
+assert.equal(world.characters.jay.role, 'Protagonist');
+assert.equal(world.characters.einstein.name, 'Einstein');
+assert.equal(world.characters.ernest.name, 'Ernest');
+assert.equal(world.characters.sumeya.name, 'Sumeya');
+assert.match(world.characters.amina.visualProfile.clothing, /hijab/);
+assert.match(world.characters.sumeya.visualProfile.clothing, /hijab/);
+assert.equal(world.characters.amina.visualProfile.status, 'model-sheet-required');
+assert.equal(world.characters.sumeya.visualProfile.status, 'model-sheet-required');
+assert.ok(['brian', 'wanjiku', 'njeri', 'mwangi'].every(id => world.characters[id]));
 assert.ok(world.districts.township.places.some(place => place.id === 'mama-njeri-kiosk'));
 console.log('world-content tests passed');
