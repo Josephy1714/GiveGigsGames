@@ -2,6 +2,10 @@
 
 This is the first district-specific 2.5D layout contract for University Campus. It is a production handoff for environment artists and level designers, **not a finished scene**. Coordinates are a first-pass design grid and must be checked against the approved paintover before any production manifest is generated.
 
+## Visual quality target
+
+Use the two user-supplied campus references as quality guidance: the first demonstrates a landscaped institutional courtyard with layered trees, planted beds, benches, warm natural light and cinematic depth; the second demonstrates a contemporary academic walkway with glass façades, a strong vanishing point, ordered trees, seating, noticeboards and a crisp polished anime-background finish. These are references, not assets to copy. The game campus must read as a credible Kenyan university environment, not a Japanese campus: do not reproduce Japanese signage, cherry blossoms or ungrounded foreign architecture. Maintain a premium anime environmental finish while grounding buildings, vegetation, signage and daily details in the game's Kenyan setting.
+
 ## Locked scene footprint
 
 - Design world: 3840 × 1080 units.
