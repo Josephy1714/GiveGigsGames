@@ -34,3 +34,7 @@ Most controller state names map directly to clip names. The controller's `land-r
 ## Current scope boundary
 
 This is a reusable integration runtime, not yet the shipped playable game. The game entrypoint is intentionally unchanged until authored character atlases, environment scenes, interactions, UI, and the complete game loop are integrated and browser-tested.
+
+## Collision integration
+
+The locomotion controller accepts an optional collision world through `setCollisionWorld`. Before applying scene bounds, it submits the proposed horizontal/depth displacement and stable collision radius to the authored collision runtime. The returned resolved position replaces the proposed position; velocity directed into a blocking surface is cancelled while tangential movement remains available. Collision geometry is independent of animation pivots and sprite dimensions. See [Collision and Contact](COLLISION_AND_CONTACT.md) for the authored shape/material contract. An empty collider list is not evidence of collision-ready production content.
