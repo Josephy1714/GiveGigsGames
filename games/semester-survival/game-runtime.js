@@ -74,7 +74,8 @@
   const phoneRuntime=modules.phone.create({lifeEngine:life,world:world,inputManager:input,universityServices:services,weatherRuntime:weather,onTravel:travelTo,onEvent:function(event){publish(event,'student-phone');}});
   phone=phoneRuntime;
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,weatherRuntime:weather,onEvent:function(event){publish(event,'interaction');}});
-  npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});\n   npcActors=modules.npcActors.create({world:world,scheduleRuntime:npcSchedules,navigationRuntime:npcNavigation,onEvent:function(event){publish(event,'npc-actors');}});
+  npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});
+   npcActors=modules.npcActors.create({world:world,scheduleRuntime:npcSchedules,navigationRuntime:npcNavigation,onEvent:function(event){publish(event,'npc-actors');}});
   const collisionWorld=modules.collision.create({onEvent:function(event){publish(event,'collision');}});
   const gameplayZones=modules.zones.create({onEvent:function(event){publish(event,'gameplay-zones');}});
   controller.setCollisionWorld(collisionWorld);
