@@ -1,6 +1,7 @@
 # Visual Production Bible
 
 ## Locked presentation direction
+The cross-game quality contract is defined in [PREMIUM_PRESENTATION_STANDARD.md](PREMIUM_PRESENTATION_STANDARD.md). It governs residence, township, campus, city, character art, animation, UI, weather, effects, audio and device delivery—not just environment backgrounds.
 The game retains its 2.5D exploration camera. Its visual identity combines cinematic anime environmental composition with premium anime-game character readability and production discipline. High-resolution source art is authored for crisp presentation; runtime output scales to the device and must not assume every phone can render at native 4K.
 
 ## User-approved visual reference direction
@@ -11,6 +12,7 @@ The two campus images supplied by the user are the current environment-quality r
 These are quality and composition references, not game assets and not permission to reproduce their exact buildings, signage or location. Translate the finish into a recognisably Kenyan university and Nairobi student world. Do not copy Japanese signage, cherry blossoms, foreign campus identity or ungrounded architecture. Every district needs its own locally credible design language.
 
 ## Environment quality bar
+Every district must meet the same premium finish while retaining its own credible Kenyan identity. Residence is intimate and lived-in; township is dense but navigable; campus is aspirational and landscaped; city communicates broader urban scale.
 - Wide establishing composition with a readable focal destination and intentional foreground, midground and background separation.
 - Convincing perspective, architectural scale, coherent windows/doors/stairs, believable pavement and material transitions.
 - Rich but controlled vegetation, planted edges, benches, lamps, noticeboards and human-scale props where appropriate.
