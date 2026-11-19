@@ -149,3 +149,18 @@ test('draws approved player and NPC animators in ground-position order',()=>{
  assert.deepEqual(drawn,['brian','jay','amina']);
  assert.equal(result.charactersDrawn,3);assert.equal(result.npcCharactersDrawn,2);
 });
+
+test('interleaves character sprites between authored background and foreground layers',()=>{
+ const {canvas,calls}=fakeCanvas();const renderer=api.create({canvas,cameraSmoothing:0});
+ renderer.resize(960,540,1);
+ const layered=Object.assign({},scene,{characterLayerZIndex:1});
+ renderer.mountScene('campus-main',{district:'campus',scene:layered,assets});
+ const actor={x:10,y:20,animator:{render(){calls.push(['actor','jay']);return {drawn:true};}}};
+ renderer.render({character:actor});
+ const order=calls.filter(call=>call[0]==='drawImage'||(Array.isArray(call)&&call[0]==='actor')).map(call=>call[0]==='actor'?'character':'layer');
+ assert.deepEqual(order,['layer','character','layer']);
+ assert.equal(renderer.getLayout().characterLayerZIndex,1);
+});
+test('rejects a non-finite authored character layer depth',()=>{
+ assert.throws(()=>api.validateScene(Object.assign({},scene,{characterLayerZIndex:NaN}),assets),/Character layer z-index must be finite/);
+});
