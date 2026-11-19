@@ -89,7 +89,7 @@ tick = function(dt){
   g.bossAt+=1050;
  }
  if(g.energy<=0 && save.up.revive>0 && !g.revived){
-  g.revived=true;g.energy=35;g.inv=2;save.up.revive=0;saveNow();
+  g.revived=true;g.energy=35;g.inv=2;
  }
 };
 const oldRender = render;
