@@ -46,7 +46,7 @@
         if (frame.pivotX !== undefined && !Number.isFinite(frame.pivotX)) errors.push(name + ': invalid pivotX.');
         if (frame.pivotY !== undefined && !Number.isFinite(frame.pivotY)) errors.push(name + ': invalid pivotY.');
         if (frame.events !== undefined && (!Array.isArray(frame.events) ||
-            frame.events.some(event => typeof event !== 'string' || !event.trim()))) {
+            frame.events.some(event => !(typeof event === 'string' && event.trim()) && !(event && typeof event === 'object' && typeof event.name === 'string' && event.name.trim() && (event.offsetX === undefined || Number.isFinite(event.offsetX)) && (event.offsetDepth === undefined || Number.isFinite(event.offsetDepth)))))) {
           errors.push(name + ': frame events must be non-empty strings.');
         }
       });
@@ -128,7 +128,7 @@
           const resolved = resolveFrame(clip, raw / clip.fps);
           const events = resolved.frame.events || [];
           events.forEach(function (event) {
-            pendingEvents.push(Object.freeze({ clip: current.name, frameIndex: resolved.index, event: event }));
+            pendingEvents.push(Object.freeze({ clip: current.name, frameIndex: resolved.index, event: typeof event === 'string' ? event : event.name, offsetX: typeof event === 'object' ? (event.offsetX || 0) : 0, offsetDepth: typeof event === 'object' ? (event.offsetDepth || 0) : 0 }));
           });
         }
         lastEventFrame = eventFrame;
