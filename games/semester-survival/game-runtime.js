@@ -219,6 +219,7 @@
     npcSchedules.update(life.getState().calendar,destination);
     npcNavigation.update();
      npcActors.update(0);
+    drainNpcAnimationEvents();
     renderer.setAtmosphere(weather.getRenderState());
     interaction.refresh(getPosition());
     publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');
@@ -236,6 +237,7 @@
       npcSchedules.update(life.getState().calendar,previous);
       npcNavigation.update();
      npcActors.update(0);
+      drainNpcAnimationEvents();
       renderer.setAtmosphere(weather.getRenderState());
       interaction.refresh(getPosition());
      }catch(rollbackError){onError(rollbackError);}
