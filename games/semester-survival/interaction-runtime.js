@@ -79,7 +79,7 @@
     function startVoice(characterId, key) {
       if (!speech || typeof speech.start !== 'function') return null;
       const characterTracks = voiceTracks[characterId] || {};
-      const track = key === 'introduction' ? characterTracks.introduction : (characterTracks.topics && characterTracks.topics[key]);
+      const track = key === 'introduction' ? characterTracks.introduction : ((characterTracks.lines && characterTracks.lines[key]) || (characterTracks.topics && characterTracks.topics[key]));
       if (!track) { speech.stop(); return null; }
       try {
         const started = speech.start(track);
@@ -96,8 +96,12 @@
         characterId: dialogue.characterId,
         characterName: dialogue.characterName,
         line: dialogue.line,
+        speakerId: dialogue.characterId,
+        speakerName: dialogue.characterName,
         topics: Object.freeze(dialogue.topics.slice()),
+        choices: Object.freeze(dialogue.choices.map(function (choice) { return Object.freeze(Object.assign({}, choice)); })),
         history: Object.freeze(dialogue.history.slice()),
+        historyEntries: Object.freeze(dialogue.historyEntries.map(function (entry) { return Object.freeze(Object.assign({}, entry)); })),
         speech: speech && typeof speech.getState === 'function' ? speech.getState() : null
       });
     }
@@ -112,13 +116,23 @@
       })) : null;
       return getNearby();
     }
+    function availableChoices(character, relationship) {
+      const authored = Array.isArray(character.conversationChoices) ? character.conversationChoices : [];
+      const state = relationship || {};
+      const choices = authored.filter(function (choice) {
+        const gate = choice.requires || {};
+        return (!Number.isFinite(gate.affinity) || (state.affinity || 0) >= gate.affinity) && (!Number.isFinite(gate.trust) || (state.trust || 0) >= gate.trust);
+      }).map(function (choice) { return { id: choice.id, label: choice.label, kind: 'authored' }; });
+      if (choices.length) return choices;
+      return Object.keys(character.topics || {}).map(function (topic) { return { id: topic, label: topic.replace(/[-_]/g, ' '), kind: 'topic' }; });
+    }
     function openDialogue(characterId) {
       const character = world.characters[characterId];
       if (!character) fail('Unknown character: ' + characterId);
       const topicKeys = Object.keys(character.topics || {});
       dialogue = {
         characterId: characterId, characterName: character.name,
-        line: character.introduction, topics: topicKeys, history: [character.introduction]
+        line: character.introduction, topics: topicKeys, choices: availableChoices(character, null), history: [character.introduction], historyEntries: [{ speakerId: characterId, speakerName: character.name, text: character.introduction, expression: 'welcoming' }]
       };
       setDialogueContext(true);
       startVoice(characterId, 'introduction');
@@ -130,18 +144,34 @@
     function chooseTopic(topic) {
       if (!dialogue) fail('No conversation is currently open.');
       const character = world.characters[dialogue.characterId];
-      const responses = character.topics && character.topics[topic];
-      if (!Array.isArray(responses) || !responses.length) fail('That conversation topic is not available.');
-      const line = responses[0];
+      const choice = dialogue.choices.find(function (item) { return item.id === topic; });
+      if (!choice) fail('That conversation choice is not currently available.');
+      let line, effect = { affinity: 1, trust: 1 }, expression = 'thoughtful';
+      if (choice.kind === 'authored') {
+        const authored = character.conversationChoices.find(function (item) { return item.id === topic; });
+        if (!authored) fail('That authored conversation choice is unavailable.');
+        const relationshipKey = RELATIONSHIP_BY_CHARACTER[dialogue.characterId];
+        const relationship = relationshipKey && life.getState().relationships ? life.getState().relationships[relationshipKey] : null;
+        const gate = authored.requires || {};
+        if ((Number.isFinite(gate.affinity) && (!relationship || relationship.affinity < gate.affinity)) || (Number.isFinite(gate.trust) && (!relationship || relationship.trust < gate.trust))) fail('This conversation option is not unlocked yet.');
+        line = authored.response;
+        effect = authored.effects || effect;
+        expression = authored.expression || expression;
+      } else {
+        const responses = character.topics && character.topics[topic];
+        if (!Array.isArray(responses) || !responses.length) fail('That conversation topic is not available.');
+        line = responses[0];
+      }
       dialogue.line = line;
       dialogue.history.push(line);
+      dialogue.historyEntries.push({ speakerId: dialogue.characterId, speakerName: dialogue.characterName, text: line, expression: expression });
       startVoice(dialogue.characterId, topic);
       const relationshipKey = RELATIONSHIP_BY_CHARACTER[dialogue.characterId];
       if (relationshipKey && typeof life.recordRelationship === 'function') {
-        const effects = options.topicEffects && options.topicEffects[dialogue.characterId] && options.topicEffects[dialogue.characterId][topic] || { affinity: 1, trust: 1 };
+        const effects = options.topicEffects && options.topicEffects[dialogue.characterId] && options.topicEffects[dialogue.characterId][topic] || effect;
         life.recordRelationship(relationshipKey, effects, 'Discussed ' + topic);
       }
-      const event = Object.freeze({ type: 'dialogue:topic', characterId: dialogue.characterId, topic: topic, line: line, relationship: relationshipKey || null });
+      const event = Object.freeze({ type: 'dialogue:topic', characterId: dialogue.characterId, topic: topic, line: line, expression: expression, relationship: relationshipKey || null });
       onEvent(event);
       lastResult = event;
       return getDialogue();
