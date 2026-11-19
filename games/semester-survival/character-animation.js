@@ -163,7 +163,7 @@
       return snapshot();
     }
 
-    return Object.freeze({ play, update, snapshot, render, reset });
+    return Object.freeze({ play, update, snapshot, render, reset, hasClip: name => library.has(name) });
   }
 
   function createControllerBinding(animator) {
