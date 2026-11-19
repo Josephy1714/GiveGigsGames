@@ -72,7 +72,12 @@ try {
   await page.waitForFunction(() => window.__runnerSmoke.state().jump === 0);
   await swipe(180, 420, 180, 650);
   assert.ok(await page.evaluate(() => window.__runnerSmoke.state().slide > 0), "Down swipe should trigger a slide");
+  await page.waitForFunction(() => window.__runnerSmoke.state().animationClip === "slide-loop");
+  assert.equal(await page.evaluate(() => window.__runnerSmoke.state().slidePhase), "loop", "Jay should transition from slide anticipation into the authored slide loop");
   await page.waitForFunction(() => window.__runnerSmoke.state().slide === 0);
+  assert.equal(await page.evaluate(() => window.__runnerSmoke.state().animationClip), "slide-recover", "Jay should play the authored slide recovery");
+  await page.waitForFunction(() => window.__runnerSmoke.state().animationClip === "sprint");
+  assert.equal(await page.evaluate(() => window.__runnerSmoke.state().slidePhase), null, "Jay should return to normal running after recovery");
   await page.keyboard.press("ArrowDown");
   assert.ok(await page.evaluate(() => window.__runnerSmoke.state().slide > 0), "Down input should activate Jay's slide");
   await page.waitForFunction(() => window.__runnerSmoke.state().slide === 0);
