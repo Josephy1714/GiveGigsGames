@@ -25,3 +25,12 @@ Every interactive anchor declared by the environment runtime must have a corresp
 ## Character depth plane
 
 Scene manifests may set a finite `characterLayerZIndex`. Layers at or below this z-index render behind the player/NPC sprite plane; higher z-index layers render afterward and can occlude characters (for example, foreground railings, foliage or furniture). If omitted, the renderer preserves the legacy behaviour by placing characters in front of all scene layers. The layer split is authored per scene; the renderer never guesses which foreground objects should cover a character.
+
+## Character grounding and depth perspective
+
+The compositor renders a restrained elliptical contact shadow before each approved character atlas frame. The shadow is anchored to the actor's ground position rather than the airborne sprite position, and its opacity/size responds to jump height so a jumping character visually separates from the floor without appearing to float. Actors may override shadow dimensions/opacity or disable the shadow for a specific authored scene.
+
+When an actor supplies its authored depth value, the compositor applies a small bounded perspective scale across the scene's declared depth range. The player render payload supplies both the airborne draw position and its ground anchor; NPC renderables without explicit depth retain their authored base scale. This is a presentation aid only: collision, navigation, actor sorting and world coordinates remain unchanged.
+
+The effect is intentionally subtle and inexpensive for mobile canvas rendering. It does not replace approved character artwork, authored animation frames, environment lighting or a device-level visual review.
+
