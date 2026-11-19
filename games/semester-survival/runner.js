@@ -3,8 +3,8 @@
 "use strict";
 const $=id=>document.getElementById(id), canvas=$("runner-stage"), ctx=canvas.getContext("2d",{alpha:false});
 const overlay=$("runner-overlay"), title=$("overlay-title"), copy=$("overlay-copy"), startBtn=$("start-run"), pauseBtn=$("pause-run");
-let startAction=null,lastStartActivation=0;
-function activateStart(){const now=performance.now();if(now-lastStartActivation<500)return;lastStartActivation=now;if(typeof startAction==="function")startAction();}
+let startAction=()=>start(),lastStartActivation=0;
+function activateStart(){const now=performance.now();if(now-lastStartActivation<500)return;lastStartActivation=now;if(typeof startAction==="function")startAction();else start();}
 startBtn.addEventListener("click",activateStart);
 startBtn.addEventListener("pointerup",e=>{if(e.pointerType==="touch"||e.pointerType==="pen"){e.preventDefault();activateStart();}});
 const hud=$("runner-hud"), scoreEl=$("score"), distanceEl=$("distance"), coinsEl=$("coins"), semesterEl=$("semester"), boostEl=$("boost-status"), toast=$("runner-toast");
