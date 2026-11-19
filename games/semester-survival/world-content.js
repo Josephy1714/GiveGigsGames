@@ -235,6 +235,19 @@
         if (!districts[exit] || !districts[exit].exits.includes(key)) throw new Error('World route must be reciprocal: ' + key + ' -> ' + exit);
       });
     });
+    Object.keys(characters).forEach(function (characterId) {
+      const character = characters[characterId];
+      const choices = character.conversationChoices || [];
+      if (!Array.isArray(choices)) throw new Error('Conversation choices must be an array: ' + characterId);
+      const choiceIds = new Set();
+      choices.forEach(function (choice) {
+        if (!choice || typeof choice.id !== 'string' || !choice.id.trim() || choiceIds.has(choice.id)) throw new Error('Conversation choice requires a unique id: ' + characterId);
+        choiceIds.add(choice.id);
+        if (typeof choice.label !== 'string' || !choice.label.trim() || typeof choice.response !== 'string' || !choice.response.trim()) throw new Error('Conversation choice requires authored label and response: ' + characterId + '/' + choice.id);
+        if (choice.requires && ['affinity', 'trust'].some(function (key) { return choice.requires[key] !== undefined && (!Number.isFinite(choice.requires[key]) || choice.requires[key] < 0 || choice.requires[key] > 100); })) throw new Error('Invalid relationship gate: ' + characterId + '/' + choice.id);
+        if (choice.effects && ['affinity', 'trust'].some(function (key) { return choice.effects[key] !== undefined && (!Number.isFinite(choice.effects[key]) || Math.abs(choice.effects[key]) > 25); })) throw new Error('Invalid relationship effect: ' + characterId + '/' + choice.id);
+      });
+    });
     if (semesterArcs.length !== 8) throw new Error('Campaign must contain eight semester arcs.');
     semesterArcs.forEach(function (arc, index) {
       if (arc.semester !== index + 1 || !arc.chapters.length) throw new Error('Invalid semester arc: ' + arc.semester);
