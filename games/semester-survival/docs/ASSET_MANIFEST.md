@@ -16,7 +16,7 @@ For every final asset record exact path, author/source, licence, original URL, e
 
 The scene asset pipeline validates and preloads authored local images declared by a version-1 manifest. Each asset needs a unique ID, safe relative path, supported role (`background`, `layer`, `prop`, `character-atlas`), exact pixel dimensions, a maximum byte budget, and author/licence attribution. Remote URLs, absolute paths, traversal paths, duplicate IDs and uncredited assets are rejected.
 
-Each district scene manifest supplied to `environment-runtime.js` must declare a non-empty `requiredAssetIds` array. Every required ID must exist in the asset pipeline manifest and belong to that same district. This prevents a district from borrowing another district's asset to satisfy readiness.
+Each district scene manifest supplied to `environment-runtime.js` must declare a non-empty `requiredAssetIds` array. Every spawn point must be a numeric `{ x, depth }` world coordinate; string labels are rejected. Optional `npcAnchors` entries must reference a known authored character and a real hotspot in the rendered scene. Every required ID must exist in the asset pipeline manifest and belong to that same district. This prevents a district from borrowing another district's asset to satisfy readiness.
 
 Example shape (illustrative only; it does not claim these files exist):
 
@@ -42,8 +42,9 @@ const sceneManifest = {
   residence: {
     sceneId: "residence-main",
     requiredAssetIds: ["residence-room-background"],
-    spawnPoints: { default: "room-entry" },
-    interactables: {}
+    spawnPoints: { default: { x: 240, depth: 0 } },
+    interactables: {},
+    npcAnchors: []
   }
 };
 ```
