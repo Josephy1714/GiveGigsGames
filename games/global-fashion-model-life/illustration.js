@@ -2,11 +2,13 @@
 
 function createStudio(canvas) {
   const T = window.THREE;
-  const renderer = new T.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true});
+  const renderer = new T.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true, powerPreference:"high-performance"});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(640,760,false);
   renderer.outputEncoding = T.sRGBEncoding;
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.12;
+  renderer.toneMappingExposure = 1.15;
+  renderer.physicallyCorrectLights = true;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
   const scene = new T.Scene();
@@ -46,8 +48,9 @@ function createStudio(canvas) {
     lamp.position.set(...pos);
     if (cast) {
       lamp.castShadow = true;
-      lamp.shadow.mapSize.set(1024, 1024);
-      lamp.shadow.bias = -0.0005;
+      lamp.shadow.mapSize.set(2048, 2048);
+      lamp.shadow.radius = 2.5;
+      lamp.shadow.bias = -0.0004;
       lamp.shadow.camera.near = 0.5;
       lamp.shadow.camera.far = 15;
       lamp.shadow.camera.left = -1.6;
@@ -57,9 +60,9 @@ function createStudio(canvas) {
     }
     scene.add(lamp);
   }
-  light(0xffe7d6,1.65,[3,4,5],true);
-  light(0xf5abda,.92,[-3,3,-3]);
-  light(0xb4c9ff,.55,[-4,1,3]);
+  light(0xffe7d6,3.4,[3,4,5],true);
+  light(0xf5abda,1.9,[-3,3,-3]);
+  light(0xb4c9ff,1.2,[-4,1,3]);
 
   const textureCanvas = document.createElement("canvas");
   textureCanvas.width = textureCanvas.height = 768;
@@ -283,35 +286,33 @@ function createStudio(canvas) {
           line([[angle,base],[angle+side*(i+2)*.006,base+.004+a.lashes*.00013]],.7+a.lashes*.015);
         }
       });
-      layer(palette("hairColor",a.hairColor),.95,()=>{
+      layer(palette("hairColor",a.hairColor),0.55+(a.browFill||45)/120,()=>{
         const points=[];
-        for(let i=0;i<10;i++){
-          const t=i/9;
-          points.push([phi+side*(t-.5)*.55,f.brow+Math.sin(t*Math.PI)*f.arch-t*.008]);
+        for(let i=0;i<14;i++){
+          const t=i/13;
+          points.push([phi+side*(t-.5)*.52,f.brow+Math.sin(t*Math.PI)*f.arch-t*.007]);
         }
-        line(points,4.6);
-        for(let i=0;i<17;i++){
-          const t=i/16;
-          const x=phi+side*(t-.5)*.55;
-          const y=f.brow+Math.sin(t*Math.PI)*f.arch-t*.008;
-          line([[x,y-.005],[x+side*.019,y+.006*(1-t)]],1.15);
-        }
+        line(points,3.2);
       });
       layer("#502837",.67,()=>ellipse(side*f.noseWidth*.67,f.noseY-.014,f.noseWidth*.24,.005));
     }
     haze(0,.242,.087,.084,"#ffdbc2",.12+a.highlight/400);
     haze(0,.156,.17,.030,"#8f4e4b",.13);
     haze(0,.071,.32,.031,"#ffcaa7",a.highlight/420);
-    const lip=palette("lip",a.lip);
     const center=f.lipY;
     const size=f.lipHeight;
-    layer(lip,.30+a.lipIntensity*.0068,()=>{
+    layer(lipColor,.30+a.lipIntensity*.0068,()=>{
       paint.beginPath();
       paint.moveTo(X(-f.lipWidth),Y(center));
       paint.bezierCurveTo(X(-f.lipWidth*.5),Y(center+size),X(-.076),Y(center+size*.85),X(0),Y(center+size*.53));
       paint.bezierCurveTo(X(.076),Y(center+size*.85),X(f.lipWidth*.5),Y(center+size),X(f.lipWidth),Y(center));
       paint.bezierCurveTo(X(f.lipWidth*.49),Y(center-size),X(-f.lipWidth*.49),Y(center-size),X(-f.lipWidth),Y(center));
       paint.fill();
+      if((a.lipLiner||0)>5){
+        paint.strokeStyle="#471d29";
+        paint.lineWidth=1.2+(a.lipLiner||0)/45;
+        paint.stroke();
+      }
     });
     layer("#5a2e3b",.76,()=>line([[-f.lipWidth,center],[-f.lipWidth*.48,center-.002],[0,center-.006],[f.lipWidth*.48,center-.002],[f.lipWidth,center]],2.1));
     haze(-.08,center-size*.46,.19,.007,"#ffcfca",a.finish==="gloss"?.76:a.finish==="satin"?.28:.08);
@@ -336,13 +337,13 @@ function createStudio(canvas) {
     const profile=[[-.035,.027,.039,.026],[f.chin+.037,f.jaw*.74,.106,.006],[.107,f.jaw,.133,0],
       [.165,f.width*.86+f.cheek,.142,0],[.23,f.width+f.cheek*.6,.155,-.005],[.30,f.width,.153,0],
       [.367,f.width*.98,.158,-.013],[.426,f.width*.86,.147,-.025],[.479,f.width*.57,.107,-.029],[.505,.003,.006,-.032]];
-    rings(pivot,material("#ffffff",.76,0,texture),profile,(angle,x,y)=>{
+    rings(pivot,material("#ffffff",.52,0,texture),profile,(angle,x,y)=>{
       const forward=Math.pow(Math.max(0,Math.cos(angle)),4);
       const eye=gaussian(Math.abs(angle)-f.eyePhi,y-f.eyeY,.26,.034);
-      return forward*(.084*gaussian(angle,y-f.noseY,f.noseWidth,.030)
-        +.05*gaussian(angle,y-f.noseY-.036,f.noseWidth*.73,.068)
-        -.018*eye+.029*gaussian(angle,y-f.lipY,.33,.029)
-        +.022*gaussian(Math.abs(angle)-.52,y-.217,.30,.047));
+      return forward*(.034*gaussian(angle,y-f.noseY,f.noseWidth*1.15,.034)
+        +.022*gaussian(angle,y-f.noseY-.036,f.noseWidth*.85,.072)
+        -.020*eye+.026*gaussian(angle,y-f.lipY,.33,.029)
+        +.024*gaussian(Math.abs(angle)-.52,y-.217,.30,.047));
     },96,8);
     for(const side of [-1,1]){
       oval(pivot,skin,side*f.width*.973,.193,-.024,.034,.062,.026);
