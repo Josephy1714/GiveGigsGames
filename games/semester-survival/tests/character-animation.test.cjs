@@ -112,6 +112,8 @@ test('emits authored frame markers once on entry and drains them deterministical
 test('validates frame event marker metadata and does not repeat once-clip markers after completion',()=>{
   const image={width:32,height:32};
   const malformed={clips:{bad:{fps:2,frames:[{x:0,y:0,width:16,height:32,events:['ok',3]}]}}};
+  const malformedOffset={clips:{bad:{fps:2,frames:[{x:0,y:0,width:16,height:32,events:[{name:'left-foot-contact',offsetX:'near'}]}]}}};
+  assert.ok(animation.validateManifest(malformedOffset,image).some(error=>error.includes('frame events')));
   assert.ok(animation.validateManifest(malformed,image).some(error=>error.includes('frame events')));
   const library=animation.createClipLibrary({clips:{finish:{fps:2,playback:'once',frames:[
     {x:0,y:0,width:16,height:32,events:['start']},
@@ -123,4 +125,14 @@ test('validates frame event marker metadata and does not repeat once-clip marker
   assert.deepEqual(animator.drainEvents().map(event=>event.event),['start','finish']);
   for(let i=0;i<6;i++) animator.update(0.1);
   assert.deepEqual(animator.drainEvents(),[]);
+});
+
+
+test('supports authored foot contact offsets while preserving legacy string markers',()=>{
+ const image={width:32,height:32};
+ const library=animation.createClipLibrary({clips:{walk:{fps:2,frames:[{x:0,y:0,width:16,height:32,events:[{name:'left-foot-contact',offsetX:-9,offsetDepth:4},'cloth-swish']}]}}},image);
+ const animator=animation.createAnimator(library);animator.play('walk',-1);animator.update(0);
+ assert.deepEqual(animator.drainEvents().map(item=>({event:item.event,offsetX:item.offsetX,offsetDepth:item.offsetDepth})),[
+  {event:'left-foot-contact',offsetX:-9,offsetDepth:4},{event:'cloth-swish',offsetX:0,offsetDepth:0}
+ ]);
 });
