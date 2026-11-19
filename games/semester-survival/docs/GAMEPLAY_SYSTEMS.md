@@ -30,3 +30,7 @@ Weather changes are deterministic for a given calendar block and district, so sa
 Every authored place declares whether it is indoor, sheltered or outdoor; world validation rejects places without this metadata. When a player starts an exposed activity during rain, the interaction runtime emits a clear shelter advisory while allowing the activity to proceed. The current milestone does not apply hidden time, money, grade or movement penalties.
 
 NPC weather-state descriptors are derived from the same simulated precipitation: indoor characters remain indoors, outdoor schedules may switch to seeking shelter in heavy rain, and exposed activity can be reduced in rain. These are behaviour-state signals for future authored NPC animation and schedules, not a claim that umbrella sprites, wet-clothing art or shelter animations are already present.
+
+## University traversal hazards and boosts
+
+Campus and township traversal includes authored student-life conditions: muddy construction paths, crowded class-change corridors, wet floors and equipment load. Helpful routes include the athletics track, purchased coffee and water-break recovery. These effects are implemented by the gameplay-zone runtime and modify movement speed, acceleration and stamina; see [University Obstacles and Boosts](UNIVERSITY_OBSTACLES_AND_BOOSTS.md). They never alter GPA through random chance.
