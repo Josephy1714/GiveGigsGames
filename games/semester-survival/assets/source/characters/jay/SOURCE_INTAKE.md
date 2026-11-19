@@ -22,7 +22,7 @@ All uploaded source images are preserved in `assets/source/characters/jay/`. Thi
 | `Meta_AI_916882119_2702665886828845_97200770314772330_n_20261119_112422.webp` | Get-up recovery | 4×2 sheet; floor/kneel-to-standing recovery is present. Verify the transition does not pop and that the final standing frame aligns with idle. |
 | `Meta_AI_916882035_28451130907895002_8609570660650290104_n_20261119_115527.webp` | Greeting / wave | 4×2 sheet; expressive upper-body wave. Lower body is cropped, so use only for a compatible interaction pose, not full-body locomotion. |
 | `Meta_AI_916882081_994725666517201_3357036583534970929_n_20261119_120922.webp` | Phone use | 4×2 sheet; phone interaction is readable. Upper-body framing means it needs a dedicated interaction anchor/pose rather than a full-body locomotion clip. |
-| `Meta_AI_916953425_2325867808197235_9058160886828845_n_20261119_121150.webp` | Sit-down / seated / stand-up | 4×2 sheet; sequence is understandable and identity is consistent. The seated pose has no visible chair, so it must be staged against an authored seat prop and aligned to its seat anchor. |
+| `Meta_AI_916953425_2325867808197235_9058160883401323934_n_20261119_121150.webp` | Sit-down / seated / stand-up | 4×2 sheet; sequence is understandable and identity is consistent. The seated pose has no visible chair, so it must be staged against an authored seat prop and aligned to its seat anchor. |
 
 ## Important file-format audit
 
