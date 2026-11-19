@@ -139,3 +139,13 @@ test('validates navigation edges against declared nodes and freezes the graph',(
  assert.deepEqual(runtime.getNavigationGraph(),null);
  assert.throws(()=>context.SemesterEnvironmentRuntime.create({world,sceneManifest:{...valid,residence:{...valid.residence,navigation:{nodes:[{id:'room',anchor:'room-door'}],edges:[{from:'room',to:'missing'}]}}},assetPipeline:makePipeline()}),/invalid navigation edge/);
 });
+
+test('draws approved player and NPC animators in ground-position order',()=>{
+ const {canvas,calls}=fakeCanvas();const renderer=api.create({canvas,cameraSmoothing:0});
+ renderer.resize(960,540,1);renderer.mountScene('campus-main',{district:'campus',scene,assets});
+ function actor(id){return {animator:{render(ctx,x,y){calls.push(['actor',id,x,y]);return {drawn:true};}},x:10,y:20,scale:1};}
+ const result=renderer.render({character:Object.assign(actor('jay'),{y:25}),characters:[actor('brian'),Object.assign(actor('amina'),{y:30})]});
+ const drawn=calls.filter(call=>call[0]==='actor').map(call=>call[1]);
+ assert.deepEqual(drawn,['brian','jay','amina']);
+ assert.equal(result.charactersDrawn,3);assert.equal(result.npcCharactersDrawn,2);
+});
