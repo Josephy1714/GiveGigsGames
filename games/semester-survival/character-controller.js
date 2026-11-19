@@ -118,13 +118,17 @@
         }
       }
 
-      if (c.dodgeTime > 0) {
-        c.x += c.dodgeDirection * 3.4 * dt;
-      }
-      c.x += c.vx * dt;
+      const dodgeDelta = c.dodgeTime > 0 ? c.dodgeDirection * 3.4 * dt : 0;
+      const deltaX = c.vx * dt + dodgeDelta;
+      const deltaDepth = c.vDepth * dt;
+      if (collisionWorld && typeof collisionWorld.moveCircle === 'function') {
+        const resolved = collisionWorld.moveCircle({ x: c.x, depth: c.depth }, { x: deltaX, depth: deltaDepth }, collisionRadius, 'player');
+        c.x = resolved.x; c.depth = resolved.depth;
+        if (resolved.blockedX) c.vx = 0;
+        if (resolved.blockedDepth) c.vDepth = 0;
+      } else { c.x += deltaX; c.depth += deltaDepth; }
       c.x = Math.max(xBounds.min, Math.min(xBounds.max, c.x));
       if ((c.x === xBounds.min && c.vx < 0) || (c.x === xBounds.max && c.vx > 0)) c.vx = 0;
-      c.depth += c.vDepth * dt;
       c.depth = Math.max(depthBounds.min, Math.min(depthBounds.max, c.depth));
       if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
       c.speed = Math.hypot(c.vx, c.vDepth);
