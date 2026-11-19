@@ -32,3 +32,6 @@ This directory is the production source of truth. Implementation decisions must 
 
 - STUDENT_PHONE.md — student phone, academic portal, registration, deadlines, inbox, notifications, finance ledger and host integration.
 - GAME_RUNTIME.md — central browser lifecycle, frame loop, event bus, travel, UI composition and in-game-only coursework policy.
+
+
+- NPC daily routines — authored schedule slots, weather-aware shelter destinations and explicit visual/pathing readiness gates.
