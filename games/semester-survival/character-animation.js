@@ -121,15 +121,17 @@
         elapsed += dt;
         const clip = library.get(current.name);
         const rawFrame = Math.floor(elapsed * clip.fps);
+        const eventFrame = (clip.playback || 'loop') === 'once'
+          ? Math.min(rawFrame, clip.frames.length - 1) : rawFrame;
         const last = lastEventFrame < 0 ? 0 : lastEventFrame + 1;
-        for (let raw = last; raw <= rawFrame; raw += 1) {
+        for (let raw = last; raw <= eventFrame; raw += 1) {
           const resolved = resolveFrame(clip, raw / clip.fps);
           const events = resolved.frame.events || [];
           events.forEach(function (event) {
             pendingEvents.push(Object.freeze({ clip: current.name, frameIndex: resolved.index, event: event }));
           });
         }
-        lastEventFrame = rawFrame;
+        lastEventFrame = eventFrame;
       }
       if (previous && blendElapsed < options.transitionSeconds) {
         previousElapsed += dt;
