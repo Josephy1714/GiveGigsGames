@@ -17,6 +17,7 @@ require('../university-services.js');
 require('../student-phone-runtime.js');
 require('../student-phone-ui.js');
 require('../weather-runtime.js');
+require('../npc-schedule-runtime.js');
 require('../game-runtime.js');
 
 class ElementMock{
@@ -99,6 +100,8 @@ test('central runtime exposes live weather and a three-day forecast',async()=>{
  await runtime.start();
  assert.ok(runtime.getState().weather);
  assert.equal(runtime.getState().weather.district,'residence');
+ assert.equal(runtime.getState().npcs.length,5);
+ assert.ok(runtime.getState().npcs.every(npc=>npc.visualReady===false&&npc.movementReady===false));
  assert.equal(runtime.getWeatherForecast().length,3);
  await runtime.travelTo('township');
  assert.equal(runtime.getState().weather.district,'township');
