@@ -73,7 +73,7 @@
     const c=item.collider,enter=!previous.has(id),normal=item.normal;
     const impact=Math.max(0,-(delta.x*normal.x+delta.depth*normal.depth));
     if(enter)onEvent(Object.freeze({type:'collision:enter',actorId,colliderId:id,material:c.material,effect:c.effect,normal}));
-    if(impact>0.15)onEvent(Object.freeze({type:'collision:impact',actorId,colliderId:id,material:c.material,effect:c.effect,intensity:clamp(impact/5,0,1),normal}));
+    if(impact>0.15)onEvent(Object.freeze({type:'collision:impact',actorId,colliderId:id,material:c.material,effect:c.effect,intensity:clamp(impact/5,0,1),position:Object.freeze({x:x,depth:z}),normal}));
    });
    previous.forEach(function(id){if(!current.has(id))onEvent(Object.freeze({type:'collision:exit',actorId,colliderId:id}));});
    if(current.size)active.set(actorId,current);else active.delete(actorId);
