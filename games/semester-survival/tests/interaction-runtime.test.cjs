@@ -7,7 +7,7 @@ function harness() {
   const events = [], focused = [], context = [], relationships = [];
   const world = {
     districts: { township: { places: [
-      { id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'] }
+      { id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'], exposure: 'outdoor' }
     ] } },
     characters: {
       njeri: { name: 'Mama Njeri', introduction: 'Karibu! What are you having today?', topics: { budget: ['Plan your meals for the week.'] } },
@@ -16,7 +16,7 @@ function harness() {
   };
   const environment = {
     getState() { return { district: 'township' }; },
-    getPlaces() { return [{ id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'], anchor: 'kiosk-hotspot', available: true }]; }
+    getPlaces() { return [{ id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'], exposure: 'outdoor', anchor: 'kiosk-hotspot', available: true }]; }
   };
   const renderer = {
     getHotspotBounds(id) { return id === 'kiosk-hotspot' ? { x: 100, y: 100, width: 40, height: 40, centerX: 120, centerY: 120 } : { x: 180, y: 100, width: 40, height: 40, centerX: 200, centerY: 120 }; },
@@ -29,8 +29,9 @@ function harness() {
     recordRelationship(key, changes, event) { relationships.push({ key, changes, event }); }
   };
   const input = { setContext(value) { context.push(value); } };
+  const weatherRuntime = { assessExposure(exposure) { return { exposure, advisory: 'Heavy rain: take shelter.', shelterRecommended: true, precipitation: 1 }; } };
   const runtime = globalThis.SemesterInteractionRuntime.create({
-    world, environment, renderer, lifeEngine: life, inputManager: input,
+    world, environment, renderer, lifeEngine: life, inputManager: input, weatherRuntime,
     npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] }
   });
   return { runtime, events, focused, context, relationships };
@@ -88,4 +89,13 @@ test('unknown topics and missing position fail explicitly', () => {
   assert.throws(() => h.runtime.refresh(null), /finite world/);
   h.runtime.openDialogue('njeri');
   assert.throws(() => h.runtime.chooseTopic('gossip'), /not available/);
+});
+
+test('outdoor activities surface clear weather advice without secretly blocking the activity',()=>{
+ const h=harness();
+ const result=h.runtime.interact({x:120,y:120},{interaction:'buy-meal'});
+ assert.equal(result.type,'interaction:completed');
+ assert.equal(result.weather.shelterRecommended,true);
+ assert.ok(h.events.some(event=>event.type==='weather:activity-advisory'&&event.message==='Heavy rain: take shelter.'));
+ assert.ok(h.events.some(event=>event.type==='activity'&&event.activity==='eat'));
 });
