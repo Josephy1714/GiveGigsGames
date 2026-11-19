@@ -33,3 +33,5 @@
 .ss-game-immersive-fallback .ss-adventure-shell{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:2147483647!important}
 @media(max-width:760px),(pointer:coarse){.ss-game-touch-controls{display:flex}.ss-game-menu__panel{border-radius:20px}.ss-game-menu__hint{max-width:320px}}
 @media(orientation:portrait) and (max-width:760px){.ss-game-menu__hint:after{content:" Rotate your phone sideways for the best full-screen experience.";color:#9bcfff}}
+
+.ss-game-menu__play--secondary{margin-top:10px;background:rgba(21,38,65,.8);box-shadow:none;border-color:rgba(157,190,233,.3)}
