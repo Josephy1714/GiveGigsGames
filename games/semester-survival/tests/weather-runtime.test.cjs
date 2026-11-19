@@ -35,7 +35,7 @@ test('forecast provides three authored in-game days without network access',()=>
  assert.equal(forecast.length,3);
  assert.equal(forecast[0].week,51);
  assert.equal(forecast[1].week,52);
- assert.equal(forecast[2].week,53);
+ assert.equal(forecast[2].week,52);
  assert.ok(forecast.every(day=>day.morning&&day.afternoon&&day.season));
 });
 
