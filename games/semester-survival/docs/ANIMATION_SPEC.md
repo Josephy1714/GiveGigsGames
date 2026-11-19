@@ -159,3 +159,8 @@ Animation must respond to actual collision/contact state, not visual overlap alo
 ## Dialogue voice and phoneme-aligned mouth animation
 
 Dialogue voice uses a separate approved mouth atlas so speaking does not replace body locomotion. The lip-sync runtime samples the actual audio playback clock and selects manually aligned viseme clips. A mouth atlas must include a neutral pose and approved language-appropriate visemes; each line needs a licensed human voice recording and reviewed timestamp cue track. See [Lip-Sync and Voice](LIP_SYNC_AND_VOICE.md). Do not mark dialogue as lip-synced when any of these assets are missing.
+
+
+## Authored frame event markers
+
+Atlas frames may declare an optional `events` array of non-empty string markers. The animator emits these markers when playback enters the corresponding frame and exposes them through `drainEvents()`, which returns and clears the pending queue. Markers are emitted in playback order, including loop and ping-pong revisits; one-shot clips do not repeat the final frame marker after completion. This provides a deterministic synchronization point for foot contacts, landing impacts, cloth/prop cues and authored effects. Marker names are data only: the host must explicitly map them to approved sound or visual effects. No sound, dust, particles or other effect is fabricated by the animation runtime.
