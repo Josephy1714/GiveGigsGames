@@ -176,6 +176,15 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   Object.assign(g,saved);
   return result;
  },
+ probeBossClear:()=>{
+  if(!g||!g.on)return null;
+  const saved={d:g.d,bossAt:g.bossAt,bossActive:g.bossActive,bossQueue:g.bossQueue,bossClock:g.bossClock,bossLabel:g.bossLabel,bossNumber:g.bossNumber,bossCleared:g.bossCleared,spawn:g.spawn,obs:g.obs,energy:g.energy,inv:g.inv,hit:g.hit,t:g.t,speed:g.speed,lane:g.lane,jump:g.jump,slide:g.slide,bonus:g.bonus,pick:g.pick,coins:g.coins};
+  g.d=1000;g.bossAt=2000;g.bossActive=true;g.bossQueue=[];g.bossClock=1;g.bossLabel="SMOKE BOSS";g.bossNumber=1;g.bossCleared=0;g.spawn=10;g.obs=[];g.energy=40;g.inv=1;g.hit=false;g.t=0;g.speed=345;g.lane=1;g.jump=0;g.slide=0;g.bonus=[];g.pick=[];g.coins=0;
+  tick(.01);
+  const result={active:g.bossActive,cleared:g.bossCleared,coins:g.coins,energy:g.energy,nextAt:g.bossAt};
+  Object.assign(g,saved);
+  return result;
+ },
  probePowerup:({lane=1,powerupLane=1,magnet=0,kind="COFFEE",type="food"}={})=>{
   if(!g||!g.on)return null;
   const saved={energy:g.energy,runPowerups:g.runPowerups,bonus:g.bonus,lane:g.lane,coins:g.coins,spawn:g.spawn,obs:g.obs,pick:g.pick,magnetRange:save.up.magnetRange,boost:g.boost};
