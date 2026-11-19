@@ -6,11 +6,12 @@ No third-party art, music, fonts or code may be added without redistribution rig
 |---|---|---|---|---|
 | Existing game code | Existing repository contributors; history audit required | Verify repository terms before reuse | JS/CSS/HTML | Legacy |
 | New interface/prototype code | Josephy1714 / project contributors | Confirm in game metadata | HTML/CSS/JS | In progress |
-| Character model sheets | Not yet supplied | Must be confirmed | To specify | Not started |
+| Jay character turnaround | Original GiveGigsGames character; supplied and approved by project owner | Project-owner approval recorded; retain source/rights record | JPEG, 4-view model reference | Approved reference; not runtime-ready |
+| Other character model sheets | Not yet supplied | Must be confirmed | To specify | Not started |
 | Background illustrations | Not yet supplied | Must be confirmed | To specify | Not started |
 | Audio | Not yet supplied | Must be confirmed | To specify | Not started |
 
-For every final asset record exact path, author/source, licence, original URL, edits, dimensions, compression and byte size. No remote fonts or runtime CDN assets.
+For every final asset record exact path, author/source, licence, original URL where applicable, edits, dimensions, compression and byte size. No remote fonts or runtime CDN assets.
 
 ## Runtime scene manifest schema
 
@@ -57,7 +58,8 @@ No real district artwork has been supplied yet; the schema above is illustrative
 
 A scene may optionally define `navigation: { nodes, edges }`. Every node has a unique `id` and references an existing NPC or place hotspot via `anchor`. Every edge references two different declared node IDs and may set `bidirectional: false` for a one-way traversal. The environment rejects unknown anchors, duplicate IDs/anchors, self-edges and invalid edge references. The renderer then verifies every node resolves to an actual hotspot in the decoded scene. NPC path planning uses breadth-first search over this graph and obtains waypoint coordinates from renderer hotspot bounds; it never guesses positions or draws a substitute route. Scenes without a navigation graph remain valid but NPC navigation reports `navigation-not-authored`.
 
+## Original character artwork intake
 
-## User-directed Gemini artwork intake
+Character designs are original intellectual property of the Semester Survival project. The project owner reviews and approves each canonical model reference before it can guide production. Preserve original source exports unchanged under `assets/source/characters/<character-id>/`; record the exact file path, source/creator declaration, rights/permission status, dimensions, byte size and any edits.
 
-Gemini-generated artwork may enter the repository as a production candidate when the project owner has reviewed and approved the design and confirmed the applicable usage rights. Preserve the original exported PNGs in `assets/source/characters/<character-id>/`; do not overwrite source exports during atlas packing. Record the generating service, prompt revision, creator/submitting owner, source and usage-rights note. Generated source artwork is not automatically production-ready: it must pass identity continuity, anatomy, transparency, exact frame-grid, animation timing and in-game scale review. Never label generated work as hand-drawn or human-commissioned. Unapproved, inconsistent or low-quality outputs stay out of the runtime manifest.
+A turnaround is a design reference only. It is not an animation atlas and must never be registered as one. Action sheets must preserve the approved identity and pass frame-grid, anatomy, continuity, transparency, timing and in-game scale review. Separate source sheets must be packed into the runtime atlas with exact authored clip metadata. Unapproved or inconsistent art stays out of the runtime manifest.
