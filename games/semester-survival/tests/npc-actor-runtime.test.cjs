@@ -31,10 +31,10 @@ test('missing authored route never creates a position or placeholder actor',()=>
  runtime.destroy();
 });
 test('route changes rebase from the new authored start and large deltas are bounded',()=>{
- const {runtime}=setup(route);runtime.update(0.5);
+ const {runtime}=setup(route);runtime.update(0.1);
  const changed={characterId:'brian',status:'route-ready',waypoints:[{nodeId:'new-a',x:20,y:20},{nodeId:'new-b',x:120,y:20}]};
  const nav={getState:()=>[changed]};
  const next=global.SemesterNpcActorRuntime.create({scheduleRuntime:{getState:()=>[{characterId:'brian',name:'Brian',presence:'in-active-district',targetDistrict:'campus'}]},navigationRuntime:nav,speed:100});
- const actor=next.update(10)[0];assert.deepEqual(actor.position,{x:30,y:20});
+ const actor=next.update(0.1)[0];assert.deepEqual(actor.position,{x:30,y:20});
  runtime.destroy();next.destroy();
 });
