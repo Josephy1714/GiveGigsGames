@@ -30,7 +30,7 @@ test('runtime configuration validates all four districts and Jay atlas metadata'
   const errors = context.SemesterCharacterAnimation
     ? context.SemesterCharacterAnimation.validateManifest(config.characterAtlas.manifest, { width: atlas.width, height: atlas.height })
     : [];
-  assert.deepEqual(errors, []);
+  assert.equal(errors.length, 0, errors.join('; '));
 });
 
 test('all districts preload, mount, expose their places and accept authored interactions', async () => {
