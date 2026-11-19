@@ -15,6 +15,7 @@
   const speed=Number.isFinite(options.speed)&&options.speed>0?options.speed:76;
   if(!world||!schedules||!navigation)fail('NPC actors require world, schedule and navigation runtimes.');
   let actors=Object.freeze([]),renderables=Object.freeze([]),states=new Map(),signature='',disposed=false;
+  const pendingAnimationEvents=[];
   function update(delta){
    if(disposed)fail('NPC actor runtime has been disposed.');
    const dt=Math.max(0,Math.min(Number(delta)||0,0.1));
@@ -50,7 +51,12 @@
       if(!played||played.ok!==true)visualReady=false;
       else {state.lastMotion=motion;state.lastFacing=state.facing;}
      }
-     if(visualReady)animator.update(dt);
+     if(visualReady){
+      animator.update(dt);
+      if(typeof animator.drainEvents==='function')animator.drainEvents().forEach(function(marker){
+       pendingAnimationEvents.push(Object.freeze({characterId:key,clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event}));
+      });
+     }
     }
     state.visualReady=visualReady;
     states.set(key,state);
@@ -65,9 +71,10 @@
   }
   function getState(){return actors;}
   function getRenderables(){return renderables;}
+  function drainAnimationEvents(){return Object.freeze(pendingAnimationEvents.splice(0,pendingAnimationEvents.length));}
   function getDiagnostics(){return Object.freeze({actors:actors.length,moving:actors.filter(function(item){return item.status==='moving';}).length,atDestination:actors.filter(function(item){return item.status==='at-destination';}).length,visualActorsReady:actors.filter(function(item){return item.visualReady;}).length,artPolicy:'authored-assets-only'});}
-  function destroy(){disposed=true;actors=Object.freeze([]);renderables=Object.freeze([]);states.clear();signature='';}
-  return Object.freeze({update:update,getState:getState,getRenderables:getRenderables,getDiagnostics:getDiagnostics,destroy:destroy});
+  function destroy(){disposed=true;actors=Object.freeze([]);renderables=Object.freeze([]);states.clear();pendingAnimationEvents.length=0;signature='';}
+  return Object.freeze({update:update,getState:getState,getRenderables:getRenderables,drainAnimationEvents:drainAnimationEvents,getDiagnostics:getDiagnostics,destroy:destroy});
  }
  root.SemesterNpcActorRuntime=Object.freeze({create:create});
 })(typeof window!=='undefined'?window:globalThis);
