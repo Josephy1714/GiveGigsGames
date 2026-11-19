@@ -41,19 +41,21 @@
    if(surface.type==='circle')return Math.hypot(position.x-surface.x,position.depth-surface.depth)<=surface.radius;
    return position.x>=surface.minX&&position.x<=surface.maxX&&position.depth>=surface.minDepth&&position.depth<=surface.maxDepth;
   }
-  function resolve(marker,position,characterId){
+  function resolve(marker,position,characterId,facing){
    if(disposed)fail('Contact effects runtime is disposed.');
    if(!marker||typeof marker.event!=='string'||!position||!Number.isFinite(position.x)||!Number.isFinite(position.depth))return null;
    const foot=marker.event==='left-foot-contact'?'left':marker.event==='right-foot-contact'?'right':null;
    const landing=marker.event==='landing-impact';
    if(!foot&&!landing)return null;
-   const surface=surfaces.find(function(item){return contains(item,position);});
+   const direction=facing===-1?-1:1;
+   const contactPosition={x:position.x+(Number.isFinite(marker.offsetX)?marker.offsetX*direction:0),depth:position.depth+(Number.isFinite(marker.offsetDepth)?marker.offsetDepth:0)};
+   const surface=surfaces.find(function(item){return contains(item,contactPosition);});
    if(!surface)return null;
    const event=Object.freeze({
     type:'character:surface-contact',characterId:String(characterId||'jay'),district:district,
     action:landing?'landing':'footstep',foot:foot,clip:marker.clip||null,frameIndex:Number.isInteger(marker.frameIndex)?marker.frameIndex:null,
     surfaceId:surface.id,material:surface.material,effect:surface.effect,
-    position:Object.freeze({x:position.x,depth:position.depth})
+    position:Object.freeze(contactPosition),anchorPosition:Object.freeze({x:position.x,depth:position.depth}),facing:direction
    });
    onEvent(event);
    return event;
