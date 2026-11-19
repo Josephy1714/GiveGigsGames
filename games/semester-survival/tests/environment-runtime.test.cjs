@@ -9,10 +9,10 @@ vm.runInContext(fs.readFileSync(path.join(base, 'world-content.js'), 'utf8'), co
 vm.runInContext(fs.readFileSync(path.join(base, 'environment-runtime.js'), 'utf8'), context);
 const world = context.SemesterWorldContent;
 const manifest = {
-  residence: { sceneId: 'residence-main', requiredAssetIds: ['res-room'], spawnPoints: { default: 'spawn-room', fromTownship: 'spawn-gate' }, interactables: { room: { anchor: 'room-door' } } },
-  township: { sceneId: 'township-main', requiredAssetIds: ['township-bg'], spawnPoints: { default: 'spawn-stage' }, interactables: { 'mama-njeri-kiosk': { anchor: 'kiosk-counter' } } },
-  campus: { sceneId: 'campus-main', requiredAssetIds: ['campus-bg'], spawnPoints: { default: 'spawn-gate' }, interactables: { library: { anchor: 'library-desk' } } },
-  city: { sceneId: 'city-main', requiredAssetIds: ['city-bg'], spawnPoints: { default: 'spawn-terminal' }, interactables: { 'career-centre': { anchor: 'career-desk' } } }
+  residence: { sceneId: 'residence-main', requiredAssetIds: ['res-room'], spawnPoints: { default: { x: 120, depth: 0 }, fromTownship: { x: 40, depth: 0 } }, interactables: { room: { anchor: 'room-door' } } },
+  township: { sceneId: 'township-main', requiredAssetIds: ['township-bg'], spawnPoints: { default: { x: 300, depth: 0 } }, interactables: { 'mama-njeri-kiosk': { anchor: 'kiosk-counter' } } },
+  campus: { sceneId: 'campus-main', requiredAssetIds: ['campus-bg'], spawnPoints: { default: { x: 200, depth: 0 } }, interactables: { library: { anchor: 'library-desk' } } },
+  city: { sceneId: 'city-main', requiredAssetIds: ['city-bg'], spawnPoints: { default: { x: 100, depth: 0 } }, interactables: { 'career-centre': { anchor: 'career-desk' } } }
 };
 function makePipeline(options = {}) {
   const report = [
@@ -117,4 +117,10 @@ test('rejects invalid scene manifests and duplicate required ids at construction
   assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: noAnchor, assetPipeline: makePipeline() }), /authored anchor id/);
   const duplicate = { ...manifest, residence: { ...manifest.residence, requiredAssetIds: ['res-room', 'res-room'] } };
   assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: duplicate, assetPipeline: makePipeline() }), /duplicate required/);
+  const badSpawn = { ...manifest, residence: { ...manifest.residence, spawnPoints: { default: 'spawn-room' } } };
+  assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: badSpawn, assetPipeline: makePipeline() }), /finite x and depth coordinates/);
+  const outsideSpawn = { ...manifest, residence: { ...manifest.residence, render: { playerBounds: { minX: 0, maxX: 100 }, depthBounds: { min: -10, max: 10 } }, spawnPoints: { default: { x: 120, depth: 0 } } } };
+  assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: outsideSpawn, assetPipeline: makePipeline() }), /outside authored horizontal/);
+  const badNpc = { ...manifest, residence: { ...manifest.residence, npcAnchors: [{ characterId: 'unknown', anchor: 'npc-door' }] } };
+  assert.throws(() => context.SemesterEnvironmentRuntime.create({ world, sceneManifest: badNpc, assetPipeline: makePipeline() }), /invalid authored NPC anchor/);
 });
