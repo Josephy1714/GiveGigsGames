@@ -2,6 +2,7 @@
 
 This directory is the production source of truth. Implementation decisions must follow these documents; update the relevant document whenever implementation changes the design.
 
+- PREMIUM_PRESENTATION_STANDARD.md — cross-game quality bar for every district, character, animation, interface, effect, sound and device target.
 - GAME_DESIGN_DOCUMENT.md — experience, narrative, progression and scope.
 - WORLD_BIBLE.md — districts, geography, traversal and activity density.
 - DISTRICT_LAYOUTS.md — authored 2.5D geometry, place hotspots, NPC anchors and route arrival contracts.
