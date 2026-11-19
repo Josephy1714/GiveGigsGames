@@ -8,6 +8,7 @@
  function safePath(path){return typeof path==='string'&&path.length>0&&!/^(?:[a-z]+:)?\/\//i.test(path)&&!path.startsWith('/')&&!path.split('/').includes('..')&&!/[?#]/.test(path);}
  function validateTrack(track,animator){
   if(!track||!safePath(track.src))fail('Voice track requires a safe relative audio path.');
+  if(animator&&typeof animator.hasClip==='function'&&!animator.hasClip('mouth-neutral'))fail('The approved mouth atlas must include mouth-neutral.');
   if(!Array.isArray(track.cues)||!track.cues.length)fail('Voice track requires authored viseme cues.');
   let previous=-1;
   track.cues.forEach(function(cue,index){
