@@ -47,3 +47,8 @@ The central runtime API and its host wiring are committed, and the entry HTML lo
 ## Dialogue voice integration
 
 Optional `dialogueVoiceTracks` maps character introductions and topic replies to local audio sources plus timestamped viseme cues. `dialogueMouthAtlas` supplies a credited local character-atlas asset and manifest containing `mouth-neutral` and the required viseme clips; it must be in the same preloaded district as the protagonist atlas. Alternatively, the host may inject `dialogueAudio` and `dialogueMouthAnimator`. Dialogue continues as text if voice or face assets are unavailable. The lip-sync runtime samples the audio playback clock and is paused/resumed/stopped with the game and conversation. The mouth renderer is not yet mounted to an approved NPC face because no final face atlases/voice recordings have been supplied; see [Lip-Sync and Voice](LIP_SYNC_AND_VOICE.md).
+
+
+## Surface-contact integration
+
+The composition root owns `contact-effects-runtime.js` and replaces its authored surface regions whenever a district is mounted. Grounded player animation markers are resolved against the current district's `contactSurfaces`; successful matches publish `character:surface-contact`. The diagnostics expose the active district and number of authored regions. The contact resolver is metadata-only and is destroyed with the game runtime.
