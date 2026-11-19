@@ -16,6 +16,7 @@ require('../campaign-ui.js');
 require('../university-services.js');
 require('../student-phone-runtime.js');
 require('../student-phone-ui.js');
+require('../weather-runtime.js');
 require('../game-runtime.js');
 
 class ElementMock{
@@ -90,4 +91,16 @@ test('coursework interface contains no file picker or external document upload',
  assert.doesNotMatch(source,/type\s*=\s*['"]file['"]/i);
  assert.doesNotMatch(source,/\.files\b|FormData\s*\(/);
  assert.match(source,/No PDF, document or external file upload is required/);
+});
+
+test('central runtime exposes live weather and a three-day forecast',async()=>{
+ const doc=makeDocument(),host=new ElementMock('main',doc),assets=fixture();
+ const runtime=global.SemesterAdventureRuntime.create({...assets,host,document:doc,storage:memoryStorage(),autoLoop:false,loadImage:async(src,asset)=>({width:asset.width,height:asset.height,naturalWidth:asset.width,naturalHeight:asset.height})});
+ await runtime.start();
+ assert.ok(runtime.getState().weather);
+ assert.equal(runtime.getState().weather.district,'residence');
+ assert.equal(runtime.getWeatherForecast().length,3);
+ await runtime.travelTo('township');
+ assert.equal(runtime.getState().weather.district,'township');
+ runtime.destroy();
 });
