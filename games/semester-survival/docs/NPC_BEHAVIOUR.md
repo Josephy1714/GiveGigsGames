@@ -23,3 +23,8 @@ Simulation state is not a rendered character. NPC actors remain invisible unless
 The NPC actor runtime accepts optional per-character authored animators. It advances the matching walk or idle clip using the actor's actual route state and facing, and exposes renderables only when the animator confirms that the required authored clip exists. The character runtime passes those renderables to the 2.5D scene compositor, which draws player and NPC sprites in ground-position order for depth-aware overlap. The game runtime accepts `npcAnimators` and optional `npcCharacterScales` at creation.
 
 No animator is fabricated. With no approved NPC atlases supplied, the runtime continues to report zero visually ready NPC actors and draws no substitute figures. Each NPC atlas must be independently approved, credited, loaded from the local asset manifest, and include at least real walk and idle clips before it can appear.
+
+
+## NPC animation marker routing
+
+When an approved NPC animator supports `drainEvents()`, the actor runtime captures its frame markers and tags each with the NPC's `characterId`. The central game runtime publishes them through the same `character:animation-event` contract used by Jay. NPC events are drained after actor updates, including zero-delta synchronization after district changes. This routes timing metadata only; no sound, particles, or impact effects are fabricated.
