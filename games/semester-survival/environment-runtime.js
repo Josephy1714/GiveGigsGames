@@ -80,9 +80,33 @@
           fail('Interactable "' + placeId + '" requires an authored anchor id.');
         }
       });
+      let navigation = null;
+      if (source.navigation !== undefined) {
+        const graph = source.navigation;
+        if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges) || !graph.nodes.length) fail('Scene "' + districtId + '" navigation requires non-empty nodes and an edges array.');
+        const nodeIds = new Set(), nodeAnchors = new Set();
+        const availableAnchors = new Set(npcAnchors.map(function (item) { return item.anchor; }));
+        Object.keys(interactables).forEach(function (placeId) { availableAnchors.add(interactables[placeId].anchor); });
+        const nodes = graph.nodes.map(function (node) {
+          if (!node || typeof node.id !== 'string' || !node.id.trim() || typeof node.anchor !== 'string' || !node.anchor.trim()) fail('Scene "' + districtId + '" contains an invalid navigation node.');
+          if (nodeIds.has(node.id) || nodeAnchors.has(node.anchor)) fail('Scene "' + districtId + '" navigation node ids and anchors must be unique.');
+          if (!availableAnchors.has(node.anchor)) fail('Navigation node "' + node.id + '" must reference an authored NPC or place anchor.');
+          nodeIds.add(node.id); nodeAnchors.add(node.anchor);
+          return Object.freeze({ id: node.id, anchor: node.anchor });
+        });
+        const edgeKeys = new Set();
+        const edges = graph.edges.map(function (edge) {
+          if (!edge || !nodeIds.has(edge.from) || !nodeIds.has(edge.to) || edge.from === edge.to) fail('Scene "' + districtId + '" contains an invalid navigation edge.');
+          const key = edge.from + '>' + edge.to;
+          if (edgeKeys.has(key)) fail('Scene "' + districtId + '" contains a duplicate navigation edge.');
+          edgeKeys.add(key);
+          return Object.freeze({ from: edge.from, to: edge.to, bidirectional: edge.bidirectional !== false });
+        });
+        navigation = Object.freeze({ nodes: Object.freeze(nodes), edges: Object.freeze(edges) });
+      }
       scenes[districtId] = {
         status: 'not-prepared', sceneId: source.sceneId, requiredAssetIds: requiredAssetIds,
-        spawnPoints: spawnPoints, interactables: interactables, npcAnchors: npcAnchors, render: source.render || null, error: null, preparation: null
+        spawnPoints: spawnPoints, interactables: interactables, npcAnchors: npcAnchors, navigation: navigation, render: source.render || null, error: null, preparation: null
       };
     });
 
@@ -173,6 +197,7 @@
             scene: scene.render,
             interactables: scene.interactables,
             npcAnchors: scene.npcAnchors,
+            navigation: scene.navigation,
             assets: Object.freeze(scene.requiredAssetIds.reduce(function (items, id) {
               items[id] = assetPipeline.getAsset(id);
               return items;
@@ -220,6 +245,8 @@
       return Object.freeze(event);
     }
 
+    function getNavigationGraph() { return current && scenes[current].navigation ? scenes[current].navigation : null; }
+
     function getExits() {
       if (!current) return [];
       return world.districts[current].exits.map(function (id) {
@@ -242,7 +269,7 @@
 
     return Object.freeze({
       enter: enter, prepareDistrict: prepareDistrict, interact: interact,
-      getPlaces: getPlaces, getExits: getExits,
+      getPlaces: getPlaces, getNavigationGraph: getNavigationGraph, getExits: getExits,
       getState: snapshot, getDiagnostics: getDiagnostics
     });
   }
