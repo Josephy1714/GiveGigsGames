@@ -236,6 +236,6 @@
 
   root.SemesterCharacterAnimation = Object.freeze({
     validateManifest, createClipLibrary, createAnimator,
-    createControllerBinding, resolveFrame, stateClips: STATE_CLIPS
+    createControllerBinding, resolveFrame, resolveStateClip, stateClips: STATE_CLIPS
   });
 })(typeof window !== 'undefined' ? window : globalThis);
