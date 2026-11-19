@@ -39,7 +39,15 @@ jobs:
             const clip = manifest.clips?.[name];
             if (!clip || clip.frames?.length !== count) throw new Error(name + ' must contain ' + count + ' authored frames');
           }
-          console.log('Jay slide start, loop and recovery clips are present.');
+          if (manifest.clips['slide-start'].playback !== 'once' ||
+              manifest.clips['slide-loop'].playback !== 'loop' ||
+              manifest.clips['slide-recover'].playback !== 'once') {
+            throw new Error('Jay slide phases must use once/loop/once playback.');
+          }
+          if (manifest.sources?.slide?.formatDetectedByPillow !== 'JPEG') {
+            throw new Error('Jay slide source must decode as the uploaded JPEG data.');
+          }
+          console.log('Jay slide start, loop and recovery clips are present and correctly packaged.');
           JS
       - name: Install Chromium for arcade smoke checks
         run: |
