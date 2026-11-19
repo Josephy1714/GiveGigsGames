@@ -36,6 +36,8 @@
     const onTravel = typeof options.onTravel === 'function' ? options.onTravel : null;
     const onPhone = typeof options.onPhone === 'function' ? options.onPhone : null;
     const weather = options.weatherRuntime || null;
+    const speech = options.speechRuntime || null;
+    const voiceTracks = options.voiceTracks || {};
     const npcAnchors = options.npcAnchors || {};
     const radius = Number.isFinite(options.interactionRadius) && options.interactionRadius > 0 ? options.interactionRadius : 72;
     if (!world || !world.districts || !environment || typeof environment.getPlaces !== 'function') fail('World content and environment runtime are required.');
@@ -74,6 +76,13 @@
       if (input && typeof input.setContext === 'function') input.setContext({ dialogueOpen: !!open });
     }
     function getNearby() { return nearby ? Object.freeze(Object.assign({}, nearby)) : null; }
+    function startVoice(characterId, key) {
+      if (!speech || typeof speech.start !== 'function') return null;
+      const characterTracks = voiceTracks[characterId] || {};
+      const track = key === 'introduction' ? characterTracks.introduction : (characterTracks.topics && characterTracks.topics[key]);
+      if (!track) { speech.stop(); return null; }
+      return speech.start(track);
+    }
     function getDialogue() {
       if (!dialogue) return null;
       return Object.freeze({
@@ -81,7 +90,8 @@
         characterName: dialogue.characterName,
         line: dialogue.line,
         topics: Object.freeze(dialogue.topics.slice()),
-        history: Object.freeze(dialogue.history.slice())
+        history: Object.freeze(dialogue.history.slice()),
+        speech: speech && typeof speech.getState === 'function' ? speech.getState() : null
       });
     }
     function refresh(position) {
@@ -104,6 +114,7 @@
         line: character.introduction, topics: topicKeys, history: [character.introduction]
       };
       setDialogueContext(true);
+      startVoice(characterId, 'introduction');
       const event = Object.freeze({ type: 'dialogue:opened', characterId: characterId, line: character.introduction });
       onEvent(event);
       lastResult = event;
@@ -117,6 +128,7 @@
       const line = responses[0];
       dialogue.line = line;
       dialogue.history.push(line);
+      startVoice(dialogue.characterId, topic);
       const relationshipKey = RELATIONSHIP_BY_CHARACTER[dialogue.characterId];
       if (relationshipKey && typeof life.recordRelationship === 'function') {
         const effects = options.topicEffects && options.topicEffects[dialogue.characterId] && options.topicEffects[dialogue.characterId][topic] || { affinity: 1, trust: 1 };
@@ -130,6 +142,7 @@
     function closeDialogue() {
       if (!dialogue) return false;
       const characterId = dialogue.characterId;
+      if (speech && typeof speech.stop === 'function') speech.stop();
       dialogue = null;
       nearby = null;
       setDialogueContext(false);
