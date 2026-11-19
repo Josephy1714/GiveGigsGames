@@ -27,6 +27,30 @@
       { from: 960, to: 1140, district: 'campus', placeId: 'library', label: 'Personal study time' },
       { from: 1140, to: 1440, district: 'residence', placeId: 'courtyard', label: 'Back at the residence' }
     ],
+    sumeya: [
+      { from: 0, to: 420, district: 'residence', placeId: 'room', label: 'At home' },
+      { from: 420, to: 600, district: 'campus', placeId: 'library', label: 'Quiet study time' },
+      { from: 600, to: 780, district: 'campus', placeId: 'lecture-hall', label: 'In lectures' },
+      { from: 780, to: 960, district: 'campus', placeId: 'student-commons', label: 'Meeting coursemates' },
+      { from: 960, to: 1140, district: 'campus', placeId: 'data-lab', label: 'Working on a project' },
+      { from: 1140, to: 1440, district: 'residence', placeId: 'room', label: 'At home' }
+    ],
+    einstein: [
+      { from: 0, to: 420, district: 'residence', placeId: 'room', label: 'At home' },
+      { from: 420, to: 600, district: 'campus', placeId: 'data-lab', label: 'Working in the data lab' },
+      { from: 600, to: 780, district: 'campus', placeId: 'lecture-hall', label: 'In lectures' },
+      { from: 780, to: 960, district: 'campus', placeId: 'student-commons', label: 'Meeting coursemates' },
+      { from: 960, to: 1140, district: 'campus', placeId: 'library', label: 'Research and reading' },
+      { from: 1140, to: 1440, district: 'residence', placeId: 'room', label: 'At home' }
+    ],
+    ernest: [
+      { from: 0, to: 420, district: 'residence', placeId: 'room', label: 'At home' },
+      { from: 420, to: 600, district: 'campus', placeId: 'student-commons', label: 'Meeting students' },
+      { from: 600, to: 780, district: 'campus', placeId: 'lecture-hall', label: 'In lectures' },
+      { from: 780, to: 960, district: 'campus', placeId: 'student-commons', label: 'Meeting coursemates' },
+      { from: 960, to: 1140, district: 'township', placeId: 'study-cafe', label: 'At the study café' },
+      { from: 1140, to: 1440, district: 'residence', placeId: 'courtyard', label: 'At the residence' }
+    ],
     njeri: [
       { from: 0, to: 300, district: 'township', placeId: 'mama-njeri-kiosk', label: 'Preparing the kiosk' },
       { from: 300, to: 720, district: 'township', placeId: 'mama-njeri-kiosk', label: 'Serving the morning rush' },
@@ -47,6 +71,9 @@
     brian: { residence: 'room', campus: 'student-commons', township: 'study-cafe' },
     amina: { residence: 'room', campus: 'library', township: 'study-cafe' },
     wanjiku: { residence: 'room', campus: 'administration', township: 'study-cafe' },
+    sumeya: { residence: 'room', campus: 'library', township: 'study-cafe' },
+    einstein: { residence: 'room', campus: 'data-lab', township: 'study-cafe' },
+    ernest: { residence: 'room', campus: 'student-commons', township: 'study-cafe' },
     njeri: { township: 'mama-njeri-kiosk' },
     mwangi: { campus: 'lecturer-office' }
   });
