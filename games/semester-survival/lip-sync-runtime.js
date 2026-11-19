@@ -21,9 +21,14 @@
  }
  function create(options){
   options=options||{};
-  const audio=options.audio||null,animator=options.animator||null;
+  const audio=options.audio||null;let animator=options.animator||null;
   let cues=[],trackId=null,index=-1,status='idle',error=null;
   function requireReady(){if(!audio||typeof audio.play!=='function'||!animator||typeof animator.play!=='function'||typeof animator.render!=='function')fail('Lip-sync requires an audio player and an authored mouth animator.');}
+  function setAnimator(value){
+   if(status==='speaking'||status==='loading')fail('Cannot replace the mouth animator while a voice track is active.');
+   if(!value||typeof value.play!=='function'||typeof value.render!=='function'||typeof value.hasClip!=='function'||!value.hasClip('mouth-neutral'))fail('Mouth animator must expose render, play and an authored mouth-neutral clip.');
+   animator=value;return getState();
+  }
   function start(track){
    requireReady();validateTrack(track,animator);
    stop();cues=track.cues.map(function(cue){return Object.freeze({time:cue.time,viseme:cue.viseme});});
@@ -59,7 +64,7 @@
   }
   function render(context,x,y,scale){if(status!=='speaking'&&status!=='paused'&&status!=='ended')return {drawn:false,reason:'not-speaking'};return animator.render(context,x,y,scale);}
   function getState(){return Object.freeze({status:status,trackId:trackId,viseme:index<0?'mouth-neutral':cues[index]&&cues[index].viseme||'mouth-neutral',cueIndex:index,error:error,clock:audio&&Number.isFinite(audio.currentTime)?audio.currentTime:0,available:Boolean(audio&&animator)});}
-  return Object.freeze({start:start,update:update,pause:pause,resume:resume,stop:stop,render:render,getState:getState,validateTrack:function(track){return validateTrack(track,animator);}});
+  return Object.freeze({start:start,update:update,pause:pause,resume:resume,stop:stop,render:render,getState:getState,setAnimator:setAnimator,validateTrack:function(track){return validateTrack(track,animator);}});
  }
  root.SemesterLipSyncRuntime=Object.freeze({create:create,validateTrack:validateTrack});
 })(typeof window!=='undefined'?window:globalThis);
