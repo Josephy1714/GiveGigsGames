@@ -10,6 +10,7 @@ try {
   const baseUrl = process.env.ARCADE_SMOKE_URL || "http://127.0.0.1:4173";
   await page.goto(`${baseUrl}/games/semester-survival-runner/index.html?smoke=1`, { waitUntil: "domcontentloaded" });
   await page.locator("#home.active").waitFor();
+  await page.waitForFunction(() => typeof window.__runnerSmoke?.endRun === "function", null, { timeout: 5000 }).catch(() => { throw new Error("Runner smoke hook did not initialize: " + errors.join(" | ")); });
   await page.waitForFunction(() => {
     const image = document.querySelector("#jay-home");
     return image && image.complete && image.naturalWidth > 0;
