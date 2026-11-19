@@ -39,3 +39,4 @@ This directory is the production source of truth. Implementation decisions must 
 
 - NPC_BEHAVIOUR.md — daily routines, authored route-following simulation and NPC visual-production gates.
 - LIP_SYNC_AND_VOICE.md — human voice recordings, phoneme-aligned viseme tracks, synchronization runtime and production approval gates.
+- SOCIAL_DIALOGUE.md — authored branching choices, relationship gates, speaker turns and voice-line integration.
