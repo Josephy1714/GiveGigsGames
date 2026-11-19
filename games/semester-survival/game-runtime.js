@@ -20,7 +20,7 @@
    animation:root.SemesterCharacterAnimation,character:root.SemesterCharacterRuntime,assets:root.SemesterSceneAssets,
    renderer:root.SemesterSceneRenderer,environment:root.SemesterEnvironmentRuntime,interaction:root.SemesterInteractionRuntime,
    interactionUI:root.SemesterInteractionUI,campaign:root.SemesterCampaignRuntime,campaignUI:root.SemesterCampaignUI,
-   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime,zones:root.SemesterGameplayZones,zones:root.SemesterGameplayZones
+   university:root.SemesterUniversityServices,phone:root.SemesterStudentPhone,phoneUI:root.SemesterStudentPhoneUI,weather:root.SemesterWeatherRuntime,npcSchedules:root.SemesterNpcScheduleRuntime,npcNavigation:root.SemesterNpcNavigationRuntime,collision:root.SemesterCollisionRuntime,zones:root.SemesterGameplayZones
   };
   if(!doc||!host||!world)fail('Adventure runtime requires a document, mount host and authored world.');
   if(Object.keys(modules).some(key=>!modules[key]))fail('Adventure runtime dependencies are incomplete. Load all Semester Survival runtime modules first.');
