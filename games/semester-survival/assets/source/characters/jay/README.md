@@ -38,3 +38,5 @@ Use `semester-survival-premium-rebuild`. Do not upload this work to `main` or me
 
 
 Atlas build automation is configured for this branch; source files remain preserved.
+
+Build retry requested after branch advanced during CI commit.
