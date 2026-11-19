@@ -87,3 +87,37 @@ test('canvas renderer draws atlas frames at the supplied world anchor', () => {
   assert.equal(result.drawn, true);
   assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'drawImage' && call[1] === image));
 });
+
+
+test('emits authored frame markers once on entry and drains them deterministically',()=>{
+  const image={width:64,height:32};
+  const manifest={clips:{walk:{fps:4,playback:'loop',frames:[
+    {x:0,y:0,width:16,height:32,events:['left-foot-contact']},
+    {x:16,y:0,width:16,height:32},
+    {x:32,y:0,width:16,height:32,events:['right-foot-contact']},
+    {x:48,y:0,width:16,height:32}
+  ]}}};
+  const library=animation.createClipLibrary(manifest,image);
+  const animator=animation.createAnimator(library);
+  animator.play('walk',1);
+  animator.update(0);
+  assert.deepEqual(animator.drainEvents().map(event=>event.event),['left-foot-contact']);
+  animator.update(0.5);
+  assert.deepEqual(animator.drainEvents().map(event=>event.event),['right-foot-contact','left-foot-contact']);
+  assert.deepEqual(animator.drainEvents(),[]);
+});
+
+test('validates frame event marker metadata and does not repeat once-clip markers after completion',()=>{
+  const image={width:32,height:32};
+  const malformed={clips:{bad:{fps:2,frames:[{x:0,y:0,width:16,height:32,events:['ok',3]}]}}};
+  assert.ok(animation.validateManifest(malformed,image).some(error=>error.includes('frame events')));
+  const library=animation.createClipLibrary({clips:{finish:{fps:2,playback:'once',frames:[
+    {x:0,y:0,width:16,height:32,events:['start']},
+    {x:16,y:0,width:16,height:32,events:['finish']}
+  ]}}},image);
+  const animator=animation.createAnimator(library);
+  animator.play('finish',1);animator.update(2);
+  assert.deepEqual(animator.drainEvents().map(event=>event.event),['start','finish']);
+  animator.update(2);
+  assert.deepEqual(animator.drainEvents(),[]);
+});
