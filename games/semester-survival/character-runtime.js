@@ -94,6 +94,7 @@
       if (disposed) throw new Error('Character runtime has been disposed.');
       const layout = sceneLayout();
       if (layout && layout.depthBounds && typeof controller.setDepthBounds === 'function') controller.setDepthBounds(layout.depthBounds);
+      if (layout && layout.playerBounds && typeof controller.setXBounds === 'function') controller.setXBounds({ min: layout.playerBounds.minX, max: layout.playerBounds.maxX });
       movement = controller.reset(position || {});
       animator.reset();
       const played = animator.play('idle', movement.facing);
