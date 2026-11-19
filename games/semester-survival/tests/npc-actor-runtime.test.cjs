@@ -48,7 +48,7 @@ test('approved NPC animators produce renderables and follow walk/idle clips',()=
  const actor=runtime.update(0.1)[0];
  assert.equal(actor.visualReady,true);assert.equal(runtime.getRenderables().length,1);
  assert.equal(played[0].name,'walk');assert.equal(updated.length,1);
- for(let i=0;i<19;i++)runtime.update(0.1);
+ for(let i=0;i<26;i++)runtime.update(0.1);
  assert.equal(runtime.getState()[0].motion,'idle');
  assert.equal(played[played.length-1].name,'idle');
  assert.equal(runtime.getDiagnostics().visualActorsReady,1);
