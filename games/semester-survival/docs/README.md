@@ -4,6 +4,7 @@ This directory is the production source of truth. Implementation decisions must 
 
 - GAME_DESIGN_DOCUMENT.md — experience, narrative, progression and scope.
 - WORLD_BIBLE.md — districts, geography, traversal and activity density.
+- DISTRICT_LAYOUTS.md — authored 2.5D geometry, place hotspots, NPC anchors and route arrival contracts.
 - CHARACTER_BIBLE.md — cast, visual identity and continuity.
 - ANIMATION_SPEC.md — locomotion, transitions and secondary motion.
 - CONTROLS_AND_UX.md — keyboard, touch, interaction and accessibility.
