@@ -18,6 +18,13 @@ require('../student-phone-runtime.js');
 require('../student-phone-ui.js');
 require('../weather-runtime.js');
 require('../npc-schedule-runtime.js');
+require('../npc-navigation-runtime.js');
+require('../npc-actor-runtime.js');
+require('../lip-sync-runtime.js');
+require('../collision-runtime.js');
+require('../gameplay-zones.js');
+require('../contact-effects-runtime.js');
+require('../district-transition-ui.js');
 require('../game-runtime.js');
 
 class ElementMock{
