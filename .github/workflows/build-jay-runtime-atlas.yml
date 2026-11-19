@@ -33,7 +33,7 @@ jobs:
           for clip in d['clips'].values(): clip.pop('reviewStatus', None)
           d.pop('warning', None)
           json.dump(d,open(p,'w'),separators=(',',':'))
-          open('games/semester-survival/jay-atlas-manifest.js','w').write('window.JAY_ATLAS_MANIFEST='+json.dumps(d,separators=(',',':'))+';\\n')
+          open('games/semester-survival/jay-atlas-manifest.js','w').write('window.JAY_ATLAS_MANIFEST='+json.dumps(d,separators=(',',':'))+';\n')
           PY
       - name: Commit generated atlas
         run: |
