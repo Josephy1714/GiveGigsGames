@@ -9,9 +9,6 @@
   if(!runtime||!shell||shell.dataset.mobileUiReady==='true')return;
   shell.dataset.mobileUiReady='true';
   const doc=root.document;
-  const style=doc.createElement('style');
-  style.textContent='.ss-adventure-shell{position:relative;touch-action:none}.ss-game-menu button,.ss-game-fullscreen,.ss-game-touch-btn{font-family:Inter,system-ui,sans-serif}';
-  doc.head.appendChild(style);
   const make=(tag,cls,parent)=>{const el=doc.createElement(tag);el.className=cls;if(parent)parent.appendChild(el);return el;};
   const menu=make('section','ss-game-menu',shell);
   menu.setAttribute('aria-label','Start Jay’s University Adventure');
