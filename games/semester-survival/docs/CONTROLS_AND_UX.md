@@ -11,7 +11,7 @@
 - Esc: pause/back.
 - Mouse: select UI, dialogue and map destinations.
 
-Depth movement is independent of jumping. The controller keeps horizontal position, depth position and jump height as separate values; scene-specific depth bounds are enforced by the controller.
+Depth movement is independent of jumping. The controller keeps horizontal position, depth position and jump height as separate values; each authored district supplies horizontal and depth bounds. Diagonal movement is normalized so it is not faster than straight movement.
 
 Inputs are context-sensitive. A movement key must not trigger a world action while dialogue or phone UI is active.
 
