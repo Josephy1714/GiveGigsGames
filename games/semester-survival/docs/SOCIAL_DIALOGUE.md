@@ -26,3 +26,8 @@ Branching choice data is authored for Brian, Amina, Sumeya, Einstein, Ernest, Wa
 The campus Student Commons hosts a scheduled five-person revision gathering from 13:00 to 16:00 in game time. Amina, Sumeya, Einstein, Ernest and Wanjiku must all have matching authored schedule targets before the scene can open. The opening exchanges and two player-directed branches are authored in `world-content.js`; each branch records Jay's choice, five speaker turns and bounded affinity/trust outcomes for the participants. The group dialogue uses the same safe speaker-attributed transcript UI. Voice playback is intentionally not started for all five lines at once; proper sequential group voice requires a cue/turn playback queue and approved recordings.
 
 The scene is a logic and text-interaction implementation. It does not imply that five visible actors, their blocking, facial acting, or group animation are production-ready. Those remain gated by authored navigation anchors, approved character artwork and animation integration.
+
+
+## Conversation blocking and speaker focus
+
+The interaction runtime now publishes a stage snapshot for both one-to-one and group conversations. It identifies the current speaker, expression metadata and every participant's speaking/listening role. The dialogue UI renders this as a live cast strip and updates focus as authored turns change. This is an interaction and blocking preview only: it uses text monograms, not character portraits, and does not claim facial animation, body acting, camera cuts or visible two-character staging. Those require approved layered character art, expression atlases, authored scene blocking coordinates and animation clips before the renderer can display them.
