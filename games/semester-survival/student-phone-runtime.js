@@ -7,7 +7,7 @@
   function create(options){
     options=options||{};
     const life=options.lifeEngine, world=options.world||root.SemesterWorldContent;
-    const input=options.inputManager||null, services=options.universityServices||null, weather=options.weatherRuntime||null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
+    const input=options.inputManager||null, services=options.universityServices||null, weather=options.weatherRuntime||null, onTravel=typeof options.onTravel==='function'?options.onTravel:null, onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
     if(!life||typeof life.getState!=='function'||!world||!world.districts)throw new Error('Student phone requires the life engine and authored world.');
     let open=false, section='home', destroyed=false;
     const sections=['home','timetable','courses','academics','assignments','assessments','finances','messages','map','weather'];
@@ -44,6 +44,13 @@
       return snapshot();
     }
     function receiveEvent(event){onEvent(event);return snapshot();}
+    async function travelTo(destination){
+      if(!onTravel)throw new Error('World travel is not connected to the game runtime.');
+      const state=life.getState(),current=state.location,definition=world.districts[current];
+      if(!definition||!definition.exits.includes(destination))throw new Error('No direct route connects '+current+' to '+destination+'.');
+      if(open)setOpen(false);
+      return onTravel(destination);
+    }
     function workOnAssignment(courseId){const index=life.getState().academics.courses.findIndex(course=>course.id===courseId);if(index<0)throw new Error('That course is not currently registered.');const result=life.perform('assignment',{courseIndex:index});onEvent(Object.freeze({type:'interaction:completed',activity:'assignment',action:'work-on-assignment',courseId:courseId,courseIndex:index}));return result;}
     function submitAssignment(id,score){if(!services)throw new Error('University services are not connected.');return services.submitAssignment(id,score);}
     function registerCourses(ids){if(!services)throw new Error('University services are not connected.');return services.registerCourses(ids);}
@@ -56,7 +63,7 @@
       return snapshot();
     }
     function destroy(){if(destroyed)return;setOpen(false);destroyed=true;}
-    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,destroy:destroy,sections:sections.slice()});
+    return Object.freeze({getSnapshot:snapshot,setOpen:setOpen,toggle:toggle,navigate:navigate,handleIntent:handleIntent,receiveEvent:receiveEvent,travelTo:travelTo,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,destroy:destroy,sections:sections.slice()});
   }
   root.SemesterStudentPhone=Object.freeze({create:create});
 })(typeof window!=='undefined'?window:globalThis);
