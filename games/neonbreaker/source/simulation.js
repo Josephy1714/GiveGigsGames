@@ -106,10 +106,16 @@ function update() {
                 brick.hits--;
                 if (brick.hits <= 0) {
                     brick.alive = false;
-                    score += brick.points;
+                    combo++;
+                    const mult = Math.min(5, 1 + Math.floor(combo / 3));
+                    score += brick.points * mult;
+                    if (combo >= 3) {
+                        shakeTime = 5;
+                        shakeIntensity = Math.min(4, 1 + Math.floor(combo / 4));
+                    }
                     spawnPowerUp(brick.x + brick.width / 2, brick.y + brick.height / 2);
                     createParticles(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.color, 12);
-                    playSound(880, 0.1, 'square', 0.08);
+                    playSound(880 + Math.min(combo * 35, 420), 0.1, 'square', 0.08);
                 } else {
                     playSound(660, 0.08, 'square', 0.06);
                 }

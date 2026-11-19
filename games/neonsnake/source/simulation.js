@@ -35,8 +35,13 @@ function update() {
         const fx = food.x * gridSize + gridSize / 2;
         const fy = food.y * gridSize + gridSize / 2;
         createParticles(fx, fy, ft.color, 12);
-        
-        playSound(660 + ft.points * 5, 0.1, 'sine', 0.1);
+        if (snake.length % 5 === 0) {
+            score += 25;
+            createParticles(fx, fy, '#00ffff', 18);
+            playSound(880, 0.14, 'triangle', 0.12);
+        } else {
+            playSound(660 + ft.points * 5, 0.1, 'sine', 0.1);
+        }
         
         // Speed up slightly
         if (foodType === 'speed') {

@@ -10,6 +10,7 @@ let score = 0;
 let highScore = neonReadRecord('neonInvadersHighScore');
 let wave = 1;
 let lives = 3;
+let shakeTime = 0;
 let animationId = null;
 
 // Set canvas size

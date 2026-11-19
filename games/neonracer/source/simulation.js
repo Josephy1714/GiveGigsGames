@@ -67,13 +67,25 @@ function update() {
         return p.life > 0;
     });
     
-    // Collision - enemies
+    // Collision - enemies & near-miss bonus
     for (const enemy of enemies) {
         if (checkCollision(player, enemy)) {
             playSound(150, 0.3, 'sawtooth', 0.1);
             createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0066', 20);
             gameOver();
             return;
+        }
+        if (!enemy.nearMissed && enemy.y + enemy.height > player.y && enemy.y < player.y + player.height) {
+            const horizGap = Math.min(
+                Math.abs((player.x + player.width) - enemy.x),
+                Math.abs((enemy.x + enemy.width) - player.x)
+            );
+            if (horizGap < 22) {
+                enemy.nearMissed = true;
+                distance += 15;
+                playSound(980, 0.08, 'sine', 0.06);
+                createParticles(player.x + player.width / 2, player.y, '#00ffff', 6);
+            }
         }
     }
     

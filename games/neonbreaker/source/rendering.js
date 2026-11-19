@@ -1,7 +1,22 @@
 function draw() {
+    ctx.save();
+    if (shakeTime > 0) {
+        const dx = (Math.random() - 0.5) * shakeIntensity * 2;
+        const dy = (Math.random() - 0.5) * shakeIntensity * 2;
+        ctx.translate(dx, dy);
+        shakeTime--;
+    }
     // Clear
     ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
+    
+    if (combo >= 2) {
+        const mult = Math.min(5, 1 + Math.floor(combo / 3));
+        ctx.fillStyle = '#ff00ff';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`COMBO x${mult} (${combo})`, canvas.width - 20, 32);
+    }
     
     // Stars
     stars.forEach(star => {
@@ -84,6 +99,7 @@ function draw() {
     ctx.fillStyle = '#00ff66';
     ctx.textAlign = 'right';
     ctx.fillText(`LIVES: ${lives}`, canvas.width - 15, 25);
+    ctx.restore();
 }
 
 function gameLoop(timestamp = performance.now()) {

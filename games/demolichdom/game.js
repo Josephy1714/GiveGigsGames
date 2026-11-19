@@ -1426,3 +1426,11 @@ window.gameDebug = {
         return this.godMode;
     }
 };
+
+window.addEventListener('keydown', (e) => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if ((e.key === 'r' || e.key === 'R') && typeof game !== 'undefined' && game.state === STATE.GAMEOVER) {
+        game.start();
+    }
+});

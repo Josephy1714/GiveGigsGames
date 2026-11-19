@@ -2392,3 +2392,13 @@ window.BS2MobileHooks = {
     });
     window.addEventListener('resize', refit);
 })();
+
+window.addEventListener('keydown', (e) => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'm' || e.key === 'M') {
+        sfx.toggleMute();
+        const btn = document.getElementById('muteBtn');
+        if (btn) btn.textContent = sfx.muted ? '🔇' : '🔊';
+    }
+});

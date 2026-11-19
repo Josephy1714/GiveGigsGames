@@ -84,6 +84,17 @@ function update() {
                 gameOver();
                 return;
             }
+        } else if (!obs.nearMissed && obs.y + obs.height > player.y && obs.y < player.y + player.height) {
+            const horizGap = Math.min(
+                Math.abs((player.x + player.width) - obs.x),
+                Math.abs((obs.x + obs.width) - player.x)
+            );
+            if (horizGap < 24) {
+                obs.nearMissed = true;
+                distance += 10;
+                createParticles(player.x + player.width / 2, player.y, '#00ffff', 6);
+                playSound(880, 0.07, 'sine', 0.06);
+            }
         }
     }
     

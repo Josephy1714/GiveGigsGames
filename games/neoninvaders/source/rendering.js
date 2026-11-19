@@ -1,7 +1,12 @@
 function draw() {
+    ctx.save();
+    if (shakeTime > 0) {
+        ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+        shakeTime--;
+    }
     // Clear canvas
     ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20);
     
     // Draw stars
     stars.forEach(star => {
@@ -121,6 +126,7 @@ function draw() {
     
     ctx.fillStyle = '#00ff00';
     ctx.fillText(`LIVES: ${lives}`, canvas.width - 110, 30);
+    ctx.restore();
 }
 
 function gameLoop(timestamp = performance.now()) {
