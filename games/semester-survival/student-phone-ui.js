@@ -66,8 +66,36 @@
         });
         forecast.appendChild(el('p','student-phone__note','Forecasts are generated from the in-game calendar. No internet connection is needed.'));
       }else if(s.section==='map'){
-        const p=panel(s.district?s.district.title:'Current district');line(p,'Current location',s.location);(s.district?s.district.exits:[]).forEach(exit=>{const d=el('article','student-phone__item');d.append(el('strong','',exit),el('span','', (root.SemesterWorldContent.districts[exit]||{}).title||''));p.appendChild(d);});
-        (s.district?s.district.places:[]).forEach(place=>{const d=el('article','student-phone__item');d.append(el('strong','',place.name),el('small','',place.actions.join(' · ')));p.appendChild(d);});
+        const world=root.SemesterWorldContent;
+        const p=panel('Nairobi · district network');
+        line(p,'Current district',s.district?s.district.title:s.location);
+        p.appendChild(el('p','student-phone__note','Choose a directly connected district to travel. Routes advance the in-game clock and use energy; the current travel system does not charge a cash fare.'));
+        const network=el('div','student-phone__map-network');
+        const order=['residence','township','campus','city'];
+        const names={residence:'Residence',township:'Township',campus:'University',city:'Nairobi City'};
+        order.forEach((id,index)=>{
+          const district=world.districts[id];if(!district)return;
+          const current=id===s.location,connected=!!(s.district&&s.district.exits.includes(id));
+          const card=el('article','student-phone__map-node'+(current?' is-current':'')+(connected?' is-connected':''));
+          const top=el('div','student-phone__map-node-top');
+          top.append(el('span','student-phone__map-index','0'+(index+1)),el('span','student-phone__map-status',current?'YOU ARE HERE':connected?'DIRECT ROUTE':'NOT CONNECTED'));
+          card.append(top,el('strong','student-phone__map-title',district.title),el('small','student-phone__map-description',district.mood));
+          if(connected){
+            const travel=el('button','student-phone__action','Travel here');travel.type='button';
+            travel.addEventListener('click',async()=>{travel.disabled=true;travel.textContent='Preparing journey…';status.textContent='';try{await phone.travelTo(id);}catch(error){status.textContent=error.message;travel.disabled=false;travel.textContent='Travel here';}});
+            card.appendChild(travel);
+          }else if(current){card.appendChild(el('small','student-phone__note','Current location'));}
+          else{card.appendChild(el('small','student-phone__note','Reach this district through an available connecting route.'));}
+          network.appendChild(card);
+          if(index<order.length-1){const connector=el('div','student-phone__map-connector');connector.setAttribute('aria-hidden','true');network.appendChild(connector);}
+        });
+        p.appendChild(network);
+        const route=panel('Available direct routes');
+        if(s.district&&s.district.exits.length){s.district.exits.forEach(id=>{const d=world.districts[id];if(!d)return;const row=el('article','student-phone__item');row.append(el('strong','',d.title),el('small','',d.mood));route.appendChild(row);});}
+        else route.appendChild(el('p','student-phone__note','No direct routes are available from this location.'));
+        const places=panel('Places in this district');
+        (s.district?s.district.places:[]).forEach(place=>{const row=el('article','student-phone__item');row.append(el('strong','',place.name),el('small','',place.actions.join(' · ')));places.appendChild(row);});
+        var status=el('p','student-phone__note','');status.setAttribute('role','status');status.setAttribute('aria-live','polite');p.appendChild(status);
       }
       const journal=panel('Recent journal');s.journal.slice(-4).reverse().forEach(entry=>journal.appendChild(el('p','student-phone__journal',entry.day+' '+entry.time+' — '+entry.text)));
     }
