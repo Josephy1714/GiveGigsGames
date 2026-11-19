@@ -147,3 +147,7 @@ A delivered character atlas must be accompanied by metadata with this shape:
 ### Current implementation boundary
 
 The controller-to-atlas adapter, deterministic frame sampling, crossfade, facing and canvas draw path are implemented and unit-tested. This does **not** mean character animation production is complete: the approved character atlas, model sheet, actual movement clips, transition clips and in-game visual review are still required release gates. Do not mark a clip accepted until its source artwork and runtime preview have been reviewed at gameplay scale.
+
+## NPC path and animation handoff
+
+NPC navigation produces authored waypoint sequences only. The eventual actor controller must consume these routes using the same delta-time, acceleration, foot-contact, facing, obstacle and recovery standards as the player controller. It must not teleport between nodes or use generic procedural figures. Each recurring NPC needs an approved model sheet, costume-consistent animation atlas/rig, walk/turn/stop/idle/dialogue clips and reviewed transitions before visible movement is enabled. A route being computable is not evidence that a character can walk it convincingly.
