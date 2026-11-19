@@ -61,6 +61,7 @@
       const just=action=>KEY[action].some(k=>justPressed.has(k));
       const result={
         moveX:blocked?0:(touchAxis||((has('right')?1:0)-(has('left')?1:0))),
+        moveY:blocked?0:((pressed.has('i')||pressed.has('I')?1:0)-(pressed.has('k')||pressed.has('K')?1:0)),
         sprint:!blocked&&has('sprint'),
         jumpPressed:!blocked&&just('jump'),
         slidePressed:!blocked&&just('slide'),
