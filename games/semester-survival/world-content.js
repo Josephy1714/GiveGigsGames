@@ -10,9 +10,9 @@
       mood: 'A compact shared student residence with lived-in corridors and a courtyard.',
       exits: ['township', 'campus'],
       places: [
-        { id: 'room', name: 'Shared Room', actions: ['sleep', 'study', 'check-phone'] },
-        { id: 'courtyard', name: 'Residence Courtyard', actions: ['talk-roommate', 'socialize'] },
-        { id: 'laundry', name: 'Laundry Corner', actions: ['wash-clothes'] }
+        { id: 'room', name: 'Shared Room', actions: ['sleep', 'study', 'check-phone'] , exposure: 'indoor' },
+        { id: 'courtyard', name: 'Residence Courtyard', actions: ['talk-roommate', 'socialize'] , exposure: 'outdoor' },
+        { id: 'laundry', name: 'Laundry Corner', actions: ['wash-clothes'] , exposure: 'sheltered' }
       ]
     },
     township: {
@@ -20,12 +20,12 @@
       mood: 'The everyday student district: affordable services, foot traffic and familiar faces.',
       exits: ['residence', 'campus', 'city'],
       places: [
-        { id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'] },
-        { id: 'print-hub', name: 'Print Hub', actions: ['print-notes', 'bind-assignment'] },
-        { id: 'barber', name: 'Barber Shop', actions: ['get-haircut', 'talk-barber'] },
-        { id: 'mini-mart', name: 'Corner Mini-Mart', actions: ['buy-supplies'] },
-        { id: 'matatu-stage', name: 'Transport Stage', actions: ['travel-campus', 'travel-city'] },
-        { id: 'study-cafe', name: 'Study Café', actions: ['study', 'meet-friend'] }
+        { id: 'mama-njeri-kiosk', name: 'Mama Njeri’s Food Kiosk', actions: ['buy-meal', 'talk-vendor'] , exposure: 'sheltered' },
+        { id: 'print-hub', name: 'Print Hub', actions: ['print-notes', 'bind-assignment'] , exposure: 'indoor' },
+        { id: 'barber', name: 'Barber Shop', actions: ['get-haircut', 'talk-barber'] , exposure: 'indoor' },
+        { id: 'mini-mart', name: 'Corner Mini-Mart', actions: ['buy-supplies'] , exposure: 'indoor' },
+        { id: 'matatu-stage', name: 'Transport Stage', actions: ['travel-campus', 'travel-city'] , exposure: 'sheltered' },
+        { id: 'study-cafe', name: 'Study Café', actions: ['study', 'meet-friend'] , exposure: 'indoor' }
       ]
     },
     campus: {
@@ -33,13 +33,13 @@
       mood: 'A busy academic core with lecture spaces, student services and quiet study corners.',
       exits: ['residence', 'township', 'city'],
       places: [
-        { id: 'main-gate', name: 'Main Gate', actions: ['check-noticeboard', 'meet-students'] },
-        { id: 'lecture-hall', name: 'Main Lecture Hall', actions: ['attend-lecture', 'ask-question'] },
-        { id: 'library', name: 'University Library', actions: ['study', 'borrow-book'] },
-        { id: 'data-lab', name: 'Computer and Data Lab', actions: ['lab-session', 'work-on-project'] },
-        { id: 'student-commons', name: 'Student Commons', actions: ['socialize', 'join-club'] },
-        { id: 'administration', name: 'Student Administration', actions: ['check-fees', 'resolve-record'] },
-        { id: 'lecturer-office', name: 'Lecturer Offices', actions: ['consult-lecturer'] }
+        { id: 'main-gate', name: 'Main Gate', actions: ['check-noticeboard', 'meet-students'] , exposure: 'outdoor' },
+        { id: 'lecture-hall', name: 'Main Lecture Hall', actions: ['attend-lecture', 'ask-question'] , exposure: 'indoor' },
+        { id: 'library', name: 'University Library', actions: ['study', 'borrow-book'] , exposure: 'indoor' },
+        { id: 'data-lab', name: 'Computer and Data Lab', actions: ['lab-session', 'work-on-project'] , exposure: 'indoor' },
+        { id: 'student-commons', name: 'Student Commons', actions: ['socialize', 'join-club'] , exposure: 'indoor' },
+        { id: 'administration', name: 'Student Administration', actions: ['check-fees', 'resolve-record'] , exposure: 'indoor' },
+        { id: 'lecturer-office', name: 'Lecturer Offices', actions: ['consult-lecturer'] , exposure: 'indoor' }
       ]
     },
     city: {
@@ -47,10 +47,10 @@
       mood: 'A later-game destination for interviews, errands, events and new opportunities.',
       exits: ['township', 'campus'],
       places: [
-        { id: 'career-centre', name: 'Career Centre', actions: ['career-advice', 'find-internship'] },
-        { id: 'interview-suite', name: 'Interview Suite', actions: ['attend-interview'] },
-        { id: 'bookshop', name: 'Bookshop Arcade', actions: ['buy-books'] },
-        { id: 'innovation-hub', name: 'Innovation Hub', actions: ['network', 'pitch-project'] }
+        { id: 'career-centre', name: 'Career Centre', actions: ['career-advice', 'find-internship'] , exposure: 'indoor' },
+        { id: 'interview-suite', name: 'Interview Suite', actions: ['attend-interview'] , exposure: 'indoor' },
+        { id: 'bookshop', name: 'Bookshop Arcade', actions: ['buy-books'] , exposure: 'indoor' },
+        { id: 'innovation-hub', name: 'Innovation Hub', actions: ['network', 'pitch-project'] , exposure: 'indoor' }
       ]
     }
   };
@@ -177,6 +177,7 @@
         if (ids.has(place.id)) throw new Error('Duplicate place id: ' + place.id);
         ids.add(place.id);
         if (!Array.isArray(place.actions) || !place.actions.length) throw new Error('Place has no actions: ' + place.id);
+        if (!['indoor', 'sheltered', 'outdoor'].includes(place.exposure)) throw new Error('Place requires explicit weather exposure: ' + place.id);
       });
       district.exits.forEach(function (exit) {
         if (!districts[exit] || !districts[exit].exits.includes(key)) throw new Error('World route must be reciprocal: ' + key + ' -> ' + exit);
