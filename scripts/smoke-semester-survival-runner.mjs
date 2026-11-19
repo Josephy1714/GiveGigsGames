@@ -18,6 +18,18 @@ try {
   await page.locator("#play").click();
   await page.locator("#game.open").waitFor();
   await page.locator("#world").waitFor({ state: "visible" });
+
+  // Verify obstacle height maps to the correct evasive action.
+  const probe = (action, movement = {}) => page.evaluate(
+    ({ action, movement }) => window.__runnerSmoke.probeObstacle({ action, ...movement }),
+    { action, movement }
+  );
+  assert.equal((await probe("jump", { jump: 0 })).hit, true, "Failing to jump should collide with a low obstacle");
+  assert.equal((await probe("jump", { jump: 1 })).hit, false, "A successful jump should clear a low obstacle");
+  assert.equal((await probe("slide", { slide: 0 })).hit, true, "Failing to slide should collide with a high obstacle");
+  assert.equal((await probe("slide", { slide: 0.9 })).hit, false, "A successful slide should clear a high obstacle");
+  assert.equal((await probe("lane", { slide: 0.9 })).hit, true, "Sliding should not clear a full-height obstacle");
+  assert.equal((await probe("lane", { lane: 0, obstacleLane: 1 })).hit, false, "Changing lanes should avoid a full-height obstacle");
   await page.locator("#fullscreen").click();
   await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
   assert.equal(await page.evaluate(() => document.fullscreenElement?.id), "game", "Fullscreen should expand the game overlay");
