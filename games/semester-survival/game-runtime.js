@@ -115,6 +115,7 @@
     weather.update(life.getState().calendar,environment.getState().district,dt);
     npcSchedules.update(life.getState().calendar,environment.getState().district);
     npcNavigation.update();
+     npcActors.update(dt);
     renderer.setAtmosphere(weather.getRenderState());
     character.render();
     if(interactionUI)interactionUI.render(interaction.getState());
@@ -156,6 +157,7 @@
     weather.update(life.getState().calendar,initialDistrict,0);
     npcSchedules.update(life.getState().calendar,initialDistrict);
     npcNavigation.update();
+     npcActors.update(0);
     renderer.setAtmosphere(weather.getRenderState());
     resize();
     character.render();
@@ -195,6 +197,7 @@
     weather.update(life.getState().calendar,destination,0);
     npcSchedules.update(life.getState().calendar,destination);
     npcNavigation.update();
+     npcActors.update(0);
     renderer.setAtmosphere(weather.getRenderState());
     interaction.refresh(getPosition());
     publish({type:'travel',origin:previous,destination:destination,spawn:spawnId,minutes:journey.minutes},'runtime');
@@ -211,6 +214,7 @@
       weather.update(life.getState().calendar,previous,0);
       npcSchedules.update(life.getState().calendar,previous);
       npcNavigation.update();
+     npcActors.update(0);
       renderer.setAtmosphere(weather.getRenderState());
       interaction.refresh(getPosition());
      }catch(rollbackError){onError(rollbackError);}
