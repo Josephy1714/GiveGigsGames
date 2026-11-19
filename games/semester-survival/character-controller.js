@@ -176,7 +176,7 @@
 
     function reset(position) {
       c.x = Number(position && position.x) || 0;
-      c.depth = Number(position && position.depth) || 0;
+      c.depth = clamp(Number(position && position.depth) || 0, depthBounds.min, depthBounds.max);
       c.y = 0; c.vx = 0; c.vy = 0; c.vDepth = 0; c.grounded = true;
       c.stamina = 100; c.slideTime = 0; c.slideCooldown = 0;
       c.dodgeTime = 0; c.jumpBuffer = 0; c.coyote = CONFIG.coyoteTime; c.takeoffFrame = false;
