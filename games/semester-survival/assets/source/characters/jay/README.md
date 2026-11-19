@@ -13,7 +13,7 @@ Preserve this source file unchanged. All future Jay expressions, poses, costumes
 
 ## Animation source intake
 
-The project owner has uploaded a first batch of separate Jay action-sheet source images. Their original auto-generated filenames and original JPEG/WebP formats are preserved. See [SOURCE_INTAKE.md](SOURCE_INTAKE.md) for the exact inventory and validation status.
+The project owner has uploaded a first batch of separate Jay action-sheet source images. Their auto-generated filenames are preserved. See [SOURCE_INTAKE.md](SOURCE_INTAKE.md) for the verified action mapping, measured dimensions and byte-signature audit. Important: seven files carry a `.webp` filename suffix but their actual bytes are JPEG/JFIF; treat them as JPEG when decoding and never trust the suffix alone.
 
 Gemini's current export path may produce a flattened JPEG or WebP with a solid white background rather than a transparent PNG, and may assign its own filename. That is acceptable for **source intake only**. Do not rename an extension to pretend the file is PNG, do not overwrite the originals, and do not put a white rectangle into the game.
 
