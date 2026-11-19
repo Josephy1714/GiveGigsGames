@@ -17,7 +17,8 @@ function harness(overrides) {
     update(dt) { calls.push(['animator.update', dt]); return { status: 'ready', clip: 'jog' }; },
     snapshot() { return { status: 'ready', clip: 'idle' }; },
     render() { calls.push(['animator.render']); return { drawn: true }; },
-    reset() { calls.push(['animator.reset']); }
+    reset() { calls.push(['animator.reset']); },
+    drainEvents() { return calls.filter(c => c[0] === 'marker').map(c => c[1]); }
   };
   const renderer = {
     updateCamera(target, dt) { calls.push(['camera', target, dt]); },
@@ -98,4 +99,12 @@ test('validates required dependencies and optional atlas clip completeness', () 
     clipLibrary: { has(name) { return name !== 'sprint'; } }
   }), /missing clips: sprint/);
   assert.ok(h);
+});
+
+
+test('exposes authored animation frame events to the host without consuming them during render',()=>{
+  const h=harness();
+  h.calls.push(['marker',{clip:'jog',frameIndex:1,event:'right-foot-contact'}]);
+  assert.deepEqual(h.runtime.drainAnimationEvents(),[{clip:'jog',frameIndex:1,event:'right-foot-contact'}]);
+  assert.deepEqual(h.runtime.drainAnimationEvents(),[]);
 });
