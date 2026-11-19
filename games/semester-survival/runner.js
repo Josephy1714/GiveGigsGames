@@ -3,6 +3,10 @@
 "use strict";
 const $=id=>document.getElementById(id), canvas=$("runner-stage"), ctx=canvas.getContext("2d",{alpha:false});
 const overlay=$("runner-overlay"), title=$("overlay-title"), copy=$("overlay-copy"), startBtn=$("start-run"), pauseBtn=$("pause-run");
+let startAction=null,lastStartActivation=0;
+function activateStart(){const now=performance.now();if(now-lastStartActivation<500)return;lastStartActivation=now;if(typeof startAction==="function")startAction();}
+startBtn.addEventListener("click",activateStart);
+startBtn.addEventListener("pointerup",e=>{if(e.pointerType==="touch"||e.pointerType==="pen"){e.preventDefault();activateStart();}});
 const hud=$("runner-hud"), scoreEl=$("score"), distanceEl=$("distance"), coinsEl=$("coins"), semesterEl=$("semester"), boostEl=$("boost-status"), toast=$("runner-toast");
 const districts=[
 {id:"residence",label:"STUDENT RESIDENCE",src:"assets/scenes/residence/district-blockout.svg"},
@@ -24,10 +28,10 @@ addEventListener("resize",resize,{passive:true});resize();
 function newGame(){return{mode:"running",elapsed:0,distance:0,score:0,coins:0,lane:1,laneVisual:1,jump:0,slide:0,hitFlash:0,speed:310,spawn:0,coinSpawn:0,powerSpawn:8,obstacles:[],pickups:[],boost:null,boostTime:0,shield:0,magnet:0,semester:1,district:0,districtFade:0,invulnerable:0,animationTime:0,shake:0}}
 function showToast(message){toast.textContent=message;toast.classList.add("is-visible");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove("is-visible"),1450)}
 function setOverlay(t,c,b){title.textContent=t;copy.textContent=c;startBtn.textContent=b;overlay.classList.remove("is-hidden");hud.classList.add("is-hidden");pauseBtn.classList.add("is-hidden")}
-function start(){game=newGame();overlay.classList.add("is-hidden");hud.classList.remove("is-hidden");pauseBtn.classList.remove("is-hidden");try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});if(screen.orientation&&screen.orientation.lock)screen.orientation.lock("portrait").catch(()=>{})}catch(_){}startBtn.onclick=start;lastTime=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(frame)}
-function pause(){if(!game||game.mode!=="running")return;game.mode="paused";setOverlay("RUN PAUSED","Catch your breath, Jay. Your university run is waiting.","RESUME RUN");startBtn.onclick=resume}
-function resume(){if(!game||game.mode!=="paused")return;game.mode="running";overlay.classList.add("is-hidden");hud.classList.remove("is-hidden");pauseBtn.classList.remove("is-hidden");startBtn.onclick=start;lastTime=performance.now();raf=requestAnimationFrame(frame)}
-function endRun(){if(!game||game.mode!=="running")return;game.mode="over";const finalScore=Math.floor(game.score);if(finalScore>best){best=finalScore;try{localStorage.setItem("semester-survival-runner-best",String(best))}catch(_){}}setTimeout(()=>{setOverlay("RUN OVER","Distance "+Math.floor(game.distance)+" m  ·  "+game.coins+" credits  ·  Best "+best.toLocaleString(),"RUN AGAIN");startBtn.onclick=start},700)}
+function start(){if(game&&game.mode==="running")return;game=newGame();overlay.classList.add("is-hidden");hud.classList.remove("is-hidden");pauseBtn.classList.remove("is-hidden");try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});if(screen.orientation&&screen.orientation.lock)screen.orientation.lock("portrait").catch(()=>{})}catch(_){}startAction=start;lastTime=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(frame)}
+function pause(){if(!game||game.mode!=="running")return;game.mode="paused";setOverlay("RUN PAUSED","Catch your breath, Jay. Your university run is waiting.","RESUME RUN");startAction=resume}
+function resume(){if(!game||game.mode!=="paused")return;game.mode="running";overlay.classList.add("is-hidden");hud.classList.remove("is-hidden");pauseBtn.classList.remove("is-hidden");startAction=start;lastTime=performance.now();raf=requestAnimationFrame(frame)}
+function endRun(){if(!game||game.mode!=="running")return;game.mode="over";const finalScore=Math.floor(game.score);if(finalScore>best){best=finalScore;try{localStorage.setItem("semester-survival-runner-best",String(best))}catch(_){}}setTimeout(()=>{setOverlay("RUN OVER","Distance "+Math.floor(game.distance)+" m  ·  "+game.coins+" credits  ·  Best "+best.toLocaleString(),"RUN AGAIN");startAction=start},700)}
 function laneX(lane,y){const h=height*.435,t=Math.max(0,Math.min(1,(y-h)/(height-h))),rw=width*(.16+.78*t);return width/2+(lane-1)*rw*.285}
 function roadWidthAt(y){const t=Math.max(0,Math.min(1,(y-height*.435)/(height*.565)));return width*(.16+.78*t)}
 function project(z){const h=height*.435,py=height*.805,y=h+z*(py-h),scale=.24+z*1.02;return{y,scale,x:lane=>laneX(lane,y)}}
@@ -41,7 +45,7 @@ let pointerStart=null;
 canvas.addEventListener("pointerdown",e=>{pointerStart={x:e.clientX,y:e.clientY}},{passive:true});
 canvas.addEventListener("pointerup",e=>{if(!pointerStart)return;const dx=e.clientX-pointerStart.x,dy=e.clientY-pointerStart.y;pointerStart=null;if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;if(Math.abs(dx)>Math.abs(dy))moveLane(dx<0?-1:1);else if(dy<0)jump();else slide()},{passive:true});
 addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")moveLane(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")moveLane(1);if(e.key==="ArrowUp"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")slide();if(e.key==="Escape")pause()},{passive:false});
-pauseBtn.addEventListener("click",pause);startBtn.onclick=start;
+pauseBtn.addEventListener("click",pause);startAction=start;
 function update(dt){
  if(!game||game.mode!=="running")return;
  game.elapsed+=dt;const baseSpeed=Math.min(590,310+game.distance*.045);game.speed=baseSpeed+(game.boost==="speed"?125:0);game.distance+=game.speed*dt/10;game.score+=game.speed*dt*(game.boost==="knowledge"?2.1:1);
@@ -67,6 +71,6 @@ function drawJay(){if(!atlasReady||!manifest||!game)return;const x=laneX(game.la
 function draw(){if(!game)return;ctx.save();if(game.shake>0)ctx.translate((Math.random()-.5)*game.shake*18,(Math.random()-.5)*game.shake*12);drawBackground();drawRoad();game.obstacles.slice().sort((a,b)=>a.z-b.z).forEach(drawObstacle);game.pickups.slice().sort((a,b)=>a.z-b.z).forEach(drawPickup);drawJay();if(game.hitFlash>0){ctx.fillStyle="rgba(255,75,65,"+(game.hitFlash*.24)+")";ctx.fillRect(0,0,width,height)}if(game.districtFade>0){ctx.fillStyle="rgba(8,20,30,"+(game.districtFade*.28)+")";ctx.fillRect(0,0,width,height)}ctx.restore()}
 function frame(now){if(!game||game.mode!=="running")return;const dt=Math.min(.034,Math.max(0,(now-lastTime)/1000));lastTime=now;update(dt);draw();if(game&&game.mode==="running")raf=requestAnimationFrame(frame)}
 function loading(){ctx.fillStyle="#071522";ctx.fillRect(0,0,width,height);ctx.fillStyle="#f5e8cf";ctx.textAlign="center";ctx.font="700 22px system-ui";ctx.fillText("LOADING JAY'S UNIVERSITY RUN…",width/2,height/2)}
-loading();loadManifest().then(()=>{title.textContent="SEMESTER SURVIVAL";copy.textContent="Jay's University Run · Swipe to change lanes, jump and slide. Survive all eight semesters.";startBtn.textContent="START RUN"}).catch(err=>{setOverlay("GAME ASSETS UNAVAILABLE",err.message,"RELOAD");startBtn.onclick=()=>location.reload()});
+loading();loadManifest().then(()=>{title.textContent="SEMESTER SURVIVAL";copy.textContent="Jay's University Run · Swipe to change lanes, jump and slide. Survive all eight semesters.";startBtn.textContent="START RUN"}).catch(err=>{setOverlay("GAME ASSETS UNAVAILABLE",err.message,"RELOAD");startAction=()=>location.reload()});
 document.addEventListener("visibilitychange",()=>{if(document.hidden&&game&&game.mode==="running")pause()});
 })();
