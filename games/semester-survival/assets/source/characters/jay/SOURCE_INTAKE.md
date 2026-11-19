@@ -6,23 +6,23 @@ All uploaded source images are preserved in `assets/source/characters/jay/`. Thi
 
 | File | Verified role | Status |
 |---|---|---|
-| `1795073501939.jpg` | Four-view Jay turnaround | Project-owner approved design reference; not an animation sheet |
+| `1795073501939.jpg` | Four-view Jay turnaround | 1376×768 JPEG; project-owner approved design reference; not an animation sheet |
 
 ## Visually inspected action sheets
 
 | File | Verified action | Initial review |
 |---|---|---|
-| `1795074192816.jpg` | Idle / blink | 4-frame horizontal strip; useful idle variation, but full-body scale and crop margins still need exact measurement. |
-| `1795074517333.jpg` | Walk | 4×2 sheet; readable walk cycle and consistent outfit. Frame-to-frame foot contacts and loop seam still need review. |
-| `1795074841200.jpg` | Jog | 4×2 sheet; readable jog cycle. Check frame ordering, stride continuity and loop seam before approval. |
-| `Meta_AI_sprint_20261119_110406.jpg` | Sprint | 4×2 sheet; energetic pose. Hair silhouette changes noticeably between frames; flag for identity-continuity review before runtime approval. |
-| `Meta_AI_916951766_1841479800241068_9219361324369617113_n_20261119_110911.webp` | Standing vertical jump and landing | 4×2 sheet; shows crouch, airborne rise and recovery. Hair silhouette varies between frames; verify sequence order and landing pivot. |
-| `Meta_AI_916811181_1450185383862546_3331141356748851519_n_20261119_111431.webp` | Running forward jump | 4×2 sheet; forward airborne poses are clear. Hair silhouette varies and the exact takeoff/landing sequence needs review. |
-| `Meta_AI_916952132_1143042368122950_6500628437492435153_n_20261119_112204.webp` | Accidental fall | 4×2 sheet; fall impact and ground contact are readable. Keep separate from intentional jump and dodge actions. |
-| `Meta_AI_916882119_2702665886828845_97200770314772330_n_20261119_112422.webp` | Get-up recovery | 4×2 sheet; floor/kneel-to-standing recovery is present. Verify the transition does not pop and that the final standing frame aligns with idle. |
-| `Meta_AI_916882035_28451130907895002_8609570660650290104_n_20261119_115527.webp` | Greeting / wave | 4×2 sheet; expressive upper-body wave. Lower body is cropped, so use only for a compatible interaction pose, not full-body locomotion. |
-| `Meta_AI_916882081_994725666517201_3357036583534970929_n_20261119_120922.webp` | Phone use | 4×2 sheet; phone interaction is readable. Upper-body framing means it needs a dedicated interaction anchor/pose rather than a full-body locomotion clip. |
-| `Meta_AI_916953425_2325867808197235_9058160883401323934_n_20261119_121150.webp` | Sit-down / seated / stand-up | 4×2 sheet; sequence is understandable and identity is consistent. The seated pose has no visible chair, so it must be staged against an authored seat prop and aligned to its seat anchor. |
+| `1795074192816.jpg` | Idle / blink | 1376×768 JPEG; 4-frame horizontal strip; useful idle variation. |
+| `1795074517333.jpg` | Walk | 1376×768 JPEG; 4×2 sheet; readable walk cycle and consistent outfit. Foot contacts and loop seam still need review. |
+| `1795074841200.jpg` | Jog | 1376×768 JPEG; 4×2 sheet; readable jog cycle. Check frame ordering, stride continuity and loop seam before approval. |
+| `Meta_AI_sprint_20261119_110406.jpg` | Sprint | 2240×1120 JPEG; 4×2 sheet; energetic pose. Hair silhouette changes noticeably between frames; flag for identity-continuity review before runtime approval. |
+| `Meta_AI_916951766_1841479800241068_9219361324369617113_n_20261119_110911.webp` | Standing vertical jump and landing | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; shows crouch, airborne rise and recovery. Hair silhouette varies between frames; verify sequence order and landing pivot. |
+| `Meta_AI_916811181_1450185383862546_3331141356748851519_n_20261119_111431.webp` | Running forward jump | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; forward airborne poses are clear. Hair silhouette varies and the exact takeoff/landing sequence needs review. |
+| `Meta_AI_916952132_1143042368122950_6500628437492435153_n_20261119_112204.webp` | Accidental fall | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; fall impact and ground contact are readable. Keep separate from intentional jump and dodge actions. |
+| `Meta_AI_916882119_2702665886828845_97200770314772330_n_20261119_112422.webp` | Get-up recovery | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; floor/kneel-to-standing recovery is present. Verify the transition does not pop and that the final standing frame aligns with idle. |
+| `Meta_AI_916882035_28451130907895002_8609570660650290104_n_20261119_115527.webp` | Greeting / wave | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; expressive upper-body wave. Lower body is cropped, so use only for a compatible interaction pose, not full-body locomotion. |
+| `Meta_AI_916882081_994725666517201_3357036583534970929_n_20261119_120922.webp` | Phone use | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; phone interaction is readable. Upper-body framing means it needs a dedicated interaction anchor/pose rather than a full-body locomotion clip. |
+| `Meta_AI_916953425_2325867808197235_9058160883401323934_n_20261119_121150.webp` | Sit-down / seated / stand-up | 2240×1120 JPEG bytes (despite the `.webp` suffix); 4×2 sheet. 4×2 sheet; sequence is understandable and identity is consistent. The seated pose has no visible chair, so it must be staged against an authored seat prop and aligned to its seat anchor. |
 
 ## Important file-format audit
 
@@ -33,7 +33,7 @@ The seven files whose names end in `.webp` were inspected at the byte-signature 
 - During processing, decode the bytes as JPEG and export a correctly encoded runtime derivative with an honest extension/MIME type (for example, PNG with alpha after background removal).
 - Verify every processed output by its actual file signature, decoded dimensions and successful browser load. Never fix a MIME mismatch by changing only the filename suffix.
 
-The four timestamped JPEGs and sprint JPEG are JPEG sources. The actual dimensions and byte sizes of every source still need to be measured during local processing.
+The four timestamped JPEGs and sprint JPEG are JPEG sources. Measured source dimensions: turnaround/idle/walk/jog are 1376×768; the sprint and all seven action sheets with `.webp` suffixes are 2240×1120. Re-measure in the actual processing environment before packing; these dimensions do not establish exact per-frame crop rectangles.
 
 ## Current coverage and missing source clips
 
