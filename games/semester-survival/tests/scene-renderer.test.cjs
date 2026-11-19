@@ -22,7 +22,7 @@ function fakeCanvas() {
   return { canvas: { width: 0, height: 0, style: {}, getContext: () => ctx }, calls };
 }
 const scene = {
-  width: 1920, height: 1080, groundY: 880, depthScale: 0.6, depthBounds: { min: -180, max: 180 }, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 },
+  width: 1920, height: 1080, groundY: 880, depthScale: 0.6, depthBounds: { min: -180, max: 180 }, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 }, playerBounds: { minX: 40, maxX: 5000 },
   layers: [
     { id: 'sky', assetId: 'sky-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 0, parallax: 0.15 },
     { id: 'foreground', assetId: 'foreground-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 2 }
@@ -41,6 +41,7 @@ test('validates layer bounds, parallax, opacity, fit and hotspot geometry', () =
   assert.throws(() => api.validateScene({ ...scene, layers: [{ ...scene.layers[0], width: -1 }] }, assets), /invalid bounds/);
   assert.throws(() => api.validateScene({ ...scene, layers: [{ ...scene.layers[0], parallax: 2 }] }, assets), /invalid parallax/);
   assert.throws(() => api.validateScene({ ...scene, hotspots: { bad: { x: 1, y: 1, width: 0, height: 3 } } }, assets), /authored bounds/);
+  assert.throws(() => api.validateScene({ ...scene, playerBounds: { minX: 10, maxX: 10 } }, assets), /playerBounds are invalid/);
 });
 
 test('mounts and composites authored layers in z-order without drawing substitute art', () => {
@@ -52,6 +53,7 @@ test('mounts and composites authored layers in z-order without drawing substitut
   assert.equal(renderer.getLayout().groundY, 880);
   assert.equal(renderer.getLayout().depthScale, 0.6);
   assert.deepEqual({min:renderer.getLayout().depthBounds.min,max:renderer.getLayout().depthBounds.max},{min:-180,max:180});
+  assert.deepEqual({min:renderer.getLayout().playerBounds.minX,max:renderer.getLayout().playerBounds.maxX},{min:40,max:5000});
   const result = renderer.render();
   assert.deepEqual({ drawnLayers: result.drawnLayers, sceneId: result.sceneId }, { drawnLayers: 2, sceneId: 'campus-main' });
   assert.equal(calls.filter(call => call[0] === 'drawImage').length, 2);
