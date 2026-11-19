@@ -4,13 +4,13 @@
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function fail(m){throw new Error(m);}
  const EFFECTS=Object.freeze({
-  muddy-ground:{label:'Muddy ground',speedMultiplier:0.68,accelerationMultiplier:0.72,staminaDrainMultiplier:1.35,staminaRecoveryMultiplier:0.8,duration:0},
-  crowded-corridor:{label:'Crowded corridor',speedMultiplier:0.76,accelerationMultiplier:0.8,staminaDrainMultiplier:1.05,staminaRecoveryMultiplier:1,duration:0},
-  wet-floor:{label:'Wet floor',speedMultiplier:0.82,accelerationMultiplier:0.68,staminaDrainMultiplier:1.15,staminaRecoveryMultiplier:1,duration:0},
-  heavy-backpack:{label:'Heavy backpack',speedMultiplier:0.88,accelerationMultiplier:0.86,staminaDrainMultiplier:1.3,staminaRecoveryMultiplier:0.8,duration:0},
-  campus-track:{label:'Clear running track',speedMultiplier:1.14,accelerationMultiplier:1.12,staminaDrainMultiplier:0.82,staminaRecoveryMultiplier:1,duration:0},
-  coffee-boost:{label:'Coffee boost',speedMultiplier:1.12,accelerationMultiplier:1.08,staminaDrainMultiplier:0.88,staminaRecoveryMultiplier:1.12,duration:24},
-  water-break:{label:'Water break',speedMultiplier:1,accelerationMultiplier:1,staminaDrainMultiplier:1,staminaRecoveryMultiplier:2.5,duration:12}
+  'muddy-ground':{label:'Muddy ground',speedMultiplier:0.68,accelerationMultiplier:0.72,staminaDrainMultiplier:1.35,staminaRecoveryMultiplier:0.8,duration:0},
+  'crowded-corridor':{label:'Crowded corridor',speedMultiplier:0.76,accelerationMultiplier:0.8,staminaDrainMultiplier:1.05,staminaRecoveryMultiplier:1,duration:0},
+  'wet-floor':{label:'Wet floor',speedMultiplier:0.82,accelerationMultiplier:0.68,staminaDrainMultiplier:1.15,staminaRecoveryMultiplier:1,duration:0},
+  'heavy-backpack':{label:'Heavy backpack',speedMultiplier:0.88,accelerationMultiplier:0.86,staminaDrainMultiplier:1.3,staminaRecoveryMultiplier:0.8,duration:0},
+  'campus-track':{label:'Clear running track',speedMultiplier:1.14,accelerationMultiplier:1.12,staminaDrainMultiplier:0.82,staminaRecoveryMultiplier:1,duration:0},
+  'coffee-boost':{label:'Coffee boost',speedMultiplier:1.12,accelerationMultiplier:1.08,staminaDrainMultiplier:0.88,staminaRecoveryMultiplier:1.12,duration:24},
+  'water-break':{label:'Water break',speedMultiplier:1,accelerationMultiplier:1,staminaDrainMultiplier:1,staminaRecoveryMultiplier:2.5,duration:12}
  });
  function create(options){
   options=options||{};const onEvent=typeof options.onEvent==='function'?options.onEvent:function(){};
