@@ -25,7 +25,7 @@ const scene = {
   width: 960, height: 540, worldBounds: { width: 2160, height: 1040 }, groundY: 880, depthScale: 0.6, depthBounds: { min: -180, max: 180 }, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 }, playerBounds: { minX: 40, maxX: 2000 },
   layers: [
     { id: 'sky', assetId: 'sky-art', x: 0, y: 0, width: 2160, height: 1040, zIndex: 0, parallax: 0.15 },
-    { id: 'foreground', assetId: 'foreground-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 2 }
+    { id: 'foreground', assetId: 'foreground-art', x: 0, y: 0, width: 2160, height: 1040, zIndex: 2 }
   ],
   hotspots: { 'library-door': { x: 600, y: 400, width: 180, height: 260 } }
 };
@@ -53,9 +53,10 @@ test('mounts and composites authored layers in z-order without drawing substitut
   const mounted = renderer.mountScene('campus-main', { district: 'campus', scene, assets });
   assert.equal(mounted.layerCount, 2);
   assert.equal(renderer.getLayout().groundY, 880);
+  assert.deepEqual({ width: renderer.getLayout().worldBounds.width, height: renderer.getLayout().worldBounds.height }, { width: 2160, height: 1040 });
   assert.equal(renderer.getLayout().depthScale, 0.6);
   assert.deepEqual({min:renderer.getLayout().depthBounds.min,max:renderer.getLayout().depthBounds.max},{min:-180,max:180});
-  assert.deepEqual({min:renderer.getLayout().playerBounds.minX,max:renderer.getLayout().playerBounds.maxX},{min:40,max:5000});
+  assert.deepEqual({min:renderer.getLayout().playerBounds.minX,max:renderer.getLayout().playerBounds.maxX},{min:40,max:2000});
   const result = renderer.render();
   assert.deepEqual({ drawnLayers: result.drawnLayers, sceneId: result.sceneId }, { drawnLayers: 2, sceneId: 'campus-main' });
   assert.equal(calls.filter(call => call[0] === 'drawImage').length, 2);
