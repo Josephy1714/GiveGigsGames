@@ -17,7 +17,8 @@ function fakeCanvas() {
     translate(...args) { calls.push(['translate', ...args]); },
     scale(...args) { calls.push(['scale', ...args]); },
     drawImage(...args) { calls.push(['drawImage', ...args]); },
-    beginPath() {}, rect() {}, clip() {}
+    beginPath() {}, rect() {}, clip() {}, fillRect(...args) { calls.push(['fillRect', ...args]); },
+    moveTo(...args) { calls.push(['moveTo', ...args]); }, lineTo(...args) { calls.push(['lineTo', ...args]); }, stroke() { calls.push(['stroke']); }
   };
   return { canvas: { width: 0, height: 0, style: {}, getContext: () => ctx }, calls };
 }
@@ -112,4 +113,17 @@ test('exposes immutable authored hotspot bounds for interaction proximity', () =
     { x: 600, y: 400, width: 180, height: 260, centerX: 690, centerY: 530 });
   assert.equal(Object.isFrozen(bounds), true);
   assert.equal(renderer.getHotspotBounds('missing'), null);
+});
+
+test('renders validated weather atmosphere without replacing authored scene artwork', () => {
+  const { canvas, calls } = fakeCanvas();
+  const renderer = api.create({ canvas });
+  renderer.resize(960, 540, 1);
+  renderer.mountScene('campus-weather', { district: 'campus', scene, assets });
+  assert.throws(() => renderer.setAtmosphere({ condition: 'snow', light: 1, precipitation: 1, wind: 0, fog: 0, timeOfDay: 600 }), /Atmosphere state is invalid/);
+  renderer.setAtmosphere({ condition: 'rain', light: 0.7, precipitation: 0.72, wind: 0.42, fog: 0.13, timeOfDay: 780, phase: 4 });
+  const result = renderer.render();
+  assert.equal(result.weather, 'rain');
+  assert.ok(calls.some(call => call[0] === 'stroke'));
+  assert.ok(calls.some(call => call[0] === 'fillRect'));
 });
