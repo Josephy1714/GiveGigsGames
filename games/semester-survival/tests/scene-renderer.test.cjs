@@ -22,7 +22,7 @@ function fakeCanvas() {
   return { canvas: { width: 0, height: 0, style: {}, getContext: () => ctx }, calls };
 }
 const scene = {
-  width: 1920, height: 1080,
+  width: 1920, height: 1080, groundY: 880, depthScale: 0.6, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 },
   layers: [
     { id: 'sky', assetId: 'sky-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 0, parallax: 0.15 },
     { id: 'foreground', assetId: 'foreground-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 2 }
@@ -49,6 +49,8 @@ test('mounts and composites authored layers in z-order without drawing substitut
   renderer.resize(960, 540, 3);
   const mounted = renderer.mountScene('campus-main', { district: 'campus', scene, assets });
   assert.equal(mounted.layerCount, 2);
+  assert.equal(renderer.getLayout().groundY, 880);
+  assert.equal(renderer.getLayout().depthScale, 0.6);
   const result = renderer.render();
   assert.deepEqual({ drawnLayers: result.drawnLayers, sceneId: result.sceneId }, { drawnLayers: 2, sceneId: 'campus-main' });
   assert.equal(calls.filter(call => call[0] === 'drawImage').length, 2);
@@ -60,6 +62,9 @@ test('supports camera parallax and authored hotspot hit testing', () => {
   const renderer = api.create({ canvas, cameraSmoothing: 0 });
   renderer.resize(960, 540, 1);
   renderer.mountScene('campus-main', { district: 'campus', scene, assets });
+  renderer.updateCamera({ x: 5000, y: 5000 }, 1 / 60);
+  assert.equal(renderer.getState().camera.x, 1200);
+  assert.equal(renderer.getState().camera.y, 500);
   renderer.updateCamera({ x: 0, y: 0 }, 1 / 60);
   assert.equal(renderer.hitTest(350, 230, 960, 540), 'library-door');
   assert.equal(renderer.hitTest(20, 20, 960, 540), null);
