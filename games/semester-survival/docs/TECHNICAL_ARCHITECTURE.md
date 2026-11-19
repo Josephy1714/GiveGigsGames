@@ -74,3 +74,7 @@ Scenes may provide a designer-authored navigation graph. Each node references an
 ## NPC navigation planning
 
 The NPC schedule runtime selects time- and weather-aware destinations. The NPC navigation runtime then checks whether the scheduled NPC is in the active district, resolves its authored start anchor and destination place anchor, and runs breadth-first search over the district's validated navigation graph. Waypoints are resolved from mounted scene hotspot bounds. Missing graphs, anchors and disconnected routes are explicit states. This milestone plans routes only; it does not animate or move NPCs. Visual and movement readiness remain false until authored character art, collision/path validation and movement integration pass.
+
+## Authored collision and contact
+
+`collision-runtime.js` validates per-district static collider descriptors and resolves player movement against authored AABBs, circles and capsule-like segments in gameplay X/depth coordinates. Movement is radius-substepped to reduce tunnelling; contact resolution preserves tangential movement and cancels velocity into blocking surfaces. Material, friction, restitution and effect tags are authored data. Contact enter/impact/exit events flow through the central event bus. Collision geometry is not inferred from art or interaction hotspots. Empty geometry remains an explicit non-production state; see [Collision and Contact](COLLISION_AND_CONTACT.md).
