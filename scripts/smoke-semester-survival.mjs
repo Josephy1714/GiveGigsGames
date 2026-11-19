@@ -88,6 +88,7 @@ try {
   await mobile.mouse.up();
   const heldButtonAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
   assert.ok(heldButtonAfter > mobileBefore, "Holding the on-screen right control should move Jay");
+  const swipeBefore = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
   await mobile.evaluate(() => {
     const canvas = document.querySelector(".ss-adventure-shell__canvas");
     const options = { bubbles: true, pointerId: 7, pointerType: "touch", isPrimary: true };
@@ -96,7 +97,12 @@ try {
   });
   await mobile.waitForTimeout(450);
   const mobileAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
-  assert.ok(mobileAfter > mobileBefore, "Horizontal touch swipe should move Jay");
+  assert.ok(mobileAfter > swipeBefore, "Horizontal touch swipe should move Jay");
+  await mobile.locator("[data-ss-action=jump]").click();
+  await mobile.waitForTimeout(180);
+  const buttonJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
+  assert.ok(buttonJump > 0, "The on-screen jump control should trigger a jump");
+  await mobile.waitForTimeout(900);
   await mobile.evaluate(() => {
     const canvas = document.querySelector(".ss-adventure-shell__canvas");
     const options = { bubbles: true, pointerId: 8, pointerType: "touch", isPrimary: true };
@@ -104,10 +110,6 @@ try {
     canvas.dispatchEvent(new PointerEvent("pointerup", { ...options, clientX: 190, clientY: 230 }));
   });
   await mobile.waitForTimeout(180);
-  await mobile.locator("[data-ss-action=jump]").click();
-  await mobile.waitForTimeout(180);
-  const buttonJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
-  assert.ok(buttonJump > 0, "The on-screen jump control should trigger a jump");
   const mobileJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
   assert.ok(mobileJump > 0, "Upward touch swipe should trigger a real jump");
   await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.destroy());
