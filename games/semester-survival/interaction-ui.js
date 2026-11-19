@@ -84,7 +84,7 @@
         dialogue.groupScene ? 'SC' : String(dialogue.characterName || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
       monogram.setAttribute('aria-hidden', 'true');
       const speaker = node('div', 'ss-interaction-ui__speaker');
-      const speechState = dialogue.speech && dialogue.speech.status === 'speaking' ? 'VOICE · LIP-SYNC ACTIVE' : dialogue.speech && dialogue.speech.status === 'paused' ? 'VOICE PAUSED' : 'IN CONVERSATION';
+      const speechState = 'TEXT CONVERSATION';
       speaker.appendChild(node('span', 'ss-interaction-ui__eyebrow', dialogue.groupScene ? 'GROUP SCENE · ' + speechState : speechState));
       speaker.appendChild(node('h2', 'ss-interaction-ui__name', dialogue.sceneTitle || dialogue.characterName));
       if (dialogue.participants && dialogue.participants.length) speaker.appendChild(node('span', 'ss-interaction-ui__participants', dialogue.participants.map(function (person) { return person.name; }).join(' · ')));
@@ -99,7 +99,7 @@
       if (stage && Array.isArray(stage.participants)) {
         const stagePanel = node('section', 'ss-interaction-ui__stage');
         stagePanel.setAttribute('aria-label', 'Conversation participants and speaking turns');
-        stagePanel.appendChild(node('span', 'ss-interaction-ui__stage-label', 'SCENE BLOCKING · TEXT PREVIEW'));
+        stagePanel.appendChild(node('span', 'ss-interaction-ui__stage-label', 'CHARACTER STAGING · TEXT DIALOGUE'));
         const cast = node('div', 'ss-interaction-ui__stage-cast');
         stage.participants.forEach(function (person) {
           const actor = node('div', 'ss-interaction-ui__stage-actor' + (person.role === 'speaking' ? ' is-speaking' : ' is-listening'));
