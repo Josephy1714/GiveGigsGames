@@ -197,7 +197,6 @@
         const relationshipKey = RELATIONSHIP_BY_CHARACTER[turn.speakerId];
         const effect = choice.effects && choice.effects[turn.speakerId];
         if (relationshipKey && effect && typeof life.recordRelationship === 'function') life.recordRelationship(relationshipKey, effect, 'Joined the ' + scene.title + ' discussion');
-        startVoice(turn.speakerId, turn.lineId || choiceId);
       });
       dialogue.line = choice.turns[choice.turns.length - 1].text;
       const event = Object.freeze({ type: 'dialogue:group-choice', sceneId: scene.id, choiceId: choiceId, participants: Object.freeze(scene.participants.slice()) });
