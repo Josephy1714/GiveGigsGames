@@ -44,3 +44,6 @@ The original game entrypoint remains untouched until the complete game shell is 
 ## No external assignment files
 
 Coursework is a gameplay loop, not a real document workflow. Do not add a file input, PDF upload, document attachment, cloud storage or LMS integration. All work is represented by in-game actions, simulation progress and authored UI feedback.
+## Weather forecast
+
+The Weather section reads the same deterministic weather runtime used by the rendered world. It shows current conditions, seasonal context, district, time, daylight, wind and precipitation, followed by a three-day morning/afternoon forecast. Forecast review emits an in-game event. It is not a real-world meteorological service and does not require internet access.
