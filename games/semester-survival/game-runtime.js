@@ -105,6 +105,11 @@
    try{
     character.update(dt);
     const characterState=character.getState(),intent=characterState.input||{},position=getPosition();
+    if(typeof character.drainAnimationEvents==='function'){
+     character.drainAnimationEvents().forEach(function(marker){
+      publish({type:'character:animation-event',characterId:'jay',clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event,frameNumber:characterState.frameNumber},'character-animation');
+     });
+    }
     const zoneState=gameplayZones.update(position,dt);controller.setMovementModifiers(zoneState.modifiers);
     if(intent.phonePressed){phone.handleIntent(intent);refreshUI();}
     if(intent.pausePressed){
