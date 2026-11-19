@@ -727,8 +727,8 @@
         "Mobile"
       ],
       "emoji": "🎓",
-      "featured": false,
-      "recommended": false,
+      "featured": true,
+      "recommended": true,
       "entrypoint": "semester-survival-runner/index.html",
       "runtimeType": "static",
       "inputs": [
@@ -739,7 +739,8 @@
       "modes": [
         "solo"
       ],
-      "packageBytes": 5584700
+      "packageBytes": 5584700,
+      "status": "preview"
     }
   ]
 }
