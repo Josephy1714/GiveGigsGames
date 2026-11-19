@@ -103,7 +103,7 @@
         const cast = node('div', 'ss-interaction-ui__stage-cast');
         stage.participants.forEach(function (person) {
           const actor = node('div', 'ss-interaction-ui__stage-actor' + (person.role === 'speaking' ? ' is-speaking' : ' is-listening'));
-          const mark = node('span', 'ss-interaction-ui__stage-mark', String(person.name || '?').trim().split(/\\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
+          const mark = node('span', 'ss-interaction-ui__stage-mark', String(person.name || '?').trim().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase());
           mark.setAttribute('aria-hidden', 'true');
           const identity = node('span', 'ss-interaction-ui__stage-identity');
           identity.appendChild(node('strong', 'ss-interaction-ui__stage-name', person.name));
