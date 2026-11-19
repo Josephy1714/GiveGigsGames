@@ -17,6 +17,7 @@
   const heading=make('h1','',panel);heading.textContent='JAY’S UNIVERSITY ADVENTURE';
   const intro=make('p','',panel);intro.textContent='Your university journey starts here. Explore the residence, township, campus and city, meet people and build your story.';
   const play=make('button','ss-game-menu__play',panel);play.type='button';play.dataset.ssPlay='true';play.textContent='START ADVENTURE';
+  const playFullscreen=make('button','ss-game-menu__play ss-game-menu__play--secondary',panel);playFullscreen.type='button';playFullscreen.dataset.ssPlayFullscreen='true';playFullscreen.textContent='START FULLSCREEN';
   const hint=make('p','ss-game-menu__hint',panel);hint.textContent='MOVE: hold ◀ / ▶  ·  SPRINT: hold RUN  ·  JUMP: tap ▲  ·  INTERACT: tap E';
   const fullscreen=make('button','ss-game-fullscreen',shell);fullscreen.type='button';fullscreen.dataset.ssFullscreen='true';fullscreen.setAttribute('aria-label','Enter fullscreen');fullscreen.textContent='⛶ FULLSCREEN';
   const controls=make('div','ss-game-touch-controls',shell);controls.setAttribute('aria-label','Touch gameplay controls');
@@ -58,10 +59,8 @@
    else if(host.classList.contains('ss-game-immersive-fallback'))host.classList.remove('ss-game-immersive-fallback');
    else await enterFullscreen();
   }
-  play.addEventListener('click',async()=>{
-   await enterFullscreen();
-   menu.classList.add('is-hidden');
-  });
+  play.addEventListener('click',()=>menu.classList.add('is-hidden'));
+  playFullscreen.addEventListener('click',async()=>{await enterFullscreen();menu.classList.add('is-hidden');});
   fullscreen.addEventListener('click',toggleFullscreen);
   doc.addEventListener('fullscreenchange',()=>{
    const active=doc.fullscreenElement===shell;
