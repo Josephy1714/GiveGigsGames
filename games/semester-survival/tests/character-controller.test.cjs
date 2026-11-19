@@ -1,6 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 require('../character-controller.js');
+require('../collision-runtime.js');
 const { createController } = globalThis.SemesterCharacterController;
 const c = createController();
 let s = c.snapshot();
@@ -48,4 +49,10 @@ const reset=c.reset({x:3,depth:12});
 assert.equal(reset.x,3);
 assert.equal(reset.depth,10);
 assert.equal(reset.state,'idle');
+const collision=globalThis.SemesterCollisionRuntime.create({colliders:[{id:'test-wall',type:'aabb',minX:10,maxX:20,minDepth:-10,maxDepth:10}]});
+const blocked=globalThis.SemesterCharacterController.createController({collisionWorld:collision,collisionRadius:2});
+for(let i=0;i<180;i++) s=blocked.update(1/60,{moveX:1,sprint:true});
+assert.ok(s.x<=8.1,'player collision capsule must stop before the authored wall');
+assert.equal(s.vx,0,'velocity into the wall must be cancelled');
+collision.destroy();
 console.log('character-controller tests passed');
