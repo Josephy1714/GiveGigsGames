@@ -14,7 +14,7 @@ import hashlib, json, math
 from pathlib import Path
 from PIL import Image
 
-GAME_ROOT = Path(__file__).resolve().parents[1]
+GAME_ROOT = Path(__file__).resolve().parents[2]
 SOURCE = GAME_ROOT / "assets/source/characters/jay"
 OUT = GAME_ROOT / "assets/processed/jay-staging"
 SHEETS = {
@@ -29,6 +29,7 @@ SHEETS = {
     "greeting-wave": ("Meta_AI_916882035_28451130907895002_8609570660650290104_n_20261119_115527.webp", 4, 2, 8, "pingpong"),
     "phone-use": ("Meta_AI_916882081_994725666517201_3357036583534970929_n_20261119_120922.webp", 4, 2, 8, "loop"),
     "sit-stand": ("Meta_AI_916953425_2325867808197235_9058160883401323934_n_20261119_121150.webp", 4, 2, 8, "once"),
+    "slide": ("Meta_AI_916765409_29130277979965148_2472250501587081787_n_20261120_004516.webp", 4, 2, 16, "loop"),
 }
 
 def white_background_matte(image: Image.Image) -> Image.Image:
@@ -76,7 +77,7 @@ def main():
     prepared = []
     source_records = {}
     for name, (filename, cols, rows, fps, playback) in SHEETS.items():
-        path = SOURCE / filename
+        path = (GAME_ROOT / "assets/characters" / filename) if name == "slide" else (SOURCE / filename)
         if not path.is_file():
             raise SystemExit(f"Missing source sheet: {path}")
         raw = path.read_bytes()
@@ -119,8 +120,18 @@ def main():
             entries.append({"x": ox, "y": oy, "width": frame.width, "height": frame.height,
                             "pivotX": frame.width//2, "pivotY": frame.height})
             index += 1
-        clips[name] = {"fps": fps, "playback": playback, "frames": entries,
-                       "reviewStatus": "staging-unapproved", "source": source}
+        if name == "slide":
+            # Authored 8-frame sheet: 2-frame anticipation, 4-frame low slide,
+            # 2-frame recovery. Each phase uses its own deterministic playback.
+            clips["slide-start"] = {"fps": fps, "playback": "once", "frames": entries[:2],
+                                    "reviewStatus": "staging-unapproved", "source": source}
+            clips["slide-loop"] = {"fps": fps, "playback": "loop", "frames": entries[2:6],
+                                   "reviewStatus": "staging-unapproved", "source": source}
+            clips["slide-recover"] = {"fps": fps, "playback": "once", "frames": entries[6:8],
+                                      "reviewStatus": "staging-unapproved", "source": source}
+        else:
+            clips[name] = {"fps": fps, "playback": playback, "frames": entries,
+                           "reviewStatus": "staging-unapproved", "source": source}
     atlas_path = OUT / "jay-atlas-staging.png"
     # Runtime atlas is palette-quantized to keep the complete game package under the arcade 10 MB cap.
     # Transparent alpha is retained; canvas rendering accepts indexed PNGs unchanged. This is the production-size build.
