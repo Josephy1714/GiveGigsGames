@@ -124,3 +124,16 @@ test('text dialogue remains usable when voice playback or approved mouth art is 
  assert.ok(h.events.some(event=>event.type==='dialogue:voice-unavailable'));
  assert.equal(dialogue.speech.available,false);
 });
+
+
+test('authored conversation choices carry relationship gates, speaker turns and per-choice effects',()=>{
+ const world={districts:{township:{places:[]}},characters:{amina:{name:'Amina',introduction:'Hello.',topics:{study:['Legacy topic response.']},conversationChoices:[{id:'open-up',label:'Share a concern',response:'That sounds difficult. We can work through it together.',expression:'empathetic',effects:{affinity:3,trust:4}},{id:'locked',label:'Ask a personal question',response:'I trust you with that.',requires:{affinity:30},effects:{affinity:1,trust:2}}]}}};
+ const events=[], relationships=[];const life={getState(){return {location:'township',relationships:{coursemate:{affinity:15,trust:8}}};},perform(){},recordRelationship(key,changes,event){relationships.push({key,changes,event});}};
+ const env={getState(){return {district:'township'};},getPlaces(){return [];}};const renderer={getHotspotBounds(){return null;},focusInteractable(){}};
+ const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,onEvent:e=>events.push(e)});
+ const opened=rt.openDialogue('amina');assert.deepEqual(opened.choices.map(c=>c.id),['open-up']);
+ assert.equal(opened.historyEntries[0].speakerName,'Amina');
+ const next=rt.chooseTopic('open-up');assert.equal(next.historyEntries.at(-1).expression,'empathetic');
+ assert.deepEqual(relationships[0].changes,{affinity:3,trust:4});
+ assert.throws(()=>rt.chooseTopic('locked'),/not currently available/);
+});
