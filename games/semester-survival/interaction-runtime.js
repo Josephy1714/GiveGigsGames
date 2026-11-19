@@ -93,12 +93,30 @@
     }
     function getDialogue() {
       if (!dialogue) return null;
+      const latestTurn = dialogue.historyEntries.length ? dialogue.historyEntries[dialogue.historyEntries.length - 1] : null;
+      const stageParticipants = dialogue.groupScene
+        ? dialogue.participants.slice()
+        : [{ id: 'jay', name: 'Jay' }, { id: dialogue.characterId, name: dialogue.characterName }];
+      const stage = Object.freeze({
+        mode: 'authored-text-blocking',
+        currentSpeakerId: latestTurn ? latestTurn.speakerId : null,
+        currentExpression: latestTurn ? latestTurn.expression || 'neutral' : 'neutral',
+        participants: Object.freeze(stageParticipants.map(function (person) {
+          return Object.freeze({
+            id: person.id,
+            name: person.name,
+            role: latestTurn && person.id === latestTurn.speakerId ? 'speaking' : 'listening',
+            expression: latestTurn && person.id === latestTurn.speakerId ? (latestTurn.expression || 'neutral') : 'attentive'
+          });
+        }))
+      });
       return Object.freeze({
         characterId: dialogue.characterId,
         characterName: dialogue.characterName,
         sceneId: dialogue.sceneId || null,
         sceneTitle: dialogue.sceneTitle || null,
         groupScene: !!dialogue.groupScene,
+        stage: stage,
         participants: Object.freeze((dialogue.participants || []).map(function (person) { return Object.freeze(Object.assign({}, person)); })),
         line: dialogue.line,
         speakerId: dialogue.characterId,
