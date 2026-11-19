@@ -13,7 +13,7 @@
     options=options||{};
     const pressed=new Set(), justPressed=new Set();
     let context={modalOpen:false,dialogueOpen:false,phoneOpen:false,paused:false};
-    let pointer=null, touchAxis=0, tapTarget=null, destroyed=false;
+    let pointer=null, touchAxis=0, touchAxisFrames=0, tapTarget=null, destroyed=false;
     const listeners=[];
     const bind=(node,event,fn,opts)=>{node.addEventListener(event,fn,opts);listeners.push(()=>node.removeEventListener(event,fn,opts));};
     function isUiBlocked(){return context.modalOpen||context.dialogueOpen||context.phoneOpen||context.paused||context.transitioning;}
@@ -26,7 +26,7 @@
       pressed.add(key);
     }
     function onKeyUp(e){pressed.delete(e.code==='Space'?'Space':e.key);}
-    function onBlur(){pressed.clear();justPressed.clear();pointer=null;touchAxis=0;}
+    function onBlur(){pressed.clear();justPressed.clear();pointer=null;touchAxis=0;touchAxisFrames=0;}
     function onPointerDown(e){
       if(destroyed||e.pointerType==='mouse')return;
       pointer={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,time:Date.now()};
@@ -37,7 +37,7 @@
       const dx=e.clientX-pointer.startX,dy=e.clientY-pointer.startY;
       const distance=Math.hypot(dx,dy);
       if(distance>28){
-        if(Math.abs(dx)>Math.abs(dy))touchAxis=dx<0?-1:1;
+        if(Math.abs(dx)>Math.abs(dy)){touchAxis=dx<0?-1:1;touchAxisFrames=22;}
         else if(dy<0)justPressed.add('Space');
         else justPressed.add('ArrowDown');
       }else if(tapTarget&&!isUiBlocked()){
@@ -60,7 +60,7 @@
       const has=action=>KEY[action].some(k=>pressed.has(k));
       const just=action=>KEY[action].some(k=>justPressed.has(k));
       const result={
-        moveX:blocked?0:(touchAxis||((has('right')?1:0)-(has('left')?1:0))),
+        moveX:blocked?0:((touchAxisFrames>0?touchAxis:0)||((has('right')?1:0)-(has('left')?1:0))),
         moveY:blocked?0:((pressed.has('i')||pressed.has('I')?1:0)-(pressed.has('k')||pressed.has('K')?1:0)),
         sprint:!blocked&&has('sprint'),
         jumpPressed:!blocked&&just('jump'),
@@ -70,12 +70,13 @@
         pausePressed:!context.transitioning&&just('pause'),
         interaction:!blocked?Array.from(justPressed).find(k=>k.startsWith('interaction:'))?.slice(12)||null:null
       };
-      justPressed.clear();touchAxis=0;
+      justPressed.clear();if(touchAxisFrames>0){touchAxisFrames-=1;if(touchAxisFrames===0)touchAxis=0;}
       return result;
     }
+    function setVirtualInput(action,down){const keys=KEY[action];if(!keys||destroyed)return false;const key=keys[0];if(down){if(!pressed.has(key))justPressed.add(key);pressed.add(key);}else pressed.delete(key);return true;}
     function reset(){onBlur();}
     function destroy(){destroyed=true;listeners.splice(0).forEach(fn=>fn());onBlur();}
-    return Object.freeze({consume,setContext,reset,destroy});
+    return Object.freeze({consume,setContext,reset,destroy,setVirtualInput});
   }
   root.SemesterInputManager=Object.freeze({createInputManager});
 })(typeof window!=='undefined'?window:globalThis);

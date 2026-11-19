@@ -50,7 +50,7 @@
   let services,campaign,phone,interaction,character,phoneUI,campaignUI,interactionUI,weather,npcSchedules,npcNavigation,npcActors,lipSync,visibilityHandler,escapeHandler;
   const initialDistrict=options.initialDistrict||life.getState().location||'residence';
   const sceneManifest=options.sceneManifest;
-  function getPosition(){const state=character?character.getState():null;return state?{x:state.movement.x,y:state.movement.y}:null;}
+  function getPosition(){const state=character?character.getState():null;if(!state)return null;const movement=state.movement||{};const layout=renderer.getLayout();const groundY=layout&&Number.isFinite(layout.groundY)?layout.groundY:0;const depthScale=layout&&Number.isFinite(layout.depthScale)?layout.depthScale:1;return{x:movement.x,y:groundY-(Number(movement.depth)||0)*depthScale-(Number(movement.y)||0),depth:movement.depth,vertical:movement.y};}
   function drainNpcAnimationEvents(){
    if(!npcActors||typeof npcActors.drainAnimationEvents!=='function')return;
    npcActors.drainAnimationEvents().forEach(function(marker){
@@ -306,7 +306,7 @@
   visibilityHandler=function(){if(doc.hidden&&lifecycle==='running')pause();};
   doc.addEventListener('keydown',escapeHandler);doc.addEventListener('visibilitychange',visibilityHandler);
   resize();
-  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,getWeatherForecast:getWeatherForecast,destroy:destroy,resize:resize});
+  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,setVirtualInput:function(action,down){return input.setVirtualInput(action,down);},openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,getWeatherForecast:getWeatherForecast,destroy:destroy,resize:resize});
  }
  root.SemesterAdventureRuntime=Object.freeze({create:create});
  if(root.document&&root.document.addEventListener){
