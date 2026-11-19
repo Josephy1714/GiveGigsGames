@@ -30,6 +30,8 @@
   const atlasEntry=validatedAssets.find(function(item){return item.id===options.characterAtlas.assetId;});
   if(!atlasEntry||atlasEntry.role!=='character-atlas')fail('The character atlas id must reference a credited character-atlas asset in the local asset manifest.');
   const atlasDistrict=atlasEntry.district;
+  const dialogueMouthAtlas=options.dialogueMouthAtlas||null;
+  if(dialogueMouthAtlas){const mouthEntry=validatedAssets.find(function(item){return item.id===dialogueMouthAtlas.assetId;});if(!mouthEntry||mouthEntry.role!=='character-atlas'||mouthEntry.district!==atlasDistrict||!dialogueMouthAtlas.manifest)fail('Dialogue mouth atlas must be a credited local character-atlas asset in the same preloaded district as the protagonist atlas, with an authored clip manifest.');}
   let shell=options.shell||null,canvas=options.canvas||null,phoneRoot=options.phoneRoot||null,campaignRoot=options.campaignRoot||null,interactionRoot=options.interactionRoot||null,pauseButton=null,transitionUI=null;
   function make(tag,cls,parent){const el=doc.createElement(tag);if(cls)el.className=cls;if(parent)parent.appendChild(el);return el;}
   if(!shell){shell=make('section','ss-adventure-shell',host);shell.setAttribute('aria-label','Semester Survival adventure');}
@@ -152,6 +154,7 @@
     const atlasImage=assets.getAsset(characterAtlas.assetId);atlasReady=true;
     const library=modules.animation.createClipLibrary(characterAtlas.manifest,atlasImage);
     const animator=modules.animation.createAnimator(library,options.animationOptions||{});
+    if(dialogueMouthAtlas){const mouthImage=assets.getAsset(dialogueMouthAtlas.assetId);const mouthLibrary=modules.animation.createClipLibrary(dialogueMouthAtlas.manifest,mouthImage);const mouthAnimator=modules.animation.createAnimator(mouthLibrary,options.dialogueMouthAnimationOptions||{});lipSync.setAnimator(mouthAnimator);}
     character=modules.character.create({controller:controller,animator:animator,renderer:renderer,inputManager:input,clipLibrary:library,characterScale:options.characterScale||1,requiredClips:options.requiredClips});
     const prepared=await environment.enter(initialDistrict,{spawn:options.initialSpawn||'default'});
     if(disposed)fail('Adventure runtime was disposed while mounting the starting scene.');
