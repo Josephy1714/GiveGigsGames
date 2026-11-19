@@ -16,7 +16,7 @@
     let pointer=null, touchAxis=0, tapTarget=null, destroyed=false;
     const listeners=[];
     const bind=(node,event,fn,opts)=>{node.addEventListener(event,fn,opts);listeners.push(()=>node.removeEventListener(event,fn,opts));};
-    function isUiBlocked(){return context.modalOpen||context.dialogueOpen||context.phoneOpen||context.paused;}
+    function isUiBlocked(){return context.modalOpen||context.dialogueOpen||context.phoneOpen||context.paused||context.transitioning;}
     function isEditable(event){const el=event.target;return el&&((EDITABLE.has(el.tagName))||el.isContentEditable);}
     function onKeyDown(e){
       if(destroyed||isEditable(e))return;
@@ -66,15 +66,16 @@
         jumpPressed:!blocked&&just('jump'),
         slidePressed:!blocked&&just('slide'),
         interactPressed:!blocked&&just('interact'),
-        phonePressed:just('phone'),
-        pausePressed:just('pause'),
+        phonePressed:!context.transitioning&&just('phone'),
+        pausePressed:!context.transitioning&&just('pause'),
         interaction:!blocked?Array.from(justPressed).find(k=>k.startsWith('interaction:'))?.slice(12)||null:null
       };
       justPressed.clear();touchAxis=0;
       return result;
     }
+    function reset(){onBlur();}
     function destroy(){destroyed=true;listeners.splice(0).forEach(fn=>fn());onBlur();}
-    return Object.freeze({consume,setContext,destroy});
+    return Object.freeze({consume,setContext,reset,destroy});
   }
   root.SemesterInputManager=Object.freeze({createInputManager});
 })(typeof window!=='undefined'?window:globalThis);
