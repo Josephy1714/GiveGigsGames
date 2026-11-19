@@ -18,7 +18,7 @@ function harness(overrides) {
     snapshot() { return { status: 'ready', clip: 'idle' }; },
     render() { calls.push(['animator.render']); return { drawn: true }; },
     reset() { calls.push(['animator.reset']); },
-    drainEvents() { return calls.filter(c => c[0] === 'marker').map(c => c[1]); }
+    drainEvents() { const markers = calls.filter(c => c[0] === 'marker').map(c => c[1]); for (let i = calls.length - 1; i >= 0; i -= 1) if (calls[i][0] === 'marker') calls.splice(i, 1); return markers; }
   };
   const renderer = {
     updateCamera(target, dt) { calls.push(['camera', target, dt]); },
