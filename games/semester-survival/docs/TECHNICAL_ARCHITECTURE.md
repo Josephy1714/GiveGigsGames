@@ -86,3 +86,7 @@ The NPC schedule runtime selects time- and weather-aware destinations. The NPC n
 ## Gameplay zone modifiers
 
 `gameplay-zones.js` evaluates authored district AABB/circle zones and timed trigger effects after the character simulation step. It produces bounded speed, acceleration and stamina modifiers for the next simulation step, plus explicit enter/exit/start/end events. Zones are separate from solid colliders: a muddy path can slow movement without acting as an invisible wall; a track can boost sprint efficiency without moving the player automatically. See [University Obstacles and Boosts](UNIVERSITY_OBSTACLES_AND_BOOSTS.md).
+
+## NPC behaviour and route simulation
+
+Daily schedules, weather-aware destination decisions, authored-anchor path planning and deterministic NPC route following are separate runtimes. Actor positions exist only for a mounted scene with a connected authored route; offscreen or unrouteable characters have no local position. Simulation snapshots do not imply visible characters: approved model sheets, sprite atlases and animation clips remain mandatory. See [NPC Behaviour](NPC_BEHAVIOUR.md).
