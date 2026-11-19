@@ -49,3 +49,23 @@ test('weather section exposes current conditions and a three-day forecast',()=>{
  assert.equal(snapshot.weatherForecast[0].afternoon,'Rain');
  assert.ok(events.some(e=>e.type==='weather:forecast-reviewed'));
 });
+
+test('world map travel closes the phone before invoking the district transition',async()=>{
+ const f=fixture(),calls=[];
+ const phone=load().create({lifeEngine:f.life,world:f.world,onTravel:async destination=>{calls.push(destination);return {destination};}});
+ phone.setOpen(true);
+ const result=await phone.travelTo('township');
+ assert.deepEqual(calls,['township']);
+ assert.equal(result.destination,'township');
+ assert.equal(phone.getSnapshot().open,false);
+});
+test('world map refuses destinations without a direct authored route',async()=>{
+ const f=fixture(),calls=[];
+ const phone=load().create({lifeEngine:f.life,world:f.world,onTravel:async destination=>{calls.push(destination);}});
+ await assert.rejects(phone.travelTo('city'),/No direct route connects/);
+ assert.equal(calls.length,0);
+});
+test('world map does not claim travel is available without runtime wiring',async()=>{
+ const f=fixture(),phone=load().create({lifeEngine:f.life,world:f.world});
+ await assert.rejects(phone.travelTo('township'),/not connected/);
+});
