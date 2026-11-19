@@ -509,6 +509,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+        if (window.SEMESTER_SURVIVAL_ADVENTURE && window.SEMESTER_SURVIVAL_ADVENTURE.autoStart === true) return;
         window.SemesterSurvivalEngine = new GameEngine();
         window.game = window.SemesterSurvivalEngine;
         window.gameState = window.game;

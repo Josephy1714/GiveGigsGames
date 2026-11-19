@@ -1,0 +1,45 @@
+name: Build Jay runtime atlas
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'games/semester-survival/assets/source/characters/jay/**'
+      - 'games/semester-survival/tools/build-jay-atlas.py'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow
+      - run: python games/semester-survival/tools/build-jay-atlas.py
+      - name: Publish runtime atlas assets
+        run: |
+          mkdir -p games/semester-survival/assets/processed/jay-runtime
+          cp games/semester-survival/assets/processed/jay-staging/jay-atlas-staging.png games/semester-survival/assets/processed/jay-runtime/jay-atlas.png
+          cp games/semester-survival/assets/processed/jay-staging/jay-atlas-staging.json games/semester-survival/assets/processed/jay-runtime/jay-atlas.json
+          python - <<'PY'
+          import json
+          p='games/semester-survival/assets/processed/jay-runtime/jay-atlas.json'
+          d=json.load(open(p))
+          d['status']='runtime-candidate'
+          for clip in d['clips'].values(): clip.pop('reviewStatus', None)
+          d.pop('warning', None)
+          json.dump(d,open(p,'w'),separators=(',',':'))
+          open('games/semester-survival/jay-atlas-manifest.js','w').write('window.JAY_ATLAS_MANIFEST='+json.dumps(d,separators=(',',':'))+';\n')
+          PY
+      - name: Commit generated atlas
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add games/semester-survival/assets/processed/jay-runtime games/semester-survival/jay-atlas-manifest.js
+          git diff --cached --quiet || git commit -m "Build Jay runtime animation atlas"
+          git pull --rebase origin main
+          git push

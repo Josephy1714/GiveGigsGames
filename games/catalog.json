@@ -17,22 +17,15 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "gravegain2dD/index.html",
-      "guideEntrypoint": "gravegain2dD/guide.html",
       "inputs": [
         "touch",
-        "keyboard",
-        "gamepad"
+        "keyboard"
       ],
-      "controls": "One-finger joystick: push right to accelerate, left to slow down, up to jump or vault, down to slide or drop. Arrow keys, WASD, or gamepad on desktop.",
+      "controls": "One-finger joystick: push right to accelerate, left to slow down, and up to jump or vault. Arrow keys or WASD on desktop.",
       "modes": [
         "solo"
       ],
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain2dD-1.jpg",
-        "games/images/screenshots/gravegain2dD-2.jpg",
-        "games/images/screenshots/gravegain2dD-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "ecosystemic-evolver",
@@ -78,12 +71,7 @@
         "solo",
         "multiplayer"
       ],
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/platform-wars-1.jpg",
-        "games/images/screenshots/platform-wars-2.jpg",
-        "games/images/screenshots/platform-wars-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "lastwordszombies",
@@ -100,17 +88,7 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "lastwordszombies/index.html",
-      "inputs": [
-        "touch",
-        "keyboard",
-        "gamepad"
-      ],
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/lastwordszombies-1.jpg",
-        "games/images/screenshots/lastwordszombies-2.jpg",
-        "games/images/screenshots/lastwordszombies-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "venturemechanically",
@@ -128,12 +106,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "venturemechanically/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/venturemechanically-1.jpg",
-        "games/images/screenshots/venturemechanically-2.jpg",
-        "games/images/screenshots/venturemechanically-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "financialfreedom",
@@ -150,12 +123,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "financialfreedom/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/financialfreedom-1.jpg",
-        "games/images/screenshots/financialfreedom-2.jpg",
-        "games/images/screenshots/financialfreedom-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "serversavershield",
@@ -172,12 +140,7 @@
       "recommended": true,
       "entrypoint": "serversavershield/index.html",
       "runtimeType": "static",
-      "guideEntrypoint": "serversavershield/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/serversavershield-1.jpg",
-        "games/images/screenshots/serversavershield-2.jpg",
-        "games/images/screenshots/serversavershield-3.jpg"
-      ]
+      "guideEntrypoint": "serversavershield/guide.html"
     },
     {
       "slug": "overtake",
@@ -193,12 +156,7 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "overtake/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/overtake-1.jpg",
-        "games/images/screenshots/overtake-2.jpg",
-        "games/images/screenshots/overtake-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "assassinanimals",
@@ -214,12 +172,7 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "assassinanimals/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/assassinanimals-1.jpg",
-        "games/images/screenshots/assassinanimals-2.jpg",
-        "games/images/screenshots/assassinanimals-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "battlesharks2",
@@ -235,12 +188,7 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "battlesharks2/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/battlesharks2-1.jpg",
-        "games/images/screenshots/battlesharks2-2.jpg",
-        "games/images/screenshots/battlesharks2-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain2dA",
@@ -256,12 +204,7 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "gravegain2dA/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain2dA-1.jpg",
-        "games/images/screenshots/gravegain2dA-2.jpg",
-        "games/images/screenshots/gravegain2dA-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain2dC",
@@ -279,12 +222,7 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "gravegain2dC/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain2dC-1.jpg",
-        "games/images/screenshots/gravegain2dC-2.jpg",
-        "games/images/screenshots/gravegain2dC-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain2dB",
@@ -300,12 +238,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "gravegain2dB/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain2dB-1.jpg",
-        "games/images/screenshots/gravegain2dB-2.jpg",
-        "games/images/screenshots/gravegain2dB-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain3dA",
@@ -321,12 +254,7 @@
       "featured": false,
       "recommended": true,
       "entrypoint": "gravegain3dA/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain3dA-1.jpg",
-        "games/images/screenshots/gravegain3dA-2.jpg",
-        "games/images/screenshots/gravegain3dA-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain1dA",
@@ -343,12 +271,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "gravegain1dA/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain1dA-1.jpg",
-        "games/images/screenshots/gravegain1dA-2.jpg",
-        "games/images/screenshots/gravegain1dA-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "demolichdom",
@@ -365,12 +288,7 @@
       "recommended": false,
       "entrypoint": "demolichdom/index.html",
       "runtimeType": "static",
-      "guideEntrypoint": "demolichdom/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/demolichdom-1.jpg",
-        "games/images/screenshots/demolichdom-2.jpg",
-        "games/images/screenshots/demolichdom-3.jpg"
-      ]
+      "guideEntrypoint": "demolichdom/guide.html"
     },
     {
       "slug": "fridgesimulator",
@@ -386,12 +304,7 @@
       "recommended": false,
       "entrypoint": "fridgesimulator/index.html",
       "runtimeType": "static",
-      "guideEntrypoint": "fridgesimulator/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/fridgesimulator-1.jpg",
-        "games/images/screenshots/fridgesimulator-2.jpg",
-        "games/images/screenshots/fridgesimulator-3.jpg"
-      ]
+      "guideEntrypoint": "fridgesimulator/guide.html"
     },
     {
       "slug": "discoveramerica",
@@ -408,12 +321,7 @@
       "recommended": false,
       "entrypoint": "discoveramerica/index.html",
       "runtimeType": "static",
-      "guideEntrypoint": "discoveramerica/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/discoveramerica-1.jpg",
-        "games/images/screenshots/discoveramerica-2.jpg",
-        "games/images/screenshots/discoveramerica-3.jpg"
-      ]
+      "guideEntrypoint": "discoveramerica/guide.html"
     },
     {
       "slug": "orbitaldrift",
@@ -429,12 +337,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "orbitaldrift/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/orbitaldrift-1.jpg",
-        "games/images/screenshots/orbitaldrift-2.jpg",
-        "games/images/screenshots/orbitaldrift-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "aiwhackamole",
@@ -450,12 +353,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "aiwhackamole/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/aiwhackamole-1.jpg",
-        "games/images/screenshots/aiwhackamole-2.jpg",
-        "games/images/screenshots/aiwhackamole-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "soundpainter2",
@@ -471,12 +369,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "soundpainter2/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/soundpainter2-1.jpg",
-        "games/images/screenshots/soundpainter2-2.jpg",
-        "games/images/screenshots/soundpainter2-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "soundpainter",
@@ -492,12 +385,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "soundpainter/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/soundpainter-1.jpg",
-        "games/images/screenshots/soundpainter-2.jpg",
-        "games/images/screenshots/soundpainter-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "friendslop",
@@ -513,33 +401,33 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "friendslop/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/friendslop-1.jpg",
-        "games/images/screenshots/friendslop-2.jpg",
-        "games/images/screenshots/friendslop-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "semester-survival",
-      "title": "Semester Survival",
-      "description": "Survive eight chaotic semesters to graduate.",
-      "genre": "Endless Runner",
+      "title": "Semester Survival: Jay's University Adventure",
+      "description": "Explore residence, township, campus and city as Jay in a 2.5D anime university-life adventure. Move, jump, meet people, complete university activities and build your student journey.",
+      "genre": "Adventure",
       "tags": [
-        "Arcade",
-        "3D",
-        "Runner",
-        "University"
+        "Adventure",
+        "Life Simulation",
+        "Anime",
+        "University",
+        "2.5D",
+        "Exploration"
       ],
       "emoji": "🎓",
       "featured": false,
       "recommended": false,
       "entrypoint": "semester-survival/index.html",
       "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/semester-survival-1.jpg",
-        "games/images/screenshots/semester-survival-2.jpg",
-        "games/images/screenshots/semester-survival-3.jpg"
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "WASD or arrow keys to move; Space or W to jump; Shift to sprint; E or Enter to interact; Tab for phone; Escape to pause. Touch: swipe to move and jump.",
+      "modes": [
+        "solo"
       ]
     },
     {
@@ -558,12 +446,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "gravegain5dA/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain5dA-1.jpg",
-        "games/images/screenshots/gravegain5dA-2.jpg",
-        "games/images/screenshots/gravegain5dA-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "gravegain4dA",
@@ -582,12 +465,7 @@
       "recommended": true,
       "entrypoint": "gravegain4dA/index.html",
       "runtimeType": "static",
-      "guideEntrypoint": "gravegain4dA/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/gravegain4dA-1.jpg",
-        "games/images/screenshots/gravegain4dA-2.jpg",
-        "games/images/screenshots/gravegain4dA-3.jpg"
-      ]
+      "guideEntrypoint": "gravegain4dA/guide.html"
     },
     {
       "slug": "starship-simulator",
@@ -608,12 +486,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "spaceships/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/starship-simulator-1.jpg",
-        "games/images/screenshots/starship-simulator-2.jpg",
-        "games/images/screenshots/starship-simulator-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "neonbreaker",
@@ -628,12 +501,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "neonbreaker/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/neonbreaker-1.jpg",
-        "games/images/screenshots/neonbreaker-2.jpg",
-        "games/images/screenshots/neonbreaker-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "neoninvaders",
@@ -648,12 +516,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "neoninvaders/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/neoninvaders-1.jpg",
-        "games/images/screenshots/neoninvaders-2.jpg",
-        "games/images/screenshots/neoninvaders-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "neonracer",
@@ -668,12 +531,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "neonracer/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/neonracer-1.jpg",
-        "games/images/screenshots/neonracer-2.jpg",
-        "games/images/screenshots/neonracer-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "neonsnake",
@@ -688,12 +546,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "neonsnake/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/neonsnake-1.jpg",
-        "games/images/screenshots/neonsnake-2.jpg",
-        "games/images/screenshots/neonsnake-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "neonvoidrunner",
@@ -708,12 +561,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "neonvoidrunner/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/neonvoidrunner-1.jpg",
-        "games/images/screenshots/neonvoidrunner-2.jpg",
-        "games/images/screenshots/neonvoidrunner-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "temple-of-lost-revenue",
@@ -728,12 +576,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "temple-of-lost-revenue/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/temple-of-lost-revenue-1.jpg",
-        "games/images/screenshots/temple-of-lost-revenue-2.jpg",
-        "games/images/screenshots/temple-of-lost-revenue-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-ai-expedition",
@@ -748,12 +591,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-ai-expedition/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-ai-expedition-1.jpg",
-        "games/images/screenshots/the-ai-expedition-2.jpg",
-        "games/images/screenshots/the-ai-expedition-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-cave-of-bottlenecks",
@@ -768,12 +606,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-cave-of-bottlenecks/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-cave-of-bottlenecks-1.jpg",
-        "games/images/screenshots/the-cave-of-bottlenecks-2.jpg",
-        "games/images/screenshots/the-cave-of-bottlenecks-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-lost-city-of-customers",
@@ -788,12 +621,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-lost-city-of-customers/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-lost-city-of-customers-1.jpg",
-        "games/images/screenshots/the-lost-city-of-customers-2.jpg",
-        "games/images/screenshots/the-lost-city-of-customers-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-madi-ai-universe",
@@ -808,17 +636,12 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-madi-ai-universe/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-madi-ai-universe-1.jpg",
-        "games/images/screenshots/the-madi-ai-universe-2.jpg",
-        "games/images/screenshots/the-madi-ai-universe-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-pipeline-mountain",
       "title": "The Pipeline Mountain",
-      "description": "Climb through moving platforms, spring jumps, and checkpoints to reach the summit.",
+      "description": "Climb from manual spreadsheets to revenue and market leadership.",
       "genre": "Adventure",
       "tags": [
         "Adventure",
@@ -828,12 +651,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-pipeline-mountain/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-pipeline-mountain-1.jpg",
-        "games/images/screenshots/the-pipeline-mountain-2.jpg",
-        "games/images/screenshots/the-pipeline-mountain-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-revenue-dragon",
@@ -848,12 +666,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-revenue-dragon/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-revenue-dragon-1.jpg",
-        "games/images/screenshots/the-revenue-dragon-2.jpg",
-        "games/images/screenshots/the-revenue-dragon-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-revenue-jungle",
@@ -868,17 +681,12 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-revenue-jungle/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-revenue-jungle-1.jpg",
-        "games/images/screenshots/the-revenue-jungle-2.jpg",
-        "games/images/screenshots/the-revenue-jungle-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "the-speed-portal",
       "title": "The Speed Portal",
-      "description": "Race through three tunnel sectors with patterned barriers and speed rings.",
+      "description": "Race through approvals, meetings, and legacy software obstacles.",
       "genre": "Racing",
       "tags": [
         "Racing",
@@ -888,17 +696,12 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "the-speed-portal/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/the-speed-portal-1.jpg",
-        "games/images/screenshots/the-speed-portal-2.jpg",
-        "games/images/screenshots/the-speed-portal-3.jpg"
-      ]
+      "runtimeType": "static"
     },
     {
       "slug": "treasure-hunters",
       "title": "Treasure Hunters",
-      "description": "Use a swinging claw to meet three timed treasure quotas.",
+      "description": "Grapple pipeline value, meetings, revenue, and customers.",
       "genre": "Arcade",
       "tags": [
         "Arcade",
@@ -908,37 +711,7 @@
       "featured": false,
       "recommended": false,
       "entrypoint": "treasure-hunters/index.html",
-      "runtimeType": "static",
-      "featuredScreenshots": [
-        "games/images/screenshots/treasure-hunters-1.jpg",
-        "games/images/screenshots/treasure-hunters-2.jpg",
-        "games/images/screenshots/treasure-hunters-3.jpg"
-      ]
-    },
-    {
-      "slug": "global-fashion-model-life",
-      "title": "Global Fashion Model Life",
-      "description": "Create a 3D model, style makeup and garments, and launch a fashion career from New York or Metro Manila before booking work around the world.",
-      "genre": "Simulation",
-      "tags": [
-        "Fashion",
-        "Character Creator",
-        "3D",
-        "Life Simulation",
-        "Offline-friendly"
-      ],
-      "emoji": "?",
-      "status": "preview",
-      "inputs": [
-        "touch",
-        "keyboard"
-      ],
-      "controls": "Click or tap to style your avatar and choose bookings. Drag the portrait to rotate. Press Space or tap the runway button to hit each cue.",
-      "modes": [
-        "solo"
-      ],
-      "runtimeType": "static",
-      "entrypoint": "global-fashion-model-life/index.html"
+      "runtimeType": "static"
     }
   ]
 }

@@ -1,0 +1,13 @@
+'use strict';
+const assert = require('node:assert/strict');
+const production = require('../visual-production.js');
+const plan = production.createPlan();
+assert.equal(plan.rendering, '2.5d');
+assert.deepEqual(plan.characterIds, ['jay','amina','einstein','ernest','sumeya']);
+assert.deepEqual(plan.districtIds, ['residence','township','campus','city']);
+assert.ok(plan.characterIds.every(id => plan.characters[id].status === 'not-started'));
+assert.ok(plan.districtIds.every(id => plan.environments[id].status === 'not-started'));
+assert.throws(() => production.validateCharacterDelivery({characterId:'jay',approved:false}), /not been approved/);
+assert.throws(() => production.validateEnvironmentDelivery({districtId:'campus',approved:false}), /not been approved/);
+assert.throws(() => production.validateCharacterDelivery({characterId:'unknown',approved:true}), /Unknown main-cast/);
+console.log('visual-production tests passed');
