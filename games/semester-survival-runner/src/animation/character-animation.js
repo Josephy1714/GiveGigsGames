@@ -12,7 +12,7 @@
     'jump-apex': 'jump-running', 'jump-fall': 'jump-running',
     'fall': 'fall-accidental', 'land-recover': 'get-up-recovery',
     'slide-start': 'slide-start',
-    'slide-loop': 'slide-loop', 'dodge-left': 'dodge-left',
+    'slide-loop': 'slide-loop', 'slide-recover': 'slide-recover', 'dodge-left': 'dodge-left',
     'dodge-right': 'dodge-right'
   });
 
@@ -215,7 +215,7 @@
 
     // Never disguise a missing action with unrelated artwork. The caller can
     // keep the gameplay action active while surfacing the missing authored clip.
-    if (state === 'slide-start' || state === 'slide-loop' ||
+    if (state === 'slide-start' || state === 'slide-loop' || state === 'slide-recover' ||
         state === 'dodge-left' || state === 'dodge-right') return requested;
     return has('idle') ? 'idle' : requested;
   }
