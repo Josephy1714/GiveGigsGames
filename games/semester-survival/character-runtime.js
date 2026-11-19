@@ -57,6 +57,7 @@
       lastInput = input.consume() || {};
       const layout = sceneLayout();
       if (layout && layout.depthBounds && typeof controller.setDepthBounds === 'function') controller.setDepthBounds(layout.depthBounds);
+      if (layout && layout.playerBounds && typeof controller.setXBounds === 'function') controller.setXBounds({ min: layout.playerBounds.minX, max: layout.playerBounds.maxX });
       movement = controller.update(dt, {
         moveX: lastInput.moveX,
         moveY: lastInput.moveY,
