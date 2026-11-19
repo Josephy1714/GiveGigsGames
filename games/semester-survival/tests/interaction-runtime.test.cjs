@@ -3,7 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 require('../interaction-runtime.js');
 
-function harness(extra) {\n  extra = extra || {};
+function harness(extra) {
+  extra = extra || {};
   const events = [], focused = [], context = [], relationships = [];
   const world = {
     districts: { township: { places: [
