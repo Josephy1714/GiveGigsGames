@@ -127,3 +127,15 @@ test('renders validated weather atmosphere without replacing authored scene artw
   assert.ok(calls.some(call => call[0] === 'stroke'));
   assert.ok(calls.some(call => call[0] === 'fillRect'));
 });
+
+
+test('rejects navigation nodes that do not reference authored NPC or place anchors',()=>{
+ const invalid={...manifest,residence:{...manifest.residence,navigation:{nodes:[{id:'ghost',anchor:'missing-anchor'}],edges:[]}}};
+ assert.throws(()=>context.SemesterEnvironmentRuntime.create({world,sceneManifest:invalid,assetPipeline:makePipeline()}),/must reference an authored NPC or place anchor/);
+});
+test('validates navigation edges against declared nodes and freezes the graph',()=>{
+ const valid={...manifest,residence:{...manifest.residence,navigation:{nodes:[{id:'room',anchor:'room-door'}],edges:[]}}};
+ const runtime=context.SemesterEnvironmentRuntime.create({world,sceneManifest:valid,assetPipeline:makePipeline()});
+ assert.deepEqual(runtime.getNavigationGraph(),null);
+ assert.throws(()=>context.SemesterEnvironmentRuntime.create({world,sceneManifest:{...valid,residence:{...valid.residence,navigation:{nodes:[{id:'room',anchor:'room-door'}],edges:[{from:'room',to:'missing'}]}}},assetPipeline:makePipeline()}),/invalid navigation edge/);
+});
