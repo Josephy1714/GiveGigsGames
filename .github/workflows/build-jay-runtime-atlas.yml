@@ -41,4 +41,5 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add games/semester-survival/assets/processed/jay-runtime games/semester-survival/jay-atlas-manifest.js
           git diff --cached --quiet || git commit -m "Build Jay runtime animation atlas"
+          git pull --rebase origin semester-survival-premium-rebuild
           git push
