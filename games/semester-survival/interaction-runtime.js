@@ -16,7 +16,7 @@
   const DIALOGUE_BY_ACTION = Object.freeze({ 'talk-roommate': 'brian', 'talk-vendor': 'njeri', 'consult-lecturer': 'mwangi' });
   const TRAVEL_BY_ACTION = Object.freeze({ 'travel-campus': 'campus', 'travel-city': 'city', 'travel-township': 'township', 'travel-residence': 'residence' });
   const RELATIONSHIP_BY_CHARACTER = Object.freeze({
-    brian: 'roommate', amina: 'coursemate', wanjiku: 'classRep', njeri: 'vendor', mwangi: 'lecturer'
+    brian: 'roommate', amina: 'coursemate', sumeya: 'sumeya', einstein: 'einstein', ernest: 'ernest', wanjiku: 'classRep', njeri: 'vendor', mwangi: 'lecturer'
   });
   function fail(message) { throw new Error(message); }
   function distanceToRect(point, rect) {
@@ -123,16 +123,19 @@
         const gate = choice.requires || {};
         return (!Number.isFinite(gate.affinity) || (state.affinity || 0) >= gate.affinity) && (!Number.isFinite(gate.trust) || (state.trust || 0) >= gate.trust);
       }).map(function (choice) { return { id: choice.id, label: choice.label, kind: 'authored' }; });
-      if (choices.length) return choices;
-      return Object.keys(character.topics || {}).map(function (topic) { return { id: topic, label: topic.replace(/[-_]/g, ' '), kind: 'topic' }; });
+      const legacy = Object.keys(character.topics || {}).filter(function (topic) { return !choices.some(function (choice) { return choice.id === topic; }); }).map(function (topic) { return { id: topic, label: topic.replace(/[-_]/g, ' '), kind: 'topic' }; });
+      return choices.concat(legacy);
     }
     function openDialogue(characterId) {
       const character = world.characters[characterId];
       if (!character) fail('Unknown character: ' + characterId);
       const topicKeys = Object.keys(character.topics || {});
+      const relationshipKey = RELATIONSHIP_BY_CHARACTER[characterId];
+      const relationshipState = life.getState().relationships || {};
+      const relationship = relationshipKey ? relationshipState[relationshipKey] : null;
       dialogue = {
         characterId: characterId, characterName: character.name,
-        line: character.introduction, topics: topicKeys, choices: availableChoices(character, null), history: [character.introduction], historyEntries: [{ speakerId: characterId, speakerName: character.name, text: character.introduction, expression: 'welcoming' }]
+        line: character.introduction, topics: topicKeys, choices: availableChoices(character, relationship), history: [character.introduction], historyEntries: [{ speakerId: characterId, speakerName: character.name, text: character.introduction, expression: 'welcoming' }]
       };
       setDialogueContext(true);
       startVoice(characterId, 'introduction');
