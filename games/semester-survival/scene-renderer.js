@@ -40,8 +40,16 @@
           item.width <= 0 || item.height <= 0) fail('Hotspot "' + anchorId + '" requires positive authored bounds.');
       hotspots[anchorId] = Object.freeze({ x: item.x, y: item.y, width: item.width, height: item.height });
     });
+    const groundY = scene.groundY === undefined ? scene.height * 0.82 : scene.groundY;
+    const depthScale = scene.depthScale === undefined ? 1 : scene.depthScale;
+    if (!Number.isFinite(groundY) || groundY < 0 || groundY > scene.height) fail('Scene groundY must be inside the authored design viewport.');
+    if (!Number.isFinite(depthScale) || depthScale <= 0 || depthScale > 10) fail('Scene depthScale must be positive and no greater than 10.');
+    const cameraBounds = scene.cameraBounds || { minX: 0, minY: 0, maxX: scene.width, maxY: scene.height };
+    if (!cameraBounds || ![cameraBounds.minX,cameraBounds.minY,cameraBounds.maxX,cameraBounds.maxY].every(Number.isFinite) ||
+        cameraBounds.minX > cameraBounds.maxX || cameraBounds.minY > cameraBounds.maxY) fail('Scene cameraBounds are invalid.');
     return Object.freeze({
-      width: scene.width, height: scene.height,
+      width: scene.width, height: scene.height, groundY: groundY, depthScale: depthScale,
+      cameraBounds: Object.freeze({ minX: cameraBounds.minX, minY: cameraBounds.minY, maxX: cameraBounds.maxX, maxY: cameraBounds.maxY }),
       layers: Object.freeze(layers), hotspots: Object.freeze(hotspots)
     });
   }
@@ -98,6 +106,8 @@
       const factor = cameraSmoothing === 0 ? 1 : 1 - Math.pow(1 - cameraSmoothing, dt * 60);
       if (Number.isFinite(target.x)) camera.x += (target.x - camera.x) * factor;
       if (Number.isFinite(target.y)) camera.y += (target.y - camera.y) * factor;
+      camera.x = clamp(camera.x, active.scene.cameraBounds.minX, active.scene.cameraBounds.maxX);
+      camera.y = clamp(camera.y, active.scene.cameraBounds.minY, active.scene.cameraBounds.maxY);
       return Object.freeze({ x: camera.x, y: camera.y });
     }
 
@@ -188,6 +198,10 @@
       return Object.freeze({ anchor: anchorId, bounds: active.scene.hotspots[anchorId] });
     }
 
+    function getLayout() {
+      return active ? Object.freeze({ width: active.scene.width, height: active.scene.height, groundY: active.scene.groundY, depthScale: active.scene.depthScale, cameraBounds: active.scene.cameraBounds }) : null;
+    }
+
     function getState() {
       return Object.freeze({
         mounted: Boolean(active), sceneId: sceneId, district: active ? active.district : null,
@@ -196,7 +210,7 @@
       });
     }
 
-    return Object.freeze({ resize, mountScene, updateCamera, render, hitTest, getHotspotBounds, focusInteractable, getState });
+    return Object.freeze({ resize, mountScene, updateCamera, render, hitTest, getHotspotBounds, focusInteractable, getLayout, getState });
   }
 
   root.SemesterSceneRenderer = Object.freeze({ create, validateScene });
