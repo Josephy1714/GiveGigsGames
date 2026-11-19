@@ -22,14 +22,14 @@ function fakeCanvas() {
   return { canvas: { width: 0, height: 0, style: {}, getContext: () => ctx }, calls };
 }
 const scene = {
-  width: 1920, height: 1080, groundY: 880, depthScale: 0.6, depthBounds: { min: -180, max: 180 }, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 }, playerBounds: { minX: 40, maxX: 5000 },
+  width: 960, height: 540, worldBounds: { width: 2160, height: 1040 }, groundY: 880, depthScale: 0.6, depthBounds: { min: -180, max: 180 }, cameraBounds: { minX: 0, minY: 0, maxX: 1200, maxY: 500 }, playerBounds: { minX: 40, maxX: 2000 },
   layers: [
-    { id: 'sky', assetId: 'sky-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 0, parallax: 0.15 },
+    { id: 'sky', assetId: 'sky-art', x: 0, y: 0, width: 2160, height: 1040, zIndex: 0, parallax: 0.15 },
     { id: 'foreground', assetId: 'foreground-art', x: 0, y: 0, width: 1920, height: 1080, zIndex: 2 }
   ],
   hotspots: { 'library-door': { x: 600, y: 400, width: 180, height: 260 } }
 };
-const assets = { 'sky-art': { width: 1920, height: 1080 }, 'foreground-art': { width: 1920, height: 1080 } };
+const assets = { 'sky-art': { width: 2160, height: 1040 }, 'foreground-art': { width: 2160, height: 1040 } };
 
 test('requires decoded artwork and valid authored scene dimensions', () => {
   assert.throws(() => api.validateScene(scene, {}), /unavailable decoded asset/);
@@ -42,6 +42,8 @@ test('validates layer bounds, parallax, opacity, fit and hotspot geometry', () =
   assert.throws(() => api.validateScene({ ...scene, layers: [{ ...scene.layers[0], parallax: 2 }] }, assets), /invalid parallax/);
   assert.throws(() => api.validateScene({ ...scene, hotspots: { bad: { x: 1, y: 1, width: 0, height: 3 } } }, assets), /authored bounds/);
   assert.throws(() => api.validateScene({ ...scene, playerBounds: { minX: 10, maxX: 10 } }, assets), /playerBounds are invalid/);
+  assert.throws(() => api.validateScene({ ...scene, hotspots: { outside: { x: 2100, y: 1, width: 100, height: 20 } } }, assets), /outside authored worldBounds/);
+  assert.throws(() => api.validateScene({ ...scene, cameraBounds: { minX: 0, minY: 0, maxX: 1300, maxY: 500 } }, assets), /cameraBounds are invalid/);
 });
 
 test('mounts and composites authored layers in z-order without drawing substitute art', () => {
@@ -69,7 +71,7 @@ test('supports camera parallax and authored hotspot hit testing', () => {
   assert.equal(renderer.getState().camera.x, 1200);
   assert.equal(renderer.getState().camera.y, 500);
   renderer.updateCamera({ x: 0, y: 0 }, 1 / 60);
-  renderer.updateCamera({ x: 1200, y: 880 }, 1 / 60);
+  renderer.updateCamera({ x: 720, y: 610 }, 1 / 60);
   assert.equal(renderer.getState().camera.x, 240);
   assert.equal(renderer.getState().camera.y, 340);
   renderer.updateCamera({ x: 960, y: 540 }, 1 / 60);
