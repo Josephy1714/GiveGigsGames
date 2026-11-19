@@ -135,6 +135,7 @@ test('authored conversation choices carry relationship gates, speaker turns and 
  assert.equal(opened.historyEntries[0].speakerName,'Amina');
  const next=rt.chooseTopic('open-up');assert.equal(next.historyEntries.at(-1).expression,'empathetic');
  assert.deepEqual(relationships[0].changes,{affinity:3,trust:4});
+ assert.throws(()=>rt.chooseTopic('open-up'),/not currently available/);
  assert.throws(()=>rt.chooseTopic('locked'),/not currently available/);
 });
 
@@ -156,7 +157,7 @@ test('authored group scene opens only when every scheduled participant is presen
  const renderer={getHotspotBounds(){return {x:0,y:0,width:50,height:50};},focusInteractable(){}};
  const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,npcScheduleRuntime:schedules});
  const opened=rt.openGroupDialogue('circle');assert.equal(opened.groupScene,true);assert.equal(opened.participants.length,2);
- const next=rt.chooseTopic('plan');assert.deepEqual(next.historyEntries.slice(-3).map(x=>x.speakerName),['Jay','Amina','Sumeya']);assert.equal(recorded.length,2);
+ const next=rt.chooseTopic('plan');assert.deepEqual(next.historyEntries.slice(-3).map(x=>x.speakerName),['Jay','Amina','Sumeya']);assert.equal(recorded.length,2);assert.equal(next.choices.length,0);assert.throws(()=>rt.chooseTopic('plan'),/not available/);
 });
 
 test('study-circle gathering is reachable through the authored student-commons interaction action',()=>{
@@ -167,4 +168,14 @@ test('study-circle gathering is reachable through the authored student-commons i
  const renderer={getHotspotBounds(){return {x:0,y:0,width:50,height:50};},focusInteractable(){}};
  const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,npcScheduleRuntime:schedules});
  const result=rt.interact({x:10,y:10},{interaction:'join-study-circle'});assert.equal(result.type,'dialogue:group-state');assert.equal(result.dialogue.groupScene,true);
+});
+
+test('group scene fails closed when a required participant is not scheduled at the gathering place',()=>{
+ const world={districts:{campus:{places:[{id:'student-commons',name:'Student Commons',actions:['join-study-circle']}] }},characters:{amina:{name:'Amina'},sumeya:{name:'Sumeya'}},socialScenes:[{id:'circle',title:'Study Circle',district:'campus',placeId:'student-commons',from:780,to:960,minParticipants:2,participants:['amina','sumeya'],opening:[{speakerId:'amina',text:'Let us begin.'}],choices:[{id:'plan',label:'Make a revision plan',turns:[{speakerId:'amina',text:'I will prepare examples.'}]}]}]};
+ const life={getState(){return {location:'campus',calendar:{minuteOfDay:800},relationships:{}};},perform(){}};
+ const env={getState(){return {district:'campus'};},getPlaces(){return [{id:'student-commons',available:true,anchor:'commons'}];}};
+ const renderer={getHotspotBounds(){return {x:0,y:0,width:50,height:50};},focusInteractable(){}};
+ const schedules={getState(){return [{characterId:'amina',presence:'in-active-district',targetDistrict:'campus',targetPlaceId:'student-commons'}];}};
+ const rt=globalThis.SemesterInteractionRuntime.create({world,environment:env,renderer,lifeEngine:life,npcScheduleRuntime:schedules});
+ assert.throws(()=>rt.openGroupDialogue('circle'),/full study circle has not assembled/);
 });
