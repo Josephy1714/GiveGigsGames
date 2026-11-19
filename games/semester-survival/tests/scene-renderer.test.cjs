@@ -190,3 +190,16 @@ test('reduces contact shadow opacity as a character rises into a jump',()=>{
  assert.equal(shadows.length,2);
  assert.ok(shadows[1][3]>shadows[0][3]);
 });
+
+
+test('reports only sprites actually drawn and uses deterministic ordering for equal ground depth',()=>{
+ const {canvas,calls}=fakeCanvas();const renderer=api.create({canvas,cameraSmoothing:0});
+ renderer.resize(960,540,1);renderer.mountScene('campus-main',{district:'campus',scene,assets});
+ const order=[];
+ const sprite=(id,drawn=true)=>({characterId:id,x:100,y:700,animator:{render(){order.push(id);return {drawn};}}});
+ const result=renderer.render({character:sprite('jay',false),characters:[sprite('zara'),sprite('amina')]});
+ assert.deepEqual(order,['amina','zara','jay']);
+ assert.equal(result.characterDrawn,false);
+ assert.equal(result.npcCharactersDrawn,2);
+ assert.equal(result.charactersDrawn,2);
+});
