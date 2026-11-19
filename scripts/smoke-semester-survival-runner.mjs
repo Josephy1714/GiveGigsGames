@@ -30,6 +30,11 @@ try {
   assert.equal((await probe("slide", { slide: 0.9 })).hit, false, "A successful slide should clear a high obstacle");
   assert.equal((await probe("lane", { slide: 0.9 })).hit, true, "Sliding should not clear a full-height obstacle");
   assert.equal((await probe("lane", { lane: 0, obstacleLane: 1 })).hit, false, "Changing lanes should avoid a full-height obstacle");
+  const pickup = movement => page.evaluate(movement => window.__runnerSmoke.probePowerup(movement), movement);
+  assert.equal((await pickup({ lane: 1, powerupLane: 1 })).collected, 1, "A same-lane power-up should be collected");
+  assert.equal((await pickup({ lane: 1, powerupLane: 2 })).collected, 0, "An adjacent power-up should not be collected without the magnet upgrade");
+  assert.equal((await pickup({ lane: 1, powerupLane: 2, magnet: 1 })).collected, 1, "The magnet upgrade should collect from an adjacent lane");
+
   await page.locator("#fullscreen").click();
   await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
   assert.equal(await page.evaluate(() => document.fullscreenElement?.id), "game", "Fullscreen should expand the game overlay");
