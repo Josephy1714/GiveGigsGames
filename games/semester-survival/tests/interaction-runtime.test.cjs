@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 require('../interaction-runtime.js');
 
-function harness() {
+function harness(extra) {\n  extra = extra || {};
   const events = [], focused = [], context = [], relationships = [];
   const world = {
     districts: { township: { places: [
@@ -32,7 +32,7 @@ function harness() {
   const weatherRuntime = { assessExposure(exposure) { return { exposure, advisory: 'Heavy rain: take shelter.', shelterRecommended: true, precipitation: 1 }; } };
   const runtime = globalThis.SemesterInteractionRuntime.create({
     world, environment, renderer, lifeEngine: life, inputManager: input, weatherRuntime,
-    npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] }
+    npcAnchors: { township: [{ characterId: 'njeri', anchor: 'njeri-hotspot', radius: 72 }] },\n    speechRuntime: extra.speechRuntime, voiceTracks: extra.voiceTracks
   });
   return { runtime, events, focused, context, relationships };
 }
@@ -98,4 +98,18 @@ test('outdoor activities surface clear weather advice without secretly blocking 
  assert.equal(result.weather.shelterRecommended,true);
  assert.ok(h.events.some(event=>event.type==='weather:activity-advisory'&&event.message==='Heavy rain: take shelter.'));
  assert.ok(h.events.some(event=>event.type==='activity'&&event.activity==='eat'));
+});
+
+test('dialogue starts the matching authored voice track and stops it when conversation closes',()=>{
+ const calls=[];
+ const speechRuntime={start(track){calls.push(['start',track.id]);return Promise.resolve();},stop(){calls.push(['stop']);},getState(){return {status:'speaking',viseme:'viseme-A'};}};
+ const voiceTracks={njeri:{introduction:{id:'njeri-intro'},topics:{budget:{id:'njeri-budget'}}}};
+ const h=harness({speechRuntime,voiceTracks});
+ const opened=h.runtime.openDialogue('njeri');
+ assert.equal(calls[0][0],'start');assert.equal(calls[0][1],'njeri-intro');
+ assert.equal(opened.speech.status,'speaking');
+ h.runtime.chooseTopic('budget');
+ assert.deepEqual(calls[1],['start','njeri-budget']);
+ h.runtime.closeDialogue();
+ assert.deepEqual(calls[2],['stop']);
 });
