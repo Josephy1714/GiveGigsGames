@@ -18,6 +18,11 @@ try {
   await page.locator("#play").click();
   await page.locator("#game.open").waitFor();
   await page.locator("#world").waitFor({ state: "visible" });
+  await page.locator("#fullscreen").click();
+  await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
+  assert.equal(await page.evaluate(() => document.fullscreenElement?.id), "game", "Fullscreen should expand the game overlay");
+  await page.locator("#fullscreen").click();
+  await page.waitForFunction(() => !document.fullscreenElement, null, { timeout: 5000 });
   const initialLane = await page.evaluate(() => window.__runnerSmoke.state().lane);
   await page.keyboard.press("ArrowLeft");
   assert.equal(await page.evaluate(() => window.__runnerSmoke.state().lane), Math.max(0, initialLane - 1), "Left input should change lanes");
