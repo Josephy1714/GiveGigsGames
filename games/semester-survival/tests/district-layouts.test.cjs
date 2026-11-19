@@ -19,10 +19,12 @@ test('all four districts have authored 2.5D scene contracts', () => {
   for (const [districtId, scene] of Object.entries(manifest)) {
     assert.ok(scene.sceneId);
     assert.ok(scene.requiredAssetIds.length >= 3);
-    assert.equal(scene.render.width, 2880);
-    assert.equal(scene.render.height, 1080);
+    assert.equal(scene.render.width, 960);
+    assert.equal(scene.render.height, 540);
+    assert.deepEqual({ width: scene.render.worldBounds.width, height: scene.render.worldBounds.height }, { width: 2880, height: 1080 });
     assert.equal(scene.render.layers.length, 3);
-    assert.ok(scene.render.layers.every(layer => scene.requiredAssetIds.includes(layer.assetId)));
+    assert.ok(scene.render.layers.every(layer => scene.requiredAssetIds.includes(layer.assetId) && layer.width === 2880 && layer.height === 1080));
+    assert.deepEqual({ maxX: scene.render.cameraBounds.maxX, maxY: scene.render.cameraBounds.maxY }, { maxX: 1920, maxY: 540 });
     assert.ok(scene.spawnPoints.default);
   }
 });
