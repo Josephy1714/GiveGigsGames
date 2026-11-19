@@ -25,7 +25,9 @@
     if (!depthBounds || !Number.isFinite(depthBounds.min) || !Number.isFinite(depthBounds.max) || depthBounds.min >= depthBounds.max) errorDepthBounds();
     if (!xBounds || !Number.isFinite(xBounds.min) || !Number.isFinite(xBounds.max) || xBounds.min >= xBounds.max) throw new Error('X bounds require finite min and max values with min less than max.');
     function errorDepthBounds() { throw new Error('Depth bounds require finite min and max values with min less than max.'); }
-    let collisionWorld = options.collisionWorld || null;\n    const collisionRadius = Number.isFinite(options.collisionRadius) && options.collisionRadius > 0 ? options.collisionRadius : 12;\n    const c = {
+    let collisionWorld = options.collisionWorld || null;
+    const collisionRadius = Number.isFinite(options.collisionRadius) && options.collisionRadius > 0 ? options.collisionRadius : 12;
+    const c = {
       x: 0, y: 0, depth: 0, vx: 0, vy: 0, vDepth: 0,
       facing: 1, grounded: true,
       state: 'idle', previousState: 'idle',
@@ -181,7 +183,12 @@
       return Object.freeze({ min: xBounds.min, max: xBounds.max });
     }
 
-    function setCollisionWorld(world) {\n      if (world !== null && (!world || typeof world.moveCircle !== 'function')) throw new Error('Collision world must expose moveCircle or be null.');\n      collisionWorld = world; return !!collisionWorld;\n    }\n\n    function setDepthBounds(bounds) {
+    function setCollisionWorld(world) {
+      if (world !== null && (!world || typeof world.moveCircle !== 'function')) throw new Error('Collision world must expose moveCircle or be null.');
+      collisionWorld = world; return !!collisionWorld;
+    }
+
+    function setDepthBounds(bounds) {
       if (!bounds || !Number.isFinite(bounds.min) || !Number.isFinite(bounds.max) || bounds.min >= bounds.max) errorDepthBounds();
       depthBounds = { min: bounds.min, max: bounds.max };
       c.depth = clamp(c.depth, depthBounds.min, depthBounds.max);
