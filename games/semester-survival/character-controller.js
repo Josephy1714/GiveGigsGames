@@ -7,7 +7,7 @@
 
   const CONFIG = Object.freeze({
     walkSpeed: 150, jogSpeed: 250, sprintSpeed: 370,
-    groundAcceleration: 1050, groundDeceleration: 1320, airAcceleration: 360,
+    groundAcceleration: 2400, groundDeceleration: 1800, airAcceleration: 600,
     jumpVelocity: 420, gravity: 1200, terminalFallSpeed: 900,
     slideDuration: 0.82, slideCooldown: 0.35, dodgeDuration: 0.28,
     coyoteTime: 0.10, jumpBuffer: 0.12, maxFrameDelta: 1 / 20,
