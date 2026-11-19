@@ -1798,23 +1798,32 @@
                 bus.emit('combat:adrenaline', { active: adrenalineActive, healthRatio: p.hp / Math.max(1, p.maxHp) });
             }
 
-            // Player movement (WASD + tapMove + camera-yaw relative or world)
+            // Player movement (WASD + tapMove + camera-yaw relative)
             // Arrow keys are dedicated to directional tactical dodge
             var keys = inputState.keys;
-            var mx = inputState.moveX;
-            var mz = inputState.moveZ;
-            if (keys['KeyW']) mz -= 1;
-            if (keys['KeyS']) mz += 1;
-            if (keys['KeyA']) mx -= 1;
-            if (keys['KeyD']) mx += 1;
+            var rawX = 0;
+            var rawZ = 0;
+            if (keys['KeyW']) rawZ -= 1;
+            if (keys['KeyS']) rawZ += 1;
+            if (keys['KeyA']) rawX -= 1;
+            if (keys['KeyD']) rawX += 1;
 
-            // Directional Dodge via Arrow Keys (or Space bar for current facing/moving dodge)
-            var arrowDodgeX = 0;
-            var arrowDodgeZ = 0;
-            if (keys['ArrowUp']) arrowDodgeZ -= 1;
-            if (keys['ArrowDown']) arrowDodgeZ += 1;
-            if (keys['ArrowLeft']) arrowDodgeX -= 1;
-            if (keys['ArrowRight']) arrowDodgeX += 1;
+            var camYaw = cameraRig ? (cameraRig.getState().yaw || 0) : 0;
+            var cosYaw = Math.cos(camYaw);
+            var sinYaw = Math.sin(camYaw);
+            var mx = inputState.moveX + (rawX * cosYaw + rawZ * sinYaw);
+            var mz = inputState.moveZ + (-rawX * sinYaw + rawZ * cosYaw);
+
+            // Directional Dodge via Arrow Keys (camera-yaw relative)
+            var rawDodgeX = 0;
+            var rawDodgeZ = 0;
+            if (keys['ArrowUp']) rawDodgeZ -= 1;
+            if (keys['ArrowDown']) rawDodgeZ += 1;
+            if (keys['ArrowLeft']) rawDodgeX -= 1;
+            if (keys['ArrowRight']) rawDodgeX += 1;
+
+            var arrowDodgeX = rawDodgeX * cosYaw + rawDodgeZ * sinYaw;
+            var arrowDodgeZ = -rawDodgeX * sinYaw + rawDodgeZ * cosYaw;
 
             if ((arrowDodgeX !== 0 || arrowDodgeZ !== 0) && p.dodgeTime <= 0 && p.stamina >= 25 && !p.isDead) {
                 var aLen = Math.hypot(arrowDodgeX, arrowDodgeZ);

@@ -629,6 +629,7 @@ function simulateFridgeDay(country, foodStats, invincible = false) {
 
 
 function startGame() {
+    document.getElementById('day-summary').textContent = '';
     gameRunning = true;
     gamePaused = false;
     day = 1;
@@ -698,12 +699,13 @@ function nextDay() {
     // Process hunger and nutrition
     let totalDeaths = 0;
     let preferredFeeds = 0;
+    let income = 0;
     Object.entries(countries).forEach(([key, country]) => {
         const outcome = simulateFridgeDay(country, FOOD_STATS, !!window.gameDebug?.godMode);
         countries[key] = outcome.country;
         totalDeaths += outcome.deaths;
         preferredFeeds += outcome.preferredFeeds;
-        money += outcome.income;
+        income += outcome.income;
     });
     deaths += totalDeaths;
     if (totalDeaths > 0) {
@@ -743,7 +745,7 @@ function nextDay() {
         feedStreak++;
         maxCombo = Math.max(maxCombo, preferredFeeds);
         const bonus = preferredFeeds * 2;
-        money += bonus;
+        income += bonus;
         playSound('autofeed');
         showToast(`🔥 Tasty combo x${preferredFeeds}! Day streak ${feedStreak} (+$${bonus})`, '#f59e0b');
     } else if (preferredFeeds > 0) {
@@ -752,6 +754,10 @@ function nextDay() {
     } else {
         feedStreak = 0;
     }
+
+    money += income;
+    const summary = `Day ${day - 1} · Income $${income} · Favorite meals ${preferredFeeds} · Deaths ${totalDeaths}`;
+    document.getElementById('day-summary').textContent = summary;
 
     // Check game over
     const aliveCount = Object.values(countries).reduce((sum, c) => sum + c.family.filter(m => m !== '💀').length, 0);
@@ -763,6 +769,7 @@ function nextDay() {
         document.getElementById('finalDays').textContent = day;
         document.getElementById('finalDeaths').textContent = deaths;
         document.getElementById('finalMoney').textContent = '$' + money;
+        document.getElementById('loss-day-summary').textContent = summary;
         document.getElementById('gameOverScreen').classList.remove('hidden');
     } else if (day >= 30) {
         gameRunning = false;
@@ -771,6 +778,7 @@ function nextDay() {
         document.getElementById('victoryDays').textContent = day;
         document.getElementById('victoryPopulation').textContent = aliveCount;
         document.getElementById('victoryMoney').textContent = '$' + money;
+        document.getElementById('victory-day-summary').textContent = summary;
         document.getElementById('victoryScreen').classList.remove('hidden');
     }
 

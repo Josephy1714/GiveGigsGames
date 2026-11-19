@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>GraveGain3DC — Arena FPS</title>
+    <link rel="stylesheet" href="game.css" />
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+
+    <div id="hud">
+        <div id="crosshair"></div>
+        <div id="top-bar">
+            <span id="mode-label">MODE: PLAYER</span>
+            <span id="map-label">MAP: NEON COURTYARD</span>
+            <span id="speedometer">0 u/s</span>
+            <span id="fps-counter">0 FPS</span>
+        </div>
+        <div id="rts-bar" class="hidden">
+            <button id="rts-add-bot">+ ADD BOT (4)</button>
+            <span id="rts-hint">Click/Tap arena to rally squad</span>
+        </div>
+        <div id="bottom-bar">
+            <div class="stat-box">HP <span id="hp-val">100</span></div>
+            <div class="stat-box" id="lives-box">LIVES <span id="lives-val">3</span></div>
+            <div class="stat-box">WEAPON <span id="weapon-val">DEVASTATOR</span></div>
+            <div class="stat-box">KILLS <span id="score-val">0</span></div>
+            <button id="menu-btn">MENU</button>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <h1>GRAVEGAIN 3DC</h1>
+        <p>Xonotic-style Arena FPS • Babylon.js</p>
+        <div class="map-section">
+            <div class="section-label">SELECT ARENA</div>
+            <div id="map-selector" class="map-selector"></div>
+        </div>
+        <div class="mode-buttons">
+            <button class="mode-btn" data-mode="player">1. PLAYER CONTROL</button>
+            <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>
+            <button class="mode-btn" data-mode="rts">3. RTS SQUAD (4+ BOTS)</button>
+        </div>
+        <p class="controls-hint">Player: WASD + Space + Shift + Click | Auto: Spectate &amp; Upgrade | RTS: Click to Rally</p>
+    </div>
+
+    <div id="upgrade-modal" class="hidden">
+        <h2>RUN OVER — UPGRADE BOT</h2>
+        <p>Scrap Available: <span id="scrap-val">0</span></p>
+        <div id="upgrade-list"></div>
+        <button id="next-run-btn">START NEXT RUN</button>
+    </div>
+
+    <div id="mobile-controls">
+        <div id="touch-move">MOVE</div>
+        <div id="touch-actions">
+            <button id="btn-jump">JUMP</button>
+            <button id="btn-fire">FIRE</button>
+            <button id="btn-dash">DASH</button>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

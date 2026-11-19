@@ -145,6 +145,8 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <button class="mtab" data-view="family" aria-label="Family ledger">📒<span>Ledger</span></button>
             </nav>
 
+            <p id="day-summary" class="day-summary" role="status"></p>
+
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <button class="btn btn-primary" id="btnNextDay" title="Press SPACE or N">➡️ Next Day <small style="opacity:0.7;font-size:0.7em">(Space/N)</small></button>
@@ -188,6 +190,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                     <span class="highlight" id="finalMoney">$0</span>
                 </div>
             </div>
+            <p id="loss-day-summary" class="day-summary"></p>
             <button class="btn btn-start" id="btnRestart">🔄 Try Again</button>
             <button class="btn btn-secondary" onclick="window.location.href='../index.html'">🏠 All Games</button>
         </div>
@@ -210,6 +213,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                     <span class="highlight" id="victoryMoney">$0</span>
                 </div>
             </div>
+            <p id="victory-day-summary" class="day-summary"></p>
             <button class="btn btn-start" id="btnPlayAgain">🔄 Play Again</button>
             <button class="btn btn-secondary" onclick="window.location.href='../index.html'">🏠 More Games</button>
         </div>

@@ -143,6 +143,7 @@ function update() {
                 createExplosion(bullet.x, bullet.y, '#00ff00');
             } else {
                 lives--;
+                shakeTime = 14;
                 playExplosionSound();
                 createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ff0066');
                 
@@ -162,6 +163,7 @@ function update() {
                 player.hasShield = false;
             } else {
                 lives--;
+                shakeTime = 14;
             }
             playExplosionSound();
             createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color);

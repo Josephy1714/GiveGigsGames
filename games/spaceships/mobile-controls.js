@@ -39,6 +39,14 @@ function injectTouchCSS() {
   #sj-stick-base { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(6,182,212,.45); background: radial-gradient(circle, rgba(6,182,212,.10), rgba(10,5,25,.55)); box-shadow: 0 0 18px rgba(6,182,212,.25); }
   #sj-stick-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(6,182,212,.9), rgba(139,92,246,.75)); box-shadow: 0 0 14px rgba(6,182,212,.6); }
   #sj-ordnance { right: max(14px, env(safe-area-inset-right)); bottom: max(86px, env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; pointer-events: auto; }
+  #sj-utility { right: max(14px, env(safe-area-inset-right)); bottom: max(180px, env(safe-area-inset-bottom)); display: flex; gap: 8px; pointer-events: auto; }
+  #sj-btn-land .surface-label, body.is-planet-surface #sj-btn-land .flight-label { display: none; }
+  body.is-planet-surface #sj-btn-land .surface-label { display: inline; }
+  html.sj-touch body.is-planet-surface #planet-surface-panel {
+    top: max(8px, env(safe-area-inset-top)); bottom: auto;
+    max-height: calc(100dvh - 232px); overflow-y: auto;
+  }
+  .sj-mini-btn { padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(56,189,248,.55); background: rgba(10,5,25,.72); color: #e0f2fe; font-weight: 700; font-size: 10px; letter-spacing: 0.8px; backdrop-filter: blur(8px); }
   .sj-btn { width: 64px; height: 64px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); color: #fff; font-weight: 800; font-size: 11px; letter-spacing: 1px; background: rgba(10,5,25,.6); backdrop-filter: blur(8px); }
   .sj-btn:active, .sj-btn.sj-held { transform: scale(.93); filter: brightness(1.35); }
   #sj-btn-fire { width: 84px; height: 84px; font-size: 13px; border-color: rgba(239,68,68,.7); background: radial-gradient(circle at 35% 30%, rgba(239,68,68,.85), rgba(120,20,20,.8)); box-shadow: 0 0 18px rgba(239,68,68,.5); }
@@ -66,6 +74,7 @@ export class MobileControls {
     this.tapStart = null;
     this.raycaster = null;
     this.elements = {};
+    this.canvasListeners = new AbortController();
   }
 
   init() {
@@ -115,10 +124,17 @@ export class MobileControls {
     msl.textContent = 'MSL';
     const fire = mk('button', 'sj-btn-fire', 'sj-btn', ord);
     fire.textContent = 'FIRE';
+
+    const util = mk('div', 'sj-utility', 'sj-ui');
+    const mapBtn = mk('button', 'sj-btn-map', 'sj-mini-btn', util);
+    mapBtn.textContent = '🗺️ MAP';
+    const landBtn = mk('button', 'sj-btn-land', 'sj-mini-btn', util);
+    landBtn.innerHTML = '<span class="flight-label">🪐 LAND/DOCK</span><span class="surface-label">🚀 TAKE OFF</span>';
+
     const toast = mk('div', 'sj-lock-toast', 'sj-ui');
     const veil = mk('div', 'sj-pause-veil', 'sj-ui');
     veil.textContent = '⏸ PAUSED — tap to resume';
-    this.elements = { stickZone, base, knob, ord, boost, msl, fire, toast, veil };
+    this.elements = { stickZone, base, knob, ord, boost, msl, fire, util, mapBtn, landBtn, toast, veil };
   }
 
   setKnob(dx, dy) {
@@ -179,12 +195,28 @@ export class MobileControls {
   }
 
   bindOrdnance() {
-    const { fire, boost, msl } = this.elements;
+    const { fire, boost, msl, mapBtn, landBtn } = this.elements;
     const core = this.core;
-    this.holdButton(fire, () => { core.touch.fire = true; }, () => { core.touch.fire = false; });
+    this.holdButton(
+      fire,
+      () => {
+        if (core.planetSurface?.active) core.planetSurface.triggerJumpJet();
+        else core.touch.fire = true;
+      },
+      () => { core.touch.fire = false; }
+    );
     this.holdButton(boost, () => { core.touch.boost = true; }, () => { core.touch.boost = false; });
-    msl.addEventListener('touchstart', (e) => { core.fireMissile(core.ships[0], core.touch.lockedTarget); e.preventDefault(); }, { passive: false });
-    msl.addEventListener('mousedown', () => core.fireMissile(core.ships[0], core.touch.lockedTarget));
+
+    const fireMslOrInteract = (e) => {
+      if (e.cancelable) e.preventDefault();
+      if (core.planetSurface?.active) core.interactPlanetSite();
+      else core.fireMissile(core.ships[0], core.touch.lockedTarget);
+    };
+    msl.addEventListener('touchstart', fireMslOrInteract, { passive: false });
+    msl.addEventListener('mousedown', fireMslOrInteract);
+
+    mapBtn?.addEventListener('click', () => core.tacticalHud?.openStarMap());
+    landBtn?.addEventListener('click', () => core.handleLandOrDockAction());
   }
 
   bindTurretDragAndTap() {
@@ -202,7 +234,7 @@ export class MobileControls {
           this.tapStart = { x: t.clientX, y: t.clientY, time: performance.now(), id: t.identifier };
         }
       }
-    }, { passive: true });
+    }, { passive: true, signal: this.canvasListeners.signal });
     canvas.addEventListener('touchmove', (e) => {
       for (const t of e.changedTouches) {
         if (t.identifier !== this.turretId) continue;
@@ -211,12 +243,12 @@ export class MobileControls {
         this.turretLast = { x: t.clientX, y: t.clientY };
         const c = this.core;
         // Drag right => yaw turret right; drag up => elevate.
-        c.touch.turretYaw = THREE.MathUtils.clamp((c.touch.turretYaw || 0) - dx * 0.005, -1.2, 1.2);
-        c.touch.turretPitch = THREE.MathUtils.clamp((c.touch.turretPitch || 0) - dy * 0.004, -0.45, 0.55);
+        c.touch.turretYaw = window.THREE.MathUtils.clamp((c.touch.turretYaw || 0) - dx * 0.005, -1.2, 1.2);
+        c.touch.turretPitch = window.THREE.MathUtils.clamp((c.touch.turretPitch || 0) - dy * 0.004, -0.45, 0.55);
         if (this.tapStart && Math.hypot(t.clientX - this.tapStart.x, t.clientY - this.tapStart.y) > TAP_MAX_PX) this.tapStart = null;
         e.preventDefault();
       }
-    }, { passive: false });
+    }, { passive: false, signal: this.canvasListeners.signal });
     const touchEnd = (e) => {
       for (const t of e.changedTouches) {
         if (t.identifier !== this.turretId) continue;
@@ -225,8 +257,8 @@ export class MobileControls {
         this.tapStart = null;
       }
     };
-    canvas.addEventListener('touchend', touchEnd);
-    canvas.addEventListener('touchcancel', touchEnd);
+    canvas.addEventListener('touchend', touchEnd, { signal: this.canvasListeners.signal });
+    canvas.addEventListener('touchcancel', touchEnd, { signal: this.canvasListeners.signal });
   }
 
   tapToTarget(cx, cy) {
@@ -266,6 +298,9 @@ export class MobileControls {
   }
 
   destroy() {
+    this.canvasListeners.abort();
+    clearTimeout(this._toastT);
+    this.core.onAutoPause = null;
     for (const el of Object.values(this.elements)) el?.remove?.();
     this.elements = {};
     document.documentElement.classList.remove('sj-touch');

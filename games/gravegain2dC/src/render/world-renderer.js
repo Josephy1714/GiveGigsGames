@@ -9,7 +9,7 @@
             wall: 0x241f2d,
             accent: 0xb48a48,
             fog: 0x0b0812,
-            fogDensity: 0.018,
+            fogDensity: 0.0055,
             ambientSky: 0x584c73,
             ambientGround: 0x16121c,
             dirColor: 0xffdfb0
@@ -19,7 +19,7 @@
             wall: 0x1a2026,
             accent: 0xd97706,
             fog: 0x101317,
-            fogDensity: 0.020,
+            fogDensity: 0.0060,
             ambientSky: 0x64748b,
             ambientGround: 0x1b1510,
             dirColor: 0xffcfa0
@@ -29,7 +29,7 @@
             wall: 0x0f1821,
             accent: 0x2dd4bf,
             fog: 0x060c14,
-            fogDensity: 0.019,
+            fogDensity: 0.0058,
             ambientSky: 0x38bdf8,
             ambientGround: 0x091018,
             dirColor: 0xcbeafe
@@ -39,7 +39,7 @@
             wall: 0x241f18,
             accent: 0x84cc16,
             fog: 0x12100d,
-            fogDensity: 0.022,
+            fogDensity: 0.0068,
             ambientSky: 0x78716c,
             ambientGround: 0x1c1712,
             dirColor: 0xe7e5e4
@@ -200,6 +200,7 @@
         // Lighting
         var hemiLight = null;
         var dirLight = null;
+        var playerLanternLight = null;
         var pointLightPool = [];
         var transientFlashes = []; // { lightIdx, timer, maxTimer, baseIntensity }
         var transientSlashes = []; // short-lived execution slash meshes
@@ -290,6 +291,7 @@
             treasureChestLids = Object.create(null);
             treasureChestLights = Object.create(null);
             hazardVisuals.length = 0;
+            playerLanternLight = null;
             pointLightPool.length = 0;
             transientFlashes.length = 0;
             exitBeacon = null;
@@ -312,14 +314,14 @@
             scene.background = new THREE.Color(pal.fog);
             scene.fog = new THREE.FogExp2(pal.fog, pal.fogDensity);
 
-            hemiLight = new THREE.HemisphereLight(pal.ambientSky, pal.ambientGround, 0.95);
+            hemiLight = new THREE.HemisphereLight(pal.ambientSky, pal.ambientGround, 1.35);
             worldRoot.add(hemiLight);
 
-            dirLight = new THREE.DirectionalLight(pal.dirColor, 1.35);
+            dirLight = new THREE.DirectionalLight(pal.dirColor, 1.65);
             dirLight.position.set(60, 38, 50);
             dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
             dirLight.shadow.camera.near = 2;
             dirLight.shadow.camera.far = 110;
             var d = 28;
@@ -330,6 +332,12 @@
             dirLight.shadow.bias = -0.0008;
             worldRoot.add(dirLight);
             worldRoot.add(dirLight.target);
+
+            // Warm player-following lantern light so immediate surroundings are always readable
+            playerLanternLight = new THREE.PointLight(0xffe6b3, 1.4, 20, 1.5);
+            playerLanternLight.castShadow = false;
+            playerLanternLight.position.set(0, 2.6, 0);
+            worldRoot.add(playerLanternLight);
 
             // Pre-allocate fixed PointLight pool (zero mid-combat shader recompile)
             anchorLightsCount = Math.min(4, Math.floor(lightBudget / 2));
@@ -443,11 +451,12 @@
                 map: fogTex,
                 transparent: true,
                 depthWrite: false,
-                opacity: 0.92
+                opacity: 0.85
             }));
             fogPlane = new THREE.Mesh(fogGeo, fogMat);
-            fogPlane.position.set(worldW / 2, 5.4, worldH / 2);
-            fogPlane.renderOrder = 20;
+            // Keep fog on the ground plane so it never occludes the player or shifts with camera angle
+            fogPlane.position.set(worldW / 2, 0.08, worldH / 2);
+            fogPlane.renderOrder = 2;
             worldRoot.add(fogPlane);
             updateFogTexture(terrain);
         }
@@ -467,7 +476,7 @@
                     fogBytes[off] = 8;
                     fogBytes[off + 1] = 8;
                     fogBytes[off + 2] = 16;
-                    fogBytes[off + 3] = 148;
+                    fogBytes[off + 3] = 120;
                 } else {
                     fogBytes[off] = 4;
                     fogBytes[off + 1] = 3;
@@ -1153,12 +1162,17 @@
 
             // Snap directional shadow camera to texels around focusPos to prevent shadow shimmer
             if (dirLight && focusPos) {
-                var texelSize = (56 / 1024);
+                var texelSize = (56 / 2048);
                 var sx = Math.round(focusPos.x / texelSize) * texelSize;
                 var sz = Math.round(focusPos.z / texelSize) * texelSize;
                 dirLight.target.position.set(sx, focusPos.y || 0, sz);
                 dirLight.position.set(sx + 22, (focusPos.y || 0) + 34, sz + 18);
                 dirLight.target.updateMatrixWorld();
+            }
+
+            if (playerLanternLight && focusPos) {
+                playerLanternLight.position.set(focusPos.x, (focusPos.y || 0) + 2.6, focusPos.z);
+                playerLanternLight.intensity = 1.35 + Math.sin(time * 5.2) * 0.08;
             }
 
             // Update nearest brazier anchor lights in pool

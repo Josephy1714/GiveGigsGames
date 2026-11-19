@@ -58,7 +58,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 25px;
+    padding: 15px 25px 15px 155px;
     gap: 15px;
 }
 
@@ -886,15 +886,16 @@
 
 .minimap-label {
     position: absolute;
-    bottom: 4px;
+    bottom: 8px;
     left: 0;
     width: 100%;
     text-align: center;
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     font-family: 'Orbitron', monospace;
     font-weight: 700;
-    color: rgba(76, 127, 255, 0.8);
-    letter-spacing: 0.1em;
+    color: rgba(147, 197, 253, 0.95);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+    letter-spacing: 0.06em;
 }
 
 /* ===== BOSS HEALTH BAR ===== */
@@ -1821,8 +1822,9 @@ body.touch-enabled .mobile-action-buttons {
     width: 44px;
     height: 44px;
     background: rgba(8, 5, 18, 0.82);
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.35);
     border-radius: 50%;
+    color: #f8fafc;
     font-size: 1.2rem;
     cursor: pointer;
     z-index: 60;

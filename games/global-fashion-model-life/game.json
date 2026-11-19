@@ -1,0 +1,12 @@
+{
+  "title": "Global Fashion Model Life",
+  "slug": "global-fashion-model-life",
+  "description": "Create a 3D model, style makeup and garments, and launch a fashion career from New York or Metro Manila before booking work around the world.",
+  "genre": "Simulation",
+  "tags": ["Fashion", "Character Creator", "3D", "Life Simulation", "Offline-friendly"],
+  "emoji": "?",
+  "entrypoint": "index.html",
+  "license": "Same as the GiveGigsGames repository",
+  "controls": "Click or tap to style your avatar and choose bookings. Drag the portrait to rotate. Press Space or tap the runway button to hit each cue.",
+  "credits": "Uses the arcade's bundled Three.js r128 (MIT)."
+}

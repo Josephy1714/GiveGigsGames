@@ -19,20 +19,16 @@
     display: block;
 }
 
-/* Glassmorphism overlays */
 .TEMPLATE-4weird-game-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(1, 4, 10, 0.85);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #f5f5f5;
-    z-index: 10;
+    z-index: 15;
 }
 
 .TEMPLATE-4weird-game-overlay.hidden {
@@ -42,17 +38,17 @@
 .TEMPLATE-4weird-overlay-content {
     text-align: center;
     max-width: 500px;
-    padding: 30px;
+    padding: 28px;
     border-radius: 24px;
-    background: rgba(10, 30, 40, 0.6);
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    background: rgba(10, 30, 40, 0.72);
+    border: 1px solid rgba(6, 182, 212, 0.35);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .TEMPLATE-4weird-overlay-content h2 {
     font-family: 'Orbitron', sans-serif;
-    font-size: 2.2rem;
-    margin-bottom: 15px;
+    font-size: 2rem;
+    margin-bottom: 14px;
     background: linear-gradient(135deg, #06b6d4, #a855f7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -61,20 +57,27 @@
 }
 
 .TEMPLATE-4weird-overlay-content p {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #d1d5db;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     line-height: 1.5;
+}
+
+.overlay-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
 }
 
 .btn {
     font-family: 'Orbitron', sans-serif;
     font-weight: 700;
-    padding: 12px 30px;
+    padding: 12px 26px;
     border-radius: 12px;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
@@ -83,23 +86,27 @@
 
 .btn-primary {
     background: linear-gradient(135deg, #06b6d4, #0891b2);
-    color: #01040a;
+    color: #fff;
     box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.6);
+.btn-secondary {
+    background: rgba(15, 23, 42, 0.9);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.45);
 }
 
-/* Controls & hints styling */
+.btn:hover {
+    transform: translateY(-2px);
+}
+
 .TEMPLATE-4weird-controls-hint {
-    margin-top: 25px;
-    font-size: 0.9rem;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 12px;
+    margin-top: 18px;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 10px 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .TEMPLATE-4weird-controls-hint p {
@@ -107,35 +114,53 @@
     color: #9ca3af;
 }
 
-/* Custom interactive Labels during play */
+/* Cleared top-left HUD */
 .portal-hud {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 12px;
+    left: clamp(64px, 18vw, 152px);
+    right: 14px;
     display: flex;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 8px 10px;
     font-family: 'Orbitron', sans-serif;
-    font-size: 1.2rem;
+    font-size: clamp(0.72rem, 1.45vw, 0.92rem);
     font-weight: bold;
     color: #fff;
     pointer-events: none;
-    z-index: 5;
+    z-index: 6;
 }
 
 .hud-item {
-    background: rgba(10, 30, 40, 0.7);
-    padding: 8px 16px;
+    background: rgba(10, 30, 40, 0.78);
+    padding: 6px 11px;
     border-radius: 8px;
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    border: 1px solid rgba(6, 182, 212, 0.35);
     backdrop-filter: blur(4px);
+    white-space: nowrap;
 }
 
-/* fourweird-fullscreen-patch: fullscreen black bg, centered canvas, no scrollbars, enlarged text */
+.portal-feed {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    right: 118px;
+    text-align: center;
+    background: rgba(2, 12, 24, 0.86);
+    border: 1px solid rgba(6, 182, 212, 0.38);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font: 600 clamp(0.7rem, 1.4vw, 0.84rem)/1.3 'Orbitron', system-ui, sans-serif;
+    color: #a5f3fc;
+    pointer-events: none;
+    z-index: 6;
+}
+
 :fullscreen { background:#000 !important; }
 :-webkit-full-screen { background:#000 !important; }
 :-ms-fullscreen { background:#000 !important; }
 .TEMPLATE-4weird-game-frame:fullscreen, .TEMPLATE-4weird-game-frame:-webkit-full-screen { width:100vw !important; height:100vh !important; max-width:none !important; margin:0 !important; border-radius:0 !important; background:#000 !important; display:flex !important; align-items:center !important; justify-content:center !important; overflow:hidden !important; }
 .TEMPLATE-4weird-game-frame:fullscreen #TEMPLATE-4weird-gameCanvas, .TEMPLATE-4weird-game-frame:-webkit-full-screen #TEMPLATE-4weird-gameCanvas { width:100% !important; height:100% !important; max-width:100vw !important; max-height:100vh !important; object-fit:contain !important; display:block !important; margin:auto !important; }
-.TEMPLATE-4weird-game-frame.is-fullscreen .TEMPLATE-4weird-overlay-content h2 { font-size:2.6rem !important; }
-.TEMPLATE-4weird-game-frame.is-fullscreen .TEMPLATE-4weird-overlay-content p { font-size:1.15rem !important; }
-.TEMPLATE-4weird-game-frame.is-fullscreen .hud-item { font-size:1.2rem !important; }
+.TEMPLATE-4weird-game-frame.is-fullscreen .TEMPLATE-4weird-overlay-content h2 { font-size:2.4rem !important; }
+.TEMPLATE-4weird-game-frame.is-fullscreen .TEMPLATE-4weird-overlay-content p { font-size:1.1rem !important; }
+.TEMPLATE-4weird-game-frame.is-fullscreen .hud-item { font-size:1.05rem !important; }

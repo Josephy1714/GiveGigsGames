@@ -86,6 +86,7 @@
                     const rotor = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 0.8, 12), trimMat);
                     rotor.position.y = 6;
                     this.skull.add(rotor);
+                    this.rotor = rotor;
                     const mast = new THREE.Mesh(new THREE.BoxGeometry(1, 5, 1), trimMat);
                     mast.position.y = 3;
                     this.skull.add(mast);
@@ -125,22 +126,20 @@
                 re.position.set(1.8, 1, 3.1);
                 this.skull.add(re);
 
-                // Limbs
-                this.leftLeg = new THREE.Mesh(new THREE.BoxGeometry(2.2, 12, 2.2), boneMat);
-                this.leftLeg.position.set(-3, -8, 0);
-                this.group3d.add(this.leftLeg);
-
-                this.rightLeg = new THREE.Mesh(new THREE.BoxGeometry(2.2, 12, 2.2), boneMat);
-                this.rightLeg.position.set(3, -8, 0);
-                this.group3d.add(this.rightLeg);
-
-                this.leftArm = new THREE.Mesh(new THREE.BoxGeometry(2, 11, 2), boneMat);
-                this.leftArm.position.set(-6, 3, 0);
-                this.torso.add(this.leftArm);
-
-                this.rightArm = new THREE.Mesh(new THREE.BoxGeometry(2, 11, 2), boneMat);
-                this.rightArm.position.set(6, 3, 0);
-                this.torso.add(this.rightArm);
+                // Place the pivots at the hips and shoulders.
+                const limb = (parent, x, y, width, length) => {
+                    const pivot = new THREE.Group();
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, length, width), boneMat);
+                    pivot.position.set(x, y, 0);
+                    mesh.position.y = -length / 2;
+                    pivot.add(mesh);
+                    parent.add(pivot);
+                    return pivot;
+                };
+                this.leftLeg = limb(this.group3d, -3, 12, 2.2, 12);
+                this.rightLeg = limb(this.group3d, 3, 12, 2.2, 12);
+                this.leftArm = limb(this.torso, -6, 8.5, 2, 11);
+                this.rightArm = limb(this.torso, 6, 8.5, 2, 11);
 
                 // Variant headgear / accessories (THREE r128 primitives only)
                 this.applyVariantHeadgear(typeData, style, trimMat, eyeMat);
@@ -289,6 +288,8 @@
             // Attack cooldown
             if (this.attackTimer > 0) this.attackTimer -= dt;
 
+            let walkDistance = 0;
+
             // AI states
             if (dist < 450 && this.state === 'idle') {
                 this.state = 'chase';
@@ -310,7 +311,10 @@
                     // Melee pursuit
                     const vx = Math.cos(this.angle) * this.speed * dt;
                     const vy = Math.sin(this.angle) * this.speed * dt;
+                    const startX = this.x;
+                    const startY = this.y;
                     physics.moveEntityWithCollision(this, vx, vy, tilemap);
+                    walkDistance = Math.hypot(this.x - startX, this.y - startY);
 
                     // Melee attack range check
                     if (dist < this.radius + player.radius + 12) {
@@ -327,15 +331,20 @@
                         }
                     }
                 }
+            }
 
-                // Walking oscillation animation
-                if (this.leftLeg && this.rightLeg) {
-                    const cycle = Date.now() * 0.01 * (this.speed / 80);
-                    this.leftLeg.rotation.x = Math.sin(cycle) * 0.65;
-                    this.rightLeg.rotation.x = -Math.sin(cycle) * 0.65;
-                    this.leftArm.rotation.x = -Math.sin(cycle) * 0.45;
-                    this.rightArm.rotation.x = Math.sin(cycle) * 0.45;
-                }
+            if (this.leftLeg) {
+                this.walkPhase = ((this.walkPhase || 0) + walkDistance / 8) % (Math.PI * 2);
+                const stride = Math.sin(this.walkPhase) * Math.min(1, dt > 0 ? walkDistance / (80 * dt) : 0);
+                const blend = 1 - Math.exp(-18 * dt);
+                this.leftLeg.rotation.x += (stride * 0.65 - this.leftLeg.rotation.x) * blend;
+                this.rightLeg.rotation.x += (-stride * 0.65 - this.rightLeg.rotation.x) * blend;
+                this.leftArm.rotation.x += (-stride * 0.45 - this.leftArm.rotation.x) * blend;
+                this.rightArm.rotation.x += (stride * 0.45 - this.rightArm.rotation.x) * blend;
+            } else {
+                this.hoverPhase = ((this.hoverPhase || 0) + dt * 5) % (Math.PI * 2);
+                this.skull.position.y = 18 + Math.sin(this.hoverPhase) * 1.6;
+                if (this.rotor) this.rotor.rotation.y += dt * 14;
             }
 
             this.group3d.position.set(this.x, 0, this.y);
@@ -344,9 +353,12 @@
 
         destroy() {
             if (window.GraveGainGame) {
-                window.GraveGainGame.scene.remove(this.group3d);
+                const scene = window.GraveGainGame.scene;
+                if (this.hp <= 0) window.GraveGainEnemyVoxels.fracture(this, scene, this.maxHp);
+                scene.remove(this.group3d);
             }
             this.group3d.traverse((child) => {
+                if (child.isInstancedMesh) child.dispose();
                 if (child.geometry) child.geometry.dispose();
                 if (child.material) {
                     if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());

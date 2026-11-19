@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#181218">
+<title>Global Fashion Model Life</title>
+<link rel="stylesheet" href="./game.css">
+<script defer src="./collections.js"></script>
+<script defer src="./sound.js"></script>
+<script defer src="../html/vendor/three-r128.min.js"></script>
+<script defer src="./illustration.js"></script>
+<script defer src="./game.js"></script>
+</head>
+<body>
+<header class="masthead">
+  <div class="wordmark"><span class="monogram" aria-hidden="true">✦</span><span>GLOBAL FASHION<small>MODEL LIFE</small></span></div>
+  <div id="stats" class="stats" aria-label="Career statistics"></div>
+</header>
+<nav id="navigation" class="navigation" aria-label="Game sections"></nav>
+<main>
+  <section class="intro"><div><p id="edition" class="eyebrow"></p><h1 id="page-title">The Studio</h1></div><p id="subtitle"></p></section>
+  <div class="workspace">
+    <section class="stage" aria-label="Avatar preview">
+      <canvas id="portrait" width="640" height="760" role="img" aria-label="Live illustration of your model"></canvas>
+      <div class="stage-head"><span id="scene-label" class="eyebrow"></span><span class="stage-mark" aria-hidden="true">✧</span></div>
+      <div class="stage-foot"><strong id="model-name"></strong><div id="camera" class="segmented" aria-label="Camera framing"></div></div>
+    </section>
+    <section id="panel" class="panel" aria-labelledby="page-title"></section>
+  </div>
+  <p id="notice" class="notice" role="status"></p>
+</main>
+<footer><span>GLOBAL FASHION MODEL LIFE</span><span>Career and looks save on this device</span></footer>
+<script defer src="../_shared/game-select.js"></script>
+</body>
+</html>
+

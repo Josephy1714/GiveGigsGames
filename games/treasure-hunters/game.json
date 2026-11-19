@@ -1,7 +1,7 @@
 {
     "title": "Treasure Hunters",
     "slug": "treasure-hunters",
-    "description": "Mine for pipeline value, meetings, revenue, and customers! Swing the claw grapple to pull in the treasures hidden in your business.",
+    "description": "Use a swinging claw to meet three timed treasure quotas.",
     "genre": "Timing / Claw Grabber",
     "tags": ["HTML5", "Action", "Three.js", "Arcade"],
     "maker": {
@@ -28,7 +28,7 @@
         "touch": true,
         "mouse": true
     },
-    "instructions": "The claw swings back and forth. Press Space or Click to release the claw downward. Grab Pipeline, Meetings, Revenue, and Customer items to secure points!",
+    "instructions": "Press Space or tap the arena to extend the claw. Grab gold and gems to reach the quota, or blue rings for six extra seconds. Avoid rocks.",
     "technical": {
         "canvasSize": {"width": 800, "height": 600},
         "targetFPS": 60,

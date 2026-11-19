@@ -146,7 +146,7 @@ export class TutorialSystem {
               if (moving) sys.stepTimer += dt;
               return sys.stepTimer >= 3.0;
             },
-            progressText: (sys) => `Maneuvering helm: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (_core, sys) => `Maneuvering helm: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Relativistic Time Dilation",
@@ -184,24 +184,30 @@ export class TutorialSystem {
             check: (core, dt, sys) => {
               return sys.stepCounter >= 3;
             },
-            progressText: (sys) => `Waypoints cleared: ${sys.stepCounter} / 3 gates`
+            progressText: (_core, sys) => `Waypoints cleared: ${sys.stepCounter} / 3 gates`
           },
           {
             title: "Autopilot Inertial Handover",
-            instruction: "Release all controls and let the autonomous inertial stabilizer take over.",
-            detail: "When no steering input is detected, the starship's flight computer automatically dampens angular drift.",
+            instruction: "Press [P] (or click Engage Autopilot below) to hand helm control over to the tactical autopilot.",
+            detail: "Toggle between 6-DOF Manual Flight and Autonomous Combat Autopilot at any time using [P].",
             target: 2.5,
             unit: "s",
-            voice: "Release helm controls. The fly-by-wire stabilizer will lock your flight vector.",
+            voice: "Engage autopilot handover. The fly-by-wire computer will pilot your combat vector.",
             check: (core, dt, sys) => {
               const moving = core.keys['w'] || core.keys['s'] || core.keys['a'] || core.keys['d'] ||
                              core.keys['arrowup'] || core.keys['arrowdown'] ||
-                             Math.abs(core.touch?.stickX || core.touch?.steerX || 0) > 0.05 || Math.abs(core.touch?.stickY || core.touch?.steerY || 0) > 0.05;
-              if (!moving) sys.stepTimer += dt;
+                             Math.abs(core.touch?.stickX || 0) > 0.05 || Math.abs(core.touch?.stickY || 0) > 0.05;
+              if (!core.flightDynamics?.manualFlight || !moving) sys.stepTimer += dt;
               else sys.stepTimer = 0;
               return sys.stepTimer >= 2.5;
             },
-            progressText: (sys) => `Autopilot active: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
+            quickAction: {
+              label: "🤖 Engage Autopilot [P]",
+              action: (core) => {
+                core.toggleAutopilot?.(true);
+              }
+            },
+            progressText: (core, sys) => `${core.flightDynamics?.manualFlight ? 'Stabilizing' : 'Autopilot active'}: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
           }
         ]
       },
@@ -217,7 +223,7 @@ export class TutorialSystem {
         steps: [
           {
             title: "Observe Escort Squadron & Formations",
-            instruction: "Observe your 4 green escort wingmen maintaining formation around your flagship.",
+            instruction: "Observe your green escort wingmen maintaining formation around your flagship.",
             detail: "Wingmen continuously execute Craig Reynolds' Boids flocking rules: separation, alignment, and cohesion.",
             target: 2.5,
             unit: "s",
@@ -226,7 +232,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.5;
             },
-            progressText: (sys) => `Fleet telemetry scanning: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
+            progressText: (_core, sys) => `Fleet telemetry scanning: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
           },
           {
             title: "Wingman Tactical Formation Shift",
@@ -247,7 +253,7 @@ export class TutorialSystem {
                 sys.formationShifted = true;
               }
             },
-            progressText: (sys) => `Current Formation: ${sys.currentFormation.toUpperCase()}`
+            progressText: (core, sys) => `Current Formation: ${(core.flightDynamics?.fleetFormation || sys.currentFormation || 'arrowhead').toUpperCase()}`
           },
           {
             title: "High-G Formation Bank Turn",
@@ -258,22 +264,22 @@ export class TutorialSystem {
             voice: "Execute a hard tactical turn. Watch the squadron calculate separation vectors.",
             check: (core, dt, sys) => {
               const turning = core.keys['a'] || core.keys['d'] || core.keys['arrowleft'] || core.keys['arrowright'] ||
-                              Math.abs(core.touch?.stickX || core.touch?.steerX || 0) > 0.2;
+                              Math.abs(core.touch?.stickX || 0) > 0.2;
               if (turning) sys.stepTimer += dt;
               return sys.stepTimer >= 3.0;
             },
-            progressText: (sys) => `Sustained tactical turn: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (_core, sys) => `Sustained tactical turn: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Fleet Boost Surge Synchronization",
-            instruction: "Accelerate forward to trigger engine boost surge and afterburners.",
+            instruction: "Hold [Shift] or accelerate forward to trigger engine boost surge and afterburners.",
             detail: "When the flagship accelerates, wingmen fire afterburners to match impulse velocity and hold formation.",
             target: 2.5,
             unit: "s",
             voice: "Engage impulse thrusters. All escort craft will ignite synchronized afterburners.",
             check: (core, dt, sys) => {
               const lead = core.ships[0];
-              const boosting = (core.keys['w'] || core.keys['arrowup'] || (lead && lead.boostActive));
+              const boosting = (core.keys['shift'] || core.keys['w'] || core.keys['arrowup'] || (lead && lead.boostActive));
               if (boosting) sys.stepTimer += dt;
               return sys.stepTimer >= 2.5;
             },
@@ -283,7 +289,7 @@ export class TutorialSystem {
                 core.ships.forEach(s => { s.boostActive = true; s.boostTimer = 3; });
               }
             },
-            progressText: (sys) => `Surge velocity: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
+            progressText: (_core, sys) => `Surge velocity: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
           }
         ]
       },
@@ -299,8 +305,8 @@ export class TutorialSystem {
         steps: [
           {
             title: "Weapons Calibration Discharge",
-            instruction: "Press [Spacebar] or click/tap the space viewport to fire plasma cannons.",
-            detail: "Your flagship mounts twin forward plasma cannons that fire high-energy cyan coherent beams.",
+            instruction: "Press [Spacebar] or click/tap the space viewport to fire plasma cannons (or [F] to switch weapons).",
+            detail: "Your flagship mounts forward plasma cannons and can swap between Plasma, Rapid, Ion EMP, and Mining lasers.",
             target: 3,
             voice: "Discharge primary plasma cannons to verify emitter convergence.",
             setup: (core, sys) => {
@@ -312,10 +318,13 @@ export class TutorialSystem {
             quickAction: {
               label: "🔥 Fire Lasers",
               action: (core) => {
-                if (core.ships[0]) core.fireLaser(core.ships[0]);
+                if (core.ships[0]) {
+                  core.ships[0].shootCooldown = 0;
+                  core.fireLaser(core.ships[0]);
+                }
               }
             },
-            progressText: (sys) => `Discharges calibrated: ${Math.min(3, sys.lasersFired || 0)} / 3`
+            progressText: (_core, sys) => `Discharges calibrated: ${Math.min(3, sys.lasersFired || 0)} / 3`
           },
           {
             title: "Destroy Stationary Training Drone",
@@ -333,11 +342,12 @@ export class TutorialSystem {
               label: "🎯 Fire at Target",
               action: (core, sys) => {
                 if (core.ships[0] && sys.trainingObjects[0]) {
+                  core.ships[0].shootCooldown = 0;
                   core.fireLaser(core.ships[0], { pos: sys.trainingObjects[0].position });
                 }
               }
             },
-            progressText: (sys) => `Drones eliminated: ${sys.stepCounter} / 1`
+            progressText: (_core, sys) => `Drones eliminated: ${sys.stepCounter} / 1`
           },
           {
             title: "Intercept Evasive Combat Drones",
@@ -351,7 +361,7 @@ export class TutorialSystem {
             check: (core, dt, sys) => {
               return sys.stepCounter >= 2;
             },
-            progressText: (sys) => `Evasive drones destroyed: ${sys.stepCounter} / 2`
+            progressText: (_core, sys) => `Evasive drones destroyed: ${sys.stepCounter} / 2`
           },
           {
             title: "Bounty Payout Confirmation",
@@ -364,7 +374,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Bounty processing: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
+            progressText: (_core, sys) => `Bounty processing: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
           }
         ]
       },
@@ -389,7 +399,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Hardpoints armed: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
+            progressText: (_core, sys) => `Hardpoints armed: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
           },
           {
             title: "Deploy Armored Raider Target",
@@ -404,16 +414,17 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 1.5;
             },
-            progressText: (sys) => `Target locked in firing arc`
+            progressText: () => `Target locked in firing arc`
           },
           {
             title: "Acquire Missile Lock & Launch Salvo",
-            instruction: "Aim toward the enemy to build missile lock (press [M] or click [Launch Missile Volley]).",
-            detail: "Missiles drop from belly hardpoints with sequential 0.2s spacing, ignite thrusters, and home in.",
+            instruction: "Press [M] or click [Launch Missile Volley] to release a homing salvo!",
+            detail: "Missiles drop from belly hardpoints with sequential spacing, ignite thrusters, and home in.",
             target: 1,
             voice: "Lock acquired. Fire underside missile salvo.",
             setup: (core, sys) => {
               sys.missilesLaunched = 0;
+              core.missileAmmo = Math.max(core.missileAmmo || 0, 3);
             },
             check: (core, dt, sys) => {
               return (sys.missilesLaunched || 0) >= 1;
@@ -422,26 +433,24 @@ export class TutorialSystem {
               label: "🚀 Launch Missile Volley",
               action: (core, sys) => {
                 if (core.ships[0]) {
-                  for (let m = 0; m < 3; m++) {
-                    core.missileQueue.push({ delay: m * 0.18, hardpointIdx: m });
-                  }
-                  sys.missilesLaunched = (sys.missilesLaunched || 0) + 1;
+                  core.missileAmmo = Math.max(core.missileAmmo || 0, 3);
+                  core.fireMissile(core.ships[0], sys.trainingObjects[0] ? { pos: sys.trainingObjects[0].position, vel: new THREE.Vector3() } : null);
                   core.soundSystem?.playLockAcquired?.();
                 }
               }
             },
-            progressText: (sys) => `Salvo status: ${(sys.missilesLaunched || 0) > 0 ? "Missiles airborne!" : "Awaiting launch command"}`
+            progressText: (_core, sys) => `Salvo status: ${(sys.missilesLaunched || 0) > 0 ? "Missiles airborne!" : "Awaiting launch command"}`
           },
           {
             title: "Target Obliteration & Scrap Retrieval",
             instruction: "Watch the homing missiles strike the raider and retrieve salvage scrap.",
-            detail: "Missile detonations inflict 60 damage each, shattering hull plating into collectible debris.",
+            detail: "Missile detonations inflict heavy explosive damage, shattering hull plating into collectible debris.",
             target: 1,
             voice: "Direct hit confirmed. Hostile frigate destroyed.",
             check: (core, dt, sys) => {
               return sys.stepCounter >= 1;
             },
-            progressText: (sys) => `Enemy frigate status: ${sys.stepCounter >= 1 ? "Destroyed" : "Tracking impacts..."}`
+            progressText: (_core, sys) => `Enemy frigate status: ${sys.stepCounter >= 1 ? "Destroyed" : "Tracking impacts..."}`
           }
         ]
       },
@@ -466,11 +475,11 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Deflector barrier active: 100% capacity`
+            progressText: () => `Deflector barrier active: 100% capacity`
           },
           {
             title: "Directional Impact Absorption",
-            instruction: "Take incoming laser fire and observe the directional impact bloom effect.",
+            instruction: "Take incoming laser fire and observe the directional impact bloom effect (or press [G] for Flares).",
             detail: "Impacts generate localized plasma blooms at the exact collision point on the deflector bubble.",
             target: 2,
             voice: "Incoming fire detected. Angle deflectors to absorb directional blast.",
@@ -488,38 +497,38 @@ export class TutorialSystem {
                 if (lead && core.fx) {
                   lead.shieldHitFlash = 1.0;
                   lead.shield = Math.max(20, lead.shield - 25);
-                  core.fx.spawnShieldImpactBloom(lead.pos.clone().add(new THREE.Vector3(2, 0, -3)), new THREE.Vector3(0, 0, 1));
+                  core.fx.spawnShieldImpact(lead, lead.pos.clone().add(new THREE.Vector3(2, 0, -3)));
                   core.soundSystem?.playShieldDeflect?.();
                   sys.shieldImpactsCount = (sys.shieldImpactsCount || 0) + 1;
                 }
               }
             },
-            progressText: (sys) => `Impacts absorbed: ${Math.min(2, sys.shieldImpactsCount || 0)} / 2`
+            progressText: (_core, sys) => `Impacts absorbed: ${Math.min(2, sys.shieldImpactsCount || 0)} / 2`
           },
           {
             title: "Shield Energy Regeneration",
             instruction: "Maneuver away from danger to let shield generators restore capacity.",
-            detail: "Deflector capacitors steadily recharge at 2.5% per second when not taking sustained fire.",
+            detail: "Deflector capacitors steadily recharge when not taking sustained fire (upgradeable at Stations).",
             target: 3,
             unit: "s",
             voice: "Disengage from fire arc. Shield capacitor recharging.",
             check: (core, dt, sys) => {
               const lead = core.ships[0];
-              if (lead && lead.shield >= 90) sys.stepTimer += dt;
+              if (lead && lead.shield >= (lead.maxShield || 100) * 0.85) sys.stepTimer += dt;
               return sys.stepTimer >= 3.0;
             },
-            progressText: (sys) => `Shield regeneration: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (_core, sys) => `Shield regeneration: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Counter-Offensive Elimination",
             instruction: "Eliminate the attacking drone with a clean laser volley.",
-            detail: "A swift counter-offensive prevents enemies from wearing down deflector banks.",
+            detail: "A swift counter-offensive prevents enemies from wearing down deflector banks and breaching hull armor.",
             target: 1,
             voice: "Counter-attack authorized. Eliminate the aggressor.",
             check: (core, dt, sys) => {
               return sys.stepCounter >= 1;
             },
-            progressText: (sys) => `Hostile status: ${sys.stepCounter >= 1 ? "Neutralized" : "Engaging..."}`
+            progressText: (_core, sys) => `Hostile status: ${sys.stepCounter >= 1 ? "Neutralized" : "Engaging..."}`
           }
         ]
       },
@@ -548,7 +557,7 @@ export class TutorialSystem {
                 if (core.cameraDirector) core.cameraDirector.setMode('cockpit', true);
               }
             },
-            progressText: (core) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
+            progressText: (core, sys) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
           },
           {
             title: "Holographic Radar Diagnostics",
@@ -561,7 +570,7 @@ export class TutorialSystem {
               if (core.cameraDirector?.mode === 'cockpit') sys.stepTimer += dt;
               return sys.stepTimer >= 3.0;
             },
-            progressText: (sys) => `Radar telemetry scan: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (core, sys) => `Radar telemetry scan: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Holographic Target Acquisition",
@@ -576,7 +585,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Target lock: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
+            progressText: (core, sys) => `Target lock: ${Math.min(2, sys.stepTimer).toFixed(1)}s / 2.0s`
           },
           {
             title: "First-Person Cockpit Dogfight",
@@ -587,7 +596,7 @@ export class TutorialSystem {
             check: (core, dt, sys) => {
               return sys.stepCounter >= 1;
             },
-            progressText: (sys) => `Cockpit kill confirmed: ${sys.stepCounter} / 1`
+            progressText: (core, sys) => `Cockpit kill confirmed: ${sys.stepCounter} / 1`
           }
         ]
       },
@@ -614,7 +623,7 @@ export class TutorialSystem {
                 if (core.cameraDirector) core.cameraDirector.setMode('gun_barrel', true);
               }
             },
-            progressText: (core) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
+            progressText: (core, sys) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
           },
           {
             title: "Wingman Escort Perspective",
@@ -629,7 +638,7 @@ export class TutorialSystem {
                 if (core.cameraDirector) core.cameraDirector.setMode('wingman_cam', true);
               }
             },
-            progressText: (core) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
+            progressText: (core, sys) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
           },
           {
             title: "Cinematic Auto-Sequence Director",
@@ -651,7 +660,7 @@ export class TutorialSystem {
                 }
               }
             },
-            progressText: (sys) => `Cinematic auto-director: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (core, sys) => `Cinematic auto-director: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Tactical Chase Restoration",
@@ -666,7 +675,7 @@ export class TutorialSystem {
                 if (core.cameraDirector) core.cameraDirector.setMode('chase', true);
               }
             },
-            progressText: (core) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
+            progressText: (core, sys) => `Current view: ${core.cameraDirector?.mode || 'chase'}`
           }
         ]
       },
@@ -682,8 +691,8 @@ export class TutorialSystem {
         steps: [
           {
             title: "Celestial Chart Scanning",
-            instruction: "Scan the star system to locate the charted terrestrial worlds (Ember, Azure, Viridian).",
-            detail: "Every planet possesses unique gravitational fields, terrain palettes, and scientific nodes.",
+            instruction: "Open [N] Star Map or scan the system to inspect the 6 charted worlds (Ember, Azure, Viridian, Cryo, Obsidian, Aurelia) and orbital stations.",
+            detail: "Every planet possesses unique gravitational fields, terrain palettes, and scientific nodes, while the Star Map enables long-range warp jumps.",
             target: 2.5,
             unit: "s",
             voice: "Scanning celestial bodies. Target planet acquired.",
@@ -691,7 +700,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.5;
             },
-            progressText: (sys) => `Planetary telemetry scanning: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
+            progressText: (core, sys) => `Planetary telemetry scanning: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
           },
           {
             title: "Align Orbital Entry Vector",
@@ -704,7 +713,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Orbital insertion vector locked`
+            progressText: (core, sys) => `Orbital insertion vector locked`
           },
           {
             title: "Initiate Planetary Descent",
@@ -721,7 +730,7 @@ export class TutorialSystem {
                 core.beginPlanetaryDescent();
               }
             },
-            progressText: (core) => core.planetaryLanding ? "Atmospheric descent in progress..." : "Awaiting descent initiation"
+            progressText: (core, sys) => core.planetaryLanding ? "Atmospheric descent in progress..." : "Awaiting descent initiation"
           },
           {
             title: "Atmospheric Ionization & Touchdown",
@@ -732,7 +741,7 @@ export class TutorialSystem {
             check: (core) => {
               return Boolean(core.planetSurface?.active);
             },
-            progressText: (core) => core.planetSurface?.active ? "Touchdown confirmed!" : "Descending through stratosphere..."
+            progressText: (core, sys) => core.planetSurface?.active ? "Touchdown confirmed!" : "Descending through stratosphere..."
           }
         ]
       },
@@ -748,8 +757,8 @@ export class TutorialSystem {
         steps: [
           {
             title: "Deploy All-Terrain Rover & Booster Jump",
-            instruction: "Drive the ground rover using [W][A][S][D] or Arrow keys across the terrain. Tap [Booster Jump] for altitude!",
-            detail: "The expedition rover features independent all-wheel suspension and vertical jump thrusters.",
+            instruction: "Drive the ground rover using [W][A][S][D] or Arrow keys across the terrain. Tap [Space] or [Booster Jump] for altitude!",
+            detail: "The expedition rover features independent all-wheel suspension, gravity physics, and vertical jump thrusters.",
             target: 3,
             unit: "s",
             voice: "Drive the expedition rover. Fire jump thrusters to navigate craters.",
@@ -767,14 +776,18 @@ export class TutorialSystem {
             quickAction: {
               label: "🚀 Fire Rover Jump Jets",
               action: (core) => {
-                if (core.planetSurface?.rover) {
+                if (core.planetSurface?.triggerJumpJet) {
+                  core.planetSurface.triggerJumpJet();
+                } else if (core.planetSurface?.rover) {
                   core.planetSurface.rover.position.y += 8.5;
-                  core.soundSystem?.playRoverJump?.();
-                  core.fx?.spawnFloatingText(core.planetSurface.rover.position, "JUMP JETS ENGAGED", "#10b981");
+                }
+                core.soundSystem?.playRoverJump?.();
+                if (core.planetSurface?.rover) {
+                  core.fx?.spawnFloatingText?.(core.planetSurface.rover.position, "JUMP JETS ENGAGED", "#10b981");
                 }
               }
             },
-            progressText: (sys) => `Rover excursion: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
+            progressText: (core, sys) => `Rover excursion: ${Math.min(3, sys.stepTimer).toFixed(1)}s / 3.0s`
           },
           {
             title: "Geological Sensor Pulse",
@@ -793,7 +806,7 @@ export class TutorialSystem {
                 core.scanPlanetSurface();
               }
             },
-            progressText: (core) => {
+            progressText: (core, sys) => {
               const prog = core.planetSurface?.planet ? core.planetSurface.getPlanetProgress(core.planetSurface.planet.name) : null;
               return prog?.scanned ? "Scanning complete!" : "Click Scan Landing Zone to map anomalies";
             }
@@ -815,7 +828,7 @@ export class TutorialSystem {
                 core.interactPlanetSite();
               }
             },
-            progressText: (core) => {
+            progressText: (core, sys) => {
               const prog = core.planetSurface?.planet ? core.planetSurface.getPlanetProgress(core.planetSurface.planet.name) : null;
               return (prog?.probe || (prog?.samples || 0) > 0) ? "Probe recovered!" : "Approach glowing anomaly and interact";
             }
@@ -835,10 +848,11 @@ export class TutorialSystem {
               label: "🏗️ Deploy Outpost",
               action: (core) => {
                 core.credits = Math.max(core.credits, 2000);
+                core.updateCreditsHud?.();
                 core.deployPlanetOutpost();
               }
             },
-            progressText: (core) => {
+            progressText: (core, sys) => {
               const prog = core.planetSurface?.planet ? core.planetSurface.getPlanetProgress(core.planetSurface.planet.name) : null;
               return prog?.outpost ? "Outpost operational! Return to orbit when ready." : "Click Deploy Outpost (1,200 CR)";
             }
@@ -847,21 +861,21 @@ export class TutorialSystem {
       },
       {
         id: 10,
-        title: "Pilot Career, Fleet Commerce & Galactic Tycoon",
+        title: "Pilot Career, Stations & Galactic Tycoon",
         badge: "Pilot Tycoon",
         icon: "💎",
-        shortDesc: "Manage pilot dossiers, acquire luxury star-yachts, charter cities, and graduate with the Grand Commission.",
+        shortDesc: "Dock at Space Stations for Contracts & Shipyard upgrades, grow Skills & Connections, and graduate with the Grand Commission.",
         reward: 2500,
         ribbon: "Master Commander Grand Cross",
-        voiceIntro: "Welcome to Starfleet Command, Admiral. Review your interstellar assets and career commission.",
+        voiceIntro: "Welcome to Starfleet Command, Admiral. Review your interstellar career, station contracts, and fleet assets.",
         steps: [
           {
-            title: "Review Pilot Dossier & Life Origin",
-            instruction: "Open the [🧬 Pilot Life] dossier (top-right panel) to inspect your pilot profile.",
-            detail: "Pilots hail from varied origins (Born Poor, Middle Class, Born Rich), each with distinct skills and starting assets.",
+            title: "Review Pilot Dossier & Career Stats",
+            instruction: "Open the [🧬 Pilot Life] dossier (top-right panel) to inspect your pilot profile, Skills, and Connections.",
+            detail: "Completing station contracts grows your Skills (+weapon/mining/agility) and Connections (shipyard discounts & higher contract tiers).",
             target: 2.5,
             unit: "s",
-            voice: "Accessing personnel service record. Career origins verified.",
+            voice: "Accessing personnel service record. Career origins and clearances verified.",
             setup: (core) => {
               const panel = document.getElementById('starship-life-panel');
               if (panel) panel.open = true;
@@ -870,20 +884,20 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.5;
             },
-            progressText: (sys) => `Pilot dossier verified: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
+            progressText: (core, sys) => `Pilot dossier verified: ${Math.min(2.5, sys.stepTimer).toFixed(1)}s / 2.5s`
           },
           {
-            title: "Inspect Pilot Economy & Dividends",
-            instruction: "Check your Pilot Credits balance and accrued passive dividend revenue.",
-            detail: "Credits accumulate from dogfight bounties, planetary mining, and commercial holding dividends.",
+            title: "Inspect Station Contracts & Economy",
+            instruction: "Check your Pilot Credits, accrued passive dividends, and Space Station Contracts (dock with [L] near any Station).",
+            detail: "Credits accumulate from combat bounties, asteroid mining, salvage wrecks, station contracts, and luxury holding dividends.",
             target: 2,
             unit: "s",
-            voice: "Interplanetary bank connection confirmed. Commercial dividends streaming.",
+            voice: "Interplanetary bank connection confirmed. Station contract boards synchronized.",
             check: (core, dt, sys) => {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Financial telemetry synchronized`
+            progressText: (core, sys) => `Financial & contract telemetry synchronized`
           },
           {
             title: "Acquire Luxury Asset or Charter City",
@@ -894,9 +908,8 @@ export class TutorialSystem {
             setup: (core) => {
               // Grant cadet grant so they can experience tycoon purchase
               if (core.credits < 50_000_000) core.credits += 40_000_000;
-              const creditsEl = document.getElementById('hud-credits');
-              if (creditsEl) creditsEl.textContent = `${core.credits} CR`;
-              core.renderPilotLife();
+              core.updateCreditsHud?.();
+              core.renderPilotLife?.();
             },
             check: (core) => {
               return (core.pilotLife?.assets?.length || 0) > 0;
@@ -907,12 +920,12 @@ export class TutorialSystem {
                 core.buyStarshipLuxuryAsset('luxury-yacht');
               }
             },
-            progressText: (core) => (core.pilotLife?.assets?.length || 0) > 0 ? "Asset acquired!" : "Select an asset from Luxury holdings"
+            progressText: (core, sys) => (core.pilotLife?.assets?.length || 0) > 0 ? "Asset acquired!" : "Select an asset from Luxury holdings"
           },
           {
             title: "Starfleet Academy Grand Commission Ceremony",
             instruction: "Receive the Master Commander Commission and unlock full sandbox mastery!",
-            detail: "Cadet, you have demonstrated complete mastery over all flight systems, fleet formations, weapons, shields, avionics, cameras, planetary descents, rover operations, and commerce.",
+            detail: "Cadet, you have demonstrated complete mastery over all flight systems, stations, contracts, weapons, shields, avionics, cameras, planetary descents, rover operations, and commerce.",
             target: 1,
             voice: "Attention all vessels! By order of Starfleet High Command, Cadet is promoted to Grand Admiral. Congratulations, Commander!",
             setup: (core) => {
@@ -924,7 +937,7 @@ export class TutorialSystem {
               sys.stepTimer += dt;
               return sys.stepTimer >= 2.0;
             },
-            progressText: (sys) => `Commissioning Grand Admiral ceremony...`
+            progressText: (core, sys) => `Commissioning Grand Admiral ceremony...`
           }
         ]
       }
@@ -1761,6 +1774,7 @@ export class TutorialSystem {
   }
 
   openAcademyModal() {
+    this.core.clearFlightKeys();
     this.renderAcademyCards();
     this.academyModal.classList.add('open');
   }
@@ -1790,6 +1804,7 @@ export class TutorialSystem {
     // Dismiss launch screen if open
     const launchScreen = document.getElementById('launch-screen');
     if (launchScreen) launchScreen.classList.add('is-dismissed');
+    if (!this.core.hasLaunched) this.core.onLaunchFlight({ unmute: false });
 
     // Resume AudioContext if suspended
     if (this.core.soundSystem) {
@@ -1820,6 +1835,7 @@ export class TutorialSystem {
 
   setFleetFormation(formation) {
     this.currentFormation = formation;
+    this.core?.setFleetFormation?.(formation);
     const lead = this.core.ships[0];
     if (!lead || !this.core.ships) return;
 
@@ -1936,7 +1952,7 @@ export class TutorialSystem {
     overallText.textContent = `Tutorial 0${this.activeTutorial.id}/10 (${overallPct}%)`;
 
     if (step.progressText) {
-      progressText.textContent = step.progressText(this.core ? (step.isInputBased || step.unit === 's' ? this : this.core) : this);
+      progressText.textContent = step.progressText(this.core, this);
     } else {
       progressText.textContent = `Step ${this.currentStepIndex + 1} of ${this.activeTutorial.steps.length}`;
     }
@@ -1998,8 +2014,8 @@ export class TutorialSystem {
 
     // Grant rewards to live pilot profile
     this.core.credits = (this.core.credits || 0) + tut.reward;
-    const creditsEl = document.getElementById('hud-credits');
-    if (creditsEl) creditsEl.textContent = `${this.core.credits} CR`;
+    this.core.updateCreditsHud?.();
+    this.core.savePilotRecord?.();
 
     this.cleanupTrainingObjects();
     this.hudCard.classList.remove('active');
@@ -2346,7 +2362,7 @@ export class TutorialSystem {
           if (this.core.fx) {
             lead.shieldHitFlash = 1.0;
             lead.shield = Math.max(15, lead.shield - 20);
-            this.core.fx.spawnShieldImpactBloom(lead.pos.clone().add(new THREE.Vector3(1.5, 0, -2.5)), new THREE.Vector3(0, 0, 1));
+            this.core.fx.spawnShieldImpact(lead, lead.pos.clone().add(new THREE.Vector3(1.5, 0, -2.5)));
             this.core.soundSystem?.playShieldDeflect?.();
             this.shieldImpactsCount = (this.shieldImpactsCount || 0) + 1;
             this.showBanner(`Deflector Impact Absorbed!`, 1200);
@@ -2366,19 +2382,18 @@ export class TutorialSystem {
               const dmg = p.damage || 35;
               obj.userData.health -= dmg;
 
-              this.core.fx?.spawnExplosion?.(obj.position, 1.2);
+              this.core.fx?.spawnExplosion?.(obj.position, 0xff5533, 24);
               this.core.soundSystem?.playHitMarker?.();
               this.core.fx?.spawnFloatingText?.(obj.position, `-${dmg}`, '#ef4444');
 
               if (obj.userData.health <= 0) {
                 this.stepCounter++;
-                this.core.fx?.spawnExplosion?.(obj.position, 3.5);
+                this.core.fx?.spawnExplosion?.(obj.position, 0xf59e0b, 45);
                 this.core.soundSystem?.playExplosion?.();
                 this.core.fx?.spawnFloatingText?.(obj.position, "+150 CR", "#f59e0b");
                 this.showBanner(`Target Destroyed! +150 CR`, 1500);
                 this.core.credits = (this.core.credits || 0) + 150;
-                const creditsEl = document.getElementById('hud-credits');
-                if (creditsEl) creditsEl.textContent = `${this.core.credits} CR`;
+                this.core.updateCreditsHud?.();
                 // Remove from scene
                 if (this.core.scene) this.core.scene.remove(obj);
               }

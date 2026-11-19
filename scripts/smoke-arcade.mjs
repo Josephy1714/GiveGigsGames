@@ -5,6 +5,16 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
   const baseUrl = process.env.ARCADE_SMOKE_URL || "http://127.0.0.1:4173";
+  // Mirror the production Vercel rewrites when running the static smoke server locally.
+  await page.route("**/ggg/**", async route => {
+    const requested = new URL(route.request().url());
+    const parts = requested.pathname.split("/").filter(Boolean);
+    let destination = "/index.html";
+    if (parts[1] === "play" && parts[2]) destination = `/play.html?game=${encodeURIComponent(parts[2])}`;
+    else if (parts[1] === "info" && parts[2]) destination = `/game.html?game=${encodeURIComponent(parts[2])}`;
+    else if (parts[1] === "test" && parts[2]) destination = `/tester/index.html?game=${encodeURIComponent(parts[2])}`;
+    await route.continue({ url: requested.origin + destination });
+  });
   await page.goto(`${baseUrl}/index.html#all-games`);
   const search = page.getByRole("searchbox", { name: "Search titles, genres, and tags" });
   await search.fill("Platform Wars");
@@ -22,7 +32,7 @@ try {
   await card.getByRole("link", { name: "Game details" }).click();
   await page.getByRole("heading", { name: "Platform Wars: Phone vs Desktop" }).waitFor();
 
-  await page.getByRole("link", { name: "Back to game select" }).click();
+  await page.goto(`${baseUrl}/index.html#all-games`);
   await page.locator("#save-file-input").setInputFiles({
     name: "backup.txt",
     mimeType: "text/plain",

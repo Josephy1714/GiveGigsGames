@@ -1,0 +1,82 @@
+'use strict';
+const assert = require('node:assert/strict');
+const systems = require('../life-systems.js');
+const store = new Map();
+const storage = { getItem:k=>store.has(k)?store.get(k):null, setItem:(k,v)=>store.set(k,v) };
+const game = systems.createEngine(storage);
+let s = game.getState();
+assert.equal(s.campaign.semester,1);
+assert.equal(s.finances.cash,2500);
+assert.equal(s.condition.energy,90);
+assert.equal(game.travel('township').result.destination,'township');
+assert.equal(game.perform('eat').result.activity,'eat');
+assert.equal(game.getState().flags.firstMeal,true);
+assert.equal(game.perform('work').result.activity,'work');
+assert.equal(game.getState().finances.cash,2830);
+assert.equal(game.getState().calendar.totalMinutes,12+30+180);
+assert.equal(game.travel('city').result.destination,'city');
+assert.throws(()=>game.travel('residence'),/not connected/);
+assert.equal(game.save(),true);
+const reloaded=systems.createEngine(storage);
+assert.equal(reloaded.getState().finances.cash,2830);
+assert.equal(systems.gradePoint(80),4);
+assert.equal(systems.gradePoint(49),1);
+assert.equal(systems.gradePoint(20),0);
+const lowSave=systems.createNewGame();
+lowSave.finances.cash=0;
+const lowStore=new Map([[systems.saveKey,JSON.stringify(lowSave)]]);
+const poor=systems.createEngine({getItem:k=>lowStore.get(k)||null,setItem:(k,v)=>lowStore.set(k,v)});
+poor.travel('township');
+assert.throws(()=>poor.perform('eat'),/Not enough cash/);
+assert.equal(poor.getState().finances.cash,0);
+console.log('life-systems tests passed');
+
+const relationshipStore = new Map();
+const legacy = systems.createNewGame();
+delete legacy.relationships.vendor;
+delete legacy.relationships.lecturer;
+relationshipStore.set(systems.saveKey, JSON.stringify(legacy));
+const migrated = systems.createEngine({
+  getItem:k=>relationshipStore.get(k)||null,
+  setItem:(k,v)=>relationshipStore.set(k,v)
+});
+assert.equal(migrated.getState().relationships.vendor.name,'Mama Njeri');
+assert.equal(migrated.getState().relationships.lecturer.name,'Dr. Mwangi');
+migrated.recordRelationship('vendor',{affinity:2,trust:3},'Discussed food budgeting');
+assert.equal(migrated.getState().relationships.vendor.affinity,12);
+assert.equal(migrated.getState().relationships.vendor.trust,8);
+assert.equal(migrated.getState().journal.at(-1).text,'Discussed food budgeting with Mama Njeri.');
+
+
+const academicLegacyStore = new Map();
+const academicLegacy = systems.createNewGame();
+delete academicLegacy.academics.catalog;
+delete academicLegacy.academics.registrationLocked;
+delete academicLegacy.finances.transactions;
+academicLegacy.academics.courses.forEach(course => {
+  course.assignmentPoints = 25;
+  delete course.assignmentProgress;
+  delete course.assignmentScoreTotal;
+  delete course.assignmentCount;
+});
+academicLegacyStore.set(systems.saveKey, JSON.stringify(academicLegacy));
+const academicMigrated = systems.createEngine({
+  getItem:k=>academicLegacyStore.get(k)||null,
+  setItem:(k,v)=>academicLegacyStore.set(k,v)
+});
+assert.equal(academicMigrated.getState().academics.catalog.length,7);
+assert.equal(academicMigrated.getState().academics.registrationLocked,false);
+assert.deepEqual(academicMigrated.getState().finances.transactions,[]);
+assert.equal(academicMigrated.getState().academics.courses[0].assignmentProgress,25);
+assert.equal(academicMigrated.getState().academics.courses[0].assignmentPoints,0);
+
+const extendedRelationshipStore = new Map();
+const oldCastSave = systems.createNewGame();
+oldCastSave.relationships.sumeya = undefined;
+oldCastSave.relationships.einstein = undefined;
+oldCastSave.relationships.ernest = undefined;
+extendedRelationshipStore.set(systems.saveKey, JSON.stringify(oldCastSave));
+const extended = systems.createEngine({getItem:k=>extendedRelationshipStore.get(k)||null,setItem:(k,v)=>extendedRelationshipStore.set(k,v)});
+for (const [key,name] of [['sumeya','Sumeya'],['einstein','Einstein'],['ernest','Ernest']]) assert.equal(extended.getState().relationships[key].name,name);
+extended.recordRelationship('sumeya',{affinity:2,trust:3},'Shared a revision session');
+assert.equal(extended.getState().relationships.sumeya.affinity,12);

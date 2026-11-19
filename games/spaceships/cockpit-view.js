@@ -662,18 +662,22 @@ export class CockpitView {
     const exteriorGroup = new THREE.Group();
     this.rig.add(exteriorGroup);
 
-    const heroArmorMat = new THREE.MeshStandardMaterial({
+    this.heroArmorMat = new THREE.MeshStandardMaterial({
       color: 0xdce8ed,
       metalness: 0.65,
       roughness: 0.28
     });
-    const heroDarkMat = new THREE.MeshStandardMaterial({
+    this.heroDarkMat = new THREE.MeshStandardMaterial({
       color: 0x10273b,
       metalness: 0.78,
       roughness: 0.26
     });
-    const heroCyanMat = new THREE.MeshBasicMaterial({ color: 0x54f5ee });
-    const heroAmberMat = new THREE.MeshBasicMaterial({ color: 0xffb969 });
+    this.heroCyanMat = new THREE.MeshBasicMaterial({ color: 0x54f5ee });
+    this.heroAmberMat = new THREE.MeshBasicMaterial({ color: 0xffb969 });
+    const heroArmorMat = this.heroArmorMat;
+    const heroDarkMat = this.heroDarkMat;
+    const heroCyanMat = this.heroCyanMat;
+    const heroAmberMat = this.heroAmberMat;
 
     // Sleek arrowhead forward nosecone matching exterior hero craft (low-profile, sloped downward)
     const noseBase = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.14, 4.2), heroDarkMat);
@@ -841,6 +845,14 @@ export class CockpitView {
     return { leftWorld, rightWorld };
   }
 
+  setLivery(livery) {
+    if (!livery) return;
+    if (this.heroArmorMat) this.heroArmorMat.color.setHex(livery.armorHex);
+    if (this.heroDarkMat) this.heroDarkMat.color.setHex(livery.darkHex);
+    if (this.heroCyanMat) this.heroCyanMat.color.setHex(livery.accentHex);
+    if (this.heroAmberMat) this.heroAmberMat.color.setHex(livery.glowHex);
+  }
+
   recordShipDeath(pos, isHostile = true) {
     this.deathMarkers.push({
       pos: pos.clone(),
@@ -851,7 +863,7 @@ export class CockpitView {
   }
 
   // 1. CENTER CONSOLE: Forward-Facing Smart Positional Radar
-  drawCenterRadar(elapsed, leadShip, ships, aliens) {
+  drawCenterRadar(elapsed, leadShip, ships, aliens, stations = [], lockedTarget = null) {
     const ctx = this.centerRadarCtx;
     if (!ctx) return;
     const w = this.centerRadarCanvas.width;
@@ -874,7 +886,7 @@ export class CockpitView {
 
     ctx.textAlign = 'right';
     const spd = leadShip?.vel ? Math.round(leadShip.vel.length()) : 220;
-    ctx.fillText(`VEL: ${spd} MGLT`, w - 14, 22);
+    ctx.fillText(`VEL: ${spd} M/S`, w - 14, 22);
 
     const rangeRings = [42, 84, 126, 154];
     ctx.lineWidth = 1;
@@ -912,8 +924,24 @@ export class CockpitView {
     ctx.fill();
 
     const invQuat = leadShip.mesh.quaternion.clone().invert();
-    const maxRange = 240;
+    const maxRange = 450;
     const radarPixelRadius = 150;
+
+    if (stations && stations.length) {
+      stations.forEach(station => {
+        const relLocal = station.mesh.position.clone().sub(leadShip.pos).applyQuaternion(invQuat);
+        const dist = Math.hypot(relLocal.x, relLocal.z);
+        if (dist > 1 && dist < maxRange * 1.8) {
+          const clamped = Math.min(dist, maxRange) / maxRange * radarPixelRadius;
+          const angle = Math.atan2(relLocal.x, -relLocal.z);
+          const px = cx + Math.sin(angle) * clamped;
+          const py = cy - Math.cos(angle) * clamped;
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(px - 5, py - 5, 10, 10);
+        }
+      });
+    }
 
     if (ships) {
       ctx.fillStyle = '#22c55e';
@@ -958,22 +986,37 @@ export class CockpitView {
           const px = cx + Math.sin(angle) * screenDist;
           const py = cy - Math.cos(angle) * screenDist;
 
-          ctx.fillStyle = '#ef4444';
-          ctx.beginPath();
-          ctx.arc(px, py, 4.5, 0, Math.PI * 2);
-          ctx.fill();
+          if (alien.isBoss) {
+            ctx.fillStyle = '#ff2a4f';
+            ctx.beginPath();
+            ctx.moveTo(px, py - 8);
+            ctx.lineTo(px + 8, py);
+            ctx.lineTo(px, py + 8);
+            ctx.lineTo(px - 8, py);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
 
           ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.arc(px, py, 7.5, 0, Math.PI * 2);
+          ctx.arc(px, py, alien.isBoss ? 11 : 7.5, 0, Math.PI * 2);
           ctx.stroke();
 
-          const forwardDist = -relLocal.z;
-          const lateralDist = Math.hypot(relLocal.x, relLocal.y);
-          if (forwardDist > 10 && lateralDist < 35 && lateralDist < closestDistSq) {
-            closestDistSq = lateralDist;
+          if (lockedTarget === alien) {
             autoLockTarget = { px, py, dist, alien };
+          } else if (!lockedTarget) {
+            const forwardDist = -relLocal.z;
+            const lateralDist = Math.hypot(relLocal.x, relLocal.y);
+            if (forwardDist > 10 && lateralDist < 50 && lateralDist < closestDistSq) {
+              closestDistSq = lateralDist;
+              autoLockTarget = { px, py, dist, alien };
+            }
           }
         }
       });
@@ -1035,8 +1078,8 @@ export class CockpitView {
     this.centerRadarTexture.needsUpdate = true;
   }
 
-  // 2. LEFT CONSOLE: Missile Racks, Ordnance Recharging & Rotating Dorsal Turret Status
-  drawLeftMissileConsole(elapsed, leadShip, missileVolleyTimer, missileQueueLen) {
+  // 2. LEFT CONSOLE: Hull, Shield, Weapon Heat, Missile Racks & Rotating Dorsal Turret
+  drawLeftMissileConsole(elapsed, leadShip, missileVolleyTimer, missileQueueLen, meta = {}) {
     const ctx = this.leftMissileCtx;
     if (!ctx) return;
     const w = this.leftMissileCanvas.width;
@@ -1052,41 +1095,72 @@ export class CockpitView {
     ctx.fillStyle = '#06b6d4';
     ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('ORDNANCE & TURRET CONTROL', 12, 20);
+    ctx.fillText('SYSTEMS & ORDNANCE', 12, 20);
 
-    ctx.font = 'bold 10px monospace';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText('BELLY MISSILE BAYS (QUAD-PACK)', 12, 38);
+    const maxAmmo = meta.maxMissileAmmo || 8;
+    const ammo = meta.missileAmmo ?? maxAmmo;
+    ctx.textAlign = 'right';
+    ctx.fillStyle = ammo > 0 ? '#10b981' : '#ef4444';
+    ctx.fillText(`MSL ${ammo}/${maxAmmo}`, w - 12, 20);
 
     const rechargePct = THREE.MathUtils.clamp(1.0 - (missileVolleyTimer / 4.0), 0.05, 1.0);
-    const readyToFire = missileVolleyTimer <= 0.3 || missileQueueLen > 0;
+    const readyToFire = missileQueueLen > 0 || ammo > 0;
 
     for (let i = 0; i < 4; i++) {
       const bx = 14 + i * 68;
-      const by = 48;
-      const isLoaded = rechargePct > (i * 0.25);
+      const by = 32;
+      const isLoaded = ammo > i || rechargePct > (i * 0.25);
 
       ctx.strokeStyle = isLoaded ? '#10b981' : '#475569';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(bx, by, 60, 26);
+      ctx.strokeRect(bx, by, 60, 22);
 
       ctx.fillStyle = isLoaded ? '#10b981' : '#1e293b';
-      if (readyToFire && isLoaded) {
+      if (missileQueueLen > 0 && isLoaded) {
         ctx.fillStyle = Math.sin(elapsed * 16.0) > 0 ? '#f59e0b' : '#10b981';
       }
-      ctx.fillRect(bx + 2, by + 2, isLoaded ? 56 : Math.round(56 * rechargePct), 22);
+      ctx.fillRect(bx + 2, by + 2, isLoaded ? 56 : Math.round(56 * rechargePct), 18);
 
       ctx.fillStyle = isLoaded ? '#000000' : '#64748b';
-      ctx.font = 'bold 10px monospace';
+      ctx.font = 'bold 9px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`BAY ${i + 1}`, bx + 30, by + 16);
+      ctx.fillText(`BAY ${i + 1}`, bx + 30, by + 15);
     }
 
-    ctx.fillStyle = readyToFire ? '#f59e0b' : '#38bdf8';
-    ctx.font = 'bold 10px monospace';
+    // Active Weapon & Heat gauge
+    const weaponName = meta.weaponName || 'PLASMA';
+    const heat = Math.round(meta.weaponHeat || 0);
+    const overheated = Boolean(meta.weaponOverheated);
     ctx.textAlign = 'left';
-    const timeText = readyToFire ? 'BURST LAUNCH IN PROGRESS' : `SALVO RECHARGING: ${Math.max(0, missileVolleyTimer).toFixed(1)}s`;
-    ctx.fillText(timeText, 14, 90);
+    ctx.font = 'bold 10px monospace';
+    ctx.fillStyle = overheated ? '#ef4444' : '#38bdf8';
+    ctx.fillText(`WPN: ${weaponName}`, 14, 72);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(130, 62, 154, 11);
+    ctx.fillStyle = overheated ? '#ef4444' : (heat > 75 ? '#f59e0b' : '#38bdf8');
+    ctx.fillRect(130, 62, Math.round(154 * THREE.MathUtils.clamp(heat / 100, 0, 1)), 11);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText(overheated ? 'OVERHEAT' : `HEAT ${heat}%`, 134, 71);
+
+    // Hull & Shield bars
+    const hullPct = Math.round(((leadShip?.hull ?? 100) / Math.max(1, leadShip?.maxHull || 100)) * 100);
+    const shieldPct = Math.round(((leadShip?.shield ?? 100) / Math.max(1, leadShip?.maxShield || 100)) * 100);
+
+    ctx.font = 'bold 9px monospace';
+    ctx.fillStyle = '#34d399';
+    ctx.fillText(`HULL ${hullPct}%`, 14, 90);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(82, 82, 62, 9);
+    ctx.fillStyle = hullPct < 30 ? '#ef4444' : '#34d399';
+    ctx.fillRect(82, 82, Math.round(62 * THREE.MathUtils.clamp(hullPct / 100, 0, 1)), 9);
+
+    ctx.fillStyle = '#54f5ee';
+    ctx.fillText(`SHLD ${shieldPct}%`, 154, 90);
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(222, 82, 62, 9);
+    ctx.fillStyle = shieldPct < 30 ? '#f59e0b' : '#54f5ee';
+    ctx.fillRect(222, 82, Math.round(62 * THREE.MathUtils.clamp(shieldPct / 100, 0, 1)), 9);
 
     ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)';
     ctx.beginPath();
@@ -1136,19 +1210,19 @@ export class CockpitView {
     ctx.font = 'bold 10px monospace';
     const deg = Math.round((turretYaw * 180) / Math.PI);
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`BEARING: ${deg}°`, 112, 138);
+    ctx.fillText(`BEARING: ${deg}°`, 112, 134);
 
-    ctx.fillStyle = isTurretFiring ? '#ef4444' : '#10b981';
-    ctx.fillText(isTurretFiring ? 'STATUS: ENGAGING TARGET' : 'STATUS: AUTO-TRACKING', 112, 156);
+    ctx.fillStyle = meta.manualFlight ? '#38bdf8' : '#10b981';
+    ctx.fillText(meta.manualFlight ? 'HELM: MANUAL' : 'HELM: AUTOPILOT', 112, 152);
 
-    ctx.fillStyle = '#54f5ee';
-    ctx.fillText(`SHIELD: ${Math.round(leadShip?.shield ?? 100)}%`, 112, 174);
+    ctx.fillStyle = meta.autoFire ? '#f59e0b' : (readyToFire ? '#10b981' : '#94a3b8');
+    ctx.fillText(`AUTO-FIRE: ${meta.autoFire ? 'ON' : 'OFF'}`, 112, 170);
 
     this.leftMissileTexture.needsUpdate = true;
   }
 
   // 3. RIGHT CONSOLE: Top-Down Local Solar System Positional Radar
-  drawRightSolarConsole(elapsed, leadShip, planets) {
+  drawRightSolarConsole(elapsed, leadShip, planets, stations = [], navTarget = null) {
     const ctx = this.rightSolarCtx;
     if (!ctx) return;
     const w = this.rightSolarCanvas.width;
@@ -1168,17 +1242,17 @@ export class CockpitView {
 
     const scx = w * 0.5;
     const scy = h * 0.56;
-    const solarScale = 0.052;
+    const solarScale = 68 / 5600;
 
     ctx.fillStyle = '#fbbf24';
     ctx.beginPath();
-    ctx.arc(scx, scy, 7, 0, Math.PI * 2);
+    ctx.arc(scx, scy, 5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(scx, scy, 11, 0, Math.PI * 2);
+    ctx.arc(scx, scy, 8, 0, Math.PI * 2);
     ctx.stroke();
 
     if (planets) {
@@ -1197,8 +1271,18 @@ export class CockpitView {
 
         ctx.fillStyle = p.color ? `#${p.color.toString(16).padStart(6, '0')}` : '#38bdf8';
         ctx.beginPath();
-        ctx.arc(px, py, Math.max(3, p.radius * 0.12), 0, Math.PI * 2);
+        ctx.arc(px, py, Math.max(2.6, p.radius * 0.032), 0, Math.PI * 2);
         ctx.fill();
+      });
+    }
+
+    if (stations) {
+      stations.forEach(st => {
+        const sPos = st.mesh.position;
+        const sx = scx + sPos.x * solarScale;
+        const sy = scy + sPos.z * solarScale;
+        ctx.fillStyle = st.theme === 'refinery' ? '#f59e0b' : (st.theme === 'citadel' ? '#c084fc' : '#38bdf8');
+        ctx.fillRect(sx - 2.5, sy - 2.5, 5, 5);
       });
     }
 
@@ -1206,39 +1290,52 @@ export class CockpitView {
       const px = scx + leadShip.pos.x * solarScale;
       const py = scy + leadShip.pos.z * solarScale;
 
-      const pulse = Math.sin(elapsed * 6.0) * 2;
+      if (navTarget?.mesh?.position) {
+        const nx = scx + navTarget.mesh.position.x * solarScale;
+        const ny = scy + navTarget.mesh.position.z * solarScale;
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(nx, ny);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      const pulse = Math.sin(elapsed * 6.0) * 1.8;
       ctx.fillStyle = '#54f5ee';
       ctx.beginPath();
-      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = '#06b6d4';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(px, py, 8 + pulse, 0, Math.PI * 2);
+      ctx.arc(px, py, 7 + pulse, 0, Math.PI * 2);
       ctx.stroke();
 
-      if (leadShip.vel) {
+      if (leadShip.vel && leadShip.vel.lengthSq() > 0.1) {
         const heading = leadShip.vel.clone().normalize();
         ctx.strokeStyle = '#54f5ee';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(px, py);
-        ctx.lineTo(px + heading.x * 12, py + heading.z * 12);
+        ctx.lineTo(px + heading.x * 11, py + heading.z * 11);
         ctx.stroke();
       }
 
       ctx.fillStyle = '#54f5ee';
       ctx.font = 'bold 9px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('HERO SQUAD', px, py - 11);
+      ctx.fillText('HERO', px, py - 10);
     }
 
     this.rightSolarTexture.needsUpdate = true;
   }
 
-  // 4. UPPER-RIGHT CIRCULAR CRT: Planetary Atmosphere & Orbital Scanner (Matching Screenshot 1)
-  drawUpperRightScanner(elapsed) {
+  // 4. UPPER-RIGHT CIRCULAR CRT: Dynamic Nearest Planet / Station Scanner
+  drawUpperRightScanner(elapsed, leadShip, planets = [], stations = []) {
     const ctx = this.upperRightScannerCtx;
     if (!ctx) return;
     const w = this.upperRightScannerCanvas.width;
@@ -1246,90 +1343,129 @@ export class CockpitView {
     const cx = w * 0.5;
     const cy = h * 0.5;
 
-    ctx.fillStyle = '#02140a';
+    let nearestPlanet = null;
+    let nearestPlanetDist = Infinity;
+    let nearestStation = null;
+    let nearestStationDist = Infinity;
+
+    if (leadShip) {
+      for (const p of planets || []) {
+        const d = leadShip.pos.distanceTo(p.mesh.position) - p.radius;
+        if (d < nearestPlanetDist) {
+          nearestPlanetDist = d;
+          nearestPlanet = p;
+        }
+      }
+      for (const s of stations || []) {
+        const d = leadShip.pos.distanceTo(s.mesh.position);
+        if (d < nearestStationDist) {
+          nearestStationDist = d;
+          nearestStation = s;
+        }
+      }
+    }
+
+    const showStation = Boolean(nearestStation && nearestStationDist < Math.min(750, nearestPlanetDist + 160));
+    const accentHex = showStation
+      ? (nearestStation.theme === 'refinery' ? '#f59e0b' : (nearestStation.theme === 'citadel' ? '#c084fc' : '#38bdf8'))
+      : (nearestPlanet?.color ? `#${nearestPlanet.color.toString(16).padStart(6, '0')}` : '#10b981');
+
+    ctx.fillStyle = '#02120e';
     ctx.fillRect(0, 0, w, h);
 
-    // Outer circular boundary with glow
-    ctx.strokeStyle = '#10b981';
+    ctx.strokeStyle = accentHex;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, 122, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Concentric scan range rings
     const rings = [35, 68, 98];
     rings.forEach((r, idx) => {
-      ctx.strokeStyle = `rgba(16, 185, 129, ${0.18 + idx * 0.08})`;
+      ctx.strokeStyle = `rgba(56, 189, 248, ${0.18 + idx * 0.08})`;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.stroke();
     });
 
-    // Degree tick marks
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.30)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(cx - 120, cy);
     ctx.lineTo(cx + 120, cy);
-    ctx.moveTo(cx - 120, cy);
-    ctx.lineTo(cx + 120, cy);
+    ctx.moveTo(cx, cy - 120);
+    ctx.lineTo(cx, cy + 120);
     ctx.stroke();
 
-    // 3D-styled emerald gas-giant planetary body (Iconic Star Wars Look from Screenshot 1)
-    const planetR = 52;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, planetR, 0, Math.PI * 2);
-    ctx.clip();
+    if (showStation) {
+      // Rotating wireframe space station schematic
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(elapsed * 0.45);
+      ctx.strokeStyle = accentHex;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 34, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeRect(-14, -46, 28, 92);
+      ctx.strokeRect(-46, -10, 92, 20);
+      ctx.fillStyle = accentHex;
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      const planetR = 50;
+      const cList = nearestPlanet?.colors || ['#064e3b', '#10b981', '#34d399', '#059669'];
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, planetR, 0, Math.PI * 2);
+      ctx.clip();
 
-    // Base atmospheric gradient
-    const grad = ctx.createLinearGradient(cx - planetR, cy - planetR, cx + planetR, cy + planetR);
-    grad.addColorStop(0, '#064e3b');
-    grad.addColorStop(0.3, '#10b981');
-    grad.addColorStop(0.65, '#34d399');
-    grad.addColorStop(0.85, '#059669');
-    grad.addColorStop(1, '#022c22');
-    ctx.fillStyle = grad;
-    ctx.fillRect(cx - planetR, cy - planetR, planetR * 2, planetR * 2);
+      const grad = ctx.createLinearGradient(cx - planetR, cy - planetR, cx + planetR, cy + planetR);
+      grad.addColorStop(0, cList[0] || '#064e3b');
+      grad.addColorStop(0.38, cList[1] || '#10b981');
+      grad.addColorStop(0.7, cList[2] || '#34d399');
+      grad.addColorStop(1, cList[3] || '#022c22');
+      ctx.fillStyle = grad;
+      ctx.fillRect(cx - planetR, cy - planetR, planetR * 2, planetR * 2);
 
-    // Horizontal atmospheric cloud bands scrolling with orbital velocity
-    const scroll = (elapsed * 12) % 32;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.20)';
-    for (let y = -planetR - 32; y < planetR + 32; y += 14) {
-      const py = cy + y + scroll;
-      ctx.fillRect(cx - planetR, py, planetR * 2, 4);
+      const scroll = (elapsed * 12) % 32;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+      for (let y = -planetR - 32; y < planetR + 32; y += 14) {
+        ctx.fillRect(cx - planetR, cy + y + scroll, planetR * 2, 4);
+      }
+
+      const shadowGrad = ctx.createRadialGradient(cx - 16, cy - 16, 8, cx, cy, planetR);
+      shadowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+      shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.0)');
+      shadowGrad.addColorStop(1, 'rgba(0, 8, 12, 0.82)');
+      ctx.fillStyle = shadowGrad;
+      ctx.fillRect(cx - planetR, cy - planetR, planetR * 2, planetR * 2);
+      ctx.restore();
+
+      if (nearestPlanet?.rings) {
+        ctx.strokeStyle = accentHex;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 74, 18, -0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = accentHex;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, planetR, 0, Math.PI * 2);
+      ctx.stroke();
     }
-    ctx.fillStyle = 'rgba(6, 78, 59, 0.38)';
-    for (let y = -planetR - 24; y < planetR + 32; y += 18) {
-      const py = cy + y + scroll * 0.7;
-      ctx.fillRect(cx - planetR, py, planetR * 2, 6);
-    }
 
-    // Shadow terminator (giving authentic 3D sphere curvature)
-    const shadowGrad = ctx.createRadialGradient(cx - 16, cy - 16, 8, cx, cy, planetR);
-    shadowGrad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
-    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.0)');
-    shadowGrad.addColorStop(1, 'rgba(0, 15, 8, 0.82)');
-    ctx.fillStyle = shadowGrad;
-    ctx.fillRect(cx - planetR, cy - planetR, planetR * 2, planetR * 2);
-    ctx.restore();
-
-    // Glowing limb rim around planet
-    ctx.strokeStyle = '#6ee7b7';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, planetR, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Rotating tactical radar sweep line
     const sweepAngle = (elapsed * 2.2) % (Math.PI * 2);
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(sweepAngle);
     const sweepGrad = ctx.createLinearGradient(0, 0, 115, 0);
-    sweepGrad.addColorStop(0, 'rgba(52, 211, 153, 0.9)');
-    sweepGrad.addColorStop(1, 'rgba(52, 211, 153, 0.05)');
+    sweepGrad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+    sweepGrad.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
     ctx.strokeStyle = sweepGrad;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
@@ -1338,18 +1474,25 @@ export class CockpitView {
     ctx.stroke();
     ctx.restore();
 
-    // Tactical HUD readouts
-    ctx.fillStyle = '#34d399';
-    ctx.font = 'bold 11px monospace';
+    const headerText = showStation
+      ? `STATION // ${nearestStation.name.toUpperCase().slice(0, 18)}`
+      : `PLANET // ${(nearestPlanet?.name || 'SYSTEM').toUpperCase()}`;
+    const distVal = showStation ? Math.max(0, Math.round(nearestStationDist)) : Math.max(0, Math.round(nearestPlanetDist));
+    const readyFlag = showStation
+      ? (nearestStationDist < 420 ? 'DOCK READY [L]' : `DIST: ${distVal} M`)
+      : (nearestPlanetDist < 360 ? 'LAND READY [L]' : `DIST: ${distVal} M`);
+
+    ctx.fillStyle = accentHex;
+    ctx.font = 'bold 10.5px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('PLANET SCAN // YAVIN-IV', cx, 26);
-    ctx.font = 'bold 9px monospace';
-    ctx.fillText('RANGE: 120 KM  ORBIT: L-2', cx, h - 16);
+    ctx.fillText(headerText, cx, 26);
+    ctx.font = 'bold 9.5px monospace';
+    ctx.fillText(readyFlag, cx, h - 16);
 
     this.upperRightScannerTexture.needsUpdate = true;
   }
 
-  update(dt, elapsed, leadShip, ships, aliens, keys = {}, touch = {}, missileVolleyTimer = 2.5, missileQueueLen = 0, planets = null, cameraDirector = null) {
+  update(dt, elapsed, leadShip, ships, aliens, keys = {}, touch = {}, missileVolleyTimer = 2.5, missileQueueLen = 0, planets = null, cameraDirector = null, cockpitMeta = {}) {
     if (!this.group.visible || !leadShip) return;
 
     if (aliens) {
@@ -1409,13 +1552,11 @@ export class CockpitView {
     this.smoothPitchRate += (rawPitchRate - this.smoothPitchRate) * smoothFactor;
     this.smoothRollRate += (rawRollRate - this.smoothRollRate) * smoothFactor;
 
-    // G-force head inertia & shield impact vibration
     const hitShake = (leadShip.shieldHitFlash || 0) * 0.022;
     const engineVib = leadShip.boostActive ? 0.0025 : 0.0008;
     const shakeX = (Math.sin(elapsed * 47.0) * engineVib) + (Math.random() - 0.5) * hitShake;
     const shakeY = (Math.cos(elapsed * 53.0) * engineVib) + (Math.random() - 0.5) * hitShake;
 
-    // Apply pilot head translation offset so zooming in seamlessly brings cockpit instrumentation closer
     const camOff = cameraDirector?.cockpitCamOffset || { x: 0, y: 0, z: 0 };
 
     this.rig.position.set(
@@ -1423,7 +1564,7 @@ export class CockpitView {
       -camOff.y + THREE.MathUtils.clamp(-this.smoothPitchRate * 0.012, -0.035, 0.035) + shakeY,
       -camOff.z + (this.recoilLeft + this.recoilRight) * 0.008
     );
-    // Counter-rotate rig by pilot look-around angles so the cockpit stays aligned with the ship's airframe
+
     const lookYaw = cameraDirector ? cameraDirector.cockpitLookYaw : 0;
     const lookPitch = cameraDirector ? cameraDirector.cockpitLookPitch : 0;
     const lookRoll = cameraDirector ? (cameraDirector.cockpitLookRoll || 0) : 0;
@@ -1434,7 +1575,6 @@ export class CockpitView {
       -lookRoll + THREE.MathUtils.clamp(-this.smoothYawRate * 0.035 + this.smoothRollRate * 0.02, -0.08, 0.08)
     );
 
-    // Animate Flight Yoke & Throttle Lever
     if (this.yokePivot) {
       const targetYokeRoll = THREE.MathUtils.clamp(this.smoothYawRate * 0.22 - this.smoothRollRate * 0.15, -0.48, 0.48);
       const targetYokePitch = THREE.MathUtils.clamp(-this.smoothPitchRate * 0.18, -0.32, 0.32);
@@ -1443,12 +1583,11 @@ export class CockpitView {
     }
 
     if (this.throttleHandle) {
-      const speedRatio = leadShip.vel ? THREE.MathUtils.clamp(leadShip.vel.length() / (leadShip.maxSpeed || 220), 0.3, 1.3) : 0.8;
+      const speedRatio = leadShip.vel ? THREE.MathUtils.clamp(leadShip.vel.length() / (leadShip.maxSpeed || 220), 0.25, 1.4) : 0.8;
       const targetZ = -0.46 - (speedRatio - 0.3) * 0.22;
       this.throttleHandle.position.z += (targetZ - this.throttleHandle.position.z) * Math.min(1, dt * 8);
     }
 
-    // Laser Cannon Recoil & Muzzle Flashes
     this.recoilLeft = Math.max(0, this.recoilLeft - dt * 6.5);
     this.recoilRight = Math.max(0, this.recoilRight - dt * 6.5);
     if (this.leftCannons) {
@@ -1471,7 +1610,8 @@ export class CockpitView {
       if (this.muzzleLight) this.muzzleLight.intensity = 0;
     }
 
-    const shieldAlert = (leadShip.shieldHitFlash || 0) > 0.1 || (leadShip.shield < 35);
+    const shieldRatio = (leadShip.shield ?? 100) / Math.max(1, leadShip.maxShield || 100);
+    const shieldAlert = (leadShip.shieldHitFlash || 0) > 0.1 || shieldRatio < 0.35;
     if (this.interiorLight) {
       if (shieldAlert) {
         const pulse = 0.5 + 0.5 * Math.sin(elapsed * 18.0);
@@ -1500,10 +1640,10 @@ export class CockpitView {
     this.canvasUpdateTimer += dt;
     if (this.canvasUpdateTimer >= 0.033) {
       this.canvasUpdateTimer = 0;
-      this.drawCenterRadar(elapsed, leadShip, ships, aliens);
-      this.drawLeftMissileConsole(elapsed, leadShip, missileVolleyTimer, missileQueueLen);
-      this.drawRightSolarConsole(elapsed, leadShip, planets);
-      this.drawUpperRightScanner(elapsed);
+      this.drawCenterRadar(elapsed, leadShip, ships, aliens, cockpitMeta.stations, cockpitMeta.lockedTarget);
+      this.drawLeftMissileConsole(elapsed, leadShip, missileVolleyTimer, missileQueueLen, cockpitMeta);
+      this.drawRightSolarConsole(elapsed, leadShip, planets, cockpitMeta.stations, cockpitMeta.navTarget);
+      this.drawUpperRightScanner(elapsed, leadShip, planets, cockpitMeta.stations);
     }
   }
 

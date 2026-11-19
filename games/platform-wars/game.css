@@ -1,7 +1,38 @@
-:root{color-scheme:dark;--ink:#eef4ff;--phone:#ff4f9a;--desk:#58dcff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 10%,#27305b,#090a17 65%);color:var(--ink);font-family:system-ui,sans-serif;min-height:100vh}main{max-width:1050px;margin:auto;padding:20px}header{text-align:center}header a{float:left;color:#9db5ff;text-decoration:none}h1{letter-spacing:.12em;margin:30px 0 3px;font-size:clamp(2rem,8vw,4.5rem)}h1 i{color:var(--phone);font-style:normal}header p{letter-spacing:.35em;color:#aeb6d4}header b{color:var(--desk)}.panel{max-width:580px;margin:50px auto;padding:32px;border:1px solid #53649c;border-radius:20px;background:#121832cc;text-align:center;box-shadow:0 15px 60px #0008}.mode{display:flex;gap:12px;justify-content:center;margin:28px 0}button{background:#26325e;border:1px solid #7288cb;color:white;border-radius:10px;padding:12px 17px;font-weight:800;cursor:pointer}#quick{background:linear-gradient(100deg,#f34f98,#754bea)}.fine{font-size:.8rem;color:#aab2cb;line-height:1.5}.hud{display:flex;justify-content:space-between;align-items:center;margin:8px auto;max-width:960px;font-size:.9rem}.hud strong{font-size:1.25rem}.hud button{padding:7px 10px}canvas{width:100%;height:auto;display:block;border:1px solid #58649e;border-radius:14px;background:#12182f}#banner{text-align:center;height:24px;color:#f9d37b;font-weight:bold;margin:7px}.savepick{display:block;margin:13px;color:#c4cef0}.savepick select{margin-left:7px;padding:7px;background:#101632;color:#fff;border:1px solid #6575a8;border-radius:6px}#game{position:relative}#cheatWatermark{position:absolute;z-index:2;left:50%;top:52%;transform:translate(-50%,-50%) rotate(-18deg);font-weight:1000;letter-spacing:.18em;font-size:clamp(2rem,8vw,5rem);color:#ff426d99;text-shadow:0 0 10px #000;pointer-events:none}.touch{display:none}.touch button{font-size:1.4rem}
+:root{color-scheme:dark;--ink:#eef4ff;--phone:#ff4f9a;--desk:#58dcff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% 10%,#27305b,#090a17 65%);color:var(--ink);font-family:system-ui,sans-serif;min-height:100vh}
+main{max-width:1050px;margin:auto;padding:20px}
+header{text-align:center}
+h1{letter-spacing:.12em;margin:18px 0 3px;font-size:clamp(2rem,8vw,4.2rem)}
+h1 i{color:var(--phone);font-style:normal}
+header p{letter-spacing:.35em;color:#aeb6d4}
+header b{color:var(--desk)}
+.panel{max-width:640px;margin:20px auto;padding:24px;border:1px solid #53649c;border-radius:20px;background:#121832cc;text-align:center;box-shadow:0 15px 60px #0008}
+.lobby-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0}
+.mode{display:flex;gap:12px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+button{background:#26325e;border:1px solid #7288cb;color:white;border-radius:10px;padding:11px 17px;font-weight:800;cursor:pointer;min-height:42px;transition:transform .12s ease,filter .12s ease}
+button:hover{filter:brightness(1.12)}
+#quick{background:linear-gradient(100deg,#f34f98,#754bea)}
+#local2p{background:linear-gradient(100deg,#06b6d4,#3b82f6)}
+.fine{font-size:.82rem;color:#cbd5e1;line-height:1.5}
+.slot-stats{font-size:.86rem;font-weight:700;color:#fde68a;margin:8px 0 4px}
+.hud{display:flex;justify-content:space-between;align-items:center;margin:6px auto;max-width:960px;font-size:.9rem;padding-left:clamp(56px,14vw,144px);gap:8px;flex-wrap:wrap}
+.hud strong{font-size:1.2rem}
+.hud button{padding:7px 10px;min-height:36px}
+canvas{width:100%;height:auto;display:block;border:1px solid #58649e;border-radius:14px;background:#12182f}
+#banner{text-align:center;min-height:24px;color:#f9d37b;font-weight:bold;margin:6px}
+.savepick{display:inline-flex;align-items:center;gap:6px;margin:4px 6px;color:#c4cef0;font-size:.88rem}
+.savepick select{padding:6px 8px;background:#101632;color:#fff;border:1px solid #6575a8;border-radius:6px}
+#game{position:relative}
+#cheatWatermark{position:absolute;z-index:2;left:50%;top:52%;transform:translate(-50%,-50%) rotate(-18deg);font-weight:1000;letter-spacing:.18em;font-size:clamp(2rem,8vw,5rem);color:#ff426d99;text-shadow:0 0 10px #000;pointer-events:none}
+.match-over{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:rgba(7,10,24,.84);backdrop-filter:blur(8px);padding:16px}
+.match-over[hidden]{display:none!important}
+.match-card{background:#121832f2;border:1px solid #7288cb;border-radius:18px;padding:24px 28px;max-width:440px;width:100%;text-align:center;box-shadow:0 16px 48px #000c}
+.match-card h2{margin:0 0 8px;color:#fde047;letter-spacing:.08em}
+.match-card p{color:#e2e8f0;line-height:1.5;margin:0 0 14px}
+.touch{display:none}.touch button{font-size:1.4rem}
 .touch-hint{display:none;text-align:center;font-size:.75rem;color:#aab2cb;margin:6px 0 90px}
 @media(pointer:coarse){.touch{display:flex}.touch-hint{display:block}}
-/* Twin-thumb platformer pad + dash double-tap: floating clusters, viewport/touch CSS */
 html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
 body{-webkit-tap-highlight-color:transparent;touch-action:pan-y}
 #arena{touch-action:none;-webkit-user-select:none;user-select:none}
@@ -13,9 +44,8 @@ body{-webkit-tap-highlight-color:transparent;touch-action:pan-y}
 .pad-left button{background:#1b2b5ecc}
 .pad-right button[data-fire]{background:linear-gradient(140deg,#f34f98,#754bea)}
 #game:fullscreen .touch{bottom:0}
-@media(max-width:600px){.touch button{width:62px;height:62px}}
-@media(orientation:landscape) and (max-height:500px){.touch button{width:56px;height:56px}.touch-hint{display:none}#game{padding-bottom:86px}}@media(max-width:600px){main{padding:10px}.hud{font-size:.7rem}.hud strong{font-size:1rem}header a{float:none;display:block;text-align:left}}
-/* FW-ARCADE-A fullscreen: ⛶ button at the right end of the HUD; #game is the fullscreen element so HUD stays visible. */
+@media(max-width:600px){.touch button{width:62px;height:62px}.hud{font-size:.74rem}.hud strong{font-size:1rem}}
+@media(orientation:landscape) and (max-height:500px){.touch button{width:56px;height:56px}.touch-hint{display:none}#game{padding-bottom:86px}}
 .fw-fs-btn{margin-left:auto;font-size:1.1rem;line-height:1;padding:7px 10px}
 #game:fullscreen{width:100vw;height:100vh;max-width:none;margin:0;padding:12px;overflow-y:auto;background:#090a17;box-sizing:border-box}
 #game:fullscreen .hud{max-width:none}

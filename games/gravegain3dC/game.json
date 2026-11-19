@@ -1,0 +1,41 @@
+{
+    "title": "GraveGain3DC",
+    "slug": "gravegain3dC",
+    "description": "A fast-paced Xonotic-inspired 3D arena FPS built with Babylon.js across 3 arenas (Neon Courtyard, Void Spires, Magma Foundry) and 3 modes (Player Control, Auto-Battler Roguelite, RTS Squad). Features strafe-jumping, bunny-hopping, rocket jumping, dash mobility, jump pads, and active AI bots.",
+    "genre": "FPS",
+    "tags": [
+        "HTML5",
+        "Action",
+        "FPS",
+        "Shooter",
+        "Arena",
+        "Babylon.js",
+        "WebGPU",
+        "3D"
+    ],
+    "maker": {
+        "name": "Antigravity Dev",
+        "bio": "Specializing in high-fidelity HTML5 game experiences with immersive systems and rich game-feel.",
+        "url": "https://4weird.com",
+        "urlLabel": "4weird"
+    },
+    "controls": {
+        "keyboard": {
+            "WASD": "Move / Strafe",
+            "Mouse": "Look (Pointer Lock)",
+            "Space": "Jump / Bunny-hop",
+            "Shift": "Dash / Sprint",
+            "Left-Click": "Fire Weapon",
+            "Right-Click": "Grapple / Alt-Fire",
+            "1-4": "Switch Weapons (Rocket, Railgun, Shotgun, Plasma)",
+            "Escape": "Pause / Release Pointer"
+        },
+        "touch": true,
+        "mouse": true
+    },
+    "technical": {
+        "canvasSize": { "width": 1280, "height": 720 },
+        "targetFPS": 120,
+        "mobileOptimized": true
+    }
+}

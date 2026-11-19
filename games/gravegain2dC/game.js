@@ -1153,6 +1153,7 @@
         if (!container) return;
 
         container.addEventListener('mousemove', function (e) {
+            if (e.target.closest('.gg-minimap')) return;
             var rect = container.getBoundingClientRect();
             self.mouse.x = e.clientX - rect.left;
             self.mouse.y = e.clientY - rect.top;
@@ -1167,7 +1168,7 @@
         });
 
         container.addEventListener('mousedown', function (e) {
-            if (e.target.closest('button,.thumb-tabs,.mobile-drawer,.screen-overlay')) return;
+            if (e.target.closest('button,.gg-minimap,.thumb-tabs,.mobile-drawer,.screen-overlay')) return;
             try { container.focus({ preventScroll: true }); } catch (_) { try { container.focus(); } catch (e) {} }
             if (e.button === 0) {
                 self.mouse.click = true;
@@ -1191,7 +1192,7 @@
         // Mobile floating crypt-stick & rune buttons
         var stickBase = document.getElementById('cryptStickBase');
         var stickKnob = document.getElementById('cryptStickKnob');
-        var isOnButton = function (t) { return !!(t.target && t.target.closest && t.target.closest('.rune-cluster,.thumb-tabs,.mobile-drawer,button')); };
+        var isOnButton = function (t) { return !!(t.target && t.target.closest && t.target.closest('.rune-cluster,.gg-minimap,.thumb-tabs,.mobile-drawer,button')); };
 
         container.addEventListener('touchstart', function (e) {
             if (self.game.isDialogueActive) return;
@@ -2611,7 +2612,7 @@
         this.updateSpeedrunHud();
         this.updateDpsHud();
         this.updateAutoTarget(st);
-        if (this.minimap) this.minimap.update(dt);
+        if (this.minimap) this.minimap.update(dt, !this.currentMission);
         if (this.controlMode === 'turnbased') {
             var keys = this.input.keys;
             var joystickAction = this.input.joystick.pendingTurnMove;

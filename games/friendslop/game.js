@@ -587,6 +587,7 @@ Object.defineProperty(FriendSlop.prototype, "handleTouchEnd", { configurable: tr
 Object.defineProperty(FriendSlop.prototype, "start", { configurable: true, writable: true, value: function start(coop = false) {
         neonClock.reset();
         console.log("FriendSlop game started. Coop mode:", coop);
+        this.bestAtRunStart = Math.floor(this.highScore);
         this.isCoop = coop;
         this.state = GAME_STATE.PLAYING;
         document.getElementById('friendslop-4weird-start-screen').classList.add('hidden');
@@ -611,6 +612,7 @@ Object.defineProperty(FriendSlop.prototype, "resume", { configurable: true, writ
 Object.defineProperty(FriendSlop.prototype, "restart", { configurable: true, writable: true, value: function restart() {
         neonClock.reset();
         console.log("FriendSlop game restarted.");
+        this.bestAtRunStart = Math.floor(this.highScore);
         this.state = GAME_STATE.PLAYING;
         this.score = 0;
         this.combo = 0;
@@ -634,6 +636,9 @@ Object.defineProperty(FriendSlop.prototype, "restart", { configurable: true, wri
     } });
 Object.defineProperty(FriendSlop.prototype, "gameOver", { configurable: true, writable: true, value: function gameOver() {
         this.state = GAME_STATE.GAME_OVER;
+        const best = Math.floor(this.highScore);
+        const label = best > this.bestAtRunStart ? 'New personal best' : 'Personal best';
+        document.getElementById('friendslop-4weird-final-best').textContent = `${label}: ${best}`;
         playSlopSound('gameover');
         document.getElementById('friendslop-4weird-final-score').textContent = Math.floor(this.score);
         document.getElementById('friendslop-4weird-daily-rank').textContent = `Wave: ${this.wave}`;
@@ -762,17 +767,14 @@ Object.defineProperty(FriendSlop.prototype, "update", { configurable: true, writ
         // Vibe meter decay
         this.vibeMeter = Math.max(0, this.vibeMeter - 0.1);
         
-        // Game over condition
-        if (this.vibeMeter <= 0) {
-            this.gameOver();
-        }
-        
         // Update high score
         if (this.score > this.highScore) {
             this.highScore = this.score;
             try { localStorage.setItem('friendslop-high-score', this.highScore); } catch (e) { /* ignore */ }
             document.getElementById('friendslop-4weird-high-score').textContent = Math.floor(this.highScore);
         }
+
+        if (this.vibeMeter <= 0) this.gameOver();
     } });
 
 Object.defineProperty(FriendSlop.prototype, "getDailySeed", { configurable: true, writable: true, value: function getDailySeed() {

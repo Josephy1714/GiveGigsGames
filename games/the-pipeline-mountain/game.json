@@ -1,7 +1,7 @@
 {
     "title": "The Pipeline Mountain",
     "slug": "the-pipeline-mountain",
-    "description": "Climb from manual spreadsheets at the bottom to the high summit of Revenue and Market Leadership!",
+    "description": "Climb through moving platforms, spring jumps, and checkpoints to reach the summit.",
     "genre": "3D Platformer / Climber",
     "tags": ["HTML5", "Action", "Three.js", "Jump"],
     "maker": {
@@ -29,7 +29,7 @@
         "touch": true,
         "mouse": true
     },
-    "instructions": "Navigate the Blue Cat as he climbs up floating system integration platforms. Avoid falling tools and spreadsheets, and reach the summit!",
+    "instructions": "Steer with A/D, arrows, or touch. Bounce off green springs, time purple platforms, and land on gold checkpoints. Reach the white summit platform to win.",
     "technical": {
         "canvasSize": {"width": 800, "height": 600},
         "targetFPS": 60,

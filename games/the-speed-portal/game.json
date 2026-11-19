@@ -1,7 +1,7 @@
 {
     "title": "The Speed Portal",
     "slug": "the-speed-portal",
-    "description": "Leave legacy speed behind! Race through the glowing portal, dodging traffic of Approvals, Meetings, and Legacy Software.",
+    "description": "Race through three tunnel sectors with patterned barriers and speed rings.",
     "genre": "Tunnel Racer",
     "tags": ["HTML5", "Action", "Three.js", "Racing"],
     "maker": {
@@ -28,7 +28,7 @@
         "touch": true,
         "mouse": true
     },
-    "instructions": "Navigate the tunnel! Rotate left and right to dodge obstacles labeled Approvals, Meetings, and Legacy Software. Collect glowing speed rings to dash!",
+    "instructions": "Steer around red barriers and collect green speed rings. Clear all three sectors to reach the 810m finish.",
     "technical": {
         "canvasSize": {"width": 800, "height": 600},
         "targetFPS": 60,

@@ -84,18 +84,27 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             <div class="jungle-hud">
                 <div class="hud-item">Score: <span id="game-score">0</span></div>
                 <div class="hud-item">Revenue: <span id="game-revenue">$0</span></div>
+                <div class="hud-pill"><span class="lbl">Combo</span> <span id="game-combo">x1</span></div>
+                <div class="hud-pill hud-pill--shield"><span class="lbl">Shield</span> <span id="game-shield">0</span></div>
+                <div class="hud-pill hud-pill--gold"><span class="lbl">Best</span> <span id="game-best">0</span></div>
+                <button id="mute-btn" class="hud-mute" type="button" aria-label="Toggle sound">🔊 SFX</button>
+            </div>
+            <div class="jungle-feed" id="jungle-status">Emerald Canopy · Double-Jump &amp; Slide Ready</div>
+            <div class="mobile-controls" aria-label="Touch controls">
+                <button id="btn-duck" class="mobile-btn" type="button">⬇ Slide</button>
+                <button id="btn-jump" class="mobile-btn" type="button">⬆ Jump</button>
             </div>
             
             <!-- Game Overlay States -->
             <div class="TEMPLATE-4weird-game-overlay" id="TEMPLATE-4weird-start-screen">
                 <div class="TEMPLATE-4weird-overlay-content">
                     <h2>The Revenue Jungle</h2>
-                    <p>Both characters navigating a dense jungle. Jump over vines (Manual Processes), quicksand (Bad Data), and duck under fog (Slow Decisions) to win!</p>
+                    <p>Lead both explorer cats through the dense jungle! Leap over Vines &amp; Quicksand, slide under Overhead Fog Drones, chain Revenue Coins, and grab Emerald Shield Orbs.</p>
                     <button class="btn btn-primary" id="TEMPLATE-4weird-start-btn">
                         <span class="btn-emoji">🎮</span> Start Game
                     </button>
                     <div class="TEMPLATE-4weird-controls-hint">
-                        <p><strong>Controls:</strong> Press <strong>Space</strong> or Click to Jump.</p>
+                        <p><strong>Controls:</strong> <strong>Space / W / Up</strong> Jump &amp; Double-Jump &middot; <strong>Down / S</strong> Slide / Fast-Fall &middot; <strong>P / Esc</strong> Pause</p>
                     </div>
                 </div>
             </div>

@@ -24,4 +24,16 @@
   document.getElementById("roadmap").href = `/ggg/roadmap/${encodeURIComponent(slug)}`;
   document.getElementById("nav-roadmap").href = `/ggg/roadmap/${encodeURIComponent(slug)}`;
   document.getElementById("actions").hidden = false;
+  const screenshotsEl = document.getElementById("screenshots");
+  if (screenshotsEl && Array.isArray(game.featuredScreenshots) && game.featuredScreenshots.length > 0) {
+    screenshotsEl.innerHTML = "";
+    game.featuredScreenshots.forEach((src, index) => {
+      const img = document.createElement("img");
+      img.src = `/${src.replace(/^\/+/, "")}`;
+      img.alt = `${game.title} gameplay screenshot ${index + 1}`;
+      img.loading = "lazy";
+      screenshotsEl.appendChild(img);
+    });
+    screenshotsEl.hidden = false;
+  }
 })();

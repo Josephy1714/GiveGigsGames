@@ -13,6 +13,9 @@ let score = 0;
 let highScore = neonReadRecord('neonBreakerHighScore');
 let lives = 3;
 let level = 1;
+let combo = 0;
+let shakeTime = 0;
+let shakeIntensity = 0;
 let animationId = null;
 
 // Update high score display

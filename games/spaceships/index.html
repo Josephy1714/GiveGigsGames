@@ -98,7 +98,7 @@
         }
 
         .launch-screen {
-            position: absolute; inset: 0; z-index: 20; display: grid; place-items: center;
+            position: absolute; inset: 0; z-index: 49; display: grid; place-items: center;
             padding: 24px; background: linear-gradient(115deg, rgba(3,8,22,.84), rgba(3,8,22,.38) 62%, rgba(3,8,22,.2));
             transition: opacity .35s ease, visibility .35s ease;
         }
@@ -113,6 +113,7 @@
         .launch-actions { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
         .launch-button { border:0; border-radius:10px; padding:13px 20px; background:#67e8f9; color:#06202b; font-weight:900; cursor:pointer; box-shadow:0 0 30px rgba(103,232,249,.2); }
         .launch-button:hover { background:#a5f3fc; transform:translateY(-1px); }
+        .launch-button:disabled { opacity:.6; cursor:wait; transform:none; }
         .launch-note { margin:0!important; font-size:.76rem; }
         @media(max-width:560px) { .launch-screen { place-items:end center; padding:14px; } .launch-card { margin:0; padding:20px; } .launch-steps { gap:5px; } .launch-step { padding:9px 7px; font-size:.68rem; } }
 
@@ -320,10 +321,27 @@
 
         /* Help Legend */
         .legend-panel {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
-            max-width: 280px;
-            line-height: 1.5;
+            width: 265px;
+            line-height: 1.45;
+            padding: 10px 14px;
+        }
+
+        .legend-panel summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .legend-panel summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .legend-panel .legend-body {
+            margin-top: 8px;
         }
 
         .legend-row {
@@ -384,6 +402,7 @@
         }
 
         /* Embedded / Background Mode Override: completely hide HUD and mobile controls */
+        .is-embedded-sim .launch-screen,
         .is-embedded-sim .hud-overlay,
         .is-embedded-sim .sj-ui,
         .is-embedded-sim #sj-stick-zone,
@@ -461,23 +480,24 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
     <section class="launch-screen" id="launch-screen" aria-labelledby="launch-title">
         <div class="launch-card">
-            <div class="launch-eyebrow">Flight deck · sandbox mode</div>
+            <div class="launch-eyebrow">Flight deck · space sim &amp; career sandbox</div>
             <h1 id="launch-title">Your ship is ready.</h1>
-            <p>Take the controls or watch the fleet fly itself. There’s no mission timer—explore at your own pace.</p>
+            <p>Pilot across 6 worlds, dock at 3 orbital stations for ship upgrades and contracts, mine ore asteroids, and explore planet surfaces by rover.</p>
             <div class="launch-steps" aria-label="Quick start guide">
-                <div class="launch-step"><strong>01 · Fly</strong>WASD to steer. Arrow keys to pitch.</div>
-                <div class="launch-step"><strong>02 · Explore</strong>Choose a camera view. Autopilot keeps the fleet moving.</div>
-                <div class="launch-step"><strong>03 · Play</strong>Space or click open space to fire.</div>
+                <div class="launch-step"><strong>01 · Fly</strong>WASD/Arrows pitch &amp; yaw, Q/E roll, Shift boost, V mouse-steer.</div>
+                <div class="launch-step"><strong>02 · Dock &amp; Warp</strong>N for Star Map &amp; Warp, L to Land or Dock at stations.</div>
+                <div class="launch-step"><strong>03 · Fight</strong>Space/Click fire, F weapons, M missiles, G flares, Tab lock.</div>
             </div>
             <div class="launch-actions">
-                <button class="launch-button" id="btn-launch-flight" type="button">Launch flight <span aria-hidden="true">→</span></button>
-                <button class="launch-button launch-academy-btn" id="btn-launch-academy" type="button" style="background: linear-gradient(135deg, #0284c7, #0d9488); margin-top: 10px;">🎓 Flight Academy (10 Tutorials) <span aria-hidden="true">→</span></button>
-                <p class="launch-note">You can reset or change camera any time.</p>
+                <button class="launch-button" id="btn-launch-flight" type="button" disabled>Launch flight <span aria-hidden="true">→</span></button>
+                <button class="launch-button launch-academy-btn" id="btn-launch-academy" type="button" disabled style="background: linear-gradient(135deg, #0284c7, #0d9488); margin-top: 10px;">🎓 Flight Academy (10 Tutorials) <span aria-hidden="true">→</span></button>
+                <p class="launch-note">Press P anytime to toggle Autopilot, or C for 3D Cockpit.</p>
             </div>
+            <p id="launch-status" role="status"></p>
         </div>
     </section>
 
-    <!-- Overlay UI HUD HUD -->
+    <!-- Overlay UI HUD -->
     <div class="hud-overlay">
         <!-- Top Row -->
         <div class="hud-header">
@@ -485,9 +505,10 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <span>🚀</span> Starship Simulator
             </div>
             
-            <div style="display: flex; gap: 12px; align-items: center; pointer-events: auto;">
+            <div style="display: flex; gap: 10px; align-items: center; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="btn" id="btn-open-starmap" title="Open Solar System Star Map &amp; Warp (N)" style="background: rgba(8, 145, 178, 0.35); border: 1px solid #38bdf8; color: #e0f2fe; padding: 6px 12px; border-radius: 8px; cursor: pointer;">🗺️ Star Map (N)</button>
                 <button class="btn btn-academy" id="btn-open-tutorials" title="Starfleet Flight Academy (10 Interactive Tutorials)" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.45), rgba(13, 148, 136, 0.45)); border: 1px solid #38bdf8; font-weight: 700; color: #e0f2fe; padding: 6px 12px; border-radius: 8px; cursor: pointer;">🎓 Tutorials (10)</button>
-                <button class="btn btn-audio" id="btn-sound-toggle" title="Toggle Simulation Audio">🔊</button>
+                <button class="btn btn-audio" id="btn-sound-toggle" title="Toggle Simulation Audio">🔇</button>
                 <button class="btn btn-restart" id="btn-restart-sim" title="Reset the current flight">New Flight</button>
                 <button class="btn btn-exit" id="btn-exit-fullscreen">Exit Fullscreen</button>
             </div>
@@ -522,46 +543,27 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <div class="credits-value" id="hud-credits">0 CR</div>
             </div>
 
-            <!-- Right Corner: Keyboard Controls Help Legend -->
-            <div class="hud-panel legend-panel">
-                <div class="panel-title">Manual Flight Controls</div>
-                <div class="legend-row">
-                    <span>Steer Lead Ship</span>
-                    <span class="legend-key">W/A/S/D</span>
+            <!-- Right Corner: Collapsible Keyboard Controls Help Legend -->
+            <details class="hud-panel legend-panel">
+                <summary class="panel-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">
+                    <span>Flight Controls</span>
+                    <span style="font-size:0.7rem;color:#94a3b8">▾</span>
+                </summary>
+                <div class="legend-body">
+                    <div class="legend-row"><span>Pitch / Yaw</span><span class="legend-key">WASD / Arrows</span></div>
+                    <div class="legend-row"><span>Roll / Boost / Brake</span><span class="legend-key">Q/E · Shift · X</span></div>
+                    <div class="legend-row"><span>Throttle / Mouse-Steer</span><span class="legend-key">Wheel · V</span></div>
+                    <div class="legend-row"><span>Fire / Cycle Weapon</span><span class="legend-key">Space / Click · F</span></div>
+                    <div class="legend-row"><span>Missiles / Flares / Lock</span><span class="legend-key">M · G · Tab</span></div>
+                    <div class="legend-row"><span>Star Map / Land / Dock</span><span class="legend-key">N · L</span></div>
+                    <div class="legend-row"><span>Cockpit / Academy</span><span class="legend-key">C · T</span></div>
+                    <div class="legend-row"><span>Autopilot / Auto-Fire</span><span class="legend-key">P · H</span></div>
+                    <div class="legend-row"><span>Formations / Orders</span><span class="legend-key">1-4 · F1-F4</span></div>
+                    <div style="font-size: 0.65rem; color: var(--neon-cyan); margin-top: 8px; text-align: center; font-weight: 500;">
+                        <button type="button" id="btn-resume-autopilot" style="background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.4);color:#67e8f9;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:700;">Resume autopilot</button>
+                    </div>
                 </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Tilt / Pitch</span>
-                    <span class="legend-key">↑ / ↓</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Fire Plasma Cannons</span>
-                    <span class="legend-key">Spacebar</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Toggle 3D Cockpit</span>
-                    <span class="legend-key">C</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Flight Academy</span>
-                    <span class="legend-key">T</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Underside Missiles</span>
-                    <span class="legend-key">M</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Land on Planet</span>
-                    <span class="legend-key">L</span>
-                </div>
-                <div class="legend-row" style="margin-top: 4px;">
-                    <span>Fleet Formations</span>
-                    <span class="legend-key">1 - 4</span>
-                </div>
-                <div style="font-size: 0.65rem; color: var(--neon-cyan); margin-top: 8px; text-align: center; font-weight: 500;">
-                    Steering takes over autopilot.
-                    <button type="button" id="btn-resume-autopilot">Resume autopilot</button>
-                </div>
-            </div>
+            </details>
         </div>
     </div>
 
@@ -569,12 +571,18 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <script src="../html/vendor/three-r128.min.js"></script><script>if(!window.THREE){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')}</script>
     
     <!-- Load Game core modules -->
-    <script type="module" src="./main.js?v=26"></script>
+    <script type="module" src="./main.js?v=28"></script>
 
     <!-- Page Specific Script binds -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const launchScreen = document.getElementById('launch-screen');
+            const openMapBtn = document.getElementById('btn-open-starmap');
+            if (openMapBtn) {
+                openMapBtn.addEventListener('click', () => {
+                    window.spaceGameCore?.tacticalHud?.openStarMap();
+                });
+            }
             const openTutBtn = document.getElementById('btn-open-tutorials');
             if (openTutBtn) {
                 openTutBtn.addEventListener('click', () => {
@@ -587,6 +595,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             if (launchAcademyBtn) {
                 launchAcademyBtn.addEventListener('click', () => {
                     launchScreen.classList.add('is-dismissed');
+                    window.spaceGameCore?.onLaunchFlight?.();
                     if (window.spaceGameCore && window.spaceGameCore.tutorialSystem) {
                         window.spaceGameCore.tutorialSystem.openAcademyModal();
                     }
@@ -594,17 +603,21 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             }
             document.getElementById('btn-launch-flight').addEventListener('click', () => {
                 launchScreen.classList.add('is-dismissed');
+                window.spaceGameCore?.onLaunchFlight?.();
                 document.getElementById('starfield').focus({ preventScroll: true });
             });
             document.getElementById('btn-resume-autopilot').addEventListener('click', () => {
-                const flight = window.spaceGameCore?.flightDynamics;
-                if (flight) flight.manualFlight = false;
+                if (window.spaceGameCore?.toggleAutopilot) {
+                    window.spaceGameCore.toggleAutopilot(true);
+                } else {
+                    const flight = window.spaceGameCore?.flightDynamics;
+                    if (flight) flight.manualFlight = false;
+                }
                 document.getElementById('starfield').focus({ preventScroll: true });
             });
             // Exit Button listener
             const exitBtn = document.getElementById('btn-exit-fullscreen');
             exitBtn.addEventListener('click', () => {
-                // Try window.close() first if opened in new tab, fallback to going back home
                 window.close();
                 setTimeout(() => {
                     window.location.href = "../index.html";
@@ -647,17 +660,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
             // Restart trigger
             const restartBtn = document.getElementById('btn-restart-sim');
-            restartBtn.addEventListener('click', () => {
-                if (window.spaceGameMain) {
-                    window.spaceGameMain.destroy();
-                    window.spaceGameMain.init();
-                    
-                    // Reset HUD time scale
-                    if (window.spaceGameCore) {
-                        window.spaceGameCore.timeScale = parseFloat(slider.value);
-                    }
-                }
-            });
+            restartBtn.addEventListener('click', () => window.spaceGameMain?.restart());
 
             // Embed / Background mode check
             const urlParams = new URLSearchParams(window.location.search);
@@ -681,14 +684,6 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                         const isMuted = soundSystem.toggleMute();
                         soundBtn.textContent = isMuted ? '🔇' : '🔊';
                     }
-                }
-            });
-
-            // Click / Tap anywhere on the space simulation canvas to fire forward plasma laser cannons
-            window.addEventListener('pointerdown', (e) => {
-                if (e.target.closest('.hud-panel') || e.target.closest('.launch-screen') || e.target.closest('#planet-surface-panel') || e.target.closest('#planet-land-button') || e.target.closest('#starship-life-panel') || e.target.closest('.btn') || e.target.closest('input') || window.spaceGameCore?.planetSurface?.active) return;
-                if (window.spaceGameCore && window.spaceGameCore.ships && window.spaceGameCore.ships[0]) {
-                    window.spaceGameCore.fireLaser(window.spaceGameCore.ships[0]);
                 }
             });
 
@@ -756,11 +751,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                     if (slider) slider.value = s;
                     if (sliderVal) sliderVal.textContent = s.toFixed(1) + 'x';
                 } else if (type === 'RESTART' && window.spaceGameMain) {
-                    window.spaceGameMain.destroy();
-                    window.spaceGameMain.init();
-                    if (window.spaceGameCore && slider) {
-                        window.spaceGameCore.timeScale = parseFloat(slider.value);
-                    }
+                    window.spaceGameMain.restart().then(notifyPlaying);
                 } else if (type === 'TOGGLE_SOUND' && window.spaceGameCore) {
                     const soundSystem = window.spaceGameCore.getSystem('audiosystem') || window.spaceGameCore.soundSystem;
                     if (soundSystem) {

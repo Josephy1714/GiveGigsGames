@@ -7,6 +7,10 @@
   stylesheet.rel = "stylesheet";
   stylesheet.href = new URL("game-interface.css", currentScript.src).href;
   document.head.append(stylesheet);
+  const gamepadScript = document.createElement("script");
+  gamepadScript.src = new URL("gamepad-adapter.js", currentScript.src).href;
+  gamepadScript.defer = true;
+  document.head.append(gamepadScript);
   const button = document.createElement("button");
   button.id = "gg-game-select";
   button.type = "button";

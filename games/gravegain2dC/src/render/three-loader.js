@@ -307,7 +307,7 @@
                     }
                     if ('toneMapping' in renderer && THREE.ACESFilmicToneMapping !== undefined) {
                         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                        renderer.toneMappingExposure = 1.15;
+                        renderer.toneMappingExposure = 1.28;
                     }
                     if (renderer.shadowMap) {
                         renderer.shadowMap.enabled = preset.shadows !== false;

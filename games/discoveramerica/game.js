@@ -709,6 +709,13 @@ function submitPuzzle() {
         if (placedSpan) {
             placedSpan.classList.remove('correct', 'wrong');
             placedSpan.classList.add(isRight ? 'correct' : 'wrong');
+            let status = placedSpan.querySelector('.fragment-status');
+            if (!status) {
+                status = document.createElement('span');
+                status.className = 'fragment-status';
+                placedSpan.appendChild(status);
+            }
+            status.textContent = isRight ? 'Correct' : 'Move this';
         }
     });
 
@@ -727,7 +734,7 @@ function submitPuzzle() {
         updateHUD();
         setTimeout(() => advanceFromPuzzle(stageIndex), 1100);
     } else {
-        el.puzzleFeedback.textContent = `${correct}/${frags.length} correct. Fix the red ones and try again.`;
+        el.puzzleFeedback.textContent = `${correct}/${frags.length} correct. Move the marked fragments and try again.`;
         el.puzzleFeedback.className = 'puzzle-feedback bad';
         playSound('error');
         

@@ -1000,6 +1000,7 @@ function handleKeyDown(e) {
         if (e.code === 'Digit1') applyShipSelection('cubesat', true);
         if (e.code === 'Digit2') applyShipSelection('dart', true);
         if (e.code === 'Digit3') applyShipSelection('station', true);
+        if (e.code === 'KeyR' && typeof startGame === 'function') startGame();
     }
     if (e.code === 'KeyP' || e.code === 'Escape') {
         if (gameActive) togglePause();
