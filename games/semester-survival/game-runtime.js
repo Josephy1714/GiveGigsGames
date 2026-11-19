@@ -306,7 +306,7 @@
   visibilityHandler=function(){if(doc.hidden&&lifecycle==='running')pause();};
   doc.addEventListener('keydown',escapeHandler);doc.addEventListener('visibilitychange',visibilityHandler);
   resize();
-  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,getWeatherForecast:getWeatherForecast,destroy:destroy,resize:resize});
+  return Object.freeze({start:start,update:update,travelTo:travelTo,pause:pause,resume:resume,setVirtualInput:function(action,down){return input.setVirtualInput(action,down);},openPhone:openPhone,closePhone:closePhone,navigatePhone:navigatePhone,interact:interact,closeDialogue:closeDialogue,chooseDialogueTopic:chooseDialogueTopic,receiveEvent:receiveEvent,workOnAssignment:workOnAssignment,submitAssignment:submitAssignment,registerCourses:registerCourses,markRead:markRead,reply:reply,submitAssessment:submitAssessment,completeSemester:completeSemester,subscribe:subscribe,getState:getState,getDiagnostics:getDiagnostics,getWeatherForecast:getWeatherForecast,destroy:destroy,resize:resize});
  }
  root.SemesterAdventureRuntime=Object.freeze({create:create});
  if(root.document&&root.document.addEventListener){

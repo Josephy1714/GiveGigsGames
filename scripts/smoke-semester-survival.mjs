@@ -16,6 +16,15 @@ try {
     return runtime && runtime.getState().ready === true;
   }, null, { timeout: 30000 });
 
+  assert.equal(await page.locator("[data-ss-play]").count(), 1, "A visible start screen should be mounted");
+  assert.equal(await page.locator("[data-ss-fullscreen]").count(), 1, "A fullscreen control should be mounted");
+  assert.equal(await page.locator("[data-ss-play-fullscreen]").count(), 1, "A fullscreen start option should be mounted");
+  await page.locator("[data-ss-play]").click();
+  await page.locator("[data-ss-fullscreen]").click();
+  const immersive = await page.evaluate(() => Boolean(document.fullscreenElement) || document.getElementById("semester-survival-adventure").classList.contains("ss-game-immersive-fallback"));
+  assert.ok(immersive, "Fullscreen control should enter fullscreen or the immersive fallback");
+  await page.locator("[data-ss-fullscreen]").click();
+
   const runtimeState = await page.evaluate(() => {
     const runtime = window.SemesterAdventureRuntimeInstance;
     const state = runtime.getState();
@@ -73,7 +82,18 @@ try {
     const runtime = window.SemesterAdventureRuntimeInstance;
     return runtime && runtime.getState().ready === true;
   }, null, { timeout: 30000 });
+  assert.equal(await mobile.locator("[data-ss-play]").count(), 1, "Mobile start screen should be mounted");
+  assert.equal(await mobile.locator("[data-ss-action=right]").count(), 1, "Mobile right control should be mounted");
+  await mobile.locator("[data-ss-play]").click();
   const mobileBefore = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  const rightButton = await mobile.locator("[data-ss-action=right]").boundingBox();
+  await mobile.mouse.move(rightButton.x + rightButton.width / 2, rightButton.y + rightButton.height / 2);
+  await mobile.mouse.down();
+  await mobile.waitForTimeout(350);
+  await mobile.mouse.up();
+  const heldButtonAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  assert.ok(heldButtonAfter > mobileBefore, "Holding the on-screen right control should move Jay");
+  const swipeBefore = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
   await mobile.evaluate(() => {
     const canvas = document.querySelector(".ss-adventure-shell__canvas");
     const options = { bubbles: true, pointerId: 7, pointerType: "touch", isPrimary: true };
@@ -82,7 +102,12 @@ try {
   });
   await mobile.waitForTimeout(450);
   const mobileAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
-  assert.ok(mobileAfter > mobileBefore, "Horizontal touch swipe should move Jay");
+  assert.ok(mobileAfter > swipeBefore, "Horizontal touch swipe should move Jay");
+  await mobile.locator("[data-ss-action=jump]").click();
+  await mobile.waitForTimeout(180);
+  const buttonJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
+  assert.ok(buttonJump > 0, "The on-screen jump control should trigger a jump");
+  await mobile.waitForTimeout(900);
   await mobile.evaluate(() => {
     const canvas = document.querySelector(".ss-adventure-shell__canvas");
     const options = { bubbles: true, pointerId: 8, pointerType: "touch", isPrimary: true };
