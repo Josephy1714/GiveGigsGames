@@ -70,7 +70,7 @@ async function indexFolders(directory) {
 const topLevelGames = await indexFolders(gamesRoot);
 const canonicalNames = new Set(topLevelGames.map((folder) => folder.toLowerCase()));
 // These legacy pages link to series whose games have their own packages.
-const seriesPages = new Set(["kouzi", "madi"]);
+const seriesPages = new Set(["kouzi", "madi", "semester-survival"]); // Retained legacy source; catalog entry launches the replacement runner.
 const legacyGames = (await indexFolders(path.join(gamesRoot, "html")))
   .filter((folder) => !canonicalNames.has(folder.toLowerCase()) && !seriesPages.has(folder))
   .map((folder) => `html/${folder}`);
