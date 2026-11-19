@@ -78,3 +78,7 @@ The NPC schedule runtime selects time- and weather-aware destinations. The NPC n
 ## Authored collision and contact
 
 `collision-runtime.js` validates per-district static collider descriptors and resolves player movement against authored AABBs, circles and capsule-like segments in gameplay X/depth coordinates. Movement is radius-substepped to reduce tunnelling; contact resolution preserves tangential movement and cancels velocity into blocking surfaces. Material, friction, restitution and effect tags are authored data. Contact enter/impact/exit events flow through the central event bus. Collision geometry is not inferred from art or interaction hotspots. Empty geometry remains an explicit non-production state; see [Collision and Contact](COLLISION_AND_CONTACT.md).
+
+## Gameplay zone modifiers
+
+`gameplay-zones.js` evaluates authored district AABB/circle zones and timed trigger effects after the character simulation step. It produces bounded speed, acceleration and stamina modifiers for the next simulation step, plus explicit enter/exit/start/end events. Zones are separate from solid colliders: a muddy path can slow movement without acting as an invisible wall; a track can boost sprint efficiency without moving the player automatically. See [University Obstacles and Boosts](UNIVERSITY_OBSTACLES_AND_BOOSTS.md).
