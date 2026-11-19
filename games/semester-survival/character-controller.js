@@ -26,6 +26,7 @@
     if (!xBounds || !Number.isFinite(xBounds.min) || !Number.isFinite(xBounds.max) || xBounds.min >= xBounds.max) throw new Error('X bounds require finite min and max values with min less than max.');
     function errorDepthBounds() { throw new Error('Depth bounds require finite min and max values with min less than max.'); }
     let collisionWorld = options.collisionWorld || null;
+    let movementModifiers = { speedMultiplier: 1, accelerationMultiplier: 1, staminaDrainMultiplier: 1, staminaRecoveryMultiplier: 1 };
     const collisionRadius = Number.isFinite(options.collisionRadius) && options.collisionRadius > 0 ? options.collisionRadius : 12;
     const c = {
       x: 0, y: 0, depth: 0, vx: 0, vy: 0, vDepth: 0,
@@ -57,7 +58,7 @@
       const moveX = inputMagnitude > 1 ? axis / inputMagnitude : axis;
       const moveY = inputMagnitude > 1 ? depthAxis / inputMagnitude : depthAxis;
       const wantsSprint = !!input.sprint && c.stamina > 0 && (Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05);
-      const targetSpeed = wantsSprint ? CONFIG.sprintSpeed : ((Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05) ? CONFIG.jogSpeed : 0);
+      const targetSpeed = (wantsSprint ? CONFIG.sprintSpeed : ((Math.abs(axis) > 0.05 || Math.abs(depthAxis) > 0.05) ? CONFIG.jogSpeed : 0)) * movementModifiers.speedMultiplier;
       const horizontalTarget = moveX * targetSpeed;
 
       c.slideCooldown = Math.max(0, c.slideCooldown - dt);
@@ -82,13 +83,13 @@
       } else {
         const acceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
         const braking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
-        c.vx = approach(c.vx, horizontalTarget, (Math.abs(horizontalTarget) > Math.abs(c.vx) ? acceleration : braking) * dt);
+        c.vx = approach(c.vx, horizontalTarget, (Math.abs(horizontalTarget) > Math.abs(c.vx) ? acceleration * movementModifiers.accelerationMultiplier : braking) * dt);
       }
 
       const depthTarget = moveY * targetSpeed;
       const depthAcceleration = c.grounded ? CONFIG.groundAcceleration : CONFIG.airAcceleration;
       const depthBraking = c.grounded ? CONFIG.groundDeceleration : CONFIG.airAcceleration;
-      c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? depthAcceleration : depthBraking) * dt);
+      c.vDepth = approach(c.vDepth, depthTarget, (Math.abs(depthTarget) > Math.abs(c.vDepth) ? depthAcceleration * movementModifiers.accelerationMultiplier : depthBraking) * dt);
 
       if (input.jumpPressed) c.jumpBuffer = CONFIG.jumpBuffer;
       if (c.jumpBuffer > 0 && (c.grounded || c.coyote > 0) && c.slideTime === 0) {
@@ -133,8 +134,8 @@
       if ((c.depth === depthBounds.min && c.vDepth < 0) || (c.depth === depthBounds.max && c.vDepth > 0)) c.vDepth = 0;
       c.speed = Math.hypot(c.vx, c.vDepth);
       if (Math.abs(c.vx) > 0.12) c.facing = Math.sign(c.vx);
-      if (wantsSprint && c.grounded && c.slideTime === 0) c.stamina = clamp(c.stamina - CONFIG.staminaDrain * dt, 0, 100);
-      else c.stamina = clamp(c.stamina + CONFIG.staminaRecovery * dt, 0, 100);
+      if (wantsSprint && c.grounded && c.slideTime === 0) c.stamina = clamp(c.stamina - CONFIG.staminaDrain * movementModifiers.staminaDrainMultiplier * dt, 0, 100);
+      else c.stamina = clamp(c.stamina + CONFIG.staminaRecovery * movementModifiers.staminaRecoveryMultiplier * dt, 0, 100);
 
       if (c.slideTime > 0) {
         if (c.state === 'slide-start' && c.slideTime < CONFIG.slideDuration - 0.12) transition('slide-loop', 'slide-start-finished');
@@ -187,6 +188,17 @@
       return Object.freeze({ min: xBounds.min, max: xBounds.max });
     }
 
+    function setMovementModifiers(modifiers) {
+      modifiers = modifiers || {};
+      const next = {};
+      ['speedMultiplier','accelerationMultiplier','staminaDrainMultiplier','staminaRecoveryMultiplier'].forEach(function(key) {
+        const value = modifiers[key] === undefined ? 1 : modifiers[key];
+        if (!Number.isFinite(value) || value <= 0) throw new Error('Movement modifier ' + key + ' must be a positive finite number.');
+        next[key] = clamp(value, 0.4, 3);
+      });
+      movementModifiers = next; return Object.freeze(Object.assign({}, movementModifiers));
+    }
+
     function setCollisionWorld(world) {
       if (world !== null && (!world || typeof world.moveCircle !== 'function')) throw new Error('Collision world must expose moveCircle or be null.');
       collisionWorld = world; return !!collisionWorld;
@@ -212,7 +224,7 @@
       return snapshot();
     }
 
-    return Object.freeze({ update, snapshot, reset, setDepthBounds, setXBounds, setCollisionWorld });
+    return Object.freeze({ update, snapshot, reset, setDepthBounds, setXBounds, setCollisionWorld, setMovementModifiers });
   }
 
   root.SemesterCharacterController = Object.freeze({ createController, config: CONFIG });
