@@ -1,1 +1,3 @@
 Separate 2D/2.5D runner vertical slice. Legacy game folder is untouched. Includes portrait runner, keyboard/touch controls, home/journey/locker/upgrades/stats/settings, local save and Jay's existing sprite atlas. Production gates: the source atlas has no dedicated slide-start/loop/recovery clips, so slide visuals are provisional; canvas environment is a playable blockout, not final commissioned district art. Requires native-scale visual review and real mobile QA before release.
+
+Jay's approved runtime atlas is copied into this folder for an isolated deploy. The original source and runtime atlas in the legacy game remain unchanged.

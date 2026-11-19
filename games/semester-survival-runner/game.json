@@ -38,8 +38,8 @@
     "external": [],
     "local": [
       "index.html",
-      "../semester-survival/assets/processed/jay-runtime/jay-atlas.json",
-      "../semester-survival/assets/processed/jay-runtime/jay-atlas.png"
+      "assets/jay-atlas.json",
+      "assets/jay-atlas.png"
     ]
   },
   "meta": {
