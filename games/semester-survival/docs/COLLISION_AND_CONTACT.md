@@ -29,3 +29,10 @@ The collision runtime emits `collision:enter`, `collision:impact` and `collision
 ## Readiness and QA
 
 An empty collider list is valid during early integration but means no authored collision geometry is active. Production scenes must include reviewed collision geometry before being called physically complete. Test high-speed movement, corner grazing, wall sliding, narrow passages, spawn clearance, diagonal approach, depth-axis movement, repeated contact, exit transitions and district changes. Verify collider overlays against the commissioned art at gameplay scale. Never infer colliders from approximate visual rectangles and call them final.
+
+
+## Animation-driven surface contacts
+
+A district may declare `contactSurfaces` in its scene manifest. Each entry has a unique ID, authored gameplay-plane geometry (`aabb` or `circle`), a supported material, an optional audiovisual effect tag, and optional priority. The contact resolver checks Jay's grounded animation frame markers against these authored regions and emits `character:surface-contact` with the foot side or landing action, character, district, surface ID, material, effect tag and gameplay position. Overlapping regions resolve by priority, then smallest area, then stable ID.
+
+Only `left-foot-contact`, `right-foot-contact` and `landing-impact` markers are interpreted. Missing surface metadata produces no contact effect. Airborne foot markers are ignored. The resolver supplies event metadata only: no footsteps, dust, splashes, sparks or landing sounds are drawn or played until commissioned local assets and explicit audiovisual consumers are supplied. District changes replace the contact-surface set; teardown clears it.
