@@ -136,7 +136,7 @@ drawPages = function(){
    $("#shop-grid").append(card);
   }
  });
- $("#[data-shop-item]").forEach(b=>{
+ $("[data-shop-item]").forEach(b=>{
   const id=b.dataset.shopItem,cost=Number(b.dataset.price);
   if(save.shop.includes(id)){b.textContent="OWNED ✓";b.disabled=true;b.classList.remove("primary");return;}
   b.onclick=()=>{if(save.coins<cost){b.textContent="NEED MORE COINS";return;}save.coins-=cost;save.shop.push(id);saveNow();drawPages();};
