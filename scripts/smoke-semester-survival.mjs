@@ -60,6 +60,41 @@ try {
   assert.equal(await page.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().phone.open), true);
   await page.evaluate(() => window.SemesterAdventureRuntimeInstance.closePhone());
   await page.evaluate(() => window.SemesterAdventureRuntimeInstance.destroy());
+
+  const mobile = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true
+  });
+  mobile.on("pageerror", error => errors.push(error.message));
+  await mobile.goto(`${baseUrl}/games/semester-survival/index.html`, { waitUntil: "domcontentloaded" });
+  await mobile.waitForFunction(() => {
+    const runtime = window.SemesterAdventureRuntimeInstance;
+    return runtime && runtime.getState().ready === true;
+  }, null, { timeout: 30000 });
+  const mobileBefore = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  await mobile.evaluate(() => {
+    const canvas = document.querySelector(".ss-adventure-shell__canvas");
+    const options = { bubbles: true, pointerId: 7, pointerType: "touch", isPrimary: true };
+    canvas.dispatchEvent(new PointerEvent("pointerdown", { ...options, clientX: 90, clientY: 300 }));
+    canvas.dispatchEvent(new PointerEvent("pointerup", { ...options, clientX: 190, clientY: 300 }));
+  });
+  await mobile.waitForTimeout(450);
+  const mobileAfter = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.x);
+  assert.ok(mobileAfter > mobileBefore, "Horizontal touch swipe should move Jay");
+  await mobile.evaluate(() => {
+    const canvas = document.querySelector(".ss-adventure-shell__canvas");
+    const options = { bubbles: true, pointerId: 8, pointerType: "touch", isPrimary: true };
+    canvas.dispatchEvent(new PointerEvent("pointerdown", { ...options, clientX: 190, clientY: 330 }));
+    canvas.dispatchEvent(new PointerEvent("pointerup", { ...options, clientX: 190, clientY: 230 }));
+  });
+  await mobile.waitForTimeout(180);
+  const mobileJump = await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.getState().player.y);
+  assert.ok(mobileJump > 0, "Upward touch swipe should trigger a real jump");
+  await mobile.evaluate(() => window.SemesterAdventureRuntimeInstance.destroy());
+  await mobile.close();
+
   assert.deepEqual(errors, [], `Browser errors: ${errors.join(" | ")}`);
   console.log("Semester Survival browser smoke passed: Jay booted, moved, jumped, visited all four districts, opened the phone and shut down cleanly.");
 } finally {
