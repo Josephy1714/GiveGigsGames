@@ -35,11 +35,12 @@ jobs:
           d.pop('warning', None)
           json.dump(d,open(p,'w'),separators=(',',':'))
           PY
+          node scripts/build-browser-catalog.mjs
       - name: Commit generated atlas to working branch
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add games/semester-survival-runner/assets/processed/jay-runtime
+          git add games/semester-survival-runner/assets/processed/jay-runtime games/catalog-data.js
           git diff --cached --quiet || git commit -m "Build Jay runtime atlas with slide animation"
           git fetch origin "$GITHUB_REF_NAME"
           git rebase "origin/$GITHUB_REF_NAME"
