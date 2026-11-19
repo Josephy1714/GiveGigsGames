@@ -9,7 +9,7 @@
 The host constructs the four dependencies and passes them to `SemesterCharacterRuntime.create`:
 
 - `controller`: `update(delta, intent)`, `snapshot()`, `reset(position)`
-- `animator`: `play(clip, facing)`, `update(delta)`, `snapshot()`, `render(context, x, y, scale)`, `reset()`
+- `animator`: `play(clip, facing)`, `update(delta)`, `snapshot()`, `render(context, x, y, scale)`, `reset()`; optional `drainEvents()` returns authored frame-entry markers.
 - `renderer`: `updateCamera(target, delta)`, `render(frame)`; optional `getLayout()` supplies the mounted scene ground line and depth scale
 - `inputManager`: `consume()`; optional `destroy()`
 
@@ -28,7 +28,7 @@ Most controller state names map directly to clip names. The controller's `land-r
 ## Lifecycle
 
 - `reset(position)` resets movement, animation and camera tracking to idle at the requested X/depth spawn position.
-- `getState()` returns movement, animation, last input, frame count, readiness and error.
+- `getState()` returns movement, animation, last input, frame count, readiness and error. `drainAnimationEvents()` forwards queued authored frame markers without consuming them during rendering; the host should drain once per simulation frame.
 - `dispose()` prevents further updates/renders and releases the input manager's event listeners.
 
 ## Current scope boundary
@@ -38,3 +38,8 @@ This is a reusable integration runtime, not yet the shipped playable game. The g
 ## Collision integration
 
 The locomotion controller accepts an optional collision world through `setCollisionWorld`. Before applying scene bounds, it submits the proposed horizontal/depth displacement and stable collision radius to the authored collision runtime. The returned resolved position replaces the proposed position; velocity directed into a blocking surface is cancelled while tangential movement remains available. Collision geometry is independent of animation pivots and sprite dimensions. See [Collision and Contact](COLLISION_AND_CONTACT.md) for the authored shape/material contract. An empty collider list is not evidence of collision-ready production content.
+
+
+## Frame-marker event routing
+
+The central game runtime drains Jay's animator markers immediately after each character update and publishes `character:animation-event` with `characterId`, `clip`, `frameIndex`, `event`, and `frameNumber`. This provides a deterministic integration point for future footstep, landing, contact, and visual-effect systems. Markers do not themselves create audio or visual effects; those still require authored, credited assets and explicit consumers.
