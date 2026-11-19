@@ -35,3 +35,6 @@
 @media(orientation:portrait) and (max-width:760px){.ss-game-menu__hint:after{content:" Rotate your phone sideways for the best full-screen experience.";color:#9bcfff}}
 
 .ss-game-menu__play--secondary{margin-top:10px;background:rgba(21,38,65,.8);box-shadow:none;border-color:rgba(157,190,233,.3)}
+
+/* Keep the game fullscreen control clear of the platform's fixed top-left back button. */
+.ss-game-fullscreen{left:50%;transform:translateX(-50%)}
