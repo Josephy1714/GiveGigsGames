@@ -1,6 +1,5 @@
 /* GraveGain2D AAA - 10 film.
-   2D adaptation: installs the film treatment overlays (vignette / grain /
-   grade) over #canvasContainer and drives damage flash, heal flash, low-HP
+   2D adaptation: drives damage flash, heal flash, low-HP
    pulse, and the directional hit indicator. Damage AND heals are detected
    by polling player HP each frame - 2D has no potion method to wrap.
    Camera shake goes through game.camera.applyShake - no core edits needed. */
@@ -14,19 +13,10 @@
         const c = AAA.container();
         if (!c) return;
 
-        const vignette = AAA.mk('aaaVignette', 'aaa-vignette', c);
-        const grain = AAA.mk('aaaGrain', 'aaa-grain', c);
-        const grade = AAA.mk('aaaGrade', 'aaa-grade', c);
         const dmgFlash = AAA.mk('aaaDmgFlash', 'aaa-damage-flash', c);
         const healFlash = AAA.mk('aaaHealFlash', 'aaa-heal-flash', c);
         const lowhp = AAA.mk('aaaLowhp', 'aaa-lowhp', c);
         const dmgDir = AAA.mk('aaaDmgDir', 'aaa-dmg-dir', c);
-        void vignette; void grain; void grade;
-
-        // Per-floor color grade follows the title-card module's floor events.
-        AAA.on('floor', (info) => {
-            if (info && info.grade) c.dataset.grade = info.grade;
-        });
 
         let lastPlayer = null;
         let lastHp = 0;

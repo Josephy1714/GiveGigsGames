@@ -5,41 +5,41 @@
 
     var BIOME_PALETTES = {
         cathedral: {
-            floor: 0x3b3545,
-            wall: 0x241f2d,
+            floor: 0x726a80,
+            wall: 0x554b63,
             accent: 0xb48a48,
             fog: 0x0b0812,
-            fogDensity: 0.018,
+            fogDensity: 0.005,
             ambientSky: 0x584c73,
             ambientGround: 0x16121c,
             dirColor: 0xffdfb0
         },
         manufactorum: {
-            floor: 0x2c333b,
-            wall: 0x1a2026,
+            floor: 0x63707d,
+            wall: 0x45515c,
             accent: 0xd97706,
             fog: 0x101317,
-            fogDensity: 0.020,
+            fogDensity: 0.006,
             ambientSky: 0x64748b,
             ambientGround: 0x1b1510,
             dirColor: 0xffcfa0
         },
         void_hull: {
-            floor: 0x192836,
-            wall: 0x0f1821,
+            floor: 0x45647a,
+            wall: 0x30495d,
             accent: 0x2dd4bf,
             fog: 0x060c14,
-            fogDensity: 0.019,
+            fogDensity: 0.005,
             ambientSky: 0x38bdf8,
             ambientGround: 0x091018,
             dirColor: 0xcbeafe
         },
         trench: {
-            floor: 0x3a3126,
-            wall: 0x241f18,
+            floor: 0x776653,
+            wall: 0x574b40,
             accent: 0x84cc16,
             fog: 0x12100d,
-            fogDensity: 0.022,
+            fogDensity: 0.007,
             ambientSky: 0x78716c,
             ambientGround: 0x1c1712,
             dirColor: 0xe7e5e4
@@ -65,7 +65,7 @@
             if (!ctx) return null;
 
             var pal = BIOME_PALETTES[biome] || BIOME_PALETTES.cathedral;
-            ctx.fillStyle = kind === 'wall' ? '#1c1a24' : '#302c38';
+            ctx.fillStyle = kind === 'wall' ? '#77717d' : '#a09ba6';
             ctx.fillRect(0, 0, 128, 128);
 
             if (biome === 'cathedral') {
@@ -281,7 +281,10 @@
             scene.background = new THREE.Color(pal.fog);
             scene.fog = new THREE.FogExp2(pal.fog, pal.fogDensity);
 
-            hemiLight = new THREE.HemisphereLight(pal.ambientSky, pal.ambientGround, 0.95);
+            var fill = new THREE.Color(0xffffff);
+            var sky = new THREE.Color(pal.ambientSky).lerp(fill, 0.55);
+            var ground = new THREE.Color(pal.ambientGround).lerp(fill, 0.24);
+            hemiLight = new THREE.HemisphereLight(sky, ground, 1.15);
             worldRoot.add(hemiLight);
 
             dirLight = new THREE.DirectionalLight(pal.dirColor, 1.35);
@@ -353,10 +356,17 @@
             var worldH = h * terrain.tileSize;
             var fogGeo = trackGeo(new THREE.PlaneGeometry(worldW, worldH));
             fogGeo.rotateX(-Math.PI / 2);
+            // Terrain rows advance toward +Z, while the rotated plane's V
+            // advances toward -Z. Match the visibility mask to the actual tiles.
+            var fogUV = fogGeo.getAttribute('uv');
+            for (var i = 0; i < fogUV.count; i++) {
+                fogUV.setY(i, 1 - fogUV.getY(i));
+            }
             var fogMat = trackMat(new THREE.MeshBasicMaterial({
                 map: fogTex,
                 transparent: true,
                 depthWrite: false,
+                fog: false,
                 opacity: 0.92
             }));
             fogPlane = new THREE.Mesh(fogGeo, fogMat);
@@ -381,7 +391,7 @@
                     fogBytes[off] = 8;
                     fogBytes[off + 1] = 8;
                     fogBytes[off + 2] = 16;
-                    fogBytes[off + 3] = 148;
+                    fogBytes[off + 3] = 108;
                 } else {
                     fogBytes[off] = 4;
                     fogBytes[off + 1] = 3;
@@ -1081,7 +1091,7 @@
                 scene.fog.density = currentPalette.fogDensity * (1 - interiorBlend * 0.35);
             }
             if (hemiLight) {
-                hemiLight.intensity = 0.95 - interiorBlend * 0.25;
+                hemiLight.intensity = 1.15 - interiorBlend * 0.15;
             }
             var rKeys = Object.keys(roofGroups);
             for (var ri = 0; ri < rKeys.length; ri++) {
