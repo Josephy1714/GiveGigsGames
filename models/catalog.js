@@ -565,3 +565,152 @@ window.GGG_MODEL_CATALOG = [
     }
   }
 ];
+
+(function appendGraveGain3DWeapons() {
+  const specs = [
+    ['katana', 'Katana', 0xe2e8f0, 0x38bdf8, ['katana', 'sword', 'melee', 'weapon']],
+    ['greatsword', 'Greatsword', 0x94a3b8, 0xfbbf24, ['greatsword', 'sword', 'melee', 'weapon']],
+    ['battleaxe', 'Battleaxe', 0x64748b, 0xef4444, ['axe', 'battleaxe', 'melee', 'weapon']],
+    ['scythe', 'Soul Scythe', 0xa855f7, 0xc084fc, ['scythe', 'melee', 'weapon']],
+    ['twinblade', 'Twinblade', 0x38bdf8, 0x22d3ee, ['twinblade', 'blade', 'melee', 'weapon']],
+    ['warhammer', 'Titan Maul', 0x475569, 0xf97316, ['hammer', 'maul', 'melee', 'weapon']],
+    ['dagger', 'Shadow Fang', 0x1e293b, 0xa855f7, ['dagger', 'melee', 'weapon']],
+    ['halberd', 'Halberd', 0xcbd5e1, 0x3b82f6, ['halberd', 'polearm', 'melee', 'weapon']],
+    ['flail', 'Infernal Mace', 0xf59e0b, 0xf97316, ['mace', 'flail', 'melee', 'weapon']],
+    ['wand', 'Arcane Wand', 0xc084fc, 0xa855f7, ['wand', 'ranged', 'magic', 'weapon']],
+    ['staff', 'Void Staff', 0x7e22ce, 0xc084fc, ['staff', 'ranged', 'magic', 'weapon']],
+    ['railgun', 'Rail-Carbine', 0x06b6d4, 0x22d3ee, ['railgun', 'gun', 'ranged', 'weapon']],
+    ['claymore', 'Star Claymore', 0x38bdf8, 0x60a5fa, ['claymore', 'sword', 'melee', 'weapon']],
+    ['rapier', 'Duelist Rapier', 0xfef08a, 0xfacc15, ['rapier', 'sword', 'melee', 'weapon']],
+    ['spear', 'Valkyrie Spear', 0xfde047, 0xfbbf24, ['spear', 'polearm', 'melee', 'weapon']],
+    ['glaive', 'Crescent Glaive', 0x2dd4bf, 0x14b8a6, ['glaive', 'polearm', 'melee', 'weapon']],
+    ['crossbow', 'Auto-Crossbow', 0x94a3b8, 0x38bdf8, ['crossbow', 'ranged', 'weapon']],
+    ['chakram', 'Solar Chakram', 0xfb923c, 0xf97316, ['chakram', 'ranged', 'weapon']],
+    ['trident', 'Abyss Trident', 0x0ea5e9, 0x38bdf8, ['trident', 'polearm', 'melee', 'weapon']],
+    ['grimoire', 'Runed Grimoire', 0xc084fc, 0xa855f7, ['grimoire', 'book', 'magic', 'weapon']]
+  ];
+
+  for (const [arch, name, tint, glow, tags] of specs) {
+    window.GGG_MODEL_CATALOG.push({
+      id: `gg3d-wpn-${arch}`,
+      name,
+      game: 'GraveGain 3D',
+      category: 'Weapons',
+      tags,
+      description: `GraveGain3dA procedural ${name} weapon model.`,
+      build: function (THREE) {
+        const g = new THREE.Group();
+        const metalMat = new THREE.MeshStandardMaterial({ color: tint, metalness: 0.85, roughness: 0.22 });
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 });
+        const glowMat = new THREE.MeshStandardMaterial({ color: glow, emissive: glow, emissiveIntensity: 0.8, roughness: 0.2 });
+
+        if (arch === 'katana') {
+          const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.45, 8), darkMat);
+          hilt.position.y = -0.55;
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.5, 0.04), metalMat);
+          blade.position.y = 0.35;
+          g.add(hilt, blade);
+        } else if (arch === 'greatsword' || arch === 'claymore') {
+          const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.5, 8), darkMat);
+          hilt.position.y = -0.65;
+          const guard = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.1, 0.14), glowMat);
+          guard.position.y = -0.35;
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.6, 0.06), metalMat);
+          blade.position.y = 0.45;
+          g.add(hilt, guard, blade);
+        } else if (arch === 'battleaxe') {
+          const haft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.6, 8), darkMat);
+          const head = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.5, 0.1), metalMat);
+          head.position.y = 0.45;
+          g.add(haft, head);
+        } else if (arch === 'scythe') {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.8, 8), darkMat);
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.18, 0.05), glowMat);
+          blade.position.set(0.32, 0.75, 0);
+          blade.rotation.z = -0.35;
+          g.add(pole, blade);
+        } else if (arch === 'twinblade') {
+          const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), darkMat);
+          const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.04), metalMat);
+          b1.position.y = 0.65;
+          const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.04), glowMat);
+          b2.position.y = -0.65;
+          g.add(grip, b1, b2);
+        } else if (arch === 'warhammer') {
+          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 1.5, 8), darkMat);
+          const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.7), metalMat);
+          head.position.y = 0.55;
+          g.add(handle, head);
+        } else if (arch === 'dagger') {
+          const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.35, 8), darkMat);
+          hilt.position.y = -0.35;
+          const blade = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.9, 4), metalMat);
+          blade.position.y = 0.25;
+          g.add(hilt, blade);
+        } else if (arch === 'halberd' || arch === 'glaive') {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.8, 8), darkMat);
+          const tip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.5, 4), metalMat);
+          tip.position.y = 1.05;
+          const axe = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.05), glowMat);
+          axe.position.set(0.18, 0.7, 0);
+          g.add(pole, tip, axe);
+        } else if (arch === 'flail') {
+          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.0, 8), darkMat);
+          handle.position.y = -0.25;
+          const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), glowMat);
+          orb.position.y = 0.55;
+          g.add(handle, orb);
+        } else if (arch === 'wand' || arch === 'staff') {
+          const len = arch === 'staff' ? 1.8 : 1.0;
+          const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, len, 8), darkMat);
+          const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), glowMat);
+          gem.position.y = len * 0.5 + 0.15;
+          g.add(shaft, gem);
+        } else if (arch === 'railgun') {
+          const body = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 1.5), darkMat);
+          const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.2, 8), glowMat);
+          coil.rotation.x = Math.PI / 2;
+          coil.position.y = 0.1;
+          g.add(body, coil);
+        } else if (arch === 'rapier') {
+          const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.35, 8), darkMat);
+          hilt.position.y = -0.55;
+          const cup = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), glowMat);
+          cup.position.y = -0.35;
+          const blade = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 1.5, 6), metalMat);
+          blade.position.y = 0.4;
+          g.add(hilt, cup, blade);
+        } else if (arch === 'spear') {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8), darkMat);
+          const tip = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.55, 4), glowMat);
+          tip.position.y = 1.05;
+          g.add(pole, tip);
+        } else if (arch === 'crossbow') {
+          const stock = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, 1.2), darkMat);
+          const bow = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.08, 0.12), glowMat);
+          bow.position.z = -0.45;
+          g.add(stock, bow);
+        } else if (arch === 'chakram') {
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.07, 8, 20), glowMat);
+          const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), metalMat);
+          g.add(ring, core);
+        } else if (arch === 'trident') {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.7, 8), darkMat);
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.08, 0.08), glowMat);
+          bar.position.y = 0.85;
+          const p1 = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.45, 4), metalMat);
+          p1.position.set(0, 1.1, 0);
+          const p2 = p1.clone(); p2.position.set(-0.22, 1.05, 0);
+          const p3 = p1.clone(); p3.position.set(0.22, 1.05, 0);
+          g.add(pole, bar, p1, p2, p3);
+        } else if (arch === 'grimoire') {
+          const cover = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.22), darkMat);
+          const rune = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), glowMat);
+          rune.position.z = 0.15;
+          g.add(cover, rune);
+        }
+        return g;
+      }
+    });
+  }
+})();

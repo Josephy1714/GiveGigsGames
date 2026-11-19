@@ -1,16 +1,43 @@
-// GraveGain3DC — Xonotic-inspired Arena FPS (Player, Auto-Battler Roguelite, RTS Squad)
+// GraveGain3DC — Xonotic-inspired Arena FPS (Player, Auto-Battler Roguelite, RTS Squad, 3 Maps)
+import { MAPS, MAP_LIST } from './maps.js';
 
 const canvas = document.getElementById('renderCanvas');
 const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true });
 
+const GRAVITY = 28;
+const PLAYER_RADIUS = 0.55;
+const PLAYER_HEIGHT = 2.0;
+const BOT_RADIUS = 0.55;
+const BOT_HEIGHT = 2.2;
+
 const WEAPONS = [
-    { name: 'ROCKET', speed: 46, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 7, damage: 65, cooldown: 0.65 },
-    { name: 'RAILGUN', speed: 140, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 85, cooldown: 0.9 },
-    { name: 'SHOTGUN', speed: 80, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 45, cooldown: 0.5 },
-    { name: 'PLASMA', speed: 62, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3, damage: 24, cooldown: 0.14 }
+    { name: 'DEVASTATOR', speed: 52, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6 },
+    { name: 'VORTEX', speed: 165, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85 },
+    { name: 'SHOTGUN', speed: 90, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48 },
+    { name: 'ELECTRO', speed: 68, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13 }
 ];
 
+// Lightweight Web Audio synth for Xonotic-style SFX
+const audioCtx = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+function playSfx(freq, dur = 0.08, type = 'sawtooth', vol = 0.06) {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.35), audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+}
+
 const SAVE_KEY = 'gravegain3dc_roguelite_v1';
+const MAP_KEY = 'gravegain3dc_map_v1';
+
 const defaultUpgrades = () => ({
     scrap: 0,
     reflexes: 0,
@@ -31,50 +58,143 @@ try {
 } catch { /* ignore */ }
 const saveUpgrades = () => localStorage.setItem(SAVE_KEY, JSON.stringify(upgrades));
 
+let selectedMapId = MAP_LIST[0].id;
+try {
+    const savedMap = localStorage.getItem(MAP_KEY);
+    if (savedMap && MAPS[savedMap]) selectedMapId = savedMap;
+} catch { /* ignore */ }
+
+const toColor3 = ([r, g, b]) => new BABYLON.Color3(r, g, b);
+
 function createScene() {
     const scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color4(0.04, 0.05, 0.09, 1);
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
 
     const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
-    hemi.intensity = 0.85;
     const dirLight = new BABYLON.DirectionalLight('dir', new BABYLON.Vector3(-0.4, -1, -0.3), scene);
-    dirLight.intensity = 0.7;
 
-    // Arena floor
-    const floor = BABYLON.MeshBuilder.CreateGround('floor', { width: 90, height: 90 }, scene);
-    const floorMat = new BABYLON.StandardMaterial('floorMat', scene);
-    floorMat.diffuseColor = new BABYLON.Color3(0.12, 0.14, 0.2);
-    floorMat.emissiveColor = new BABYLON.Color3(0.02, 0.03, 0.05);
-    floor.material = floorMat;
-
-    // Arena obstacles
-    const blockMat = new BABYLON.StandardMaterial('blockMat', scene);
-    blockMat.diffuseColor = new BABYLON.Color3(0.18, 0.22, 0.32);
-    blockMat.emissiveColor = new BABYLON.Color3(0.0, 0.08, 0.12);
-    [
-        [0, 1.5, 14, 10, 3, 4],
-        [-16, 2.5, 0, 5, 5, 14],
-        [16, 2.5, 0, 5, 5, 14],
-        [0, 1.0, -16, 12, 2, 4],
-        [-10, 4, -10, 4, 8, 4],
-        [10, 4, 10, 4, 8, 4]
-    ].forEach(([x, y, z, w, h, d], idx) => {
-        const box = BABYLON.MeshBuilder.CreateBox(`blk_${idx}`, { width: w, height: h, depth: d }, scene);
-        box.position.set(x, y, z);
-        box.material = blockMat;
-    });
-
-    const camera = new BABYLON.UniversalCamera('playerCam', new BABYLON.Vector3(0, 2, -26), scene);
+    const camera = new BABYLON.UniversalCamera('playerCam', new BABYLON.Vector3(0, 24, -44), scene);
     camera.minZ = 0.1;
     camera.fov = 1.05;
 
+    // RTS Rally visual marker
+    const rallyMarker = BABYLON.MeshBuilder.CreateTorus('rallyMarker', { diameter: 3.2, thickness: 0.25, tessellation: 24 }, scene);
+    const rallyMat = new BABYLON.StandardMaterial('rallyMat', scene);
+    rallyMat.diffuseColor = new BABYLON.Color3(0, 1, 0.75);
+    rallyMat.emissiveColor = new BABYLON.Color3(0, 0.85, 0.65);
+    rallyMarker.material = rallyMat;
+    rallyMarker.isPickable = false;
+    rallyMarker.isVisible = false;
+
+    let currentMap = MAPS[selectedMapId];
+    const mapMeshes = [];
+    const mapMaterials = [];
+    const solidBlocks = [];
+
+    function makeMaterial(name, diffuseArr, emissiveArr) {
+        const mat = new BABYLON.StandardMaterial(name, scene);
+        mat.diffuseColor = toColor3(diffuseArr);
+        mat.emissiveColor = toColor3(emissiveArr);
+        mapMaterials.push(mat);
+        return mat;
+    }
+
+    function updateMapSelectionUI() {
+        document.getElementById('map-label').textContent = `MAP: ${currentMap.name}`;
+        document.querySelectorAll('.map-card').forEach(card => {
+            card.classList.toggle('selected', card.dataset.mapId === currentMap.id);
+        });
+    }
+
+    function loadMap(mapId) {
+        const nextMap = MAPS[mapId] || MAP_LIST[0];
+        selectedMapId = nextMap.id;
+        currentMap = nextMap;
+        try { localStorage.setItem(MAP_KEY, selectedMapId); } catch { /* ignore */ }
+
+        while (mapMeshes.length) mapMeshes.pop().dispose();
+        while (mapMaterials.length) mapMaterials.pop().dispose();
+        solidBlocks.length = 0;
+
+        const [cr, cg, cb, ca] = currentMap.clearColor;
+        scene.clearColor = new BABYLON.Color4(cr, cg, cb, ca);
+        scene.fogColor = toColor3(currentMap.fogColor);
+        scene.fogDensity = currentMap.fogDensity;
+
+        hemi.diffuse = toColor3(currentMap.hemiColor);
+        hemi.intensity = currentMap.hemiIntensity;
+        dirLight.diffuse = toColor3(currentMap.dirColor);
+        dirLight.intensity = currentMap.dirIntensity;
+
+        if (currentMap.hasFloor) {
+            const floor = BABYLON.MeshBuilder.CreateGround('floor', { width: currentMap.floorSize, height: currentMap.floorSize }, scene);
+            floor.material = makeMaterial('floorMat', currentMap.floorColor, currentMap.floorEmissive);
+            floor.isPickable = true;
+            mapMeshes.push(floor);
+        }
+
+        const mats = {
+            primary: makeMaterial('matPrimary', currentMap.palette.primary, currentMap.palette.primaryEmissive),
+            platform: makeMaterial('matPlatform', currentMap.palette.platform, currentMap.palette.platformEmissive),
+            trim: makeMaterial('matTrim', currentMap.palette.trim, currentMap.palette.trimEmissive),
+            pad: makeMaterial('matPad', currentMap.palette.pad, currentMap.palette.padEmissive)
+        };
+
+        currentMap.blocks.forEach((b, idx) => {
+            const box = BABYLON.MeshBuilder.CreateBox(`blk_${idx}`, { width: b.w, height: b.h, depth: b.d }, scene);
+            box.position.set(b.x, b.y, b.z);
+            box.material = mats[b.style] || mats.primary;
+            const isSolid = b.solid !== false;
+            box.isPickable = isSolid;
+            mapMeshes.push(box);
+
+            if (isSolid) {
+                solidBlocks.push({
+                    x: b.x, y: b.y, z: b.z,
+                    w: b.w, h: b.h, d: b.d,
+                    minX: b.x - b.w / 2, maxX: b.x + b.w / 2,
+                    minY: b.y - b.h / 2, maxY: b.y + b.h / 2,
+                    minZ: b.z - b.d / 2, maxZ: b.z + b.d / 2
+                });
+            }
+        });
+
+        currentMap.jumpPads.forEach((pad, idx) => {
+            const cyl = BABYLON.MeshBuilder.CreateCylinder(`pad_${idx}`, { diameter: pad.radius * 1.7, height: 0.35 }, scene);
+            cyl.position.set(pad.x, pad.y + 0.18, pad.z);
+            cyl.material = mats.pad;
+            cyl.isPickable = false;
+            mapMeshes.push(cyl);
+        });
+
+        updateMapSelectionUI();
+    }
+
+    // Build Map Selector UI once on startup
+    const mapSelectorEl = document.getElementById('map-selector');
+    MAP_LIST.forEach(map => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'map-card';
+        card.dataset.mapId = map.id;
+        card.style.setProperty('--map-accent', map.accent);
+        card.style.setProperty('--map-glow', `${map.accent}55`);
+        card.innerHTML = `<div class="map-card-title">${map.name}</div><div class="map-card-tagline">${map.tagline}</div>`;
+        card.addEventListener('click', () => loadMap(map.id));
+        mapSelectorEl.appendChild(card);
+    });
+
     // Game state
     let mode = 'menu'; // 'menu' | 'player' | 'autobattler' | 'rts'
-    let rallyPoint = new BABYLON.Vector3(0, 0, 0);
+    let menuAngle = 0;
+    const rallyPoint = new BABYLON.Vector3(0, 0, 0);
 
     const player = {
+        pos: new BABYLON.Vector3(0, 0, -34),
         vel: new BABYLON.Vector3(0, 0, 0),
         grounded: true,
+        padCooldown: 0,
+        padFlightTimer: 0,
         hp: 100,
         score: 0,
         weaponIdx: 0,
@@ -94,14 +214,22 @@ function createScene() {
     const enemies = [];
     const projectiles = [];
 
-    function createBot(team, x, z) {
-        const mesh = BABYLON.MeshBuilder.CreateCapsule(`${team}_bot`, { height: 2.2, radius: 0.55 }, scene);
-        mesh.position.set(x, 1.1, z);
+    function pickSpawn(list, idx = null) {
+        const arr = list && list.length ? list : [[0, 0, 0]];
+        return arr[idx !== null ? idx % arr.length : Math.floor(Math.random() * arr.length)];
+    }
+
+    function createBot(team, spawnCoord) {
+        const [sx, sy, sz] = spawnCoord;
+        const mesh = BABYLON.MeshBuilder.CreateCapsule(`${team}_bot`, { height: BOT_HEIGHT, radius: BOT_RADIUS }, scene);
+        mesh.position.set(sx, sy + 1.1, sz);
         mesh.material = team === 'friendly' ? heroMat : enemyMat;
+        mesh.isPickable = false;
         const maxHp = team === 'friendly' ? 100 + upgrades.maxHp * 25 : 90;
         return {
             team,
             mesh,
+            pos: new BABYLON.Vector3(sx, sy, sz),
             vel: new BABYLON.Vector3(0, 0, 0),
             hp: maxHp,
             maxHp,
@@ -110,8 +238,33 @@ function createScene() {
             strafeTimer: 0.6 + Math.random() * 0.8,
             jumpTimer: 0.5 + Math.random() * 1.2,
             grounded: true,
+            padCooldown: 0,
+            padFlightTimer: 0,
             lives: 3
         };
+    }
+
+    function respawnBot(bot) {
+        const list = bot.team === 'friendly' ? currentMap.friendlySpawns : currentMap.enemySpawns;
+        const [sx, sy, sz] = pickSpawn(list);
+        bot.hp = bot.maxHp;
+        bot.pos.set(sx, sy, sz);
+        bot.vel.set(0, 0, 0);
+        bot.grounded = true;
+        bot.padCooldown = 0;
+        bot.padFlightTimer = 0;
+        bot.mesh.position.set(sx, sy + 1.1, sz);
+    }
+
+    function respawnPlayer() {
+        const [px, py, pz] = currentMap.playerSpawn;
+        player.pos.set(px, py, pz);
+        player.vel.set(0, 0, 0);
+        player.grounded = true;
+        player.padCooldown = 0;
+        player.padFlightTimer = 0;
+        player.hp = 100;
+        camera.position.set(px, py + PLAYER_HEIGHT, pz);
     }
 
     function clearEntities() {
@@ -123,11 +276,133 @@ function createScene() {
         projectiles.length = 0;
     }
 
-    function spawnEnemyWave(count = 4) {
+    function spawnEnemyWave(count = 5) {
         for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            enemies.push(createBot('enemy', Math.cos(angle) * 28, Math.sin(angle) * 28));
+            enemies.push(createBot('enemy', pickSpawn(currentMap.enemySpawns, i)));
         }
+    }
+
+    // Shared map AABB collision, jump pad & hazard physics (pos = entity feet)
+    function moveEntityWithMap(pos, vel, radius, height, dt, entityState) {
+        // 1. Horizontal movement + wall/block AABB pushout
+        pos.x += vel.x * dt;
+        pos.z += vel.z * dt;
+
+        for (const b of solidBlocks) {
+            if (pos.y + height > b.minY && pos.y + 0.45 < b.maxY) {
+                const halfW = b.w / 2 + radius;
+                const halfD = b.d / 2 + radius;
+                const dx = pos.x - b.x;
+                const dz = pos.z - b.z;
+                const ox = halfW - Math.abs(dx);
+                const oz = halfD - Math.abs(dz);
+                if (ox > 0 && oz > 0) {
+                    if (ox < oz) {
+                        pos.x += dx >= 0 ? ox : -ox;
+                        vel.x = 0;
+                    } else {
+                        pos.z += dz >= 0 ? oz : -oz;
+                        vel.z = 0;
+                    }
+                }
+            }
+        }
+
+        // 2. Vertical movement + floor/platform landing + ceiling clamp
+        const prevY = pos.y;
+        pos.y += vel.y * dt;
+        let supportY = currentMap.hasFloor ? 0 : -Infinity;
+
+        for (const b of solidBlocks) {
+            if (Math.abs(pos.x - b.x) < b.w / 2 + radius * 0.85 &&
+                Math.abs(pos.z - b.z) < b.d / 2 + radius * 0.85) {
+                if (vel.y <= 0 && prevY >= b.maxY - 0.55 && pos.y <= b.maxY) {
+                    supportY = Math.max(supportY, b.maxY);
+                } else if (vel.y > 0 && prevY + height <= b.minY + 0.3 && pos.y + height >= b.minY) {
+                    pos.y = b.minY - height;
+                    vel.y = 0;
+                }
+            }
+        }
+
+        if (pos.y <= supportY) {
+            pos.y = supportY;
+            vel.y = 0;
+            entityState.grounded = true;
+            entityState.padFlightTimer = 0;
+        } else {
+            entityState.grounded = false;
+        }
+
+        pos.x = Math.max(-currentMap.halfBound, Math.min(currentMap.halfBound, pos.x));
+        pos.z = Math.max(-currentMap.halfBound, Math.min(currentMap.halfBound, pos.z));
+
+        // 3. Jump pads
+        let jumpedPad = false;
+        entityState.padCooldown = Math.max(0, (entityState.padCooldown || 0) - dt);
+        if (entityState.padCooldown <= 0) {
+            for (const pad of currentMap.jumpPads) {
+                if (Math.hypot(pos.x - pad.x, pos.z - pad.z) < pad.radius && Math.abs(pos.y - pad.y) < 1.2) {
+                    if (pad.vx !== 0 || pad.vz !== 0) {
+                        vel.x = pad.vx;
+                        vel.z = pad.vz;
+                        entityState.padFlightTimer = 0.95;
+                    }
+                    vel.y = pad.vy;
+                    entityState.grounded = false;
+                    entityState.padCooldown = 0.28;
+                    jumpedPad = true;
+                    break;
+                }
+            }
+        }
+
+        // 4. Hazards (e.g. magma channels)
+        let hazardDmg = 0;
+        for (const hz of currentMap.hazards) {
+            if (Math.abs(pos.x - hz.x) < hz.w / 2 && Math.abs(pos.z - hz.z) < hz.d / 2 && pos.y <= hz.maxY) {
+                hazardDmg += hz.dps * dt;
+                vel.y = Math.max(vel.y, hz.bounceVy);
+                entityState.grounded = false;
+            }
+        }
+
+        const fellInVoid = currentMap.voidY !== null && pos.y < currentMap.voidY;
+        return { jumpedPad, hazardDmg, fellInVoid };
+    }
+
+    function hasSurfaceBelow(x, z, footY) {
+        if (currentMap.hasFloor) return true;
+        for (const b of solidBlocks) {
+            if (x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ && b.maxY <= footY + 0.6) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function findDeckCenter(x, z, footY) {
+        let best = null;
+        let bestArea = -1;
+        for (const b of solidBlocks) {
+            if (x >= b.minX - 0.8 && x <= b.maxX + 0.8 && z >= b.minZ - 0.8 && z <= b.maxZ + 0.8 && Math.abs(b.maxY - footY) < 0.8) {
+                const area = b.w * b.d;
+                if (area > bestArea) {
+                    bestArea = area;
+                    best = b;
+                }
+            }
+        }
+        return best ? { x: best.x, z: best.z } : { x: 0, z: 0 };
+    }
+
+    function isInsideHazard(x, z, footY) {
+        for (const hz of currentMap.hazards) {
+            if (Math.abs(x - hz.x) < hz.w / 2 + 0.4 && Math.abs(z - hz.z) < hz.d / 2 + 0.4 && footY <= hz.maxY + 0.6) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // UI Elements
@@ -140,39 +415,44 @@ function createScene() {
     const crosshair = document.getElementById('crosshair');
 
     function startMode(newMode) {
+        loadMap(selectedMapId);
         mode = newMode;
         clearEntities();
         overlay.classList.add('hidden');
         upgradeModal.classList.add('hidden');
         player.score = 0;
-        player.hp = 100;
-        player.vel.set(0, 0, 0);
+        respawnPlayer();
 
         document.getElementById('mode-label').textContent = `MODE: ${newMode.toUpperCase()}`;
         rtsBar.classList.toggle('hidden', newMode !== 'rts');
         livesBox.classList.toggle('hidden', newMode !== 'autobattler');
         mobileControls.classList.toggle('active', newMode === 'player');
         crosshair.classList.toggle('hidden', newMode !== 'player');
+        rallyMarker.isVisible = newMode === 'rts';
 
         if (newMode === 'player') {
-            camera.position.set(0, 2, -26);
             camera.rotation.set(0, 0, 0);
-            spawnEnemyWave(4);
+            camera.fov = 1.05;
+            spawnEnemyWave(5);
             canvas.requestPointerLock?.();
         } else if (newMode === 'autobattler') {
-            const hero = createBot('friendly', 0, -18);
+            camera.fov = 1.05;
+            const hero = createBot('friendly', pickSpawn(currentMap.friendlySpawns, 0));
             hero.lives = 3;
             friendlies.push(hero);
-            spawnEnemyWave(4);
+            spawnEnemyWave(5);
         } else if (newMode === 'rts') {
-            rallyPoint.set(0, 0, 0);
+            camera.fov = 1.05;
+            const [rx, ry, rz] = currentMap.playerSpawn;
+            rallyPoint.set(rx, ry, rz);
+            rallyMarker.position.set(rx, ry + 0.15, rz);
             for (let i = 0; i < 4; i++) {
-                friendlies.push(createBot('friendly', -6 + i * 4, -20));
+                friendlies.push(createBot('friendly', pickSpawn(currentMap.friendlySpawns, i)));
             }
             rtsAddBtn.textContent = `+ ADD BOT (${friendlies.length})`;
-            spawnEnemyWave(5);
-            camera.position.set(0, 34, -32);
-            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
+            spawnEnemyWave(6);
+            camera.position.set(...currentMap.rtsCamera.pos);
+            camera.setTarget(new BABYLON.Vector3(...currentMap.rtsCamera.target));
         }
     }
 
@@ -182,6 +462,7 @@ function createScene() {
 
     document.getElementById('menu-btn').addEventListener('click', () => {
         mode = 'menu';
+        rallyMarker.isVisible = false;
         document.exitPointerLock?.();
         overlay.classList.remove('hidden');
         upgradeModal.classList.add('hidden');
@@ -189,7 +470,7 @@ function createScene() {
 
     rtsAddBtn.addEventListener('click', () => {
         if (mode !== 'rts') return;
-        friendlies.push(createBot('friendly', (Math.random() - 0.5) * 10, -18));
+        friendlies.push(createBot('friendly', pickSpawn(currentMap.friendlySpawns, friendlies.length)));
         rtsAddBtn.textContent = `+ ADD BOT (${friendlies.length})`;
     });
 
@@ -209,6 +490,7 @@ function createScene() {
 
     function openUpgradeShop() {
         mode = 'menu';
+        rallyMarker.isVisible = false;
         upgradeModal.classList.remove('hidden');
         document.getElementById('scrap-val').textContent = upgrades.scrap;
         const list = document.getElementById('upgrade-list');
@@ -253,6 +535,7 @@ function createScene() {
     function spawnProjectile(origin, dir, weapon, ownerTeam) {
         const proj = BABYLON.MeshBuilder.CreateSphere('proj', { diameter: 0.36 }, scene);
         proj.position = origin.clone();
+        proj.isPickable = false;
         const mat = new BABYLON.StandardMaterial('pMat', scene);
         mat.emissiveColor = weapon.color;
         proj.material = mat;
@@ -271,20 +554,45 @@ function createScene() {
                 player.fireTimer = w.cooldown;
                 const fwd = camera.getDirection(BABYLON.Axis.Z).normalize();
                 spawnProjectile(camera.position.add(fwd.scale(1.2)), fwd, w, 'friendly');
+                playSfx(player.weaponIdx === 1 ? 620 : 220, 0.11, 'sawtooth', 0.07);
             }
         } else if (mode === 'rts' && e.button === 0) {
             const pick = scene.pick(scene.pointerX, scene.pointerY);
             if (pick?.hit && pick.pickedPoint) {
                 rallyPoint.copyFrom(pick.pickedPoint);
+                rallyMarker.position.set(rallyPoint.x, rallyPoint.y + 0.15, rallyPoint.z);
             }
         }
     });
 
-    // Intelligent Bot AI (strafe, jump/bunny-hop, dodge, lead shots)
+    function handleEnemyDeath(enemy) {
+        player.score++;
+        if (mode === 'player') playSfx(1040, 0.12, 'triangle', 0.07);
+        if (mode === 'autobattler') {
+            upgrades.scrap += 1 + upgrades.scrapGain;
+            saveUpgrades();
+        }
+        respawnBot(enemy);
+    }
+
+    function handleFriendlyDeath(bot) {
+        if (mode === 'autobattler') {
+            bot.lives--;
+            if (bot.lives <= 0) {
+                openUpgradeShop();
+                return true;
+            }
+        }
+        respawnBot(bot);
+        return false;
+    }
+
+    // Intelligent Bot AI (strafe, jump/bunny-hop, jump-pad pursuit, void & hazard avoidance)
     function updateBotAI(bot, targets, dt) {
         bot.fireTimer = Math.max(0, bot.fireTimer - dt);
         bot.strafeTimer -= dt;
         bot.jumpTimer -= dt;
+        bot.padFlightTimer = Math.max(0, (bot.padFlightTimer || 0) - dt);
 
         if (bot.strafeTimer <= 0) {
             bot.strafeDir *= -1;
@@ -296,7 +604,6 @@ function createScene() {
             bot.hp = Math.min(bot.maxHp, bot.hp + upgrades.regen * 1.5 * dt);
         }
 
-        // Find nearest target
         let nearest = null;
         let minDist = Infinity;
         for (const t of targets) {
@@ -318,10 +625,33 @@ function createScene() {
             const idealMin = bot.team === 'friendly' ? 8 + upgrades.tactics * 0.8 : 8;
             const idealMax = bot.team === 'friendly' ? 16 + upgrades.tactics * 1.0 : 16;
 
-            if (mode === 'rts' && bot.team === 'friendly' && BABYLON.Vector3.Distance(bot.mesh.position, rallyPoint) > 6) {
-                const toRally = rallyPoint.subtract(bot.mesh.position);
+            if (mode === 'rts' && bot.team === 'friendly' && Math.hypot(bot.pos.x - rallyPoint.x, bot.pos.z - rallyPoint.z) > 6) {
+                const toRally = rallyPoint.subtract(bot.pos);
                 toRally.y = 0;
-                moveDir.addInPlace(toRally.normalize());
+                if (toRally.lengthSquared() > 0.01) moveDir.addInPlace(toRally.normalize());
+            } else if (!currentMap.hasFloor && bot.grounded && (dist > 18 || Math.abs(nearest.position.y - 1.1 - bot.pos.y) > 2.5)) {
+                // Seek a jump pad on current deck that lands closer to target
+                let bestPad = null;
+                let bestScore = dist - 2;
+                for (const pad of currentMap.jumpPads) {
+                    if (Math.abs(pad.y - bot.pos.y) < 1.5) {
+                        const landX = pad.x + pad.vx * 1.3;
+                        const landZ = pad.z + pad.vz * 1.3;
+                        const landDist = Math.hypot(nearest.position.x - landX, nearest.position.z - landZ);
+                        if (landDist < bestScore) {
+                            bestScore = landDist;
+                            bestPad = pad;
+                        }
+                    }
+                }
+                if (bestPad) {
+                    moveDir.set(bestPad.x - bot.pos.x, 0, bestPad.z - bot.pos.z);
+                    if (moveDir.lengthSquared() > 0.01) moveDir.normalize();
+                } else {
+                    if (dist > idealMax) moveDir.addInPlace(toTarget);
+                    else if (dist < idealMin) moveDir.subtractInPlace(toTarget);
+                    moveDir.addInPlace(strafe.scale(1.2));
+                }
             } else {
                 if (dist > idealMax) moveDir.addInPlace(toTarget);
                 else if (dist < idealMin) moveDir.subtractInPlace(toTarget);
@@ -329,7 +659,7 @@ function createScene() {
             }
 
             // Fire at target
-            if (bot.fireTimer <= 0 && dist < 45) {
+            if (bot.fireTimer <= 0 && dist < 50) {
                 const cdMult = bot.team === 'friendly' ? Math.max(0.4, 1 - upgrades.fireRate * 0.1) : 1.15;
                 bot.fireTimer = (0.55 + Math.random() * 0.35) * cdMult;
                 const aimDir = nearest.position.subtract(bot.mesh.position).normalize();
@@ -341,8 +671,32 @@ function createScene() {
         }
 
         if (moveDir.lengthSquared() > 0) moveDir.normalize();
-        bot.vel.x = moveDir.x * moveSpeed;
-        bot.vel.z = moveDir.z * moveSpeed;
+
+        // Void-edge & lava-hazard avoidance on ground
+        if (bot.grounded && moveDir.lengthSquared() > 0) {
+            const nextX = bot.pos.x + moveDir.x * 1.4;
+            const nextZ = bot.pos.z + moveDir.z * 1.4;
+            if (!currentMap.hasFloor) {
+                const nearPad = currentMap.jumpPads.some(
+                    p => Math.hypot(nextX - p.x, nextZ - p.z) < p.radius && Math.abs(bot.pos.y - p.y) < 1.5
+                );
+                if (!hasSurfaceBelow(nextX, nextZ, bot.pos.y) && !nearPad) {
+                    const center = findDeckCenter(bot.pos.x, bot.pos.z, bot.pos.y);
+                    moveDir.set(center.x - bot.pos.x, 0, center.z - bot.pos.z);
+                    if (moveDir.lengthSquared() > 0.01) moveDir.normalize();
+                }
+            } else if (isInsideHazard(nextX, nextZ, bot.pos.y)) {
+                const jumpBoost = bot.team === 'friendly' ? 1 + upgrades.jump * 0.08 : 1;
+                bot.vel.y = 11.5 * jumpBoost;
+                bot.grounded = false;
+            }
+        }
+
+        // Preserve ballistic pad velocity while mid-flight from a directional pad
+        if (bot.padFlightTimer <= 0) {
+            bot.vel.x = moveDir.x * moveSpeed;
+            bot.vel.z = moveDir.z * moveSpeed;
+        }
 
         // Active bunny-hop / jumping
         if (bot.grounded && bot.jumpTimer <= 0) {
@@ -351,16 +705,19 @@ function createScene() {
             bot.grounded = false;
             bot.jumpTimer = 0.6 + Math.random() * 1.1;
         }
-        bot.vel.y -= 26 * dt;
+        bot.vel.y -= GRAVITY * dt;
 
-        bot.mesh.position.addInPlace(bot.vel.scale(dt));
-        if (bot.mesh.position.y <= 1.1) {
-            bot.mesh.position.y = 1.1;
-            bot.vel.y = 0;
-            bot.grounded = true;
+        const phys = moveEntityWithMap(bot.pos, bot.vel, BOT_RADIUS, BOT_HEIGHT, dt, bot);
+        bot.mesh.position.set(bot.pos.x, bot.pos.y + 1.1, bot.pos.z);
+
+        if (phys.hazardDmg > 0) bot.hp -= phys.hazardDmg;
+        if (phys.fellInVoid || bot.hp <= 0) {
+            if (bot.team === 'friendly') {
+                return handleFriendlyDeath(bot);
+            }
+            respawnBot(bot);
         }
-        bot.mesh.position.x = Math.max(-41, Math.min(41, bot.mesh.position.x));
-        bot.mesh.position.z = Math.max(-41, Math.min(41, bot.mesh.position.z));
+        return false;
     }
 
     const speedEl = document.getElementById('speedometer');
@@ -370,9 +727,18 @@ function createScene() {
     const weaponEl = document.getElementById('weapon-val');
     const scoreEl = document.getElementById('score-val');
 
+    // Load initial map & start menu showcase
+    loadMap(selectedMapId);
+
     scene.onBeforeRenderObservable.add(() => {
-        if (mode === 'menu') return;
         const dt = Math.min(0.05, engine.getDeltaTime() / 1000);
+        if (mode === 'menu') {
+            menuAngle += dt * 0.22;
+            camera.position.set(Math.cos(menuAngle) * 44, 24, Math.sin(menuAngle) * 44);
+            camera.setTarget(new BABYLON.Vector3(0, 2, 0));
+            return;
+        }
+
         player.fireTimer = Math.max(0, player.fireTimer - dt);
         player.dashTimer = Math.max(0, player.dashTimer - dt);
 
@@ -391,40 +757,57 @@ function createScene() {
                 player.dashTimer = 1.2;
             }
 
-            const maxSpd = 14;
+            const maxSpd = 17;
             if (player.grounded) {
                 const spd = Math.hypot(player.vel.x, player.vel.z);
                 if (spd > 0.01) {
-                    const s = Math.max(0, spd - spd * 6.5 * dt) / spd;
+                    const s = Math.max(0, spd - spd * 6.0 * dt) / spd;
                     player.vel.x *= s; player.vel.z *= s;
                 }
                 const add = maxSpd - (player.vel.x * wish.x + player.vel.z * wish.z);
                 if (add > 0) {
-                    const acc = Math.min(add, 12 * maxSpd * dt);
+                    const acc = Math.min(add, 14 * maxSpd * dt);
                     player.vel.x += wish.x * acc; player.vel.z += wish.z * acc;
                 }
-                if (keys['Space']) { player.vel.y = 11.5; player.grounded = false; }
+                if (keys['Space']) {
+                    player.vel.y = 12.2;
+                    player.grounded = false;
+                    playSfx(320, 0.06, 'triangle', 0.04);
+                }
             } else {
-                const add = maxSpd - (player.vel.x * wish.x + player.vel.z * wish.z);
+                const airWishCap = 3.2;
+                const add = airWishCap - (player.vel.x * wish.x + player.vel.z * wish.z);
                 if (add > 0) {
-                    const acc = Math.min(add, 2.6 * maxSpd * dt);
+                    const acc = Math.min(add, 18 * airWishCap * dt);
                     player.vel.x += wish.x * acc; player.vel.z += wish.z * acc;
                 }
-                player.vel.y -= 28 * dt;
+                player.vel.y -= GRAVITY * dt;
             }
 
-            camera.position.addInPlace(player.vel.scale(dt));
-            if (camera.position.y <= 2.0) { camera.position.y = 2.0; player.vel.y = 0; player.grounded = true; }
-            camera.position.x = Math.max(-42, Math.min(42, camera.position.x));
-            camera.position.z = Math.max(-42, Math.min(42, camera.position.z));
+            const phys = moveEntityWithMap(player.pos, player.vel, PLAYER_RADIUS, PLAYER_HEIGHT, dt, player);
+            if (phys.jumpedPad) playSfx(520, 0.16, 'sine', 0.07);
+            if (phys.hazardDmg > 0) player.hp -= phys.hazardDmg;
+            if (phys.fellInVoid || player.hp <= 0) {
+                playSfx(140, 0.2, 'sawtooth', 0.07);
+                respawnPlayer();
+            }
+
+            camera.position.set(player.pos.x, player.pos.y + PLAYER_HEIGHT, player.pos.z);
+
+            const horiz = Math.hypot(player.vel.x, player.vel.z);
+            camera.fov = BABYLON.Scalar.Lerp(camera.fov, 1.05 + Math.min(0.28, horiz * 0.01), 0.12);
         }
 
         // Update AI
         const enemyTargets = mode === 'player' ? [{ position: camera.position }] : friendlies.map(f => f.mesh);
         const friendlyTargets = enemies.map(e => e.mesh);
 
-        friendlies.forEach(f => updateBotAI(f, friendlyTargets, dt));
-        enemies.forEach(e => updateBotAI(e, enemyTargets, dt));
+        for (const f of friendlies) {
+            if (updateBotAI(f, friendlyTargets, dt)) return;
+        }
+        for (const e of enemies) {
+            updateBotAI(e, enemyTargets, dt);
+        }
 
         // Spectator camera for Auto-Battler
         if (mode === 'autobattler' && friendlies[0]) {
@@ -443,52 +826,91 @@ function createScene() {
             const p = projectiles[i];
             p.life -= dt;
             p.mesh.position.addInPlace(p.vel.scale(dt));
-            let hit = p.life <= 0 || p.mesh.position.y <= 0.1;
 
+            let hit = p.life <= 0 ||
+                (currentMap.hasFloor && p.mesh.position.y <= 0.1) ||
+                Math.abs(p.mesh.position.x) > currentMap.halfBound + 10 ||
+                Math.abs(p.mesh.position.z) > currentMap.halfBound + 10 ||
+                p.mesh.position.y < -30;
+
+            if (!hit) {
+                const pr = 0.18;
+                for (const b of solidBlocks) {
+                    if (p.mesh.position.x + pr > b.minX && p.mesh.position.x - pr < b.maxX &&
+                        p.mesh.position.y + pr > b.minY && p.mesh.position.y - pr < b.maxY &&
+                        p.mesh.position.z + pr > b.minZ && p.mesh.position.z - pr < b.maxZ) {
+                        hit = true;
+                        break;
+                    }
+                }
+            }
+
+            let directHitEnemyIdx = -1;
             if (p.ownerTeam === 'friendly') {
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     if (BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position) < 1.35) {
                         enemies[j].hp -= p.damage;
                         hit = true;
-                        if (enemies[j].hp <= 0) {
-                            player.score++;
-                            if (mode === 'autobattler') { upgrades.scrap += 1 + upgrades.scrapGain; saveUpgrades(); }
-                            enemies[j].hp = enemies[j].maxHp;
-                            enemies[j].mesh.position.set((Math.random() - 0.5) * 60, 1.1, (Math.random() - 0.5) * 60);
-                        }
+                        directHitEnemyIdx = j;
+                        if (mode === 'player') playSfx(880, 0.05, 'sine', 0.05);
+                        if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
+                        break;
                     }
                 }
             } else {
                 if (mode === 'player' && BABYLON.Vector3.Distance(p.mesh.position, camera.position) < 1.4) {
                     player.hp -= 12;
                     hit = true;
-                    if (player.hp <= 0) { player.hp = 100; camera.position.set(0, 2, -26); }
+                    if (player.hp <= 0) respawnPlayer();
                 } else {
                     for (const f of friendlies) {
                         if (BABYLON.Vector3.Distance(p.mesh.position, f.mesh.position) < 1.35) {
                             f.hp -= 14;
                             hit = true;
-                            if (f.hp <= 0) {
-                                if (mode === 'autobattler') {
-                                    f.lives--;
-                                    if (f.lives <= 0) { openUpgradeShop(); return; }
-                                }
-                                f.hp = f.maxHp;
-                                f.mesh.position.set((Math.random() - 0.5) * 20, 1.1, -20);
+                            if (f.hp <= 0 && handleFriendlyDeath(f)) {
+                                p.mesh.dispose();
+                                projectiles.splice(i, 1);
+                                return;
                             }
+                            break;
                         }
                     }
                 }
             }
 
             if (hit) {
+                if (p.weapon.splash > 0) {
+                    if (mode === 'player') {
+                        const playerCenter = player.pos.add(new BABYLON.Vector3(0, 1.2, 0));
+                        const dist = BABYLON.Vector3.Distance(p.mesh.position, playerCenter);
+                        if (dist < p.weapon.splash) {
+                            const pushDir = playerCenter.subtract(p.mesh.position);
+                            if (pushDir.lengthSquared() < 0.001) pushDir.set(0, 1, 0);
+                            pushDir.normalize();
+                            player.vel.addInPlace(pushDir.scale((1 - dist / p.weapon.splash) * 20));
+                            player.grounded = false;
+                        }
+                    }
+                    if (p.ownerTeam === 'friendly') {
+                        for (let j = enemies.length - 1; j >= 0; j--) {
+                            if (j === directHitEnemyIdx) continue;
+                            const dist = BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position);
+                            if (dist < p.weapon.splash) {
+                                enemies[j].hp -= p.damage * 0.6 * (1 - dist / p.weapon.splash);
+                                if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
+                            }
+                        }
+                    }
+                }
                 p.mesh.dispose();
                 projectiles.splice(i, 1);
             }
         }
 
-        const horizSpeed = Math.round(Math.hypot(player.vel.x, player.vel.z) * 20);
-        speedEl.textContent = `${horizSpeed} u/s`;
+        const activeSpeed = mode === 'autobattler' && friendlies[0]
+            ? Math.hypot(friendlies[0].vel.x, friendlies[0].vel.z)
+            : Math.hypot(player.vel.x, player.vel.z);
+        speedEl.textContent = `${Math.round(activeSpeed * 20)} u/s`;
         fpsEl.textContent = `${Math.round(engine.getFps())} FPS`;
         weaponEl.textContent = WEAPONS[player.weaponIdx].name;
         scoreEl.textContent = player.score;

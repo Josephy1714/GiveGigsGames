@@ -19,6 +19,15 @@
   const toggleRotateBtn = document.getElementById('toggle-rotate');
   const toggleWireframeBtn = document.getElementById('toggle-wireframe');
   const resetCameraBtn = document.getElementById('reset-camera');
+  const animSelectEl = document.getElementById('anim-select');
+  const toggleAnimPlayBtn = document.getElementById('toggle-anim-play');
+  const cycleAnimSpeedBtn = document.getElementById('cycle-anim-speed');
+  let activeAnimName = 'idle';
+  let animPlaying = true;
+  let animSpeed = 1;
+  let animTime = 0;
+  let lastModalTime = 0;
+  let modalRawGroup = null;
 
   let activeCategory = 'All';
   let activeGame = 'all';
@@ -31,21 +40,39 @@
   const thumbRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   thumbRenderer.setSize(thumbWidth, thumbHeight);
   thumbRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  if (THREE.ACESFilmicToneMapping) {
+    thumbRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    thumbRenderer.toneMappingExposure = 1.08;
+  }
 
   const thumbScene = new THREE.Scene();
   const thumbCamera = new THREE.PerspectiveCamera(42, thumbWidth / thumbHeight, 0.1, 100);
   thumbCamera.position.set(2.4, 1.8, 3.2);
   thumbCamera.lookAt(0, 0, 0);
 
-  const thumbAmbient = new THREE.AmbientLight(0xffffff, 0.75);
-  const thumbDir = new THREE.DirectionalLight(0xffffff, 1.1);
-  thumbDir.position.set(4, 6, 5);
-  const thumbRim = new THREE.DirectionalLight(0x38bdf8, 0.45);
-  thumbRim.position.set(-4, -2, -4);
-  thumbScene.add(thumbAmbient, thumbDir, thumbRim);
+  function addStudioLights(scene) {
+    scene.add(new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.72));
+    const key = new THREE.DirectionalLight(0xfff7ed, 1.2);
+    key.position.set(4.5, 6.5, 5.0);
+    const rim = new THREE.DirectionalLight(0x38bdf8, 0.65);
+    rim.position.set(-4.5, 2.5, -4.0);
+    const back = new THREE.DirectionalLight(0xa855f7, 0.4);
+    back.position.set(0, -3.0, -5.0);
+    scene.add(key, rim, back);
+  }
+  addStudioLights(thumbScene);
+
+  const thumbHolder = new THREE.Group();
+  thumbScene.add(thumbHolder);
 
   // Cache built normalized models for cards
   const cardEntries = new Map();
+
+  function countMeshes(obj) {
+    let n = 0;
+    obj.traverse(c => { if (c.isMesh) n++; });
+    return n;
+  }
 
   function normalizeModel(rawGroup) {
     const wrapper = new THREE.Group();
@@ -63,11 +90,11 @@
   }
 
   function renderCardThumbnail(entry, angle) {
-    while (thumbScene.children.length > 3) {
-      thumbScene.remove(thumbScene.children[thumbScene.children.length - 1]);
+    while (thumbHolder.children.length > 0) {
+      thumbHolder.remove(thumbHolder.children[thumbHolder.children.length - 1]);
     }
     entry.group.rotation.y = angle;
-    thumbScene.add(entry.group);
+    thumbHolder.add(entry.group);
     thumbRenderer.render(thumbScene, thumbCamera);
 
     const ctx = entry.canvas.getContext('2d');
@@ -76,7 +103,15 @@
   }
 
   function formatStandaloneCode(model) {
-    return `// ${model.name} (${model.game})\n// Usage: const mesh = ${model.build.name || 'createModel'}(THREE); scene.add(mesh);\n${model.build.toString()}`;
+    const fnStr = model.build.toString();
+    const usesKit = fnStr.includes('K.');
+    const deps = usesKit ? '// Requires: /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)\n' : '';
+    const sample = cardEntries.has(model.id) ? cardEntries.get(model.id).rawGroup : null;
+    const anims = sample && sample.userData && sample.userData.animations;
+    const animHint = Array.isArray(anims) && anims.length
+      ? `// Animations (${anims.length}): ${anims.join(', ')}\n// Animate in loop: mesh.userData.animate(timeSeconds, '${anims[0]}');\n`
+      : '';
+    return `// ${model.name} (${model.game})\n${deps}${animHint}// Usage: const mesh = ${model.build.name || 'createModel'}(THREE); scene.add(mesh);\n${fnStr}`;
   }
 
   async function copyCode(text, btn) {
@@ -198,11 +233,23 @@
       card.append(previewBox, body);
       gridEl.appendChild(card);
 
+      const rawGroup = model.build(THREE);
+      const anims = rawGroup.userData && rawGroup.userData.animations;
+      if (Array.isArray(anims) && anims.length > 0) {
+        const animBadge = document.createElement('span');
+        animBadge.className = 'preview-anim-badge';
+        animBadge.textContent = `${anims.length} anims`;
+        previewBox.appendChild(animBadge);
+      }
+
       const entry = {
         model,
         canvas,
-        group: normalizeModel(model.build(THREE)),
-        angle: 0.45
+        rawGroup,
+        group: normalizeModel(rawGroup),
+        angle: 0.45,
+        animTime: 0,
+        defaultAnim: Array.isArray(anims) && anims.length ? anims[0] : null
       };
       cardEntries.set(model.id, entry);
       renderCardThumbnail(entry, entry.angle);
@@ -215,6 +262,10 @@
     if (hoveredCardId && cardEntries.has(hoveredCardId)) {
       const entry = cardEntries.get(hoveredCardId);
       entry.angle += 0.025;
+      if (entry.defaultAnim && entry.rawGroup && entry.rawGroup.userData && typeof entry.rawGroup.userData.animate === 'function') {
+        entry.animTime += 0.016;
+        entry.rawGroup.userData.animate(entry.animTime, entry.defaultAnim);
+      }
       renderCardThumbnail(entry, entry.angle);
     }
   }
@@ -263,16 +314,28 @@
     if (!modalRenderer) {
       modalRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       modalRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      if (THREE.ACESFilmicToneMapping) {
+        modalRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        modalRenderer.toneMappingExposure = 1.08;
+      }
       modalViewportEl.insertBefore(modalRenderer.domElement, modalViewportEl.firstChild);
 
       modalScene = new THREE.Scene();
       modalCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-      modalScene.add(new THREE.AmbientLight(0xffffff, 0.75));
-      const d1 = new THREE.DirectionalLight(0xffffff, 1.15);
-      d1.position.set(5, 7, 5);
-      const d2 = new THREE.DirectionalLight(0x38bdf8, 0.5);
-      d2.position.set(-5, -3, -5);
-      modalScene.add(d1, d2);
+      addStudioLights(modalScene);
+
+      const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65, metalness: 0.35 });
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.24, 0.04, 32), pedestalMat);
+      pedestal.position.y = -1.02;
+      pedestal.userData.isPedestal = true;
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(1.12, 1.18, 32),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = -0.995;
+      ring.userData.isPedestal = true;
+      modalScene.add(pedestal, ring);
 
       modalViewportEl.addEventListener('pointerdown', e => {
         if (e.target.closest('.viewport-toolbar')) return;
@@ -299,9 +362,33 @@
     if (modalModelGroup) {
       modalScene.remove(modalModelGroup);
     }
-    modalModelGroup = normalizeModel(model.build(THREE));
+    modalRawGroup = model.build(THREE);
+    modalModelGroup = normalizeModel(modalRawGroup);
     setWireframe(modalModelGroup, wireframe);
     modalScene.add(modalModelGroup);
+
+    const meshCount = countMeshes(modalRawGroup);
+    const anims = modalRawGroup.userData && modalRawGroup.userData.animations;
+    const hasAnims = Array.isArray(anims) && anims.length > 0 && typeof modalRawGroup.userData.animate === 'function';
+    modalMetaEl.textContent = `${model.game} • ${model.category} • ${meshCount} meshes${hasAnims ? ` • ${anims.length} animations` : ''}`;
+
+    animTime = 0;
+    lastModalTime = performance.now();
+    if (animSelectEl) {
+      if (hasAnims) {
+        animSelectEl.innerHTML = anims.map(a => `<option value="${a}">${a}</option>`).join('');
+        activeAnimName = anims[0];
+        animSelectEl.value = activeAnimName;
+        animSelectEl.style.display = 'inline-block';
+        animSelectEl.onchange = () => { activeAnimName = animSelectEl.value; animTime = 0; };
+        if (toggleAnimPlayBtn) toggleAnimPlayBtn.style.display = 'inline-block';
+        if (cycleAnimSpeedBtn) cycleAnimSpeedBtn.style.display = 'inline-block';
+      } else {
+        animSelectEl.style.display = 'none';
+        if (toggleAnimPlayBtn) toggleAnimPlayBtn.style.display = 'none';
+        if (cycleAnimSpeedBtn) cycleAnimSpeedBtn.style.display = 'none';
+      }
+    }
 
     const rect = modalViewportEl.getBoundingClientRect();
     modalRenderer.setSize(rect.width || 480, rect.height || 400);
@@ -311,8 +398,15 @@
     updateModalCamera();
 
     if (!modalAnimId) {
-      const loop = () => {
+      const loop = (now) => {
         modalAnimId = requestAnimationFrame(loop);
+        const cur = now || performance.now();
+        const dt = Math.min(0.05, Math.max(0, (cur - lastModalTime) * 0.001));
+        lastModalTime = cur;
+        if (animPlaying) animTime += dt * animSpeed;
+        if (modalRawGroup && modalRawGroup.userData && typeof modalRawGroup.userData.animate === 'function') {
+          modalRawGroup.userData.animate(animTime, activeAnimName);
+        }
         if (autoRotate && !isDragging && modalModelGroup) {
           orbit.theta += 0.01;
           updateModalCamera();
@@ -366,6 +460,23 @@
     orbit = { theta: 0.6, phi: 1.15, radius: 3.4 };
     updateModalCamera();
   });
+
+  if (toggleAnimPlayBtn) {
+    toggleAnimPlayBtn.addEventListener('click', () => {
+      animPlaying = !animPlaying;
+      toggleAnimPlayBtn.classList.toggle('active', animPlaying);
+      toggleAnimPlayBtn.textContent = animPlaying ? 'Pause Anim' : 'Play Anim';
+    });
+  }
+
+  if (cycleAnimSpeedBtn) {
+    const speeds = [1, 1.5, 0.5];
+    cycleAnimSpeedBtn.addEventListener('click', () => {
+      const idx = (speeds.indexOf(animSpeed) + 1) % speeds.length;
+      animSpeed = speeds[idx];
+      cycleAnimSpeedBtn.textContent = `${animSpeed}x`;
+    });
+  }
 
   renderGrid();
 })();

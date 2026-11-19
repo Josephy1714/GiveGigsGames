@@ -104,3 +104,27 @@
   display: block;
   object-fit: cover;
 }
+
+/* Cleanups & 3D Model Library navigation */
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.catalog-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.9rem;
+}
+
+.catalog-search {
+  flex: 1 1 240px;
+}
+
+.models-banner {
+  margin-top: 2rem;
+  border-color: rgba(56, 189, 248, 0.35);
+}

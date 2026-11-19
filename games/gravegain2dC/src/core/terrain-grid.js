@@ -397,14 +397,14 @@
         this.spawnRoom = this.rooms[0];
         this.safespaceRoom = this.rooms[this.rooms.length - 1];
 
-        // 2. Connect rooms with 2-tile wide gothic-industrial corridors + loops
+        // 2. Connect rooms with winding gothic-industrial corridors + branching loops
         for (var ci = 0; ci < this.rooms.length - 1; ci++) {
-            this._digCorridor(this.rooms[ci].cx, this.rooms[ci].cz, this.rooms[ci + 1].cx, this.rooms[ci + 1].cz, 2);
+            this._digCorridor(this.rooms[ci].cx, this.rooms[ci].cz, this.rooms[ci + 1].cx, this.rooms[ci + 1].cz, 2, rng);
         }
-        for (var li = 0; li < 3 && this.rooms.length > 3; li++) {
+        for (var li = 0; li < 5 && this.rooms.length > 3; li++) {
             var ra = this.rooms[rng.int(0, this.rooms.length - 1)];
             var rb = this.rooms[rng.int(0, this.rooms.length - 1)];
-            if (ra !== rb) this._digCorridor(ra.cx, ra.cz, rb.cx, rb.cz, 2);
+            if (ra !== rb) this._digCorridor(ra.cx, ra.cz, rb.cx, rb.cz, 2, rng);
         }
 
         // 3. Multi-tier elevation (0..3) & walkable ramps (delta == 1)
@@ -460,13 +460,16 @@
         }
     };
 
-    TerrainGrid.prototype._digCorridor = function (x1, z1, x2, z2, width) {
+    TerrainGrid.prototype._digCorridor = function (x1, z1, x2, z2, width, rng) {
         var w = width || 2;
         var cx = x1;
         var cz = z1;
-        var carveBrush = function (self, gx, gz) {
-            for (var ox = 0; ox < w; ox++) {
-                for (var oz = 0; oz < w; oz++) {
+        var maxX = this.width - w - 2;
+        var maxZ = this.height - w - 2;
+        var carveBrush = function (self, gx, gz, brushW) {
+            var bw = brushW || w;
+            for (var ox = 0; ox < bw; ox++) {
+                for (var oz = 0; oz < bw; oz++) {
                     var c = self.getCell(gx + ox, gz + oz);
                     if (c && c.type === 'wall') {
                         c.type = 'floor';
@@ -474,15 +477,68 @@
                 }
             }
         };
+
+        var steps = 0;
+        var maxSteps = (Math.abs(x2 - x1) + Math.abs(z2 - z1)) * 3 + 40;
+        var lastAxis = 0; // 0 = x, 1 = z
+        var runLen = 0;
+        while ((cx !== x2 || cz !== z2) && steps < maxSteps) {
+            steps++;
+            var bw = (rng && rng.chance(0.12)) ? w + 1 : w;
+            carveBrush(this, cx, cz, bw);
+
+            var dx = x2 - cx;
+            var dz = z2 - cz;
+            var dist = Math.abs(dx) + Math.abs(dz);
+
+            // Occasional perpendicular meander when far enough from target
+            if (rng && dist > 6 && runLen >= 2 && rng.chance(0.28)) {
+                var jog = rng.chance(0.5) ? 1 : -1;
+                if (lastAxis === 0) {
+                    cz = Math.max(2, Math.min(maxZ, cz + jog));
+                    lastAxis = 1;
+                } else {
+                    cx = Math.max(2, Math.min(maxX, cx + jog));
+                    lastAxis = 0;
+                }
+                runLen = 0;
+                continue;
+            }
+
+            // Choose axis weighted toward remaining distance, encouraging winding zig-zags
+            var moveX = false;
+            if (dx !== 0 && dz !== 0) {
+                var probX = Math.abs(dx) / dist;
+                if (rng) {
+                    moveX = rng.chance(probX);
+                } else {
+                    moveX = (steps % 3 !== 0) ? (Math.abs(dx) >= Math.abs(dz)) : (Math.abs(dx) < Math.abs(dz));
+                }
+            } else {
+                moveX = dx !== 0;
+            }
+
+            if (moveX) {
+                cx += dx > 0 ? 1 : -1;
+                runLen = (lastAxis === 0) ? runLen + 1 : 1;
+                lastAxis = 0;
+            } else {
+                cz += dz > 0 ? 1 : -1;
+                runLen = (lastAxis === 1) ? runLen + 1 : 1;
+                lastAxis = 1;
+            }
+        }
+
+        // Guarantee exact connection if maxSteps was reached
         while (cx !== x2) {
-            carveBrush(this, cx, cz);
+            carveBrush(this, cx, cz, w);
             cx += x2 > cx ? 1 : -1;
         }
         while (cz !== z2) {
-            carveBrush(this, cx, cz);
+            carveBrush(this, cx, cz, w);
             cz += z2 > cz ? 1 : -1;
         }
-        carveBrush(this, x2, z2);
+        carveBrush(this, x2, z2, w);
     };
 
     TerrainGrid.prototype._buildElevationsAndRamps = function (rng) {

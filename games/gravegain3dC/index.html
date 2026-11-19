@@ -14,6 +14,7 @@
         <div id="crosshair"></div>
         <div id="top-bar">
             <span id="mode-label">MODE: PLAYER</span>
+            <span id="map-label">MAP: NEON COURTYARD</span>
             <span id="speedometer">0 u/s</span>
             <span id="fps-counter">0 FPS</span>
         </div>
@@ -24,7 +25,7 @@
         <div id="bottom-bar">
             <div class="stat-box">HP <span id="hp-val">100</span></div>
             <div class="stat-box" id="lives-box">LIVES <span id="lives-val">3</span></div>
-            <div class="stat-box">WEAPON <span id="weapon-val">ROCKET</span></div>
+            <div class="stat-box">WEAPON <span id="weapon-val">DEVASTATOR</span></div>
             <div class="stat-box">KILLS <span id="score-val">0</span></div>
             <button id="menu-btn">MENU</button>
         </div>
@@ -33,6 +34,10 @@
     <div id="overlay">
         <h1>GRAVEGAIN 3DC</h1>
         <p>Xonotic-style Arena FPS • Babylon.js</p>
+        <div class="map-section">
+            <div class="section-label">SELECT ARENA</div>
+            <div id="map-selector" class="map-selector"></div>
+        </div>
         <div class="mode-buttons">
             <button class="mode-btn" data-mode="player">1. PLAYER CONTROL</button>
             <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>

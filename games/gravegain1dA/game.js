@@ -671,8 +671,9 @@
         var seed = (Date.now() % 100000) | 0;
         var run = newRun(seed, classId, mode, raceId);
         G = {
-            run: run, floaters: [], parts: [],
+            run: run, floaters: [], parts: [], slashes: [],
             acc: 0, last: 0, paused: false, banner: false,
+            shake: 0, hurtFlash: 0,
             speed: 1, profile: loadProfile(),
             canvas: el('gg1dCanvas'), ctx: null,
             preset: gfxPreset()
@@ -795,6 +796,17 @@
         } catch (e) { /* never break on input */ }
     }
 
+    function addShake(amt) {
+        if (!G || reducedMotion()) return;
+        G.shake = Math.min(14, Math.max(G.shake || 0, amt));
+    }
+
+    function addSlash(x, color, kind) {
+        if (!G || !G.slashes || reducedMotion()) return;
+        if (G.slashes.length > 10) G.slashes.shift();
+        G.slashes.push({ x: x, color: color || '#fbbf24', kind: kind || 'slash', ttl: 1 });
+    }
+
     function onEvents(events) {
         try {
             for (var i = 0; i < events.length; i++) {
@@ -804,22 +816,24 @@
                     addFloater(e.x, (e.dmg > 0 ? '-' : '') + e.dmg, e.foe ? '#fbbf24' : '#ef4444');
                     burst(e.x, e.foe ? '#fbbf24' : '#ef4444', 6);
                     sfx(e.foe ? 'hit' : 'hurt');
-                } else if (e.t === 'swing') { if (e.crit) addFloater(e.x, 'CRIT!', '#f472b6'); sfx('swing'); }
-                else if (e.t === 'kill') { addFloater(e.x, '+' + e.gold + 'g', '#fbbf24'); sfx('kill'); }
-                else if (e.t === 'level') { addFloater(G.run.x, 'LEVEL ' + e.level + '!', '#22c55e'); sfx('level'); }
+                    if (e.foe) { addShake(3); addSlash(e.x, '#fbbf24', 'slash'); }
+                    else { addShake(7); G.hurtFlash = 1; }
+                } else if (e.t === 'swing') { if (e.crit) { addFloater(e.x, 'CRIT!', '#f472b6'); addShake(5); } sfx('swing'); }
+                else if (e.t === 'kill') { addFloater(e.x, '+' + e.gold + 'g', '#fbbf24'); burst(e.x, '#fbbf24', 8); sfx('kill'); }
+                else if (e.t === 'level') { addFloater(G.run.x, 'LEVEL ' + e.level + '!', '#22c55e'); addSlash(G.run.x, '#22c55e', 'nova'); sfx('level'); }
                 else if (e.t === 'miss') addFloater(G.run.x, 'no target', '#94a3b8');
                 else if (e.t === 'blocked') addFloater(G.run.x + 1, 'blocked!', '#94a3b8');
                 else if (e.t === 'wall') addFloater(G.run.x, 'the Array holds', '#a855f7');
                 else if (e.t === 'step') sfx('step');
-                else if (e.t === 'potion') { addFloater(G.run.x, '+' + 'HP', '#22c55e'); sfx('potion'); }
-                else if (e.t === 'ability') addFloater(G.run.x, e.name + '!', '#a855f7');
+                else if (e.t === 'potion') { addFloater(G.run.x, '+' + 'HP', '#22c55e'); addSlash(G.run.x, '#22c55e', 'nova'); sfx('potion'); }
+                else if (e.t === 'ability') { addFloater(G.run.x, e.name + '!', '#a855f7'); addSlash(G.run.x, '#a855f7', 'nova'); addShake(4); }
                 else if (e.t === 'giggles_guard') addFloater(e.x, '▰ GG · GUARD', '#f3d487');
                 else if (e.t === 'giggles_hint') addFloater(e.x, '▰ GG · ' + e.text, '#f3d487');
-                else if (e.t === 'boss') { sfx('boss'); showBanner('💀 ' + e.name.toUpperCase(), bossBrief(e.name) + '\nThe gate seals behind you — distant husks crumble. Duel it.', null); }
-                else if (e.t === 'bossdown') addFloater(G.run.x, 'GATE OPEN', '#22c55e');
+                else if (e.t === 'boss') { addShake(9); sfx('boss'); showBanner('💀 ' + e.name.toUpperCase(), bossBrief(e.name) + '\nThe gate seals behind you — distant husks crumble. Duel it.', null); }
+                else if (e.t === 'bossdown') { addFloater(G.run.x, 'GATE OPEN', '#22c55e'); addSlash(G.run.x, '#22c55e', 'nova'); }
                 else if (e.t === 'summon') addFloater(e.x, 'they rise!', '#ef4444');
                 else if (e.t === 'crumble') addFloater(e.x, 'crumbles', '#94a3b8');
-                else if (e.t === 'explode') { burst(e.x, '#fb923c', 10); sfx('hurt'); }
+                else if (e.t === 'explode') { burst(e.x, '#fb923c', 10); addSlash(e.x, '#fb923c', 'nova'); addShake(7); sfx('hurt'); }
                 else if (e.t === 'charge') addFloater(e.x, 'CHARGE!', '#ef4444');
                 else if (e.t === 'pulse') addFloater(e.x, 'ARRAY PULSE', '#a855f7');
                 else if (e.t === 'resurrect') addFloater(e.x, 'RISE AGAIN', '#ef4444');
@@ -1000,7 +1014,10 @@
             if (!G || !G.ctx) { renderMenuBackdrop(); return; }
             var ctx = G.ctx, s = G.run;
             var W = 960, H = 540;
-            ctx.setTransform(G.dpr || 1, 0, 0, G.dpr || 1, 0, 0);
+            var dpr = G.dpr || 1;
+            var shX = G.shake > 0 ? (Math.random() - 0.5) * G.shake * 2 : 0;
+            var shY = G.shake > 0 ? (Math.random() - 0.5) * G.shake * 2 : 0;
+            ctx.setTransform(dpr, 0, 0, dpr, shX * dpr, shY * dpr);
             var sec = SECTORS[Math.min(s.sector, 4)];
             // Sky.
             var sky = ctx.createLinearGradient(0, 0, 0, H);
@@ -1024,6 +1041,17 @@
             var scale = W / VIEW_TILES;
             function sx(x) { return (x - cam) * scale; }
             var trackY = H * 0.66;
+            // Parallax distant spires/ruins.
+            ctx.fillStyle = sec.theme;
+            ctx.globalAlpha = 0.28;
+            var parOff = (cam * scale * 0.25) % 120;
+            for (var pxI = -120; pxI < W + 120; pxI += 120) {
+                var bx = pxI - parOff;
+                var bh = 70 + ((Math.abs(Math.floor((pxI + cam * scale * 0.25) / 120)) * 37) % 65);
+                ctx.fillRect(bx, trackY - bh, 26, bh);
+                ctx.fillRect(bx + 44, trackY - bh * 0.6, 16, bh * 0.6);
+            }
+            ctx.globalAlpha = 1;
             // Ley-line + range bands.
             ctx.fillStyle = 'rgba(168,85,247,0.10)';
             ctx.fillRect(sx(Math.max(0, s.x - s.range)), trackY - 46, s.range * 2 * scale, 92);
@@ -1057,8 +1085,13 @@
                 if (ex < -40 || ex > W + 40) continue;
                 var size = e.isBoss ? 40 : 28;
                 ctx.font = size + 'px sans-serif';
-                // Aggro ring.
+                // Aggro ring + in-range target brackets.
                 var d = Math.abs(e.x - s.x);
+                if (d <= s.range) {
+                    ctx.strokeStyle = 'rgba(251,191,36,0.75)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ex - size * 0.65, trackY - 46, size * 1.3, 44);
+                }
                 if (d <= e.aggro) {
                     ctx.strokeStyle = e.isBoss ? 'rgba(239,68,68,0.8)' : 'rgba(239,68,68,0.35)';
                     ctx.lineWidth = e.isBoss ? 3 : 1.5;
@@ -1106,6 +1139,39 @@
                 ctx.fillStyle = f.color;
                 ctx.fillText(f.text, sx(f.x), trackY - 80 - (1 - f.ttl) * 40);
             }
+            // Slashes & novas.
+            if (G.slashes && G.slashes.length) {
+                for (var sli = 0; sli < G.slashes.length; sli++) {
+                    var sl = G.slashes[sli];
+                    var slx = sx(sl.x);
+                    ctx.save();
+                    ctx.globalAlpha = clamp(sl.ttl, 0, 1);
+                    ctx.strokeStyle = sl.color;
+                    if (sl.kind === 'nova') {
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(slx, trackY - 22, (1 - sl.ttl) * 68 + 14, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else {
+                        ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(slx - 18, trackY - 44);
+                        ctx.lineTo(slx + 18, trackY - 6);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            }
+            // Damage vignette.
+            if (G.hurtFlash > 0) {
+                ctx.fillStyle = 'rgba(239,68,68,' + (G.hurtFlash * 0.25).toFixed(3) + ')';
+                ctx.fillRect(0, 0, W, H);
+            }
+            // Subtle desktop controls hint.
+            ctx.fillStyle = 'rgba(148,163,184,0.55)';
+            ctx.font = '12px Outfit, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('[→/D] Step   [Space/J] Attack   [K/1] Ability   [H/2] Potion   [W/0] Wait   [P] Pause', W / 2, H - 14);
             updateHud();
         } catch (e) { /* render must never throw */ }
     }
@@ -1177,7 +1243,15 @@
                 if (G.last) dt = clamp((t - G.last) / 1000, 0, 0.1);
                 G.last = t;
             } catch (e) { /* ignore */ }
-            // Floaters + particles always animate.
+            // Floaters + particles + slashes + screen shake always animate.
+            if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 28);
+            if (G.hurtFlash > 0) G.hurtFlash = Math.max(0, G.hurtFlash - dt * 3.5);
+            if (G.slashes) {
+                for (var si = G.slashes.length - 1; si >= 0; si--) {
+                    G.slashes[si].ttl -= dt * 4.2;
+                    if (G.slashes[si].ttl <= 0) G.slashes.splice(si, 1);
+                }
+            }
             for (var i = G.floaters.length - 1; i >= 0; i--) {
                 G.floaters[i].ttl -= dt * 1.2;
                 if (G.floaters[i].ttl <= 0) G.floaters.splice(i, 1);

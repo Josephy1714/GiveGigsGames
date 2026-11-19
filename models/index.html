@@ -63,6 +63,9 @@
               <button id="toggle-rotate" class="tool-chip active" type="button">Auto-Rotate</button>
               <button id="toggle-wireframe" class="tool-chip" type="button">Wireframe</button>
               <button id="reset-camera" class="tool-chip" type="button">Reset View</button>
+              <select id="anim-select" class="tool-chip" style="display:none;" aria-label="Animation"></select>
+              <button id="toggle-anim-play" class="tool-chip active" type="button" style="display:none;">Pause Anim</button>
+              <button id="cycle-anim-speed" class="tool-chip" type="button" style="display:none;">1x</button>
             </div>
           </div>
           <div class="modal-code-pane">
@@ -78,6 +81,11 @@
 
     <script src="/games/html/vendor/three-r128.min.js"></script>
     <script src="/models/catalog.js"></script>
+    <script src="/models/gravegain-kit.js"></script>
+    <script src="/models/gravegain-races.js"></script>
+    <script src="/models/gravegain-enemies.js"></script>
+    <script src="/models/gravegain-props.js"></script>
     <script src="/models/app.js"></script>
+    <script src="/games/_shared/gamepad-adapter.js" defer></script>
   </body>
 </html>

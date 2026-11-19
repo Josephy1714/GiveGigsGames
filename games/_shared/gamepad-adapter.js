@@ -25,6 +25,8 @@
   let prevTriggerClick = false;
   let prevSiteA = false;
   let prevSiteB = false;
+  let prevMenuToggle = false;
+  let siteMenuActive = false;
   let lastNavAt = 0;
   let rafId = 0;
   let cursorEl = null;
@@ -211,35 +213,86 @@
 
       // Site navigation mode on non-canvas pages
       if (!document.querySelector("canvas")) {
-        const now = performance.now();
-        if ((up || down || left || right) && now - lastNavAt > 180) {
-          lastNavAt = now;
-          const focusables = Array.from(
-            document.querySelectorAll(
-              'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            )
-          ).filter((el) => el.offsetParent !== null);
-          if (focusables.length > 0) {
-            const idx = focusables.indexOf(document.activeElement);
-            const delta = down || right ? 1 : -1;
-            const next = idx === -1
-              ? focusables[0]
-              : focusables[(idx + delta + focusables.length) % focusables.length];
-            next.focus({ preventScroll: false });
-            next.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        const gameFrame = document.getElementById("game-frame");
+        const hasActiveGameFrame = !!(gameFrame && !gameFrame.hidden && gameFrame.offsetParent !== null);
+        const openDialog = document.querySelector("dialog[open]");
+
+        // On play.html, Select+Start (8+9) or Guide (16) toggles between game iframe and top menu bar
+        const selectPressed = !!(pad.buttons[8] && pad.buttons[8].pressed);
+        const startPressed = !!(pad.buttons[9] && pad.buttons[9].pressed);
+        const guidePressed = !!(pad.buttons[16] && pad.buttons[16].pressed);
+        const menuToggle = (selectPressed && startPressed) || guidePressed;
+        if (hasActiveGameFrame && !openDialog && menuToggle && !prevMenuToggle) {
+          siteMenuActive = !siteMenuActive;
+          if (siteMenuActive) {
+            const firstBarBtn = document.querySelector(".player-bar a[href], .player-bar button:not([disabled])");
+            if (firstBarBtn) {
+              try { firstBarBtn.focus({ preventScroll: false, focusVisible: true }); } catch { firstBarBtn.focus(); }
+            }
+            showToast("🎮 Menu bar focused (Select+Start to return)");
+          } else {
+            gameFrame.focus();
+            showToast("🎮 Game focused");
           }
         }
-        const aPressed = !!(pad.buttons[0] && pad.buttons[0].pressed);
-        if (aPressed && !prevSiteA && document.activeElement && document.activeElement !== document.body) {
-          document.activeElement.click();
-        }
-        prevSiteA = aPressed;
+        prevMenuToggle = menuToggle;
 
-        const bPressed = !!(pad.buttons[1] && pad.buttons[1].pressed);
-        if (bPressed && !prevSiteB && history.length > 1) {
-          history.back();
+        const siteNavEnabled = !hasActiveGameFrame || !!openDialog || siteMenuActive;
+
+        if (siteNavEnabled) {
+          const now = performance.now();
+          if ((up || down || left || right) && now - lastNavAt > 180) {
+            lastNavAt = now;
+            const scope = openDialog || document;
+            const focusables = Array.from(
+              scope.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+              )
+            ).filter((el) => el.offsetParent !== null);
+            if (focusables.length > 0) {
+              const idx = focusables.indexOf(document.activeElement);
+              const delta = down || right ? 1 : -1;
+              const next = idx === -1
+                ? focusables[0]
+                : focusables[(idx + delta + focusables.length) % focusables.length];
+              try {
+                next.focus({ preventScroll: false, focusVisible: true });
+              } catch {
+                next.focus({ preventScroll: false });
+              }
+              next.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            }
+          }
+
+          const aPressed = !!(pad.buttons[0] && pad.buttons[0].pressed);
+          if (aPressed && !prevSiteA && document.activeElement && document.activeElement !== document.body) {
+            const active = document.activeElement;
+            if (active.tagName === "SELECT" && active.options && active.options.length > 0) {
+              active.selectedIndex = (active.selectedIndex + 1) % active.options.length;
+              active.dispatchEvent(new Event("change", { bubbles: true }));
+            } else {
+              active.click();
+            }
+          }
+          prevSiteA = aPressed;
+
+          const bPressed = !!(pad.buttons[1] && pad.buttons[1].pressed);
+          if (bPressed && !prevSiteB) {
+            if (openDialog && typeof openDialog.close === "function") {
+              openDialog.close();
+            } else if (siteMenuActive && hasActiveGameFrame) {
+              siteMenuActive = false;
+              gameFrame.focus();
+              showToast("🎮 Game focused");
+            } else if (history.length > 1) {
+              history.back();
+            }
+          }
+          prevSiteB = bPressed;
+        } else {
+          prevSiteA = !!(pad.buttons[0] && pad.buttons[0].pressed);
+          prevSiteB = !!(pad.buttons[1] && pad.buttons[1].pressed);
         }
-        prevSiteB = bPressed;
       }
     }
 
