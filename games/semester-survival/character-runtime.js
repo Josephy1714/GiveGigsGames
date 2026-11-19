@@ -5,12 +5,9 @@
 (function (root) {
   'use strict';
 
-  const CLIP_BY_STATE = Object.freeze({ 'land-recover': 'land-soft' });
-  const REQUIRED = Object.freeze([
-    'idle', 'walk', 'jog', 'sprint', 'jump-takeoff', 'jump-rise',
-    'jump-apex', 'jump-fall', 'land-soft', 'slide-start', 'slide-loop',
-    'dodge-left', 'dodge-right'
-  ]);
+  // These four clips are the minimum complete locomotion set. Jump, slide and
+  // dodge states are resolved against the actual approved source clips below.
+  const REQUIRED = Object.freeze(['idle', 'walk', 'jog', 'sprint']);
 
   function create(options) {
     options = options || {};
@@ -66,7 +63,11 @@
         slidePressed: lastInput.slidePressed,
         dodgeDirection: lastInput.dodgeDirection
       });
-      const clipName = CLIP_BY_STATE[movement.state] || movement.state;
+      const clipName = options.resolveStateClip
+        ? options.resolveStateClip(movement.state, movement, library)
+        : (root.SemesterCharacterAnimation && root.SemesterCharacterAnimation.resolveStateClip
+          ? root.SemesterCharacterAnimation.resolveStateClip(movement.state, movement, library)
+          : movement.state);
       const played = animator.play(clipName, movement.facing);
       if (!played || played.ok !== true) {
         lastError = 'Required animation clip unavailable: ' + (played && played.missingClip || clipName);
