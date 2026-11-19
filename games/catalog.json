@@ -427,31 +427,32 @@
     },
     {
       "slug": "semester-survival",
-      "title": "Semester Survival: Jay's University Adventure",
-      "description": "Explore residence, township, campus and city as Jay in a 2.5D anime university-life adventure. Move, jump, meet people, complete university activities and build your student journey.",
-      "genre": "Adventure",
+      "title": "Semester Survival: The University Run",
+      "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins, beat academic challenges and earn graduation.",
+      "genre": "Endless Runner",
       "tags": [
-        "Adventure",
-        "Life Simulation",
-        "Anime",
-        "University",
+        "Endless Runner",
+        "2D",
         "2.5D",
-        "Exploration"
+        "University",
+        "Kenya",
+        "Mobile"
       ],
       "emoji": "🎓",
-      "featured": false,
-      "recommended": false,
-      "entrypoint": "semester-survival/index.html",
+      "featured": true,
+      "recommended": true,
+      "entrypoint": "semester-survival-runner/index.html",
       "runtimeType": "static",
       "inputs": [
         "touch",
         "keyboard"
       ],
-      "controls": "WASD or arrow keys to move; Space or W to jump; Shift to sprint; E or Enter to interact; Tab for phone; Escape to pause. Touch: swipe to move and jump.",
+      "controls": "Swipe left/right to change lanes, swipe up to jump and down to slide. Keyboard: arrows or WASD; Escape to pause.",
       "modes": [
         "solo"
       ],
-      "packageBytes": 5531857
+      "packageBytes": 5586254,
+      "status": "preview"
     },
     {
       "slug": "gravegain5dA",
@@ -753,35 +754,6 @@
       "entrypoint": "treasure-hunters/index.html",
       "runtimeType": "static",
       "packageBytes": 47288
-    },
-    {
-      "slug": "semester-survival-runner",
-      "title": "Semester Survival: The University Run",
-      "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
-      "genre": "Endless Runner",
-      "tags": [
-        "Endless Runner",
-        "2D",
-        "2.5D",
-        "University",
-        "Kenya",
-        "Mobile"
-      ],
-      "emoji": "🎓",
-      "featured": true,
-      "recommended": true,
-      "entrypoint": "semester-survival-runner/index.html",
-      "runtimeType": "static",
-      "inputs": [
-        "touch",
-        "keyboard"
-      ],
-      "controls": "Swipe left/right to change lanes, swipe up to jump and down to slide. Keyboard: arrows or WASD; Escape to pause.",
-      "modes": [
-        "solo"
-      ],
-      "status": "preview",
-      "packageBytes": 5584753
     }
   ]
 }
