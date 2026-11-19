@@ -122,7 +122,7 @@
      character.drainAnimationEvents().forEach(function(marker){
       publishAnimationEvent({type:'character:animation-event',characterId:'jay',clip:marker.clip,frameIndex:marker.frameIndex,event:marker.event,frameNumber:characterState.frameNumber});
       const movement=characterState.movement||{};
-      if(movement.grounded!==false&&Number.isFinite(movement.depth))contactEffects.resolve(marker,{x:movement.x,depth:movement.depth},'jay');
+      if(movement.grounded!==false&&Number.isFinite(movement.depth))contactEffects.resolve(marker,{x:movement.x,depth:movement.depth},'jay',movement.facing);
      });
     }
     const zoneState=gameplayZones.update(position,dt);controller.setMovementModifiers(zoneState.modifiers);
