@@ -115,7 +115,7 @@
         if (index === 0) firstTopicButton = choice;
       });
       const footer = node('footer', 'ss-interaction-ui__footer');
-      footer.appendChild(node('span', 'ss-interaction-ui__hint-text', 'Choose a topic to continue'));
+      footer.appendChild(node('span', 'ss-interaction-ui__hint-text', dialogue.choices && dialogue.choices.length ? (dialogue.groupScene ? 'Choose how Jay contributes to the group' : 'Choose a topic to continue') : 'You have reached the end of this conversation for now.'));
       footer.appendChild(button('End conversation', 'ss-interaction-ui__end', function () {
         activate({ closeDialogue: true });
       }));
