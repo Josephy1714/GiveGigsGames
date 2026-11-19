@@ -8,6 +8,8 @@ Each scene's `render` descriptor must contain:
 - `width`, `height`: authored design-space dimensions.
 - `layers`: non-empty list of unique `id`, `assetId`, `x`, `y`, `width`, `height`; optional `zIndex`, `parallax` (0–1), `opacity` (0–1), and `fit` (`stretch`, `contain`, `cover`).
 - `hotspots`: map from the exact interaction anchor ID to authored `x`, `y`, `width`, `height`.
+- `spawnPoints` in the district manifest: named `{ x, depth }` world coordinates, validated against district player/depth bounds when supplied.
+- `npcAnchors` in the district manifest: optional `{ characterId, anchor, radius? }` entries; each character and rendered hotspot must exist.
 - `groundY` (optional): baseline for a character standing at depth zero; defaults to 82% of scene height.
 - `depthScale` (optional): vertical screen displacement per depth unit; must be greater than zero and at most 10.
 - `depthBounds` (optional): `{ min, max }` player depth limits for the district; defaults to -120 through 120.
