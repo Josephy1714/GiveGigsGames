@@ -40,3 +40,12 @@ Folder strictly below 10,000,000 bytes. No remote scripts, fonts, images, audio 
 - Spawn points and narrow routes are reviewed against collider clearance.
 - Collision geometry is overlaid against final commissioned scene artwork; no geometry is accepted solely from guessed background-image bounds.
 - A scene with no colliders is not described as collision-complete.
+
+## University obstacle and boost acceptance
+
+- Mud, wet floors and crowd zones reduce movement as authored; exiting restores neutral modifiers.
+- The athletics track provides a modest bounded speed/stamina benefit.
+- Coffee and water triggers have clear durations and cooldowns and expire deterministically.
+- Effects modify actual player movement and stamina, not just HUD text.
+- Invalid zone shapes, duplicate IDs and unsupported effects fail closed.
+- Visual cues and final authored zone boundaries are reviewed against production campus/township art.
