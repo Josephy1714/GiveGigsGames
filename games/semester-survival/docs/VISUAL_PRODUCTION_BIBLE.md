@@ -28,7 +28,7 @@ Every district must meet the same premium finish while retaining its own credibl
 - Jay's locked first-year baseline remains in CHARACTER_BIBLE.md. Four-year maturity remains a separate deferred milestone.
 - Characters require model sheets, expression sheets, animation atlases, clip coverage, in-game scale review and approval before integration.
 - Each district requires layout paintover, background/midground/foreground art, prop artwork, lighting variants, hotspot review and credits.
-- No generated placeholder art, geometric character stand-ins or unapproved artwork may be presented as final production content.
+- No generated placeholder art, geometric character stand-ins or unapproved artwork may be presented as final production content. User-directed Gemini artwork is allowed as a production candidate only after the user approves the design and confirms the applicable usage rights; it must pass consistency, transparency, atlas and in-game animation checks. Do not misrepresent generated assets as hand-drawn or commissioned work.
 - Missing required art fails closed; no unrelated image or fake sprite fallback is permitted.
 
 ## Character animation delivery
