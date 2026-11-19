@@ -140,7 +140,7 @@
       const relationship = relationshipKey ? relationshipState[relationshipKey] : null;
       dialogue = {
         characterId: characterId, characterName: character.name,
-        line: character.introduction, topics: topicKeys, choices: availableChoices(character, relationship), history: [character.introduction], historyEntries: [{ speakerId: characterId, speakerName: character.name, text: character.introduction, expression: 'welcoming' }]
+        line: character.introduction, topics: topicKeys, choices: availableChoices(character, relationship), usedChoices: [], history: [character.introduction], historyEntries: [{ speakerId: characterId, speakerName: character.name, text: character.introduction, expression: 'welcoming' }]
       };
       setDialogueContext(true);
       startVoice(characterId, 'introduction');
@@ -171,6 +171,7 @@
         participants: scene.participants.map(function (id) { return { id: id, name: world.characters[id].name }; }),
         line: first.text, topics: scene.choices.map(function (choice) { return choice.id; }),
         choices: scene.choices.map(function (choice) { return { id: choice.id, label: choice.label, kind: 'group' }; }),
+        usedChoices: [],
         history: [], historyEntries: []
       };
       scene.opening.forEach(function (turn) {
@@ -199,6 +200,8 @@
         if (relationshipKey && effect && typeof life.recordRelationship === 'function') life.recordRelationship(relationshipKey, effect, 'Joined the ' + scene.title + ' discussion');
       });
       dialogue.line = choice.turns[choice.turns.length - 1].text;
+      dialogue.usedChoices.push(choiceId);
+      dialogue.choices = [];
       const event = Object.freeze({ type: 'dialogue:group-choice', sceneId: scene.id, choiceId: choiceId, participants: Object.freeze(scene.participants.slice()) });
       onEvent(event); lastResult = event;
       return getDialogue();
@@ -232,13 +235,16 @@
       dialogue.history.push(line);
       dialogue.historyEntries.push({ speakerId: dialogue.characterId, speakerName: dialogue.characterName, text: line, expression: expression });
       startVoice(dialogue.characterId, lineId, topic);
+      dialogue.usedChoices.push(topic);
       const relationshipKey = RELATIONSHIP_BY_CHARACTER[dialogue.characterId];
       if (relationshipKey && typeof life.recordRelationship === 'function') {
         const effects = options.topicEffects && options.topicEffects[dialogue.characterId] && options.topicEffects[dialogue.characterId][topic] || effect;
         life.recordRelationship(relationshipKey, effects, 'Discussed ' + topic);
         const updatedState = life.getState();
         const updatedRelationship = updatedState.relationships && updatedState.relationships[relationshipKey];
-        dialogue.choices = availableChoices(character, updatedRelationship);
+        dialogue.choices = availableChoices(character, updatedRelationship).filter(function (item) { return dialogue.usedChoices.indexOf(item.id) === -1; });
+      } else {
+        dialogue.choices = dialogue.choices.filter(function (item) { return item.id !== topic; });
       }
       const event = Object.freeze({ type: 'dialogue:topic', characterId: dialogue.characterId, topic: topic, line: line, expression: expression, relationship: relationshipKey || null });
       onEvent(event);
