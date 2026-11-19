@@ -76,7 +76,9 @@
   interaction=modules.interaction.create({world:world,environment:environment,renderer:renderer,lifeEngine:life,inputManager:input,npcAnchors:options.npcAnchors||Object.keys(sceneManifest).reduce(function(map,id){map[id]=sceneManifest[id].npcAnchors||[];return map;},{}),onTravel:travelTo,onPhone:openPhone,weatherRuntime:weather,speechRuntime:lipSync,voiceTracks:options.dialogueVoiceTracks||{},onEvent:function(event){publish(event,'interaction');}});
   npcNavigation=modules.npcNavigation.create({world:world,scheduleRuntime:npcSchedules,environment:environment,renderer:renderer,sceneManifest:sceneManifest,onEvent:function(event){publish(event,'npc-navigation');}});
    npcActors=modules.npcActors.create({world:world,scheduleRuntime:npcSchedules,navigationRuntime:npcNavigation,onEvent:function(event){publish(event,'npc-actors');}});
-   lipSync=modules.lipSync.create({audio:options.dialogueAudio||null,animator:options.dialogueMouthAnimator||null});
+   const dialogueAudio=options.dialogueAudio||(options.dialogueVoiceTracks?doc.createElement('audio'):null);
+   if(dialogueAudio&&'preload' in dialogueAudio)dialogueAudio.preload='auto';
+   lipSync=modules.lipSync.create({audio:dialogueAudio,animator:options.dialogueMouthAnimator||null});
   const collisionWorld=modules.collision.create({onEvent:function(event){publish(event,'collision');}});
   const gameplayZones=modules.zones.create({onEvent:function(event){publish(event,'gameplay-zones');}});
   controller.setCollisionWorld(collisionWorld);
