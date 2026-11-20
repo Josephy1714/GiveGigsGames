@@ -124,8 +124,11 @@ def main():
             visible = frame.getchannel("A").getbbox()
             if visible is None:
                 raise SystemExit(f"{name}: frame {len(entries)} has no visible pixels after matte")
-            pivot_x = (visible[0] + visible[2]) / 2
-            pivot_y = visible[3]
+            grounded_clip = name in {"idle", "walk", "jog", "sprint", "slide"}
+            pivot_x = (visible[0] + visible[2]) / 2 if grounded_clip else frame.width / 2
+            # Keep airborne source-sheet offsets for jumps; gameplay supplies
+            # the jump arc. Grounded locomotion and slide use stable foot anchors.
+            pivot_y = visible[3] if grounded_clip else frame.height
             entries.append({"x": ox, "y": oy, "width": frame.width, "height": frame.height,
                             "pivotX": pivot_x, "pivotY": pivot_y})
             index += 1
