@@ -2,44 +2,53 @@ name: Build Jay runtime atlas
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, semester-survival-runner-clean]
     paths:
-      - 'games/semester-survival/assets/source/characters/jay/**'
-      - 'games/semester-survival/tools/build-jay-atlas.py'
+      - 'artwork/semester-survival-runner/jay-source/**'
+      - 'games/semester-survival-runner/assets/characters/**'
+      - 'games/semester-survival-runner/src/tools/build-jay-atlas.py'
+      - '.github/workflows/build-jay-runtime-atlas.yml'
 permissions:
   contents: write
+concurrency:
+  group: jay-runtime-atlas-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install Pillow
-      - run: python games/semester-survival/tools/build-jay-atlas.py
-      - name: Publish runtime atlas assets
+      - run: python games/semester-survival-runner/src/tools/build-jay-atlas.py
+      - name: Publish generated runtime atlas
         run: |
-          mkdir -p games/semester-survival/assets/processed/jay-runtime
-          cp games/semester-survival/assets/processed/jay-staging/jay-atlas-staging.png games/semester-survival/assets/processed/jay-runtime/jay-atlas.png
-          cp games/semester-survival/assets/processed/jay-staging/jay-atlas-staging.json games/semester-survival/assets/processed/jay-runtime/jay-atlas.json
+          mkdir -p games/semester-survival-runner/assets/processed/jay-runtime
+          cp games/semester-survival-runner/assets/processed/jay-staging/jay-atlas-staging.png games/semester-survival-runner/assets/processed/jay-runtime/jay-atlas.png
+          cp games/semester-survival-runner/assets/processed/jay-staging/jay-atlas-staging.json games/semester-survival-runner/assets/processed/jay-runtime/jay-atlas.json
           python - <<'PY'
           import json
-          p='games/semester-survival/assets/processed/jay-runtime/jay-atlas.json'
+          p='games/semester-survival-runner/assets/processed/jay-runtime/jay-atlas.json'
           d=json.load(open(p))
           d['status']='runtime-candidate'
-          for clip in d['clips'].values(): clip.pop('reviewStatus', None)
+          d['atlas']='jay-atlas.png'
+          for clip in d['clips'].values():
+              clip.pop('reviewStatus', None)
           d.pop('warning', None)
           json.dump(d,open(p,'w'),separators=(',',':'))
-          open('games/semester-survival/jay-atlas-manifest.js','w').write('window.JAY_ATLAS_MANIFEST='+json.dumps(d,separators=(',',':'))+';\n')
           PY
-      - name: Commit generated atlas
+      - name: Commit generated atlas to working branch
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add games/semester-survival/assets/processed/jay-runtime games/semester-survival/jay-atlas-manifest.js
-          git diff --cached --quiet || git commit -m "Build Jay runtime animation atlas"
-          git pull --rebase origin main
-          git push
+          git add games/semester-survival-runner/assets/processed/jay-runtime games/catalog-data.js
+          git diff --cached --quiet || git commit -m "Build Jay runtime atlas with slide animation"
+          git fetch origin "$GITHUB_REF_NAME"
+          git rebase "origin/$GITHUB_REF_NAME"
+          rm -rf games/semester-survival-runner/assets/processed/jay-staging
+          node scripts/build-browser-catalog.mjs
+          git add games/catalog-data.js
+          git diff --cached --quiet || git commit -m "Refresh arcade catalog after Jay atlas build"
+          git push origin HEAD:"$GITHUB_REF_NAME"
