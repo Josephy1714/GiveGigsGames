@@ -45,6 +45,11 @@ try {
   assert.equal((await pickup({ lane: 1, powerupLane: 1 })).collected, 1, "A same-lane power-up should be collected");
   assert.equal((await pickup({ lane: 1, powerupLane: 2 })).collected, 0, "An adjacent power-up should not be collected without the magnet upgrade");
   assert.equal((await pickup({ lane: 1, powerupLane: 2, magnet: 1 })).collected, 1, "The magnet upgrade should collect from an adjacent lane");
+  assert.ok((await pickup({ kind: "COFFEE" })).energy > 50, "Energy power-ups should restore energy");
+  assert.equal((await pickup({ kind: "CALCULATOR" })).shield, true, "Shield power-ups should activate a shield");
+  assert.ok((await pickup({ kind: "GOOD WI-FI" })).magnetTime > 0, "Magnet power-ups should activate timed coin attraction");
+  assert.ok((await pickup({ kind: "PAST PAPERS" })).focusTime > 0, "Focus power-ups should reduce energy drain");
+  assert.equal((await pickup({ kind: "HELB DISBURSEMENT" })).coins, 100, "Coin power-ups should award their stated value");
   const boss = await page.evaluate(() => window.__runnerSmoke.probeBoss());
   assert.equal(boss.active, true, "Reaching the boss threshold should start a boss encounter");
   assert.equal(boss.queued, 3, "Each semester boss should launch a three-wave attack pattern");
