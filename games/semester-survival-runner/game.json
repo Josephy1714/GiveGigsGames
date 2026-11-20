@@ -1,0 +1,60 @@
+{
+  "title": "Semester Survival: The University Run",
+  "slug": "semester-survival-runner",
+  "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
+  "genre": "Endless Runner",
+  "tags": [
+    "Endless Runner",
+    "2D",
+    "2.5D",
+    "University",
+    "Kenya",
+    "Mobile"
+  ],
+  "maker": {
+    "name": "Joseph Ombati",
+    "bio": "Creator and Game Director of Semester Survival.",
+    "url": "https://github.com/Josephy1714/GiveGigsGames"
+  },
+  "controls": {
+    "keyboard": {
+      "Arrows / WASD": "Move, jump and slide",
+      "Escape": "Pause"
+    },
+    "touch": {
+      "swipe": "Left/right to change lanes, up to jump, down to slide"
+    }
+  },
+  "technical": {
+    "canvasSize": {
+      "width": 540,
+      "height": 960
+    },
+    "targetFPS": 60,
+    "mobileOptimized": true,
+    "rendering": "2.5D Canvas with Jay sprite atlas"
+  },
+  "assets": {
+    "external": [],
+    "local": [
+      "index.html",
+      "assets/characters/file_000000005ec88210ad9921b64294a95b.png",
+      "assets/characters/file_000000009d848210a4053fb4b0ce9aac.png",
+      "assets/characters/1795182152528.jpg",
+      "assets/processed/jay-runtime/jay-atlas.json",
+      "assets/processed/jay-runtime/jay-atlas.png"
+    ]
+  },
+  "meta": {
+    "version": "0.1.0",
+    "license": "Private - All Rights Reserved"
+  },
+  "credits": [
+    {
+      "name": "DM Sans and Space Grotesk",
+      "source": "Google Fonts",
+      "license": "SIL Open Font License 1.1",
+      "url": "https://fonts.google.com"
+    }
+  ]
+}
