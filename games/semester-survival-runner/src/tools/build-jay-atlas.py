@@ -117,8 +117,17 @@ def main():
             ox = x + (cell_w-frame.width)//2
             oy = y + cell_h-frame.height
             atlas.alpha_composite(frame, (ox, oy))
+            # Anchor the visible subject, not the square source cell. This removes
+            # artificial vertical foot drift caused by different amounts of
+            # transparent matte beneath each generated pose. Airborne poses still
+            # move naturally because their opaque-foot bounds are higher.
+            visible = frame.getchannel("A").getbbox()
+            if visible is None:
+                raise SystemExit(f"{name}: frame {len(entries)} has no visible pixels after matte")
+            pivot_x = (visible[0] + visible[2]) / 2
+            pivot_y = visible[3]
             entries.append({"x": ox, "y": oy, "width": frame.width, "height": frame.height,
-                            "pivotX": frame.width//2, "pivotY": frame.height})
+                            "pivotX": pivot_x, "pivotY": pivot_y})
             index += 1
         if name == "slide":
             # Authored 8-frame sheet: 2-frame anticipation, 4-frame low slide,
