@@ -854,6 +854,33 @@
       "status": "experimental",
       "entrypoint": "html/template-demo/index.html",
       "runtimeType": "static"
+    },
+    {
+      "slug": "semester-survival-runner",
+      "title": "Semester Survival: The University Run",
+      "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
+      "genre": "Endless Runner",
+      "tags": [
+        "Endless Runner",
+        "2D",
+        "2.5D",
+        "University",
+        "Kenya",
+        "Mobile"
+      ],
+      "emoji": "🎓",
+      "featured": false,
+      "recommended": false,
+      "entrypoint": "semester-survival-runner/index.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Keyboard: Left/Right or A/D to change lanes; Up/W/Space to jump; Down/S to slide; Escape to pause. Touch: swipe left/right to change lanes, up to jump, down to slide.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static"
     }
   ]
 }
