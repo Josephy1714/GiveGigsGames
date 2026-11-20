@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-grave-dimension="2d" lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -53,6 +53,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
       document.head.appendChild(vercelAnalyticsScript);
     }
   </script>
+    <link rel="stylesheet" href="../_shared/gravegain.css">
 </head>
 <body data-slug="gravegain2dB">
   <div id="gg2dbWrap">
@@ -71,8 +72,10 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
       </div></div>
     </div>
     <div id="gg2dbTouch" hidden>
+      <button data-held="left" type="button" aria-label="Move left">◀ LEFT</button>
+      <button data-held="right" type="button" aria-label="Move right">RIGHT ▶</button>
       <button data-act="jump" type="button">⤴ JUMP</button>
-      <button data-act="fire" type="button">🔥 FIRE</button>
+      <button data-act="fire" data-held="fireHeld" type="button">🔥 FIRE</button>
       <button data-act="alt" type="button">💥 ALT</button>
       <button data-act="dash" type="button">💨 DASH</button>
       <button data-act="interact" type="button">📡 USE</button>

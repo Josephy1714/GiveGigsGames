@@ -12,13 +12,13 @@
   </head>
   <body>
     <header class="player-bar">
-      <a class="player-action" href="/ggg/#all-games" aria-label="Back to game select"><span aria-hidden="true">←</span> Games</a>
+      <a class="player-action player-back" href="/ggg/#all-games" aria-label="Back to game select"><span aria-hidden="true">←</span><span class="player-back-label">Games</span></a>
       <div class="player-identity">
         <span id="game-icon" aria-hidden="true"></span>
         <h1 id="game-title">Loading game…</h1>
       </div>
       <div class="player-actions">
-        <button class="player-action" id="open-game-info" type="button" aria-haspopup="dialog" hidden>Game info</button>
+        <button class="player-action" id="open-game-info" type="button" aria-label="Game info" aria-haspopup="dialog" hidden>Info</button>
         <button class="player-action" id="fullscreen-game" type="button" aria-label="Enter fullscreen" hidden>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></svg>
         </button>
@@ -59,6 +59,6 @@
       </nav>
     </dialog>
     <p id="fullscreen-status" class="player-toast" role="status" hidden></p>
-    <script src="games/_shared/gamepad-adapter.js" defer></script>
+    <script src="/games/_shared/gamepad-adapter.js" defer></script>
   </body>
 </html>

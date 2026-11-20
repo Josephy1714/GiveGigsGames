@@ -129,8 +129,9 @@ dialog::backdrop { background: #060d18bf; }
 #fullscreen-game { padding: 0; }
 
 @media (max-width: 520px) {
-  .player-bar { grid-template-columns: 1fr auto; row-gap: 5px; }
-  .player-actions { grid-column: 2; grid-row: 1; }
-  .player-identity { grid-column: 1 / -1; justify-content: flex-start; }
-  .player-bar h1 { white-space: normal; overflow-wrap: anywhere; }
+  .player-bar { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .player-identity { justify-content: flex-start; }
+  .player-back-label, #game-icon { display: none; }
+  .player-actions { gap: 4px; }
+  .player-actions .player-action { padding-inline: 8px; }
 }

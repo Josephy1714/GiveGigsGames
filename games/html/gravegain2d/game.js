@@ -159,13 +159,17 @@
         setupListeners() {
             window.addEventListener('keydown', (e) => {
                 this.keys[e.code] = true;
-                if (e.code === 'KeyP' || e.code === 'Escape') {
+                if (!e.repeat && (e.code === 'KeyP' || e.code === 'Escape')) {
                     if (window.GraveGainGame) window.GraveGainGame.togglePause();
                 }
                 if (window.GraveGainGame && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) {
                     const mode = { Digit1: 'realtime', Digit2: 'chrono', Digit3: 'turnbased' }[e.code];
                     window.GraveGainGame.setControlMode(mode);
                 }
+            });
+            window.addEventListener('blur', () => {
+                for (const key of Object.keys(this.keys)) this.keys[key] = false;
+                this.tapMove.active = false;
             });
             window.addEventListener('keyup', (e) => {
                 this.keys[e.code] = false;
@@ -2781,6 +2785,10 @@
             this.enemies.forEach(e => {
                 ctx.save();
                 ctx.translate(e.x - offset.x, e.y - offset.y);
+                ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                ctx.beginPath();
+                ctx.ellipse(1, 10, 14, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.rotate(e.angle);
 
                 ctx.font = '26px Arial';

@@ -41,6 +41,8 @@
   let coyote = 0;
   let cameraLift = 0;
   let jumpHeld = false;
+  let frame = 0;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let fireballs = [];
   let callouts = [];
 
@@ -104,11 +106,13 @@
 
   function setPaused(next) {
     if (!running) return;
+    if (paused === Boolean(next)) return;
     paused = Boolean(next);
+    cancelAnimationFrame(frame);
     pausePanel.hidden = !paused;
     if (!paused) {
       last = performance.now();
-      requestAnimationFrame(loop);
+      frame = requestAnimationFrame(loop);
     }
   }
 
@@ -180,6 +184,7 @@
   GraveGainProgression.renderShop(shop);
 
   function start() {
+    cancelAnimationFrame(frame);
     GraveGainAudio?.unlock();
     build = GraveGainProgression.createBuild();
     drafts = 0;
@@ -207,7 +212,7 @@
     stride = landing = lastStepStride = 0;
     running = true;
     last = performance.now();
-    time = distance = gems = world = spawn = 0;
+    time = distance = gems = world = spawn = shake = 0;
     hearts = 3 + (build.health || 0);
     obstacles = [];
     loot = [];
@@ -221,7 +226,7 @@
     $('#start').textContent = 'BEGIN RUN';
     $overlay.classList.add('hidden');
     if (build.draft) showDraft();
-    requestAnimationFrame(loop);
+    frame = requestAnimationFrame(loop);
   }
   $('#start').addEventListener('click', start);
 
@@ -809,7 +814,7 @@
     if (!running || paused) return;
     if (!draftPanel.hidden) {
       last = now;
-      requestAnimationFrame(loop);
+      frame = requestAnimationFrame(loop);
       return;
     }
 
@@ -881,7 +886,7 @@
       doubleJumpReady = Boolean(build.capstones?.wall);
       jumpBuffer = coyote = 0;
       GraveGainAudio?.sfx.wallJump();
-    } else if ((wantsJump || jumpBuffer > 0) && coyote > 0 && !wallGrip) {
+    } else if (jumpBuffer > 0 && coyote > 0 && !wallGrip) {
       run.leavePlatform();
       player.vy = -575 - (build.jump || 0);
       player.jump = true;
@@ -929,7 +934,10 @@
     if (wallTop && floor.y > ground - wallTop.h) floor.y = ground - wallTop.h;
 
     if (player.y >= floor.y && player.vy >= 0) {
-      if (player.jump) landing = 0.09;
+      if (player.jump) {
+        landing = 0.09;
+        if (player.vy > 250) emit(feetX, floor.y - 2, '#d2c3ab', 5);
+      }
       player.y = floor.y;
       player.vy = 0;
       player.jump = false;
@@ -1053,10 +1061,8 @@
     ctx.translate(0, cameraLift);
     drawBg(dt, velocity, cameraLift);
     ctx.save();
-    if (shake > 0) {
-      shake = Math.max(0, shake - dt);
-      ctx.translate(Math.sin(time * 96) * shake * 9, 0);
-    }
+    shake = Math.max(0, shake - dt);
+    if (!reducedMotion.matches && shake > 0) ctx.translate(Math.sin(time * 96) * shake * 9, 0);
     run.draw(ctx);
     drawFireballs();
     for (const o of obstacles) {
@@ -1123,7 +1129,7 @@
     $score.textContent = Math.floor(distance);
     ctx.restore();
     ctx.restore();
-    requestAnimationFrame(loop);
+    frame = requestAnimationFrame(loop);
   }
 
   renderIntro();

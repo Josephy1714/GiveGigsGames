@@ -70,6 +70,9 @@ const toColor3 = ([r, g, b]) => new BABYLON.Color3(r, g, b);
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
+    const glow = new BABYLON.GlowLayer('arena-glow', scene, { mainTextureRatio: 0.5 });
+    glow.intensity = 0.28;
+    const projectileMaterials = new Map();
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
 
     const hemi = new BABYLON.HemisphericLight('hemi', new BABYLON.Vector3(0, 1, 0), scene);
@@ -498,6 +501,7 @@ function createScene() {
 
     function startMode(newMode) {
         loadMap(selectedMapId);
+        clearHeldInput();
         mode = newMode;
         clearEntities();
         overlay.classList.add('hidden');
@@ -516,7 +520,7 @@ function createScene() {
             camera.rotation.set(0, 0, 0);
             camera.fov = 1.05;
             spawnEnemyWave(5);
-            canvas.requestPointerLock?.();
+            lockPointer();
         } else if (newMode === 'autobattler') {
             camera.fov = 1.05;
             const hero = createBot('friendly', pickSpawn(currentMap.friendlySpawns, 0));
@@ -543,9 +547,10 @@ function createScene() {
     });
 
     document.getElementById('menu-btn').addEventListener('click', () => {
+        clearHeldInput();
         mode = 'menu';
         rallyMarker.isVisible = false;
-        document.exitPointerLock?.();
+        if (document.pointerLockElement === canvas) document.exitPointerLock?.();
         overlay.classList.remove('hidden');
         upgradeModal.classList.add('hidden');
     });
@@ -599,6 +604,68 @@ function createScene() {
 
     // Input
     const keys = {};
+    const touchMove = { x: 0, y: 0 };
+    const coarsePointer = matchMedia('(pointer: coarse)');
+    let firing = false;
+
+    function lockPointer() {
+        if (coarsePointer.matches) return;
+        try { canvas.requestPointerLock?.()?.catch?.(() => {}); } catch { /* Pointer lock may be unavailable. */ }
+    }
+
+    function clearHeldInput() {
+        for (const key of Object.keys(keys)) keys[key] = false;
+        touchMove.x = touchMove.y = 0;
+        firing = false;
+    }
+    window.addEventListener('blur', clearHeldInput);
+    document.addEventListener('pointerlockchange', () => {
+        if (document.pointerLockElement !== canvas) clearHeldInput();
+    });
+
+    function bindTouch(element, update, release) {
+        let active = null;
+        element.addEventListener('pointerdown', event => {
+            if (event.pointerType !== 'touch' || active !== null || mode !== 'player') return;
+            event.preventDefault();
+            active = event.pointerId;
+            element.setPointerCapture(active);
+            update(event, true);
+        });
+        element.addEventListener('pointermove', event => {
+            if (event.pointerId === active && mode === 'player') update(event, false);
+        });
+        element.addEventListener('lostpointercapture', event => {
+            if (event.pointerId !== active) return;
+            active = null;
+            release();
+        });
+    }
+
+    const stick = document.getElementById('touch-move');
+    bindTouch(stick, event => {
+        const bounds = stick.getBoundingClientRect();
+        const x = (event.clientX - bounds.left - bounds.width / 2) / (bounds.width * 0.4);
+        const y = (bounds.top + bounds.height / 2 - event.clientY) / (bounds.height * 0.4);
+        const scale = Math.max(1, Math.hypot(x, y));
+        touchMove.x = x / scale;
+        touchMove.y = y / scale;
+    }, () => { touchMove.x = touchMove.y = 0; });
+
+    let lastLook;
+    bindTouch(canvas, (event, start) => {
+        if (!start) turnCamera(event.clientX - lastLook.x, event.clientY - lastLook.y, 0.005);
+        lastLook = { x: event.clientX, y: event.clientY };
+    }, () => { lastLook = null; });
+    for (const [id, key] of [['btn-jump', 'Space'], ['btn-dash', 'ShiftLeft']]) {
+        bindTouch(document.getElementById(id), () => { keys[key] = true; }, () => { keys[key] = false; });
+    }
+    bindTouch(document.getElementById('btn-fire'), () => { firing = true; }, () => { firing = false; });
+
+    function turnCamera(dx, dy, sensitivity) {
+        camera.rotation.y += dx * sensitivity;
+        camera.rotation.x = Math.max(-1.45, Math.min(1.45, camera.rotation.x + dy * sensitivity));
+    }
     window.addEventListener('keydown', (e) => {
         keys[e.code] = true;
         if (e.code === 'Digit1') player.weaponIdx = 0;
@@ -610,34 +677,56 @@ function createScene() {
 
     window.addEventListener('mousemove', (e) => {
         if (mode !== 'player' || document.pointerLockElement !== canvas) return;
-        camera.rotation.y += e.movementX * 0.0022;
-        camera.rotation.x = Math.max(-1.45, Math.min(1.45, camera.rotation.x + e.movementY * 0.0022));
+        turnCamera(e.movementX, e.movementY, 0.0022);
     });
 
     function spawnProjectile(origin, dir, weapon, ownerTeam) {
         const proj = BABYLON.MeshBuilder.CreateSphere('proj', { diameter: 0.36 }, scene);
         proj.position = origin.clone();
         proj.isPickable = false;
-        const mat = new BABYLON.StandardMaterial('pMat', scene);
-        mat.emissiveColor = weapon.color;
-        proj.material = mat;
+        if (!projectileMaterials.has(weapon)) {
+            const mat = new BABYLON.StandardMaterial('projectile-' + weapon.name, scene);
+            mat.emissiveColor = weapon.color;
+            mat.disableLighting = true;
+            projectileMaterials.set(weapon, mat);
+        }
+        proj.material = projectileMaterials.get(weapon);
+        proj.scaling.z = weapon.speed > 100 ? 5 : 2;
+        proj.lookAt(origin.add(dir));
         const dmgMult = ownerTeam === 'friendly' ? 1 + upgrades.damage * 0.15 : 1;
         projectiles.push({ mesh: proj, vel: dir.scale(weapon.speed), weapon, damage: weapon.damage * dmgMult, ownerTeam, life: 2.4 });
     }
 
+    const shotgunPellet = { ...WEAPONS[2], damage: WEAPONS[2].damage / 3 };
+
+    function firePlayerWeapon() {
+        if (player.fireTimer > 0) return;
+        const weapon = WEAPONS[player.weaponIdx];
+        player.fireTimer = weapon.cooldown;
+        const forward = camera.getDirection(BABYLON.Axis.Z).normalize();
+        const origin = camera.position.add(forward.scale(1.2));
+        if (player.weaponIdx === 2) {
+            const right = camera.getDirection(BABYLON.Axis.X);
+            for (let pellet = -2; pellet <= 2; pellet++) {
+                const direction = forward.add(right.scale(pellet * 0.045)).normalize();
+                spawnProjectile(origin, direction, shotgunPellet, 'friendly');
+            }
+        } else {
+            spawnProjectile(origin, forward, weapon, 'friendly');
+        }
+        playSfx(player.weaponIdx === 1 ? 620 : 220, 0.11, 'sawtooth', 0.07);
+    }
+
+    window.addEventListener('mouseup', e => { if (e.button === 0) firing = false; });
     window.addEventListener('mousedown', (e) => {
+        if (e.target !== canvas && document.pointerLockElement !== canvas) return;
         if (mode === 'player' && e.button === 0) {
             if (document.pointerLockElement !== canvas) {
-                canvas.requestPointerLock?.();
+                lockPointer();
                 return;
             }
-            if (player.fireTimer <= 0) {
-                const w = WEAPONS[player.weaponIdx];
-                player.fireTimer = w.cooldown;
-                const fwd = camera.getDirection(BABYLON.Axis.Z).normalize();
-                spawnProjectile(camera.position.add(fwd.scale(1.2)), fwd, w, 'friendly');
-                playSfx(player.weaponIdx === 1 ? 620 : 220, 0.11, 'sawtooth', 0.07);
-            }
+            firing = true;
+            firePlayerWeapon();
         } else if (mode === 'rts' && e.button === 0) {
             const pick = scene.pick(scene.pointerX, scene.pointerY);
             if (pick?.hit && pick.pickedPoint) {
@@ -816,6 +905,10 @@ function createScene() {
     const hpEl = document.getElementById('hp-val');
     const livesEl = document.getElementById('lives-val');
     const weaponEl = document.getElementById('weapon-val');
+    document.getElementById('weapon-switch').addEventListener('click', () => {
+        if (mode !== 'player') return;
+        player.weaponIdx = (player.weaponIdx + 1) % WEAPONS.length;
+    });
     const scoreEl = document.getElementById('score-val');
 
     // Load initial map & start menu showcase
@@ -837,12 +930,13 @@ function createScene() {
         if (mode === 'player') {
             const forward = new BABYLON.Vector3(Math.sin(camera.rotation.y), 0, Math.cos(camera.rotation.y));
             const right = new BABYLON.Vector3(forward.z, 0, -forward.x);
-            const wish = new BABYLON.Vector3(0, 0, 0);
+            if (firing) firePlayerWeapon();
+            const wish = forward.scale(touchMove.y).addInPlace(right.scale(touchMove.x));
             if (keys['KeyW']) wish.addInPlace(forward);
             if (keys['KeyS']) wish.subtractInPlace(forward);
             if (keys['KeyD']) wish.addInPlace(right);
             if (keys['KeyA']) wish.subtractInPlace(right);
-            if (wish.lengthSquared() > 0) wish.normalize();
+            if (wish.lengthSquared() > 1) wish.normalize();
 
             if (keys['ShiftLeft'] && player.dashTimer <= 0 && wish.lengthSquared() > 0) {
                 player.vel.addInPlace(wish.scale(16));
@@ -938,7 +1032,7 @@ function createScene() {
             }
 
             let directHitEnemy = null;
-            if (p.ownerTeam === 'friendly') {
+            if (!hit && p.ownerTeam === 'friendly') {
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     if (BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position) < 1.35) {
                         directHitEnemy = enemies[j];
@@ -949,7 +1043,7 @@ function createScene() {
                         break;
                     }
                 }
-            } else {
+            } else if (!hit) {
                 if (mode === 'player' && BABYLON.Vector3.Distance(p.mesh.position, camera.position) < 1.4) {
                     player.hp -= 12;
                     hit = true;

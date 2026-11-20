@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html data-grave-dimension="3d" lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>GraveGain3DC — Arena FPS</title>
     <link rel="stylesheet" href="game.css" />
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <link rel="stylesheet" href="../_shared/gravegain.css">
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
@@ -25,7 +26,7 @@
         <div id="bottom-bar">
             <div class="stat-box">HP <span id="hp-val">100</span></div>
             <div class="stat-box" id="lives-box">LIVES <span id="lives-val">3</span></div>
-            <div class="stat-box">WEAPON <span id="weapon-val">DEVASTATOR</span></div>
+            <button type="button" class="stat-box" id="weapon-switch" aria-label="Switch weapon">WEAPON <span id="weapon-val">DEVASTATOR</span></button>
             <div class="stat-box">KILLS <span id="score-val">0</span></div>
             <button id="menu-btn">MENU</button>
         </div>
@@ -43,7 +44,7 @@
             <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>
             <button class="mode-btn" data-mode="rts">3. RTS SQUAD (4+ BOTS)</button>
         </div>
-        <p class="controls-hint">Player: WASD + Space + Shift + Click | Auto: Spectate &amp; Upgrade | RTS: Click to Rally</p>
+        <p class="controls-hint">Player: WASD, Space to jump, Shift to dash, hold click to fire, 1–4 to switch weapons | Touch: move pad, drag to aim, tap weapon to swap | Auto: Spectate &amp; Upgrade | RTS: Tap to Rally</p>
     </div>
 
     <div id="upgrade-modal" class="hidden">

@@ -32,7 +32,7 @@ class InputManager {
     setupDesktopControls() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
-            if (e.code === 'KeyP' || e.code === 'Escape') {
+            if (!e.repeat && (e.code === 'KeyP' || e.code === 'Escape')) {
                 if (window.GraveGainGame) window.GraveGainGame.togglePause();
             }
             if (e.code === 'KeyQ') {
@@ -42,6 +42,11 @@ class InputManager {
 
         window.addEventListener('keyup', (e) => {
             this.keys[e.code] = false;
+        });
+
+        window.addEventListener('blur', () => {
+            for (const key of Object.keys(this.keys)) this.keys[key] = false;
+            this.mouse.click = this.mouse.rightClick = this.mouse.isBlocking = false;
         });
 
         const container = document.getElementById('canvasContainer');

@@ -1113,7 +1113,7 @@
             }
             self.keys[e.code] = true;
             if (engine) engine.setInputState({ keys: self.keys });
-            if (e.code === 'KeyP' || e.code === 'Escape') {
+            if (!e.repeat && (e.code === 'KeyP' || e.code === 'Escape')) {
                 self.game.togglePause();
             }
             if (e.code === 'KeyF' && (!self.game.loop || self.game.loop.isPaused)) {
@@ -1140,6 +1140,10 @@
                 e.preventDefault();
                 if (engine) engine.setInputState({ keys: self.keys });
             }
+        });
+        window.addEventListener('blur', function () {
+            Object.keys(self.keys).forEach(function (key) { self.keys[key] = false; });
+            if (engine) engine.setInputState({ keys: self.keys });
         });
         window.addEventListener('keyup', function (e) {
             if (e.code === 'KeyV' && !self.gamepad.buttons[1] && self.game.player && self.game.loop && !self.game.loop.isPaused && self.game.controlMode !== 'turnbased') {

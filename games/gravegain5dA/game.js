@@ -282,6 +282,26 @@
     // actions; contact damage taxes every round. `putt` is kept as a legacy
     // alias of `strike` (no golf semantics: no power, gravity, par, strokes).
     function tick(s, action) {
+        var ev = resolveAction(s, action);
+        if (!s || s.over || !s.foes || s.foes.some(function (foe) { return foe && foe.hp > 0; })) return ev;
+        var bonus = Math.round(10 * s.combo);
+        s.gold += bonus;
+        ev.push({ t: 'hole', hole: s.hole, bonus: bonus, combo: s.combo });
+        s.hole += 1;
+        s.strokes = 0;
+        s.combo = 1;
+        if (s.hole >= HOLES.length) {
+            s.over = true;
+            s.win = true;
+            ev.push({ t: 'victory', gold: s.gold, hops: s.hops, kills: s.kills, level: s.level });
+        } else {
+            s.foes = spawnFoes(s.hole, s.universe);
+            ev.push({ t: 'haunt', hole: s.hole, universe: s.universe });
+        }
+        return ev;
+    }
+
+    function resolveAction(s, action) {
         var ev = [];
         if (!s || s.over) return ev;
         action = action || { wait: true };
@@ -327,23 +347,6 @@
             s.chain = 0;
             ev.push({ t: 'strike', strike: true });
             playerAttack(s, ev, false);
-            var cleared = !s.over && s.foes && s.foes.every(function (f) { return !f || f.hp <= 0; });
-            if (cleared) {
-                var bonus = Math.round(10 * s.combo);
-                s.gold += bonus;
-                ev.push({ t: 'hole', hole: s.hole, bonus: bonus, combo: s.combo });
-                s.hole += 1;
-                s.strokes = 0;
-                s.combo = 1;
-                if (s.hole >= HOLES.length) {
-                    s.over = true;
-                    s.win = true;
-                    ev.push({ t: 'victory', gold: s.gold, hops: s.hops, kills: s.kills, level: s.level });
-                } else {
-                    s.foes = spawnFoes(s.hole, s.universe);
-                    ev.push({ t: 'haunt', hole: s.hole, universe: s.universe });
-                }
-            }
             if (!s.over) enemyContact(s, ev);
             stepDoom(s, ev, u);
             return ev;
@@ -471,19 +474,7 @@
             var ctx = c.getContext('2d');
             if (!ctx) return;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.fillStyle = '#05030d';
-            ctx.fillRect(0, 0, c.width, c.height);
-            // Multiverse teaser: one ring per universe.
-            var cols = ['#22d3ee', '#a855f7', '#f472b6', '#ef4444', '#34d399', '#94a3b8'];
-            for (var i = 0; i < 6; i++) {
-                ctx.strokeStyle = cols[i % cols.length];
-                ctx.globalAlpha = 0.5;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(c.width * (0.2 + i * 0.12), c.height * 0.4, 24 + (i % 3) * 12, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
+            GraveGainWorldArt.multiverse(ctx, null, c.width, c.height);
         } catch (_) {}
     }
 
@@ -494,34 +485,7 @@
             var W = 1000, H = 600;
             ctx.setTransform(G.canvas.width / W, 0, 0, G.canvas.height / H, 0, 0);
             var u = universeById(s.universe);
-            // Sky tinted per universe (scaffold palette).
-            var tints = { prime: '#0e7490', echo: '#7c3aed', dream: '#db2777', void: '#7f1d1d', bloom: '#15803d', static: '#475569' };
-            ctx.fillStyle = '#05030d';
-            ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = tints[s.universe] || '#0e7490';
-            ctx.globalAlpha = 0.25;
-            ctx.fillRect(0, 0, W, H * 0.6);
-            ctx.globalAlpha = 1;
-            // Combat line: living haunts stand against the delver. No fairway, hole, or ball.
-            var alive = s.foes ? s.foes.filter(function (f) { return f && f.hp > 0; }) : [];
-            ctx.strokeStyle = 'rgba(34,211,238,0.7)';
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(60, H * 0.7); ctx.lineTo(W - 60, H * 0.7); ctx.stroke();
-            ctx.font = '40px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(u.emoji, W - 120, H * 0.7 - 12);
-            ctx.font = '30px sans-serif';
-            for (var fi = 0; fi < alive.length; fi++) {
-                var fx = W * (0.35 + fi * 0.18);
-                ctx.fillText('💀', fx, H * 0.7 - 12);
-                ctx.font = 'bold 13px Outfit, sans-serif';
-                ctx.fillStyle = '#fecaca';
-                var fmax = Math.max(1, alive[fi].maxHp || alive[fi].hp);
-                ctx.fillText(Math.max(0, alive[fi].hp) + '/' + fmax, fx, H * 0.7 - 52);
-                ctx.font = '30px sans-serif';
-            }
-            ctx.font = '28px sans-serif';
-            ctx.fillText('⚔️', 110, H * 0.7 - 30);
+            GraveGainWorldArt.multiverse(ctx, s, W, H, true);
             // HUD line.
             ctx.textAlign = 'left';
             ctx.font = 'bold 16px Outfit, sans-serif';
@@ -621,6 +585,7 @@
             else if (kind === 'potion') ev = tick(G.run, { potion: true });
             else if (kind === 'giggles') { if (window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain5dA', G); return; }
             else ev = tick(G.run, { wait: true });
+            GraveGainWorldArt.combatFeedback(G.run, ev);
             if (ev.some(function (e) { return e.t === 'giggles_relief'; })) {
                 showBanner('▰ GG · BREATHING ROOM', 'Giggles opens the briefcase: paradox eases and the collapse clock clears. Once per floor, with no price or promise.');
             }

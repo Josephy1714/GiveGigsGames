@@ -196,7 +196,11 @@
     var c = $('gameCanvas');
     if (!c) return;
     var g = c.getContext('2d');
-    g.fillStyle = '#050510';
+    var floorLight = g.createRadialGradient(VW * 0.5, VH * 0.5, 40, VW * 0.5, VH * 0.5, VW * 0.63);
+    floorLight.addColorStop(0, '#242b43');
+    floorLight.addColorStop(0.65, '#11172c');
+    floorLight.addColorStop(1, '#070814');
+    g.fillStyle = floorLight;
     g.fillRect(0, 0, VW, VH);
     // Grid floor
     g.strokeStyle = 'rgba(120,80,180,0.18)';
@@ -385,6 +389,10 @@
       S.tap.active = false; // stick/key input cancels a pending tap destination
       if (e.code === 'KeyE') S.interactHold = Math.max(S.interactHold, 6);
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].indexOf(e.code) >= 0) e.preventDefault();
+    });
+    window.addEventListener('blur', function () {
+      S.keys = {};
+      S.mouse.down = false;
     });
     window.addEventListener('keyup', function (e) { S.keys[e.code] = false; });
 

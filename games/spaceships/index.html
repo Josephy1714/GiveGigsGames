@@ -99,7 +99,8 @@
 
         .launch-screen {
             position: absolute; inset: 0; z-index: 49; display: grid; place-items: center;
-            padding: 24px; background: linear-gradient(115deg, rgba(3,8,22,.84), rgba(3,8,22,.38) 62%, rgba(3,8,22,.2));
+            padding: 24px; overflow-y: auto; overscroll-behavior: contain;
+            background: linear-gradient(115deg, rgba(3,8,22,.84), rgba(3,8,22,.38) 62%, rgba(3,8,22,.2));
             transition: opacity .35s ease, visibility .35s ease;
         }
         .launch-screen.is-dismissed { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -115,7 +116,8 @@
         .launch-button:hover { background:#a5f3fc; transform:translateY(-1px); }
         .launch-button:disabled { opacity:.6; cursor:wait; transform:none; }
         .launch-note { margin:0!important; font-size:.76rem; }
-        @media(max-width:560px) { .launch-screen { place-items:end center; padding:14px; } .launch-card { margin:0; padding:20px; } .launch-steps { gap:5px; } .launch-step { padding:9px 7px; font-size:.68rem; } }
+        @media(max-width:560px) { .launch-screen { align-items:safe end; justify-items:center; padding:14px; } .launch-card { margin:0; padding:20px; } .launch-steps { gap:5px; } .launch-step { padding:9px 7px; font-size:.68rem; } }
+        @media(max-height:520px) { .launch-screen { align-items:start; } }
 
         /* Fullscreen Overlay HUD Wrapper */
         .hud-overlay {
@@ -152,6 +154,21 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+        }
+
+        .hud-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 560px) {
+            .hud-header { flex-wrap: wrap; gap: 6px; }
+            .hud-actions { justify-content: flex-start; gap: 4px; }
+            .hud-actions .btn { min-height: 36px; padding: 5px 8px; font-size: .7rem; letter-spacing: 0; }
         }
 
         .logo {
@@ -505,7 +522,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <span>🚀</span> Starship Simulator
             </div>
             
-            <div style="display: flex; gap: 10px; align-items: center; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end;">
+            <div class="hud-actions">
                 <button class="btn" id="btn-open-starmap" title="Open Solar System Star Map &amp; Warp (N)" style="background: rgba(8, 145, 178, 0.35); border: 1px solid #38bdf8; color: #e0f2fe; padding: 6px 12px; border-radius: 8px; cursor: pointer;">🗺️ Star Map (N)</button>
                 <button class="btn btn-academy" id="btn-open-tutorials" title="Starfleet Flight Academy (10 Interactive Tutorials)" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.45), rgba(13, 148, 136, 0.45)); border: 1px solid #38bdf8; font-weight: 700; color: #e0f2fe; padding: 6px 12px; border-radius: 8px; cursor: pointer;">🎓 Tutorials (10)</button>
                 <button class="btn btn-audio" id="btn-sound-toggle" title="Toggle Simulation Audio">🔇</button>

@@ -81,11 +81,14 @@
                 camera.position.set(0, 60, 120);
 
                 // Vertex-lit look: dim ambient + warm torch directional.
-                var ambient = new window.THREE.AmbientLight(0x8a8aa0, 0.55);
+                var ambient = new window.THREE.HemisphereLight(0xc6b5ff, 0x3f255e, 0.85);
                 var torch = new window.THREE.DirectionalLight(0xffc37a, 0.9);
                 torch.position.set(40, 80, 20);
                 scene.add(ambient);
                 scene.add(torch);
+                var rim = new window.THREE.DirectionalLight(0x78ccff, 0.5);
+                rim.position.set(-50, 20, -40);
+                scene.add(rim);
 
                 var sliceGroup = new window.THREE.Group();
                 sliceGroup.name = 'wslice-rooms';

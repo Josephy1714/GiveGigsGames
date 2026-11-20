@@ -889,6 +889,12 @@
             ctx.fillStyle = sky;
             ctx.fillRect(0, 0, W, H);
             /* Parallax MoonRock skyline: distant towers, fires, searchlights. */
+            var moonX = 760 - cam * 0.035;
+            var moonGlow = ctx.createRadialGradient(moonX, 92, 25, moonX, 92, 124);
+            moonGlow.addColorStop(0, '#ffd59a66');
+            moonGlow.addColorStop(1, '#ffd59a00');
+            ctx.fillStyle = moonGlow;
+            ctx.fillRect(moonX - 124, -32, 248, 248);
             ctx.fillStyle = '#e6c7a0'; ctx.globalAlpha = 0.78; ctx.beginPath(); ctx.arc(760 - cam * 0.035, 92, 49, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
             for (var st = 0; st < 72; st++) {
                 var starX = ((st * 173 - cam * 0.05) % (W + 173) + W + 173) % (W + 173);
@@ -1201,7 +1207,7 @@
              * game px (960x540) so canvas CSS scaling can never skew it. */
             if (K.aimUp || K.aimDown || K.aimLeft || K.aimRight) {
                 inp.aim = Math.atan2((K.aimDown ? 1 : 0) - (K.aimUp ? 1 : 0), (K.aimRight ? 1 : 0) - (K.aimLeft ? 1 : 0));
-            } else if (G.run && G.canvas) {
+            } else if (K.aimingMouse && G.run && G.canvas) {
                 var rect = G.canvas.getBoundingClientRect();
                 var rw = Math.max(1, rect.width), rh = Math.max(1, rect.height);
                 var pxGame = G.run.player.x - cameraX(G.run);
@@ -1209,6 +1215,8 @@
                 var canvasX = (typeof K.mx === 'number' ? K.mx : rw / 2) / rw * VIEW_WIDTH;
                 var canvasY = (typeof K.my === 'number' ? K.my : rh / 2) / rh * VIEW_HEIGHT;
                 inp.aim = Math.atan2(canvasY - heroYGame, canvasX - pxGame);
+            } else if (G.run) {
+                inp.aim = (inp.move || G.run.player.face) < 0 ? Math.PI : 0;
             }
             var gp = readPad();
             if (gp) {
@@ -1405,21 +1413,38 @@
                     else if (a === 'melee') G.keys.melee = true;
                     else if (a === 'ability') G.keys.ability = true;
                     else if (a === 'alt') G.keys.alt = true;
-                    else if (a === 'fire') {
+                    else if (a === 'fire' && ev.detail === 0) {
                         G.keys.fireHeld = true;
                         setTimeout(function () { try { G.keys.fireHeld = false; } catch (_) {} }, 220);
                     }
                 } catch (_) {}
             });
+            var heldPointers = new Map();
             if (tb) {
                 tb.addEventListener('pointerdown', function (ev) {
-                    var fireButton = ev.target.closest && ev.target.closest('[data-act="fire"]');
-                    if (fireButton) { G.keys.fireHeld = true; ev.preventDefault(); }
+                    var button = ev.target.closest && ev.target.closest('[data-held]');
+                    if (!button || ev.button !== 0) return;
+                    var key = button.dataset.held;
+                    heldPointers.set(ev.pointerId, key);
+                    button.setPointerCapture(ev.pointerId);
+                    G.keys.aimingMouse = false;
+                    G.keys[key] = true;
+                    ev.preventDefault();
                 });
-                tb.addEventListener('pointerup', function () { G.keys.fireHeld = false; });
-                tb.addEventListener('pointercancel', function () { G.keys.fireHeld = false; });
-                window.addEventListener('blur', function () { G.keys.fireHeld = false; });
+                tb.addEventListener('lostpointercapture', function (ev) {
+                    var key = heldPointers.get(ev.pointerId);
+                    if (!key) return;
+                    heldPointers.delete(ev.pointerId);
+                    G.keys[key] = Array.from(heldPointers.values()).includes(key);
+                });
             }
+            window.addEventListener('blur', function () {
+                heldPointers.clear();
+                Object.keys(G.keys).forEach(function (key) {
+                    if (typeof G.keys[key] === 'boolean') G.keys[key] = false;
+                });
+                G.keys.swap = null;
+            });
             document.addEventListener('keydown', function (ev) {
                 try {
                     var k = ev.key;
@@ -1438,7 +1463,7 @@
                     else if (k === 'c' || k === 'C') G.keys.ability = true;
                     else if (k === '1' && G.run) G.keys.swap = 'starter';
                     else if (k === '2' && G.run) G.keys.swap = 'pickup';
-                    else if (k === 'Escape' || k === 'p' || k === 'P') {
+                    else if (!ev.repeat && (k === 'Escape' || k === 'p' || k === 'P')) {
                         if (G.run && G.run.over) { startRun(buildId, gameMode, contentMode, routeMode); return; }
                         G.paused = !G.paused;
                         showBanner(G.paused ? 'PAUSED' : 'BREACH', G.paused ? 'Esc resume · controls in menu' : '', G.paused);

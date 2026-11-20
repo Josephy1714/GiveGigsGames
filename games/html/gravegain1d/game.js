@@ -1002,31 +1002,15 @@
             var W = 960, H = 540;
             ctx.setTransform(G.dpr || 1, 0, 0, G.dpr || 1, 0, 0);
             var sec = SECTORS[Math.min(s.sector, 4)];
-            // Sky.
-            var sky = ctx.createLinearGradient(0, 0, 0, H);
-            sky.addColorStop(0, sec.sky);
-            sky.addColorStop(0.6, '#05030d');
-            sky.addColorStop(1, '#000');
-            ctx.fillStyle = sky;
-            ctx.fillRect(0, 0, W, H);
-            // Giantess + stars.
-            ctx.fillStyle = 'rgba(168,85,247,0.25)';
-            ctx.beginPath(); ctx.arc(780, 110, 70, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'rgba(251,191,36,0.15)';
-            ctx.beginPath(); ctx.arc(780, 110, 88, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            var starRng = mulberry32(7);
-            for (var si = 0; si < 40; si++) {
-                ctx.fillRect(starRng() * W, starRng() * H * 0.5, 1.5, 1.5);
-            }
             // Camera: keep the player left-of-center, looking east.
             var cam = clamp(s.x - 12, 0, Math.max(0, xCap(s) - VIEW_TILES));
             var scale = W / VIEW_TILES;
             function sx(x) { return (x - cam) * scale; }
             var trackY = H * 0.66;
+            GraveGainWorldArt.atmosphere(ctx, W, H, trackY, sec.theme, cam * scale);
             // Ley-line + range bands.
             ctx.fillStyle = 'rgba(168,85,247,0.10)';
-            ctx.fillRect(sx(Math.max(0, s.x - s.range)), trackY - 46, s.range * 2 * scale, 92);
+            ctx.fillRect(sx(s.x - s.range), trackY - 46, s.range * 2 * scale, 92);
             ctx.strokeStyle = 'rgba(168,85,247,0.6)';
             ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(0, trackY); ctx.lineTo(W, trackY); ctx.stroke();
@@ -1423,7 +1407,9 @@
             document.addEventListener('keydown', function (ev) {
                 try {
                     if (!G || !G.run) return;
+                    if (ev.target && ev.target.closest && ev.target.closest('input, textarea, select, [contenteditable]')) return;
                     var k = ev.key;
+                    if (ev.repeat && !/^(ArrowRight|d| |j)$/i.test(k)) return;
                     if (k === 'ArrowRight' || k === 'd' || k === 'D') { ev.preventDefault(); doAction('step'); }
                     else if (k === ' ' || k === 'j' || k === 'J') { ev.preventDefault(); doAction(G.banner ? 'dismiss' : 'attack'); }
                     else if (k === 'Enter') { if (G.banner) hideBanner(); }

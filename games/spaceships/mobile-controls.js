@@ -54,6 +54,13 @@ function injectTouchCSS() {
   #sj-btn-msl { border-color: rgba(16,185,129,.7); box-shadow: 0 0 12px rgba(16,185,129,.4); }
   #sj-lock-toast { left: 50%; top: 76px; transform: translateX(-50%); color: #5ffaff; font-size: 12px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(6,182,212,.8); opacity: 0; transition: opacity .25s; }
   #sj-pause-veil { inset: 0; display: none; align-items: center; justify-content: center; background: rgba(5,3,10,.72); color: #fff; font-size: 14px; letter-spacing: 2px; pointer-events: auto; text-align: center; padding: 24px; }
+  @media (max-width: 395px) {
+    #sj-stick-zone { width: 104px; height: 104px; }
+    #sj-ordnance { gap: 6px; }
+    .sj-btn { width: 48px; height: 48px; font-size: 10px; }
+    #sj-btn-fire { width: 60px; height: 60px; }
+    #sj-utility { bottom: max(154px, env(safe-area-inset-bottom)); }
+  }
   @media (pointer: coarse) {
     .legend-panel, .controls-panel { display: none !important; }
     .hud-overlay { padding: 12px !important; }
@@ -155,7 +162,7 @@ export class MobileControls {
       e.preventDefault();
     };
     const move = (e) => {
-      const touches = e.changedTouches ? [...e.changedTouches] : [e];
+      const touches = Array.from(e.changedTouches);
       for (const t of touches) {
         if ((t.identifier ?? 'mouse') !== this.stickId) continue;
         const dx = t.clientX - this.stickCenter.x;
@@ -169,7 +176,7 @@ export class MobileControls {
       }
     };
     const end = (e) => {
-      const touches = e.changedTouches ? [...e.changedTouches] : [e];
+      const touches = Array.from(e.changedTouches);
       for (const t of touches) {
         if ((t.identifier ?? 'mouse') !== this.stickId) continue;
         this.stickId = null;
@@ -185,13 +192,30 @@ export class MobileControls {
   }
 
   holdButton(el, on, off) {
-    el.addEventListener('touchstart', (e) => { el.classList.add('sj-held'); on(); e.preventDefault(); }, { passive: false });
-    const release = (e) => { el.classList.remove('sj-held'); off(); };
-    el.addEventListener('touchend', release);
-    el.addEventListener('touchcancel', release);
-    // Mouse fallback for desktop testing.
-    el.addEventListener('mousedown', (e) => { el.classList.add('sj-held'); on(); });
-    el.addEventListener('mouseup', release);
+    let heldPointer = null;
+    const release = () => {
+      if (heldPointer === null) return;
+      const pointerId = heldPointer;
+      heldPointer = null;
+      if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId);
+      el.classList.remove('sj-held');
+      off();
+    };
+    el.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || heldPointer !== null) return;
+      heldPointer = event.pointerId;
+      el.setPointerCapture(heldPointer);
+      el.classList.add('sj-held');
+      on();
+      event.preventDefault();
+    });
+    el.addEventListener('lostpointercapture', (event) => {
+      if (event.pointerId === heldPointer) release();
+    });
+    window.addEventListener('blur', release, { signal: this.canvasListeners.signal });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) release();
+    }, { signal: this.canvasListeners.signal });
   }
 
   bindOrdnance() {
@@ -225,7 +249,7 @@ export class MobileControls {
     this.raycaster = new window.THREE.Raycaster();
     canvas.style.touchAction = 'none';
     canvas.addEventListener('touchstart', (e) => {
-      for (const t of e.changedTouches) {
+      for (const t of Array.from(e.changedTouches)) {
         // Right-half touches aim the turret; left-half belongs to the fly-stick.
         if (t.clientX < window.innerWidth * 0.4) continue;
         if (this.turretId === null) {
@@ -236,7 +260,7 @@ export class MobileControls {
       }
     }, { passive: true, signal: this.canvasListeners.signal });
     canvas.addEventListener('touchmove', (e) => {
-      for (const t of e.changedTouches) {
+      for (const t of Array.from(e.changedTouches)) {
         if (t.identifier !== this.turretId) continue;
         const dx = t.clientX - this.turretLast.x;
         const dy = t.clientY - this.turretLast.y;
@@ -250,10 +274,12 @@ export class MobileControls {
       }
     }, { passive: false, signal: this.canvasListeners.signal });
     const touchEnd = (e) => {
-      for (const t of e.changedTouches) {
+      for (const t of Array.from(e.changedTouches)) {
         if (t.identifier !== this.turretId) continue;
         this.turretId = null;
-        if (this.tapStart && performance.now() - this.tapStart.time < TAP_MAX_MS) this.tapToTarget(t.clientX, t.clientY);
+        if (e.type === 'touchend' && this.tapStart && performance.now() - this.tapStart.time < TAP_MAX_MS) {
+          this.tapToTarget(t.clientX, t.clientY);
+        }
         this.tapStart = null;
       }
     };
@@ -291,6 +317,15 @@ export class MobileControls {
     const hide = () => { if (veil) veil.style.display = 'none'; };
     // Core already stops the loop on hidden; the veil makes it explicit + tappable.
     this.core.onAutoPause = (paused) => (paused ? show() : hide());
+    const resetGestures = () => {
+      this.stickId = this.turretId = this.tapStart = null;
+      this.core.touch.stickX = this.core.touch.stickY = 0;
+      this.setKnob(0, 0);
+    };
+    window.addEventListener('blur', resetGestures, { signal: this.canvasListeners.signal });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) resetGestures();
+    }, { signal: this.canvasListeners.signal });
     if (veil) {
       veil.addEventListener('touchstart', (e) => { this.core.start(); hide(); e.preventDefault(); }, { passive: false });
       veil.addEventListener('mousedown', () => { this.core.start(); hide(); });

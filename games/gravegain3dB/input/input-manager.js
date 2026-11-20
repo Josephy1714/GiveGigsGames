@@ -57,7 +57,7 @@ class InputManager {
             if (!e.repeat && window.GraveGainGame && window.GraveGainGame.handleGameplayKey) {
                 window.GraveGainGame.handleGameplayKey(e.code);
             }
-            if (e.code === 'KeyP' || e.code === 'Escape') {
+            if (!e.repeat && (e.code === 'KeyP' || e.code === 'Escape')) {
                 if (window.GraveGainGame) window.GraveGainGame.togglePause();
             }
             if (e.code === 'KeyQ') {

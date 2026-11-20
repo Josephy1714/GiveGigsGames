@@ -69,7 +69,7 @@ progress{width:100%;accent-color:var(--accent);height:16px}
 .timing-zone{background:#a06c90}
 .timing-needle{width:4px;background:#fff;box-shadow:0 0 8px #fff}
 @media(max-width:800px){.workspace{grid-template-columns:1fr}.stage{position:relative;top:auto;max-height:65vh}.stage canvas{height:min(65vh,650px);width:100%;object-fit:contain}.intro{align-items:start;flex-direction:column}.intro>p{max-width:unset}}
-@media(max-width:450px){.masthead{gap:8px}.monogram{display:none}.stats{gap:8px}.stats strong{font-size:14px}.stats small{font-size:9px}.navigation button{font-size:14px}.slider-grid{gap:10px}.stage-foot .segmented button{padding:.35rem}.panel{border-radius:13px}}
+@media(max-width:450px){.masthead{display:grid;gap:8px;padding-block:12px}.monogram{display:none}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;text-align:left}.stats strong{font-size:14px;overflow-wrap:anywhere}.stats small{font-size:9px;letter-spacing:.06em}.navigation button{font-size:14px}.slider-grid{gap:10px}.stage-foot .segmented button{padding:.35rem}.panel{border-radius:13px}}
 canvas{touch-action:pan-y;cursor:grab}
 canvas:active{cursor:grabbing}
 canvas.flash{filter:brightness(2.4)}

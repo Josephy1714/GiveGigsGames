@@ -331,6 +331,9 @@
             dirLight.shadow.camera.bottom = -d;
             dirLight.shadow.bias = -0.0008;
             worldRoot.add(dirLight);
+            var rim = new THREE.DirectionalLight(0x98baff, 0.32);
+            rim.position.set(-20, 12, -24);
+            worldRoot.add(rim);
             worldRoot.add(dirLight.target);
 
             // Warm player-following lantern light so immediate surroundings are always readable

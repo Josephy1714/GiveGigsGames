@@ -284,7 +284,22 @@
         if (!s || s.over) return ev;
         action = action || { wait: true };
         ensureRpg(s);
+        var echo = s.puttEcho;
+        delete s.puttEcho;
+        if (action.rewind) {
+            if (!echo) return [{ t: 'noecho' }];
+            var paradox = Math.min(100, s.paradox + 12);
+            if (echo.travel === undefined) delete s.travel;
+            Object.assign(s, echo, { paradox: paradox });
+            if (paradox >= 100 && !s.doom) s.doom = universeById(s.universe).collapseTicks || 6;
+            return [{ t: 'rewind', paradox: s.paradox }];
+        }
         var u = universeById(s.universe);
+        if (action.putt) {
+            s.puttEcho = Object.assign({}, s, {
+                foes: s.foes.map(function (foe) { return Object.assign({}, foe); })
+            });
+        }
         if (s.cooldown > 0) s.cooldown -= 1;
         if (s.ward > 0) s.ward -= 1;
 
@@ -315,18 +330,27 @@
             var power = clamp(Number(action.power) || 1, 0.25, 3);
             s.strokes += 1;
             s.w = clamp(s.w + u.drift, -3, 3);
-            s.paradox = clamp(s.paradox - 4, 0, 100);
+            var overdrive = Math.round(Math.max(0, power - 1.25) * 8);
+            s.paradox = clamp(s.paradox - 4 + overdrive, 0, 100);
+            if (s.paradox >= 100 && !s.doom) {
+                s.doom = u.collapseTicks || 6;
+                ev.push({ t: 'collapse', universe: u.id, fuse: s.doom });
+            }
             s.chain = 0;
             var need = holePar(s.hole, s.universe);
-            var sunk = s.strokes >= need; // dungeon strike: par strikes clear the haunt
-            ev.push({ t: 'putt', power: power, gravity: u.gravity, strokes: s.strokes, par: need, strike: true });
+            var priorTravel = isFinite(s.travel) ? s.travel : s.strokes - 1;
+            s.travel = priorTravel + power / u.gravity;
+            var sunk = s.travel >= need - 0.0001;
+            ev.push({ t: 'putt', power: power, gravity: u.gravity, strokes: s.strokes, par: need, travel: s.travel, strike: true });
             playerAttack(s, ev, false);
             if (sunk && !s.over) {
                 var bonus = Math.round(10 * s.combo);
                 s.gold += bonus;
                 ev.push({ t: 'hole', hole: s.hole, bonus: bonus, combo: s.combo });
                 s.hole += 1;
+                delete s.puttEcho;
                 s.strokes = 0;
+                s.travel = 0;
                 s.combo = 1;
                 if (s.hole >= HOLES.length) {
                     s.over = true;
@@ -472,19 +496,7 @@
             var ctx = c.getContext('2d');
             if (!ctx) return;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.fillStyle = '#05030d';
-            ctx.fillRect(0, 0, c.width, c.height);
-            // Multiverse teaser: one ring per universe.
-            var cols = ['#22d3ee', '#a855f7', '#f472b6', '#ef4444', '#34d399', '#94a3b8'];
-            for (var i = 0; i < 6; i++) {
-                ctx.strokeStyle = cols[i % cols.length];
-                ctx.globalAlpha = 0.5;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(c.width * (0.2 + i * 0.12), c.height * 0.4, 24 + (i % 3) * 12, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
+            GraveGainWorldArt.multiverse(ctx, null, c.width, c.height);
         } catch (_) {}
     }
 
@@ -495,27 +507,7 @@
             var W = 1000, H = 600;
             ctx.setTransform(G.dpr || 1, 0, 0, G.dpr || 1, 0, 0);
             var u = universeById(s.universe);
-            // Sky tinted per universe (scaffold palette).
-            var tints = { prime: '#0e7490', echo: '#7c3aed', dream: '#db2777', void: '#7f1d1d', bloom: '#15803d', static: '#475569' };
-            ctx.fillStyle = '#05030d';
-            ctx.fillRect(0, 0, W, H);
-            ctx.fillStyle = tints[s.universe] || '#0e7490';
-            ctx.globalAlpha = 0.25;
-            ctx.fillRect(0, 0, W, H * 0.6);
-            ctx.globalAlpha = 1;
-            // Fairway + hole.
-            ctx.strokeStyle = 'rgba(34,211,238,0.7)';
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(60, H * 0.7); ctx.lineTo(W - 60, H * 0.7); ctx.stroke();
-            ctx.font = '40px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('🕳️', W - 120, H * 0.7 - 12);
-            // Ball position from strokes (scaffold: marches right per stroke).
-            var bx = 100 + (s.strokes / Math.max(1, holePar(s.hole, s.universe))) * (W - 260);
-            ctx.font = '36px sans-serif';
-            ctx.fillText('⚪', bx, H * 0.7 - 12);
-            ctx.font = '28px sans-serif';
-            ctx.fillText(u.emoji, bx, H * 0.7 - 54);
+            GraveGainWorldArt.multiverse(ctx, s, W, H, false, holePar(s.hole, s.universe));
             // HUD line.
             ctx.textAlign = 'left';
             ctx.font = 'bold 16px Outfit, sans-serif';
@@ -533,7 +525,9 @@
             var s = G.run;
             var u = universeById(s.universe);
             setText('gg5dHole', 'Hole ' + (s.hole + 1) + '/10');
-            setText('gg5dStrokes', s.strokes + '/' + holePar(s.hole, s.universe));
+            var par = holePar(s.hole, s.universe);
+            var progress = Math.min(100, Math.floor(100 * (s.travel == null ? s.strokes : s.travel) / par));
+            setText('gg5dStrokes', s.strokes + '/' + par + ' · ' + progress + '%');
             setText('gg5dGold', s.gold);
             setText('gg5dUniverse', u.emoji + ' ' + u.name);
             setText('gg5dParadox', s.paradox + (s.doom > 0 ? ' 💥' + s.doom : ''));
@@ -603,7 +597,7 @@
         } catch (_) {}
         sizeCanvas();
         var u = universeById(G.run.universe);
-        showBanner('TRANSCEND — ' + u.name.toUpperCase(), u.blurb + '\nU = hop · Space = putt · T = rewind (4D echo)');
+        showBanner('TRANSCEND — ' + u.name.toUpperCase(), u.blurb + '\nU = hop · Space = putt · T = rewind. Power putts build paradox.');
         render();
     }
 
@@ -617,6 +611,14 @@
             else if (kind === 'hopNext') ev = tick(G.run, { hop: nextUniverse(G.run.universe) });
             else if (kind === 'hopPrev') ev = tick(G.run, { hop: prevUniverse(G.run.universe) });
             else if (kind === 'attack') ev = tick(G.run, { attack: true });
+            else if (kind === 'rewind') {
+                ev = tick(G.run, { rewind: true });
+                if (ev[0].t === 'noecho') {
+                    showBanner('NO ECHO', 'Rewind works immediately after a putt that stays on the current hole.');
+                } else {
+                    showBanner('PUTT REWOUND', 'Rewinding costs paradox.');
+                }
+            }
             else if (kind === 'putt' || kind === 'step') {
                 var pw = 1;
                 try { if (opts && isFinite(opts.power)) pw = opts.power; } catch (_) {}
@@ -683,7 +685,8 @@
             });
             document.addEventListener('keydown', function (ev) {
                 try {
-                    if (!G || !G.run) return;
+                    if (!G || !G.run || ev.repeat) return;
+                    if (ev.target && ev.target.closest && ev.target.closest('button, input, textarea, select, [contenteditable]')) return;
                     var k = ev.key;
                     if (k === 'u' || k === 'U' || k === 'v' || k === 'V') { ev.preventDefault(); doAction('hop'); }
                     else if (k === ' ' || k === 'Enter') { ev.preventDefault(); doAction('putt'); }
@@ -691,7 +694,7 @@
                     else if (k === 'r' || k === 'R') { ev.preventDefault(); doAction('ability'); }
                     else if (k === 'h' || k === 'H') { ev.preventDefault(); doAction('potion'); }
                     else if (k === 'q' || k === 'Q' || k === 'e' || k === 'E') { ev.preventDefault(); doAction('step'); }
-                    else if (k === 't' || k === 'T') { ev.preventDefault(); doAction('wait'); }
+                    else if (k === 't' || k === 'T') { ev.preventDefault(); doAction('rewind'); }
                 } catch (_) {}
             });
             var cv = el('gg5dCanvas');

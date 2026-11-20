@@ -59,7 +59,7 @@
                     self.timefold.beginRewind();
                 }
             }
-            if (e.code === 'KeyB') self.tryBraneFlip();
+            if (e.code === 'KeyB' && !e.repeat) self.tryBraneFlip();
         });
 
         window.addEventListener('keyup', function (e) {
@@ -72,6 +72,19 @@
                     self.timefold.endRewind();
                 }
             }
+        });
+
+        function clearHeldInput() {
+            self.keys = {};
+            self.jumpPressed = false;
+            self.puttCharging = false;
+            if (self.putt && self.putt.cancelCharge) self.putt.cancelCharge();
+            if (self.rewindHeld && self.timefold && self.timefold.endRewind) self.timefold.endRewind();
+            self.rewindHeld = false;
+        }
+        window.addEventListener('blur', clearHeldInput);
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) clearHeldInput();
         });
 
         container.addEventListener('contextmenu', function (e) { e.preventDefault(); });

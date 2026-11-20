@@ -139,6 +139,8 @@
             // Enhanced 3D Atmospheric Lighting
             this.ambientLight = new THREE.AmbientLight(0x2d1f4d, 0.65);
             this.scene.add(this.ambientLight);
+            // Cool overhead light picks out silhouettes and floor edges in dark rooms.
+            this.scene.add(new THREE.HemisphereLight(0xa2caff, 0x392448, 0.52));
 
             // Player lantern with subtle warm dynamic aura
             this.playerLantern = new THREE.PointLight(0xffecd2, 2.4, 210, 1.2);
