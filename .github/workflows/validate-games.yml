@@ -4,6 +4,13 @@ on:
   pull_request:
   push:
     branches: [main, semester-survival-runner-matty-main]
+    # Atlas source edits are validated after the atlas builder publishes the
+    # runtime files and refreshed catalog, avoiding a race against stale sizes.
+    paths-ignore:
+      - '.github/workflows/build-jay-runtime-atlas.yml'
+      - 'games/semester-survival-runner/src/tools/build-jay-atlas.py'
+      - 'games/semester-survival-runner/assets/source/characters/jay/**'
+      - 'games/semester-survival-runner/assets/characters/**'
 
 permissions:
   contents: read
