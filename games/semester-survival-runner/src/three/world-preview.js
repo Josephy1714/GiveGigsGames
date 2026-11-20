@@ -1,4 +1,5 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import { loadJayCharacter } from "./jay-character.js";
 
 const mount = document.querySelector("#scene");
 const distanceEl = document.querySelector("#distance");
@@ -191,23 +192,27 @@ const trafficSpecs=[
 ];
 for(const spec of trafficSpecs){const v=createVehicle(spec.kind,spec.color);v.position.set(spec.x,.02,spec.z);v.rotation.y=spec.dir>0?Math.PI:0;scene.add(v);traffic.push({...spec,mesh:v});}
 
-function createPlayer() {
- // Temporary rig stand-in for validating 3D scale, lane spacing and camera framing.
- // It is intentionally not presented as the final Jay character asset.
- const root=new THREE.Group();scene.add(root);
- const skin=mat(0x8c6048),shirt=mat(0x284e91),trouser=mat(0x25313b),shoe=mat(0xe4e1d4);
- const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.38,.78,5,10),shirt);torso.position.y=1.45;torso.castShadow=true;root.add(torso);
- const head=new THREE.Mesh(new THREE.SphereGeometry(.27,16,12),skin);head.position.y=2.22;head.castShadow=true;root.add(head);
- const hair=new THREE.Mesh(new THREE.SphereGeometry(.28,16,8,0,Math.PI*2,0,Math.PI*.52),mat(0x171b20));hair.position.y=2.32;root.add(hair);
- const limbs=[];
- for(const side of [-1,1]){
-  const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.62,4,8),shirt);arm.position.set(side*.48,1.45,0);arm.castShadow=true;root.add(arm);
-  const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.68,4,8),trouser);leg.position.set(side*.19,.52,0);leg.castShadow=true;root.add(leg);
-  const foot=box(root,.25,.13,.42,shoe,side*.19,.13,-.08);limbs.push({leg,foot,arm,side});
- }
- root.userData.limbs=limbs;root.position.set(0,0,5.1);return root;
-}
-const player=createPlayer();
+// Load only a real skinned Jay GLB. No primitive stand-in is shown when
+// the approved production character asset has not yet been generated.
+let jayRig = null;
+const characterStatus = document.querySelector(".metric:nth-child(3) b");
+characterStatus.textContent = "JAY ASSET PENDING";
+loadJayCharacter({
+ url: "./assets/3d/jay/jay.glb",
+ scene,
+ targetHeight: 1.78,
+ strictClips: false
+}).then(rig => {
+ jayRig = rig;
+ jayRig.root.position.set(0, 0, 5.1);
+ jayRig.root.rotation.y = Math.PI;
+ jayRig.play("idle");
+ characterStatus.textContent = "JAY RIGGED";
+ if (rig.missingClips.length) console.warn("Jay model missing optional clips:", rig.missingClips);
+}).catch(error => {
+ characterStatus.textContent = "MODEL REQUIRED";
+ console.info("Production Jay GLB has not been added yet:", error.message);
+});
 const state={lane:1,targetLane:1,jump:0,slide:0,distance:0,running:true};
 function moveLane(direction){state.targetLane=Math.max(0,Math.min(2,state.targetLane+direction));}
 function jump(){if(state.jump<=0&&state.slide<=0)state.jump=.9;}
@@ -240,25 +245,22 @@ function animate(){
   state.slide=Math.max(0,state.slide-dt);
   const laneX=(state.lane-1)*2.05;
   const jumpY=state.jump>0?Math.sin((1-state.jump/.9)*Math.PI)*1.35:0;
-  player.position.x=THREE.MathUtils.damp(player.position.x,laneX,15,dt);
-  player.position.y=jumpY;
-  const limbs=player.userData.limbs;
-  limbs.forEach(({leg,foot,arm,side},i)=>{
-   const phase=time*11+(i%2)*Math.PI;
-   leg.rotation.x=Math.sin(phase)*.58;
-   arm.rotation.x=-Math.sin(phase)*.48;
-   foot.rotation.x=Math.max(0,-Math.sin(phase))*.2;
-  });
-  player.scale.y=state.slide>0?.62:1;
-  player.rotation.z=THREE.MathUtils.damp(player.rotation.z,(state.targetLane-state.lane)*-.08,8,dt);
+  if (jayRig) {
+   jayRig.root.position.x=THREE.MathUtils.damp(jayRig.root.position.x,laneX,15,dt);
+   jayRig.root.position.y=jumpY;
+   jayRig.root.rotation.z=THREE.MathUtils.damp(jayRig.root.rotation.z,(state.targetLane-state.lane)*-.08,8,dt);
+   const wanted=state.slide>0?"slide":state.jump>0?"jump":"run";
+   jayRig.play(jayRig.availableClips.includes(wanted)?wanted:"run",{timeScale:wanted==="run"?1.08:1});
+   jayRig.update(dt);
+  }
   traffic.forEach(v=>{
    v.mesh.position.z+=dt*v.dir*v.mesh.userData.speed;
    if(v.mesh.position.z>13)v.mesh.position.z=-170-Math.random()*40;
    if(v.mesh.position.z<-175)v.mesh.position.z=10+Math.random()*35;
   });
   // Repeating road studs and distant world drift give a convincing forward-run cue.
-  camera.position.x=THREE.MathUtils.damp(camera.position.x,player.position.x*.14,2.5,dt);
-  camera.lookAt(player.position.x*.1,1.6,-13);
+  camera.position.x=THREE.MathUtils.damp(camera.position.x,(jayRig?.root.position.x||laneX)*.14,2.5,dt);
+  camera.lookAt((jayRig?.root.position.x||laneX)*.1,1.6,-13);
  }
  renderer.render(scene,camera);
 }
