@@ -210,10 +210,10 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  },
  probePowerup:({lane=1,powerupLane=1,magnet=0,kind="COFFEE",type="food"}={})=>{
   if(!g||!g.on)return null;
-  const saved={energy:g.energy,runPowerups:g.runPowerups,bonus:g.bonus,lane:g.lane,coins:g.coins,spawn:g.spawn,obs:g.obs,pick:g.pick,magnetRange:save.up.magnetRange,boost:g.boost};
+  const saved={energy:g.energy,runPowerups:g.runPowerups,bonus:g.bonus,lane:g.lane,coins:g.coins,spawn:g.spawn,obs:g.obs,pick:g.pick,magnetRange:save.up.magnetRange,boost:g.boost,shield:g.shield,magnetTime:g.magnetTime,focusTime:g.focusTime};
   g.energy=50;g.runPowerups=0;g.bonus=[{lane:powerupLane,z:.83,kind,type}];g.lane=lane;g.coins=0;g.spawn=10;g.obs=[];g.pick=[];save.up.magnetRange=magnet;
   tick(.03);
-  const result={energy:g.energy,collected:g.runPowerups,remaining:g.bonus.length,coins:g.coins};
+  const result={energy:g.energy,collected:g.runPowerups,remaining:g.bonus.length,coins:g.coins,shield:!!g.shield,magnetTime:g.magnetTime||0,focusTime:g.focusTime||0};
   Object.assign(g,saved);save.up.magnetRange=saved.magnetRange;
   return result;
  },
