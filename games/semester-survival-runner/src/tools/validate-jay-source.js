@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-'use strict';
-
 /**
  * Read-only audit for Jay's original source sheets.
  * Detects actual image encodings, measures pixel dimensions and checks that
@@ -11,9 +9,11 @@
  * Add --strict to exit non-zero when any warning is found.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sourceDir = path.resolve(__dirname, '../../../../artwork/semester-survival-runner/jay-source');
 const expected = Object.freeze({
   '1795073501939.jpg': { action: 'turnaround', columns: 4, rows: 1 },
