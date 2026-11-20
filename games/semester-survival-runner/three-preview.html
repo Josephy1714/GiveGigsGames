@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#08131e">
+<title>Semester Survival 3D — World Preview</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09131c;color:#f4f5ed}#scene{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}.top{position:fixed;z-index:2;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top) + 14px) 18px 36px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(#08131ee8,transparent);pointer-events:none}.brand{font-size:11px;font-weight:900;letter-spacing:.17em}.brand small{display:block;margin-top:5px;color:#b5d6c2;font-size:8px;letter-spacing:.24em}.pill{border:1px solid #ffffff35;background:#0b1d27c9;border-radius:99px;padding:9px 13px;font-size:9px;letter-spacing:.12em}.hud{position:fixed;z-index:2;top:90px;left:16px;right:16px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}.metric{min-width:75px;padding:10px 12px;border:1px solid #ffffff26;border-radius:9px;background:#0a1b27c9;backdrop-filter:blur(10px)}.metric small{display:block;color:#a5b8b6;font-size:7px;letter-spacing:.15em}.metric b{display:block;margin-top:5px;font-size:15px}.foot{position:fixed;z-index:2;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px);text-align:center;color:#e6e9dc;text-shadow:0 2px 8px #000;font-size:9px;letter-spacing:.1em;pointer-events:none}.controls{position:fixed;z-index:3;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 38px);display:flex;justify-content:space-between;pointer-events:none}.cluster{display:flex;gap:9px;pointer-events:auto}.controls button{width:54px;height:54px;border:1px solid #ffffff55;border-radius:16px;background:#0b1d27c9;color:#f5f4e9;font-size:20px;font-weight:800;backdrop-filter:blur(12px);touch-action: manipulation}.controls button:active{background:#b5d6c2;color:#0b1d27}.note{position:fixed;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 36px));padding:18px 20px;border:1px solid #d5e8d055;border-radius:14px;background:#0b1c28e8;backdrop-filter:blur(18px);text-align:center;box-shadow:0 20px 70px #0008}.note h1{margin:0 0 8px;font-size:19px;letter-spacing:-.03em}.note p{margin:0;color:#c2d0cb;font-size:11px;line-height:1.6}.note button{margin-top:14px;padding:12px 18px;border:0;border-radius:8px;background:#c8e6cb;color:#10231d;font-weight:900;letter-spacing:.12em;font-size:9px}.hidden{display:none}@media(min-width:700px){.controls{bottom:28px}.foot{bottom:18px}.note{padding:24px}}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<header class="top"><div class="brand">SEMESTER SURVIVAL<small>THE UNIVERSITY RUN · 3D WORLD LAB</small></div><div class="pill">CHIROMO CAMPUS · WORLD PREVIEW</div></header>
+<div class="hud"><div class="metric"><small>SEMESTER</small><b>01 / 08</b></div><div class="metric"><small>DISTANCE</small><b id="distance">000 m</b></div><div class="metric"><small>WORLD</small><b>LIVE 3D</b></div></div>
+<div class="note" id="intro"><h1>Welcome to the 3D World Lab</h1><p>This is the first environment and movement prototype: a perspective campus road, detailed building facades, moving traffic, trees, street furniture and lane controls. Jay's final production 3D model and the original game systems are not replaced by this temporary test avatar.</p><button id="start">ENTER CAMPUS</button></div>
+<div class="controls"><div class="cluster"><button id="left" aria-label="Move left">←</button><button id="right" aria-label="Move right">→</button></div><div class="cluster"><button id="jump" aria-label="Jump">↑</button><button id="slide" aria-label="Slide">↓</button></div></div>
+<div class="foot">SWIPE OR USE ARROWS · SPACE TO JUMP · DOWN TO SLIDE</div>
+<script type="module" src="./src/three/world-preview.js"></script>
+</body></html>
