@@ -769,47 +769,49 @@ function setupTouchControls() {
     if (!canvas) return;
     const frame = document.querySelector('.TEMPLATE-4weird-game-frame');
 
-    // Drag anywhere on canvas: absolute 1:1 move (scaled to canvas coords)
+    let dragTouch = null;
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        if (dragTouch !== null) return;
         initAudio();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
+        if (gameState === 'start') startGame();
+        else if (gameState === 'gameOver') restartGame();
+        if (gameState !== 'playing') return;
+        const touch = e.changedTouches[0];
+        dragTouch = touch.identifier;
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
         playerStartX = player.x;
         playerStartY = player.y;
         isTouching = true;
-
-        if (gameState === 'start') { startGame(); return; }
-        if (gameState === 'gameOver') { restartGame(); return; }
-        if (gameState === 'playing' && bulletCooldown <= 0 && (fireHeld || autoFire)) shootBullet();
-        // Store scale for move handler
-        canvas._touchScaleX = canvas.width / rect.width;
-        canvas._touchScaleY = canvas.height / rect.height;
+        if (bulletCooldown <= 0 && (fireHeld || autoFire)) shootBullet();
     }, { passive: false });
 
-    // Touch move - drag player, auto-fire while dragging
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
         if (gameState !== 'playing' || !isTouching) return;
-
-        const touch = e.touches[0];
-        const sx = canvas._touchScaleX || 1;
-        const sy = canvas._touchScaleY || 1;
+        const touch = Array.from(e.changedTouches).find(contact => contact.identifier === dragTouch);
+        if (!touch) return;
+        const rect = canvas.getBoundingClientRect();
+        const sx = canvas.width / Math.max(1, rect.width);
+        const sy = canvas.height / Math.max(1, rect.height);
         player.x = playerStartX + (touch.clientX - touchStartX) * sx;
         player.y = playerStartY + (touch.clientY - touchStartY) * sy;
         player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
         player.y = Math.max(canvas.height / 2, Math.min(canvas.height - player.height - 10, player.y));
-
         if (bulletCooldown <= 0 && (fireHeld || autoFire)) shootBullet();
     }, { passive: false });
 
-    // Touch end
-    canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
+    function clearDrag() {
+        dragTouch = null;
         isTouching = false;
-    }, { passive: false });
+    }
+    function endDrag(e) {
+        if (Array.from(e.changedTouches).some(contact => contact.identifier === dragTouch)) clearDrag();
+    }
+    canvas.addEventListener('touchend', endDrag);
+    canvas.addEventListener('touchcancel', endDrag);
+    window.addEventListener('blur', clearDrag);
 
     if (frame) frame.addEventListener('touchmove', (e) => { if (gameState === 'playing') e.preventDefault(); }, { passive: false });
 

@@ -161,6 +161,7 @@ document.addEventListener('keyup', (e) => keys[e.code] = false);
 
 // Touch controls — tilt-or-touch steering + gas buttons (mobile unique)
 let raceTouchSX = 0;
+let steeringTouch = null, steeringDragged = false;
 let tiltEnabled = false;
 let gasHeld = false, brakeHeld = false;
 function steerLane(dir) {
@@ -172,8 +173,11 @@ function steerLane(dir) {
 }
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (steeringTouch !== null) return;
     initAudio();
-    const touch = e.touches[0];
+    const touch = e.changedTouches[0];
+    steeringTouch = touch.identifier;
+    steeringDragged = gameState !== 'playing';
     const rect = canvas.getBoundingClientRect();
     raceTouchSX = touch.clientX - rect.left;
 
@@ -183,26 +187,34 @@ canvas.addEventListener('touchstart', (e) => {
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (gameState !== 'playing') return;
-    const touch = e.touches[0];
+    const touch = Array.from(e.changedTouches).find(contact => contact.identifier === steeringTouch);
+    if (!touch) return;
     const rect = canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const dx = x - raceTouchSX;
     // Drag-steer: cross a lane threshold to change lanes (scaled to canvas)
     const laneCss = rect.width / laneCount;
     if (Math.abs(dx) > laneCss * 0.35) {
+        steeringDragged = true;
         steerLane(dx > 0 ? 1 : -1);
         raceTouchSX = x;
     }
 }, { passive: false });
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    if (gameState !== 'playing') return;
+    const touch = Array.from(e.changedTouches).find(contact => contact.identifier === steeringTouch);
+    if (!touch) return;
+    steeringTouch = null;
+    if (gameState !== 'playing' || steeringDragged) return;
     // Tap (no drag): left/right half steers
-    const touch = e.changedTouches[0];
     const rect = canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     if (Math.abs(x - raceTouchSX) < 12) steerLane(x < rect.width / 2 ? -1 : 1);
 }, { passive: false });
+canvas.addEventListener('touchcancel', (e) => {
+    if (Array.from(e.changedTouches).some(contact => contact.identifier === steeringTouch)) steeringTouch = null;
+});
+window.addEventListener('blur', () => { steeringTouch = null; });
 (function () {
     const frame = document.querySelector('.TEMPLATE-4weird-game-frame');
     if (!frame) return;

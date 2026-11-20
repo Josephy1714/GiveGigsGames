@@ -152,6 +152,7 @@ document.addEventListener('keyup', (e) => keys[e.code] = false);
 
 // Touch controls — tap halves to dodge + swipe for boost/brake (mobile unique)
 let touchSX = 0, touchSY = 0;
+let steeringTouch = null, steeringDragged = false;
 function moveLane(dir) {
     if (dir < 0) player.x = Math.max(laneWidth / 2 - player.width / 2, player.x - laneWidth);
     else player.x = Math.min(canvas.width - laneWidth / 2 - player.width / 2, player.x + laneWidth);
@@ -159,8 +160,11 @@ function moveLane(dir) {
 }
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (steeringTouch !== null) return;
     initAudio();
-    const touch = e.touches[0];
+    const touch = e.changedTouches[0];
+    steeringTouch = touch.identifier;
+    steeringDragged = gameState !== 'playing';
     const rect = canvas.getBoundingClientRect();
     touchSX = touch.clientX - rect.left;
     touchSY = touch.clientY - rect.top;
@@ -171,13 +175,15 @@ canvas.addEventListener('touchstart', (e) => {
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (gameState !== 'playing') return;
-    const touch = e.touches[0];
+    const touch = Array.from(e.changedTouches).find(contact => contact.identifier === steeringTouch);
+    if (!touch) return;
     const rect = canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
     const dx = x - touchSX, dy = y - touchSY;
     // Swipe boss: horizontal = lane dodge, vertical = boost(up)/brake(down)
     if (Math.abs(dx) > 24 || Math.abs(dy) > 24) {
+        steeringDragged = true;
         if (Math.abs(dx) > Math.abs(dy)) {
             moveLane(dx > 0 ? 1 : -1);
         } else if (dy < 0) {
@@ -192,9 +198,11 @@ canvas.addEventListener('touchmove', (e) => {
 }, { passive: false });
 canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
-    if (gameState !== 'playing') return;
+    const touch = Array.from(e.changedTouches).find(contact => contact.identifier === steeringTouch);
+    if (!touch) return;
+    steeringTouch = null;
+    if (gameState !== 'playing' || steeringDragged) return;
     // Tap (no swipe): left half = dodge left, right half = dodge right
-    const touch = e.changedTouches[0];
     const rect = canvas.getBoundingClientRect();
     const x = touch.clientX - rect.left;
     const y = touch.clientY - rect.top;
@@ -202,6 +210,10 @@ canvas.addEventListener('touchend', (e) => {
         moveLane(x < rect.width / 2 ? -1 : 1);
     }
 }, { passive: false });
+canvas.addEventListener('touchcancel', (e) => {
+    if (Array.from(e.changedTouches).some(contact => contact.identifier === steeringTouch)) steeringTouch = null;
+});
+window.addEventListener('blur', () => { steeringTouch = null; });
 (function () {
     // On-screen ◀ ▶ dodge buttons for coarse pointers
     const frame = document.querySelector('.TEMPLATE-4weird-game-frame');
