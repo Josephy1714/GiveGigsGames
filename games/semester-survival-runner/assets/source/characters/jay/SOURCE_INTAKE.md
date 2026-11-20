@@ -1,6 +1,6 @@
 # Jay source artwork intake
 
-All uploaded source images are preserved in `assets/source/characters/jay/`. This inventory was updated after opening the actual repository image bytes, not just trusting filenames. The source files are not yet runtime-ready.
+Runtime/build source sheets and the approved canonical reference are retained in `assets/source/characters/jay/`. Superseded, duplicate and unused source images were removed from the game package to keep its downloadable size lean. This inventory is based on the actual repository image bytes, not just filenames. Retained source sheets are build inputs, not files loaded during gameplay.
 
 ## Canonical reference
 
