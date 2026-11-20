@@ -175,6 +175,7 @@
   function startMatch(mode) {
     initAudio();
     stopLoop();
+    clearPlayerInput();
     currentModeLabel = mode;
     localVersus = mode === '2p';
     const slot = Number($('#slot').value) || 0;
@@ -300,9 +301,11 @@
   // Input listeners
   const p1Map = (e) => ({ ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'jump', w: 'jump', W: 'jump', ' ': 'jump', s: 'down', S: 'down', ArrowDown: 'down', f: 'dash', F: 'dash' }[e.key]);
   addEventListener('keydown', (e) => {
+    if (!run || e.target.closest?.('input, select, textarea, button, a, [contenteditable]')) return;
     if (localVersus) {
       const k1 = ({ a: 'left', A: 'left', d: 'right', D: 'right', w: 'jump', W: 'jump', ' ': 'jump', s: 'down', S: 'down', f: 'dash', F: 'dash' })[e.key];
       const k2 = ({ ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'jump', ArrowDown: 'down', Shift: 'dash', Enter: 'dash' })[e.key];
+      if (k1 || k2) e.preventDefault();
       if (k1) { keys[k1] = true; lastInput = Date.now(); }
       if (k2) { p2Keys[k2] = true; lastInput = Date.now(); }
       return;
@@ -328,33 +331,54 @@
 
   // Twin-thumb pad
   let lastTapDir = 0, lastTapKey = '';
-  document.querySelectorAll('[data-key]').forEach((b) => {
-    ['pointerdown', 'pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => {
-      b.addEventListener(ev, (e) => {
-        e.preventDefault();
-        initAudio();
-        const k = b.dataset.key;
-        if (ev === 'pointerdown') {
-          lastInput = Date.now();
-          keys[k] = true;
-          b.classList.add('pressed');
-          if (b.dataset.fire) keys.dash = true;
-          if (k === 'left' || k === 'right') {
-            const now = performance.now();
-            if (lastTapKey === k && now - lastTapDir < 300 && player && player.dashCd <= 0) {
-              triggerDash(player, k === 'left' ? -1 : 1);
-            }
-            lastTapDir = now;
-            lastTapKey = k;
-          }
-        } else {
-          keys[k] = false;
-          b.classList.remove('pressed');
-          if (b.dataset.fire) keys.dash = false;
-        }
-      }, { passive: false });
-    });
+  const touchButtons = document.querySelectorAll('#touchPad [data-key]');
+  const touchPointers = new Map();
+  const pendingActions = new Set();
+  function clearPlayerInput() {
+    keys = {};
+    p2Keys = {};
+    touchPointers.clear();
+    pendingActions.clear();
+    lastTapDir = 0;
+    lastTapKey = '';
+    for (const button of touchButtons) button.classList.remove('pressed');
+  }
+  addEventListener('blur', clearPlayerInput);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearPlayerInput();
   });
+  for (const button of touchButtons) {
+    button.addEventListener('pointerdown', e => {
+      if (!run || e.button !== 0 || touchPointers.has(e.pointerId)) return;
+      e.preventDefault();
+      initAudio();
+      const key = button.dataset.key;
+      const firstContact = !Array.from(touchPointers.values()).includes(button);
+      touchPointers.set(e.pointerId, button);
+      try { button.setPointerCapture(e.pointerId); } catch (_) {}
+      button.classList.add('pressed');
+      lastInput = Date.now();
+      if (!firstContact) return;
+      if (key === 'jump' || key === 'dash') pendingActions.add(key);
+      if (key === 'left' || key === 'right') {
+        const now = performance.now();
+        if (lastTapKey === key && now - lastTapDir < 300 && player && player.dashCd <= 0) {
+          triggerDash(player, key === 'left' ? -1 : 1);
+        }
+        lastTapDir = now;
+        lastTapKey = key;
+      }
+    });
+    const release = e => {
+      if (touchPointers.get(e.pointerId) !== button) return;
+      touchPointers.delete(e.pointerId);
+      if (e.type !== 'pointerup') pendingActions.delete(button.dataset.key);
+      if (!Array.from(touchPointers.values()).includes(button)) button.classList.remove('pressed');
+    };
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', release);
+  }
 
   function spawnParticles(x, y, color, count, spd) {
     for (let i = 0; i < count; i++) {
@@ -637,7 +661,11 @@
     }
 
     const p2Input = localVersus ? p2Keys : botControl(bot, player);
-    stepFighter(player, bot, keys, dt);
+    const playerInput = { ...keys };
+    for (const button of touchPointers.values()) playerInput[button.dataset.key] = true;
+    for (const action of pendingActions) playerInput[action] = true;
+    pendingActions.clear();
+    stepFighter(player, bot, playerInput, dt);
     stepFighter(bot, player, p2Input, dt);
 
     // Fighter collision & dash clash

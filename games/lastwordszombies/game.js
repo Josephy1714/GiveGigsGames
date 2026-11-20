@@ -5,6 +5,8 @@ class GameApp {
   constructor() {
     this.state = new StateManager();
     this.audio = new AudioManager(this.state);
+    this.systemKeyboardEnabled = false;
+    this.mobileGraphics = matchMedia('(pointer: coarse)').matches;
     
     // 2. Three.js Setup (fail fast with a readable error if shell is missing)
     this.container = document.getElementById('canvas-container');
@@ -20,8 +22,8 @@ class GameApp {
     // Add player spotlight
     this.flashlight = new THREE.SpotLight(0x8eefff, 18.0, 30.0, Math.PI / 5, 0.55, 1.2);
     this.flashlight.castShadow = true;
-    this.flashlight.shadow.mapSize.width = 1024;
-    this.flashlight.shadow.mapSize.height = 1024;
+    const shadowSize = this.mobileGraphics ? 512 : 1024;
+    this.flashlight.shadow.mapSize.set(shadowSize, shadowSize);
     this.flashlight.shadow.camera.near = 0.5;
     this.flashlight.shadow.camera.far = 35;
     this.flashlight.shadow.bias = -0.001;
@@ -29,7 +31,7 @@ class GameApp {
     this.scene.add(this.camera);
     
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.renderPixelRatio());
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1015,11 +1017,15 @@ class GameApp {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
   }
 
+  renderPixelRatio() {
+    return Math.min(window.devicePixelRatio || 1, this.mobileGraphics ? 1.5 : 2);
+  }
+
   // Focus the hidden typing input without scrolling the page. The input is
   // anchored inside the game frame (see .mobile-typing-input), and
   // preventScroll stops mobile browsers from jumping vertically to reveal it.
   focusMobileInput() {
-    if (!this.isTouchDevice()) return;
+    if (!this.systemKeyboardEnabled || !this.isTouchDevice()) return;
     if (this.state.currentState !== GameState.PLAYING) return;
     const mobileInput = document.getElementById('mobile-game-input');
     if (!mobileInput) return;
@@ -1079,6 +1085,7 @@ class GameApp {
   // otherwise resize the frame + canvas on every open/close and make the
   // game jump. Cleared when leaving PLAYING.
   lockFrameHeight() {
+    if (!this.systemKeyboardEnabled || !this.isTouchDevice()) return;
     const frame = document.querySelector('.TEMPLATE-4weird-game-frame');
     if (!frame || frame.dataset.lwzLocked === 'true') return;
     const rect = frame.getBoundingClientRect();
@@ -1271,7 +1278,7 @@ class GameApp {
     if (this.isTouchDevice() && mobileBtn) {
       mobileBtn.style.display = 'flex';
 
-      // Tapping the play area re-opens the keyboard without scrolling.
+      // Keep the user's keyboard choice when tapping back into the play area.
       this.container.addEventListener('click', () => {
         this.focusMobileInput();
       });
@@ -1280,11 +1287,13 @@ class GameApp {
     if (mobileBtn) {
       mobileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Toggle: focused -> dismiss keyboard, blurred -> bring it back.
-        if (document.activeElement === mobileInput) {
-          this.blurMobileInput();
-        } else {
+        this.systemKeyboardEnabled = !this.systemKeyboardEnabled;
+        mobileBtn.setAttribute('aria-pressed', String(this.systemKeyboardEnabled));
+        if (this.systemKeyboardEnabled) {
           this.focusMobileInput();
+        } else {
+          this.blurMobileInput();
+          this.unlockFrameHeight();
         }
         if (mobileBtn.blur) mobileBtn.blur();
       });
@@ -1303,6 +1312,7 @@ class GameApp {
         }
       });
       mobileInput.addEventListener('input', (e) => {
+        if (e.isComposing) return;
         const val = e.target.value;
         if (val.length > 0) {
           for (let i = 0; i < val.length; i++) {
@@ -1547,18 +1557,22 @@ class GameApp {
     if (canvas) {
       canvas.style.touchAction = 'none';
       canvas.addEventListener('pointerdown', (e) => {
-        this._tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        if (this._tapStart || e.button !== 0) return;
+        this._tapStart = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
       }, { passive: true });
       canvas.addEventListener('pointerup', (e) => {
         const s = this._tapStart;
+        if (!s || s.id !== e.pointerId) return;
         this._tapStart = null;
-        if (!s) return;
         const dx = e.clientX - s.x, dy = e.clientY - s.y;
         if (Math.hypot(dx, dy) > 10 || performance.now() - s.t > 400) return;
         if (this.state.currentState !== GameState.PLAYING) return;
         this.handleCanvasTap(e.clientX, e.clientY);
         this.focusMobileInput();
       }, { passive: true });
+      canvas.addEventListener('pointercancel', (e) => {
+        if (this._tapStart?.id === e.pointerId) this._tapStart = null;
+      });
       // Pinch/scroll on the canvas must never zoom or scroll the page.
       canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     }
@@ -1773,7 +1787,7 @@ class GameApp {
     this.camera.updateProjectionMatrix();
     // HiDPI fix: re-apply capped pixel ratio on every refit (fullscreen
     // changes container size without re-running the constructor).
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(this.renderPixelRatio());
     this.renderer.setSize(w, h);
   }
 

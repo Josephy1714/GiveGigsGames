@@ -22,7 +22,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link data-optional-fonts="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Base Styles -->
     <link rel="stylesheet" href="game.css?v=8">
@@ -165,8 +165,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             <!-- MOBILE: Tap-to-banish + thumb typing deck. Visible on touch
                  devices while PLAYING (toggled via .lwz-deck-on on the frame).
                  Action row mirrors powerups with thumb-sized targets; the
-                 QWERTY deck feeds the same TypingController as the keyboard
-                 and re-focuses the hidden input so the OS keyboard stays up. -->
+                 QWERTY deck feeds the same TypingController as the keyboard. -->
             <div id="lwz-mobile-deck" class="lwz-mobile-deck" aria-label="Tap-to-banish thumb typing deck" style="display: none;">
                 <div class="lwz-action-row" role="group" aria-label="Banish powers">
                     <button type="button" id="lwz-btn-banish" class="lwz-action-btn lwz-banish" aria-label="Banish: shockwave wipe">💥 BANISH</button>
@@ -186,7 +185,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             <div id="gamepad-typing" hidden>D-pad selects a letter · A types · B clears lock <strong id="gamepad-letter">A</strong></div>
 
             <!-- Mobile Keyboard Floating Trigger -->
-            <button type="button" id="mobile-keyboard-btn" class="mobile-keyboard-trigger" style="display: none;" title="Toggle Keyboard" aria-label="Toggle on-screen keyboard">⌨️ TYPE</button>
+            <button type="button" id="mobile-keyboard-btn" class="mobile-keyboard-trigger" style="display: none;" title="Toggle Keyboard" aria-label="Toggle system keyboard" aria-pressed="false">⌨️ TYPE</button>
 
             <!-- Speed Up Button Overlay -->
             <button type="button" id="game-speed-btn" class="game-speed-trigger" style="display: none;" title="Speed Up Zombies" aria-label="Hold to speed up zombies">⚡ <span id="game-speed-label">SPEED UP</span></button>

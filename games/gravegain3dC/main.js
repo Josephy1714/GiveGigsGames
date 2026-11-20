@@ -1,5 +1,6 @@
 // GraveGain3DC — Xonotic-inspired Arena FPS (Player, Auto-Battler Roguelite, RTS Squad, 3 Maps)
 import { MAPS, MAP_LIST } from './maps.js';
+import * as BABYLON from './vendor/babylon-arena.js';
 
 const canvas = document.getElementById('renderCanvas');
 const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true });
@@ -495,6 +496,7 @@ function createScene() {
     const upgradeModal = document.getElementById('upgrade-modal');
     const rtsBar = document.getElementById('rts-bar');
     const rtsAddBtn = document.getElementById('rts-add-bot');
+    const rtsHint = document.getElementById('rts-hint');
     const livesBox = document.getElementById('lives-box');
     const mobileControls = document.getElementById('mobile-controls');
     const crosshair = document.getElementById('crosshair');
@@ -528,6 +530,7 @@ function createScene() {
             friendlies.push(hero);
             spawnEnemyWave(5);
         } else if (newMode === 'rts') {
+            rtsHint.textContent = 'Click or tap the floor to rally your squad';
             camera.fov = 1.05;
             const [rx, ry, rz] = currentMap.playerSpawn;
             rallyPoint.set(rx, ry, rz);
@@ -727,13 +730,17 @@ function createScene() {
             }
             firing = true;
             firePlayerWeapon();
-        } else if (mode === 'rts' && e.button === 0) {
-            const pick = scene.pick(scene.pointerX, scene.pointerY);
-            if (pick?.hit && pick.pickedPoint) {
-                rallyPoint.copyFrom(pick.pickedPoint);
-                rallyMarker.position.set(rallyPoint.x, rallyPoint.y + 0.15, rallyPoint.z);
-            }
         }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+        if (mode !== 'rts' || e.button !== 0) return;
+        const rect = canvas.getBoundingClientRect();
+        const pick = scene.pick(e.clientX - rect.left, e.clientY - rect.top);
+        if (!pick?.hit || !pick.pickedPoint) return;
+        rallyPoint.copyFrom(pick.pickedPoint);
+        rallyMarker.position.set(rallyPoint.x, rallyPoint.y + 0.15, rallyPoint.z);
+        rtsHint.textContent = 'Squad rally point set';
     });
 
     function handleEnemyDeath(enemy) {

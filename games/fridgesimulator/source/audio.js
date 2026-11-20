@@ -1,11 +1,13 @@
 
 
 function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return null;
+    try {
+        if (!audioCtx) audioCtx = new Audio();
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    } catch {
+        // Audio is optional for gameplay.
     }
     return audioCtx;
 }

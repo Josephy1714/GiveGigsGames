@@ -92,13 +92,16 @@
 
   direct.href = url;
   direct.hidden = false;
-  frame.addEventListener("load", () => {
+  function showGame() {
     clearTimeout(timeout);
     loading.hidden = true;
-  });
+  }
+  frame.addEventListener("load", showGame);
   retry.addEventListener("click", launch);
   window.addEventListener("message", (event) => {
-    if (event.source === frame.contentWindow && event.data?.type === "givegigsgames:back-to-select") {
+    if (event.source !== frame.contentWindow) return;
+    if (event.origin === location.origin && event.data?.type === "givegigsgames:game-ready") showGame();
+    if (event.data?.type === "givegigsgames:back-to-select") {
       location.href = "/ggg/#all-games";
     }
   });

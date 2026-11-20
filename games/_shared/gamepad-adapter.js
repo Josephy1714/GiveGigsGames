@@ -115,9 +115,8 @@
     });
     const target = document.activeElement && document.activeElement !== document.body
       ? document.activeElement
-      : window;
+      : document;
     target.dispatchEvent(evt);
-    if (target !== document) document.dispatchEvent(evt);
   }
 
   function setKeyState(def, pressed) {
@@ -134,39 +133,27 @@
 
   function releaseAllKeys() {
     for (const code of Array.from(heldKeys)) {
-      const def = BUTTON_KEY_MAP.find((b) => b.code === code) || {
-        key: code.replace("Arrow", "Arrow"),
-        code,
-        keyCode: 0
-      };
+      const def = BUTTON_KEY_MAP.find((b) => b.code === code);
       heldKeys.delete(code);
-      emitKey("keyup", def);
+      if (def) emitKey("keyup", def);
     }
   }
 
-  function hasConnectedGamepad() {
-    if (!navigator.getGamepads) return false;
-    const pads = navigator.getGamepads();
-    for (let i = 0; i < pads.length; i++) {
-      if (pads[i] && pads[i].connected) return true;
+  function getConnectedGamepad() {
+    try {
+      return Array.from(navigator.getGamepads?.() || []).find(pad => pad?.connected);
+    } catch {
+      // Some embeds disable the Gamepad API through their permissions policy.
+      return undefined;
     }
-    return false;
   }
 
   function poll() {
-    if (!hasConnectedGamepad()) {
+    const pad = getConnectedGamepad();
+    if (!pad || document.hidden) {
       releaseAllKeys();
       rafId = 0;
       return;
-    }
-
-    const pads = navigator.getGamepads();
-    let pad = null;
-    for (let i = 0; i < pads.length; i++) {
-      if (pads[i] && pads[i].connected) {
-        pad = pads[i];
-        break;
-      }
     }
 
     if (pad) {
@@ -300,7 +287,7 @@
   }
 
   function startPolling() {
-    if (!rafId && hasConnectedGamepad()) {
+    if (!rafId && !document.hidden && getConnectedGamepad()) {
       rafId = requestAnimationFrame(poll);
     }
   }
@@ -312,11 +299,16 @@
   });
 
   window.addEventListener("gamepaddisconnected", () => {
-    if (!hasConnectedGamepad()) {
+    if (!getConnectedGamepad()) {
       releaseAllKeys();
       if (cursorEl) cursorEl.style.display = "none";
       cursorVisible = false;
     }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) releaseAllKeys();
+    else startPolling();
   });
 
   // In case a controller was already connected before page load

@@ -69,7 +69,15 @@ progress{width:100%;accent-color:var(--accent);height:16px}
 .timing-zone{background:#a06c90}
 .timing-needle{width:4px;background:#fff;box-shadow:0 0 8px #fff}
 @media(max-width:800px){.workspace{grid-template-columns:1fr}.stage{position:relative;top:auto;max-height:65vh}.stage canvas{height:min(65vh,650px);width:100%;object-fit:contain}.intro{align-items:start;flex-direction:column}.intro>p{max-width:unset}}
+@media(max-width:680px){.masthead{flex-wrap:wrap;gap:8px;padding-block:12px}.stats{flex-wrap:wrap;gap:8px 16px;text-align:left}.stats strong{overflow-wrap:anywhere}}
 @media(max-width:450px){.masthead{display:grid;gap:8px;padding-block:12px}.monogram{display:none}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;text-align:left}.stats strong{font-size:14px;overflow-wrap:anywhere}.stats small{font-size:9px;letter-spacing:.06em}.navigation button{font-size:14px}.slider-grid{gap:10px}.stage-foot .segmented button{padding:.35rem}.panel{border-radius:13px}}
+@media(orientation:landscape) and (min-width:520px) and (max-width:800px){
+  .workspace{grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:10px}
+  .stage{position:sticky;top:8px;max-height:calc(100dvh - 16px)}
+  .stage canvas{height:min(100dvh - 16px,420px)}
+  .stage-foot{align-items:start;flex-direction:column;padding:8px}
+  .stage-foot .segmented button{padding:4px 8px;font-size:12px}
+}
 canvas{touch-action:pan-y;cursor:grab}
 canvas:active{cursor:grabbing}
 canvas.flash{filter:brightness(2.4)}

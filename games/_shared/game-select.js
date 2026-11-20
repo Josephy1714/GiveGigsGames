@@ -1,5 +1,15 @@
 (() => {
   const currentScript = document.currentScript;
+  const optionalFonts = document.querySelectorAll("link[data-optional-fonts]");
+  if (optionalFonts.length) {
+    const loadFonts = () => {
+      setTimeout(() => {
+        for (const link of optionalFonts) link.href = link.dataset.optionalFonts;
+      }, 0);
+    };
+    if (document.readyState === "complete") loadFonts();
+    else window.addEventListener("load", loadFonts, { once: true });
+  }
   const libraryUrl = location.protocol === "file:"
     ? new URL("../../index.html#all-games", currentScript.src).href
     : `${location.origin}/ggg/#all-games`;

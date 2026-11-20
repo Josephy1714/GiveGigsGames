@@ -158,8 +158,11 @@ npm run catalog:build   # Regenerate games/catalog-data.js from games/catalog.js
 npm run check           # Verify catalog freshness + size limits + offline relative paths & assets
 npm run check:size      # Check every static game folder is strictly under 10,000,000 bytes
 npm run check:offline   # Check portable relative links and local HTML asset resolution
+npm run test:mobile     # Open catalog play routes at phone width and exercise selected touch controls
 npm run serve           # Start a basic Python static server on port 4173
 ```
+
+The smoke suite uses Playwright. Set `ARCADE_BROWSER` to `firefox` or `webkit` to test another engine, `ARCADE_SMOKE_ORIENTATION=landscape` for a shorter phone viewport, `ARCADE_SMOKE_INPUT=desktop` for mouse and keyboard, or `ARCADE_SMOKE_GAMES` to a comma-separated list of game slugs for a focused run.
 
 ### Syncing to the GiveGigs Next.js app
 

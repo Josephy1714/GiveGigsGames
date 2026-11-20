@@ -776,7 +776,14 @@ function initPainterScreens() {
     status.id = 'sp-edit-status';
     status.setAttribute('role', 'status');
     controls.before(status);
-    const observer = new ResizeObserver(() => { if (!stage.hidden) resizeCanvas(); });
+    let resizeFrame = 0;
+    const observer = new ResizeObserver(() => {
+        if (resizeFrame) return;
+        resizeFrame = requestAnimationFrame(() => {
+            resizeFrame = 0;
+            if (!stage.hidden) resizeCanvas();
+        });
+    });
     observer.observe(stage);
     document.getElementById('sp-palette').addEventListener('click', refreshPainterHistory);
     document.addEventListener('keydown', event => {

@@ -421,7 +421,6 @@
     }
     const mapCtx = miniMapContext;
     const app = requireElement("#app");
-    app.style.setProperty("--menu-title-image", `url("${getAssetUrl(MENU_TITLE_ASSET)}")`);
     const loadingScreen = requireElement("#loadingScreen");
     const loadingPercent = requireElement("#loadingPercent");
     const loadingFill = requireElement("#loadingFill");
@@ -3142,11 +3141,61 @@
             ctx.drawImage(image, 0, 0, image.naturalWidth, sourceHeight, x, y, width, visibleHeight);
             return;
         }
-        ctx.fillStyle = "#d82e3f";
-        ctx.fillRect(x, y, width, visibleHeight);
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = Math.max(1, Math.min(4, width * 0.04));
-        ctx.strokeRect(x, y, width, visibleHeight);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, y, width, visibleHeight);
+        ctx.clip();
+        ctx.translate(x, y);
+        ctx.scale(width, height);
+        if (asset.startsWith("cars/")) {
+            const paint = asset.includes("veloce") ? "#52ced8" :
+                asset.includes("strada") ? "#efbb54" :
+                    asset.includes("prototype") ? "#ae92ff" : "#e84f59";
+            ctx.fillStyle = "#101722";
+            ctx.fillRect(0.07, 0.58, 0.17, 0.4);
+            ctx.fillRect(0.76, 0.58, 0.17, 0.4);
+            ctx.fillStyle = paint;
+            ctx.beginPath();
+            ctx.moveTo(0.04, 0.61);
+            ctx.lineTo(0.16, 0.45);
+            ctx.lineTo(0.29, 0.22);
+            ctx.lineTo(0.71, 0.22);
+            ctx.lineTo(0.84, 0.45);
+            ctx.lineTo(0.96, 0.61);
+            ctx.lineTo(0.92, 0.87);
+            ctx.lineTo(0.08, 0.87);
+            ctx.closePath();
+            ctx.fill();
+            drawQuad(0.31, 0.28, 0.69, 0.28, 0.78, 0.48, 0.22, 0.48, "#203b54");
+            ctx.fillStyle = "#ffb6aa";
+            ctx.fillRect(0.12, 0.61, 0.22, 0.11);
+            ctx.fillRect(0.66, 0.61, 0.22, 0.11);
+            ctx.fillStyle = "#141b29";
+            ctx.fillRect(0.16, 0.78, 0.68, 0.07);
+        }
+        else if (asset.includes("tree") || asset.includes("cactus")) {
+            ctx.fillStyle = "#5b4437";
+            ctx.fillRect(0.44, 0.38, 0.12, 0.62);
+            ctx.fillStyle = "#306c58";
+            ctx.beginPath();
+            ctx.ellipse(0.5, 0.33, 0.43, 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        else if (asset.includes("building") || asset.includes("billboard")) {
+            ctx.fillStyle = "#34374e";
+            ctx.fillRect(0.06, 0.08, 0.88, 0.92);
+            ctx.fillStyle = "#c5aad8";
+            for (let row = 0; row < 4; row++) {
+                ctx.fillRect(0.21, 0.19 + row * 0.18, 0.58, 0.055);
+            }
+        }
+        else {
+            ctx.fillStyle = asset.startsWith("items/") ? "#8cedee" : "#956f60";
+            ctx.beginPath();
+            ctx.ellipse(0.5, 0.62, 0.42, 0.32, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
     function drawQuad(x1, y1, x2, y2, x3, y3, x4, y4, color) {
         ctx.fillStyle = color;
@@ -3210,7 +3259,11 @@
         document.addEventListener("pointerdown", () => syncMapBgm(), { once: true, capture: true });
         window.addEventListener("resize", () => {
             resize();
-            resetRace();
+            releaseTouchControls();
+        });
+        window.addEventListener("blur", () => {
+            keys.clear();
+            releaseTouchControls();
         });
         window.addEventListener("keydown", (event) => {
             const key = event.key.toLowerCase();
@@ -3302,5 +3355,13 @@
         hideLoadingScreen();
         requestAnimationFrame(frame);
     }
-    void loadAssets().finally(init);
+    // Let a race start even if the optional art host does not answer.
+    const budget = new Promise(resolve => window.setTimeout(resolve, 2500));
+    void Promise.race([loadAssets(), budget]).then(() => {
+        init();
+        if (window.parent !== window && window.location.origin !== "null") {
+            window.parent.postMessage({ type: "givegigsgames:game-ready" }, window.location.origin);
+        }
+        app.style.setProperty("--menu-title-image", `url("${getAssetUrl(MENU_TITLE_ASSET)}")`);
+    });
 })();

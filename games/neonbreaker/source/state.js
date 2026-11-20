@@ -29,8 +29,14 @@ function setMuted(m) { muted = !!m; return muted; }
 function toggleMute() { return setMuted(!muted); }
 
 function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return;
+    try {
+        if (!audioCtx) audioCtx = new Audio();
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    } catch {
+        // Gameplay continues if the browser cannot start audio.
+    }
 }
 
 function playSound(freq, duration, type = 'square', volume = 0.08) {

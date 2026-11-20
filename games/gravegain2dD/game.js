@@ -110,6 +110,7 @@
     paused = Boolean(next);
     cancelAnimationFrame(frame);
     pausePanel.hidden = !paused;
+    if (paused) clearInput();
     if (!paused) {
       last = performance.now();
       frame = requestAnimationFrame(loop);
@@ -242,6 +243,7 @@
 
   const zone = $('#stickZone');
   zone.addEventListener('pointerdown', e => {
+    if (!running || paused || !draftPanel.hidden || pointer !== null || e.button !== 0) return;
     e.preventDefault();
     pointer = e.pointerId;
     zone.setPointerCapture(pointer);
@@ -259,27 +261,36 @@
   }
   zone.addEventListener('pointerup', release);
   zone.addEventListener('pointercancel', release);
+  zone.addEventListener('lostpointercapture', release);
 
   // Right-side tap/swipe gesture support for mobile
-  let tapPointer = null, tapStartY = 0;
+  let tapPointer = null, tapStartY = 0, tapDirection = 0;
   canvas.addEventListener('pointerdown', e => {
-    if (!running || paused || !draftPanel.hidden) return;
+    if (!running || paused || !draftPanel.hidden || tapPointer !== null || e.button !== 0) return;
     if (e.clientX < window.innerWidth * 0.35) return;
     tapPointer = e.pointerId;
     tapStartY = e.clientY;
-    input.y = -0.8;
+    tapDirection = -0.8;
+    canvas.setPointerCapture(tapPointer);
+    jumpBuffer = 0.16;
   });
   canvas.addEventListener('pointermove', e => {
     if (e.pointerId !== tapPointer) return;
-    if (e.clientY - tapStartY > 28) input.y = 0.8;
+    if (e.clientY - tapStartY > 28 && tapDirection < 0) {
+      tapDirection = 0.8;
+      jumpBuffer = 0;
+    }
   });
   function endTap(e) {
     if (e.pointerId !== tapPointer) return;
     tapPointer = null;
-    applyKeyboard();
+    tapDirection = 0;
+    if (e.type === 'pointercancel') jumpBuffer = 0;
+    if (pointer === null) applyKeyboard();
   }
   canvas.addEventListener('pointerup', endTap);
   canvas.addEventListener('pointercancel', endTap);
+  canvas.addEventListener('lostpointercapture', endTap);
 
   const heldKeys = new Set();
   const controls = new Map([
@@ -801,12 +812,18 @@
   atlas.addEventListener('load', renderIntro);
   props.addEventListener('load', renderIntro);
 
-  addEventListener('blur', () => {
+  function clearInput() {
     heldKeys.clear();
     input = { x: 0, y: 0 };
     pointer = null;
     tapPointer = null;
+    tapDirection = jumpBuffer = 0;
+    jumpHeld = false;
     $stick.style.transform = 'translate(0,0)';
+  }
+
+  addEventListener('blur', () => {
+    clearInput();
     if (running && !paused && draftPanel.hidden) setPaused(true);
   });
 
@@ -872,7 +889,8 @@
     player.vault = Math.max(0, player.vault - dt);
     dropTimer = Math.max(0, dropTimer - dt);
 
-    const wantsJump = input.y < -0.33;
+    const vertical = tapPointer === null ? input.y : tapDirection;
+    const wantsJump = vertical < -0.33;
     if (wantsJump && !jumpHeld) jumpBuffer = 0.16;
     jumpHeld = wantsJump;
     if (!player.jump && player.y <= ground) coyote = 0.105;
@@ -901,7 +919,7 @@
     }
 
     // Platform drop-through when pressing down on an upper platform
-    if (!player.jump && player.y < ground && input.y > 0.45 && dropTimer <= 0) {
+    if (!player.jump && player.y < ground && vertical > 0.45 && dropTimer <= 0) {
       run.leavePlatform();
       dropTimer = 0.22;
       player.jump = true;
@@ -911,7 +929,7 @@
     jumpBuffer = Math.max(0, jumpBuffer - dt);
     coyote = Math.max(0, coyote - dt);
     const previousY = player.y;
-    if (input.y > 0.36 && player.jump && player.vault === 0) player.vy = Math.max(player.vy, 380);
+    if (vertical > 0.36 && player.jump && player.vault === 0) player.vy = Math.max(player.vy, 380);
     player.vy += (player.vy < 0 ? 1130 : 1350) * dt;
     if (wallGrip) player.vy = Math.min(105, Math.max(0, player.vy));
     player.y += player.vy * dt;
@@ -957,7 +975,7 @@
       spawn = 1.15 + Math.random() * 1.05 - Math.min(distance / 18000, 0.3);
     }
 
-    sliding = input.y > 0.36 && !player.jump;
+    sliding = vertical > 0.36 && !player.jump;
 
     for (const o of obstacles) {
       if (o.type === 'turret') updateTurret(o);
@@ -1037,7 +1055,7 @@
       }
       if (o.type === 'gap') continue;
       if (player.y > ground - o.h + 16) {
-        if (o.type === 'stump' && input.y < -0.15 && player.vault <= 0) {
+        if (o.type === 'stump' && vertical < -0.15 && player.vault <= 0) {
           player.vy = -350 - (build.vault || 0);
           player.jump = true;
           player.vault = VAULT_SECONDS;

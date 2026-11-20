@@ -60,12 +60,18 @@ let muted = false;
 function setMuted(m) { muted = !!m; return muted; }
 function toggleMute() { return setMuted(!muted); }
 function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    if (!Audio) return;
+    try {
+        if (!audioCtx) audioCtx = new Audio();
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    } catch {
+        // Gameplay continues if the browser cannot start audio.
+    }
 }
 // Resume audio on first user gesture (autoplay policy safety)
 window.addEventListener('pointerdown', function () {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    initAudio();
 }, { passive: true });
 function playSound(freq, duration, type = 'square', volume = 0.08) {
     if (!audioCtx || muted) return;

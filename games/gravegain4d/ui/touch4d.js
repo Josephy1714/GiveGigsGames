@@ -25,6 +25,7 @@
         this.wShift = 0; // -1 ana .. +1 kata, set by ana/kata buttons
         this.buttons = { putt: false, ana: false, kata: false, jump: false, rewind: false };
         this._stickId = null;
+        this._padPointers = new Map();
         this._stickCx = 0; this._stickCy = 0;
         this._radius = 48;
         this._attached = false;
@@ -88,6 +89,7 @@
 
     Touch4D.prototype._emitButton = function (name, down) {
         try {
+            if (this.buttons[name] === !!down) return;
             this.buttons[name] = !!down;
             if (name === 'ana' && down) this.wShift = -1;
             else if (name === 'kata' && down) this.wShift = 1;
@@ -145,27 +147,36 @@
             this._zone.addEventListener('pointercancel', this._onStickEnd, { passive: false });
 
             this._onBtnDown = function (ev) {
-                try {
-                    var t = ev.target && ev.target.closest ? ev.target.closest('[data-gg4d-btn]') : null;
-                    if (!t) return;
-                    if (ev.cancelable) ev.preventDefault();
-                    self._emitButton(t.dataset.gg4dBtn, true);
-                } catch (e) { /* ignore */ }
+                var button = ev.target.closest?.('[data-gg4d-btn]');
+                if (!button || ev.button !== 0 || self._padPointers.has(ev.pointerId)) return;
+                if (ev.cancelable) ev.preventDefault();
+                self._padPointers.set(ev.pointerId, button.dataset.gg4dBtn);
+                try { button.setPointerCapture(ev.pointerId); } catch (e) { /* Synthetic input may not support capture. */ }
+                self._emitButton(button.dataset.gg4dBtn, true);
             };
             this._onBtnUp = function (ev) {
-                try {
-                    var t = ev.target && ev.target.closest ? ev.target.closest('[data-gg4d-btn]') : null;
-                    if (!t) return;
-                    if (ev.cancelable) ev.preventDefault();
-                    self._emitButton(t.dataset.gg4dBtn, false);
-                } catch (e) { /* ignore */ }
+                var name = self._padPointers.get(ev.pointerId);
+                if (!name) return;
+                if (ev.cancelable) ev.preventDefault();
+                self._padPointers.delete(ev.pointerId);
+                if (!Array.from(self._padPointers.values()).includes(name)) self._emitButton(name, false);
             };
             this._pad.addEventListener('pointerdown', this._onBtnDown, { passive: false });
             this._pad.addEventListener('pointerup', this._onBtnUp, { passive: false });
             this._pad.addEventListener('pointercancel', this._onBtnUp, { passive: false });
-            // Avoid stuck buttons when the pointer leaves mid-press.
-            this._pad.addEventListener('pointerleave', this._onBtnUp, { passive: false });
-            // Stop iOS double-tap zoom / scroll gestures on the overlay.
+            this._pad.addEventListener('lostpointercapture', this._onBtnUp);
+            this._zone.addEventListener('lostpointercapture', this._onStickEnd);
+
+            this._resetInput = function () {
+                if (self._stickId !== null) self._onStickEnd({ pointerId: self._stickId });
+                self._padPointers.clear();
+                Object.keys(self.buttons).forEach(function (name) { self._emitButton(name, false); });
+            };
+            this._onVisibilityChange = function () {
+                if (document.hidden) self._resetInput();
+            };
+            window.addEventListener('blur', this._resetInput);
+            document.addEventListener('visibilitychange', this._onVisibilityChange);
             this._onTouchMove = function (ev) { try { if (ev.cancelable) ev.preventDefault(); } catch (e) { /* ignore */ } };
             this.root.addEventListener('touchmove', this._onTouchMove, { passive: false });
         } catch (e) { /* ignore */ }
@@ -185,18 +196,24 @@
 
     Touch4D.prototype.destroy = function () {
         try {
+            if (this._resetInput) {
+                this._resetInput();
+                window.removeEventListener('blur', this._resetInput);
+                document.removeEventListener('visibilitychange', this._onVisibilityChange);
+            }
             if (this._zone && this._onStickStart) {
                 this._zone.removeEventListener('pointerdown', this._onStickStart);
                 this._zone.removeEventListener('pointermove', this._onStickMove);
                 this._zone.removeEventListener('pointerup', this._onStickEnd);
                 this._zone.removeEventListener('pointercancel', this._onStickEnd);
+                this._zone.removeEventListener('lostpointercapture', this._onStickEnd);
             }
             if (this._pad) {
                 if (this._onBtnDown) this._pad.removeEventListener('pointerdown', this._onBtnDown);
                 if (this._onBtnUp) {
                     this._pad.removeEventListener('pointerup', this._onBtnUp);
                     this._pad.removeEventListener('pointercancel', this._onBtnUp);
-                    this._pad.removeEventListener('pointerleave', this._onBtnUp);
+                    this._pad.removeEventListener('lostpointercapture', this._onBtnUp);
                 }
             }
             if (this.root && this._onTouchMove) this.root.removeEventListener('touchmove', this._onTouchMove);
