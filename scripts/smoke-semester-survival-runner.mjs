@@ -18,6 +18,17 @@ try {
   await page.locator("#play").click();
   await page.locator("#game.open").waitFor();
   await page.locator("#world").waitFor({ state: "visible" });
+  await page.waitForFunction(() => window.__runnerSmoke.state().animationClip === "sprint");
+  const roadTop = await page.locator("#world").evaluate(canvas => Array.from(canvas.getContext("2d").getImageData(270, 10, 1, 1).data));
+  assert.ok(roadTop[0] > 20 && roadTop[0] < 130 && roadTop[1] > 20, "The road must reach the top of the portrait canvas without a hill covering it");
+  const laneProjection = await page.evaluate(() => {
+    const state = window.__runnerSmoke.state();
+    return [0, 1, 2].map(lane => Math.abs(state.projectedLaneX(lane, .9) - [77, 270, 463][lane]));
+  });
+  assert.ok(laneProjection.every(delta => delta < 2), "Each lane's approaching pickups must line up with Jay at the camera plane");
+  const coinProbe = lane => page.evaluate(lane => window.__runnerSmoke.probeCoin({ lane: 1, coinLane: lane }), lane);
+  assert.deepEqual(await coinProbe(1), { coins: 1, remaining: 0 }, "A same-lane coin should award one coin and disappear immediately");
+  assert.deepEqual(await coinProbe(0), { coins: 0, remaining: 1 }, "A coin in another lane must not be collected or disappear early");
 
   // Verify obstacle height maps to the correct evasive action.
   const probe = (action, movement = {}) => page.evaluate(
