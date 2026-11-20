@@ -1,0 +1,28 @@
+name: Semester Survival runner tests
+on:
+  pull_request:
+    paths:
+      - 'games/semester-survival-runner/**'
+      - 'artwork/semester-survival-runner/jay-source/**'
+      - '.github/workflows/semester-survival-runner-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'games/semester-survival-runner/**'
+      - 'artwork/semester-survival-runner/jay-source/**'
+      - '.github/workflows/semester-survival-runner-tests.yml'
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          find games/semester-survival-runner -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Run runner module tests
+        run: npm --prefix games/semester-survival-runner run test:runner-modules
+      - name: Audit preserved Jay source artwork
+        run: node games/semester-survival-runner/src/tools/validate-jay-source.js
