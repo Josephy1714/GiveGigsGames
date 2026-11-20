@@ -43,7 +43,7 @@ try {
   assert.equal(bossClear.cleared, 1, "Clearing a boss should increment the boss-clear counter");
   assert.equal(bossClear.coins, 55, "The first semester boss should award its 55-coin reward");
   assert.ok(Math.abs(bossClear.energy - 52) < 0.01, "Clearing a boss should restore 12 energy");
-  assert.equal(bossClear.nextAt, 3050, "The next boss threshold should advance by 1,050 metres");
+  assert.equal(bossClear.nextAt, 3600, "The next boss threshold should advance by 1,600 metres");
 
   await page.locator("#fullscreen").click();
   await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
