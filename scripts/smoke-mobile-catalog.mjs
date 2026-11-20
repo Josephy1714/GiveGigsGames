@@ -259,6 +259,11 @@ try {
           }
           await activate(frame.locator("#leave"));
           await frame.locator("#lobby").waitFor({ state: "visible" });
+          await frame.evaluate(() => {
+            document.querySelector("#quick").click();
+            if (document.querySelector("#game").hidden) throw new Error("Quick Match should launch immediately");
+          });
+          assert.match(await frame.locator("#banner").textContent(), /LOCAL .* RIVAL READY/);
         }
         if (game.slug === "gravegain4d" || game.slug === "gravegain4dA") await verifyHyperdungeonGestures(frame);
         if (game.slug === "global-fashion-model-life") {
@@ -270,6 +275,30 @@ try {
             assert.ok(preview && editor && preview.x + preview.width <= editor.x,
               "Landscape editor and preview must sit side by side");
           }
+          await activate(frame.getByRole("button", { name: "Jade halo", exact: true }));
+          await activate(frame.getByRole("button", { name: "Clean casting", exact: true }));
+          assert.equal(await frame.locator('[data-avatar="shadowShape"]').inputValue(), "wash");
+          await activate(frame.getByRole("button", { name: "Bookings", exact: true }));
+          assert.equal(await frame.locator('#panel [data-action="job"]').count(), 11);
+          await frame.locator("#booking-kind").selectOption("Casting");
+          await frame.locator("#booking-available").check();
+          const newBooking = frame.locator('[data-action="job"][data-value="5"]');
+          assert.equal(await frame.locator('#panel [data-action="job"]').count(), 2);
+          await activate(newBooking);
+          await frame.getByRole("heading", { name: "Brooklyn denim test" }).waitFor();
+          for (const [pose, framing] of [["front", "beauty"], ["angle", "mid"], ["front", "full"]]) {
+            await activate(frame.locator(`[data-action="pose"][data-value="${pose}"]`));
+            await activate(frame.locator(`[data-action="frame"][data-value="${framing}"]`));
+            await activate(frame.getByRole("button", { name: "Release shutter" }));
+          }
+          await frame.getByText("Final Score:", { exact: false }).getByText("85%", { exact: true }).waitFor();
+          await activate(frame.getByRole("button", { name: "Back to Call Sheet" }));
+          assert.equal(await newBooking.count(), 0, "A completed booking should leave the available list");
+          await activate(frame.getByRole("button", { name: "Lifestyle", exact: true }));
+          const reception = frame.locator('[data-action="social"][data-value="market:nyc"]');
+          await activate(reception);
+          await activate(frame.getByRole("button", { name: "Compare notes with other new models" }));
+          assert.ok(await reception.isDisabled(), "The local event should be limited to once per day");
         }
         if (game.slug === "gravegain2dD") {
           await activate(frame.locator("#start"));
@@ -278,6 +307,15 @@ try {
           await activate(frame.locator("#pause-btn"));
           await activate(frame.locator("#resume-btn"));
           await frame.locator("#pause-panel").waitFor({ state: "hidden" });
+          await frame.evaluate(() => {
+            Object.defineProperty(document, "hidden", { configurable: true, value: true });
+            try {
+              document.dispatchEvent(new Event("visibilitychange"));
+            } finally {
+              delete document.hidden;
+            }
+          });
+          await frame.locator("#pause-panel").waitFor({ state: "visible" });
         }
         if (game.slug === "gravegain3dC") {
           await activate(frame.locator('[data-mode="player"]'));
@@ -294,6 +332,11 @@ try {
           await activate(frame.locator("#menu-btn"));
           await activate(frame.locator('[data-mode="autobattler"]'));
           await frame.locator("#overlay").waitFor({ state: "hidden" });
+        }
+        if (game.slug === "semester-survival-runner") {
+          await activate(frame.locator("#play"));
+          await frame.locator("#world").waitFor({ state: "visible" });
+          await frame.waitForFunction(() => parseInt(document.querySelector("#distance").textContent, 10) > 0);
         }
         if (game.slug === "starship-simulator") {
           await activate(frame.locator("#btn-launch-flight"));
@@ -350,6 +393,17 @@ try {
           await activate(keyboard);
           assert.equal(await keyboard.getAttribute("aria-pressed"), "false");
           assert.notEqual(await frame.evaluate(() => document.activeElement.id), "mobile-game-input");
+        }
+        if (game.slug === "lastwordszombies" && desktop) {
+          await page.keyboard.down("Escape");
+          try {
+            const pause = frame.locator("#TEMPLATE-4weird-pause-screen");
+            await pause.waitFor({ state: "visible" });
+            await page.keyboard.down("Escape");
+            assert.ok(await pause.isVisible(), "Holding Escape should keep the game paused");
+          } finally {
+            await page.keyboard.up("Escape");
+          }
         }
       }
       assert.deepEqual([...errors], []);

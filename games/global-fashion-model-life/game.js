@@ -10,6 +10,11 @@ const avatarDefault = {
   ...presets[1][1]
 };
 const saveKey="global-fashion-model-life-v1";
+const makeupKeys=new Set([
+  "customLip","customShadow","customBlush",
+  ...presets.flatMap(([,settings])=>Object.keys(settings)),
+  ...sliderGroups.Makeup.map(([key])=>key)
+]);
 const initial = {
   home:null,city:"nyc",name:"Ari Chen",day:1,cash:480,fame:0,contacts:0,energy:100,avatar:avatarDefault,
   owned:garments.filter(g=>g.cost===0).map(g=>g.id), looks:[],photos:[],record:{},log:[],
@@ -51,6 +56,10 @@ function load(){
 }
 let state=load();
 let page="Studio", tab="Makeup", frame="full", pose="front", scene="studio", session=null, wrap=null, animation=0, photoLight="studio", flashTimer=0;
+const bookingKinds=["Casting","Shoot","Fitting","Runway","Press"];
+const photoLimit=12;
+let bookingKind="", availableOnly=false;
+const localEvents=()=>({...events,["market:"+state.city]:marketEvents[state.city]});
 let renderer;
 try{ renderer=createStudio(canvas); }
 catch { canvas.hidden=true; $("notice").textContent="The avatar preview requires WebGL. Career and styling controls are still available."; }
@@ -137,21 +146,32 @@ function studioPanel(){
 function bookingPanel(){
   const curStyle=styleOf();
   const trend=dailyTrend();
+  const entries=jobs[state.city].map((job,index)=>({job,index,status:bookingStatus(job,index)}))
+    .filter(({job,status})=>(!bookingKind||job[1]===bookingKind)&&(!availableOnly||!status));
   panel.innerHTML='<div class="fields"><div><p class="eyebrow">Local market · Daily trend: '+trend+' (+20%)</p><h2>'+hubs[state.city].city+'</h2><p class="muted">'+hubs[state.city].note+'</p><p class="muted">Current look: <strong>'+curStyle+'</strong></p></div>'+
-    jobs[state.city].map((job,i)=>{
-      const [name,kind,style,brief,gate,fee]=job;
+    '<div class="buttons booking-filters"><label class="field">Booking type <select id="booking-kind"><option value="">All types</option>'+
+      bookingKinds.map(kind=>'<option'+(bookingKind===kind?' selected':'')+'>'+kind+'</option>').join("")+
+    '</select></label><label class="booking-availability"><input id="booking-available" type="checkbox"'+(availableOnly?' checked':'')+'> Available today</label></div>'+
+    '<p class="muted" role="status">'+entries.length+' of '+jobs[state.city].length+' bookings</p>'+
+    (entries.length?entries.map(({job,index:i,status})=>{
+      const [name,kind,style,brief,,fee]=job;
       const record=state.record[state.city+":"+i];
-      const status=state.fame<gate?"Unlocks at "+gate+" reputation":state.energy<19?"Requires 19% energy":record?.day===state.day?"Return tomorrow":"";
       const matchBadge=curStyle===style?'<span class="badge match">✓ Look matches brief</span>':'<span class="badge warn">Brief: '+style+'</span>';
       const trendBadge=style===trend?' <span class="badge trend">★ Trend +20%</span>':"";
       const actions=status?primary(status,"job",i,true):'<div class="buttons">'+primary("Take booking","job",i)+(curStyle!==style?btn("Style in Studio","go-studio",""):"")+'</div>';
       return '<article class="card"><p class="eyebrow">'+kind+' · '+style+'</p><h3>'+name+'</h3><div>'+matchBadge+trendBadge+'</div><p>'+brief+'</p><small>'+money(fee)+' base fee'+(record?" · Personal best "+record.best+"%":"")+'</small>'+actions+'</article>';
-    }).join("")+'</div>';
+    }).join(""):'<p>No bookings match these filters. Change the type or show unavailable bookings.</p>')+'</div>';
+}
+function bookingStatus(job,index){
+  if(state.fame<job[4])return "Unlocks at "+job[4]+" reputation";
+  if(state.record[state.city+":"+index]?.day===state.day)return "Return tomorrow";
+  return state.energy<19?"Requires 19% energy":"";
 }
 function photoPanel(){
   panel.innerHTML='<div class="fields"><h2>Contact Sheet</h2>'+choices("Pose","pose",poses,pose)+
     choices("Set","photo-light",[["Fitting mirror","studio"],["Softbox","shoot"],["Runway","runway"],["After dark","party"]],photoLight)+
-    '<div class="buttons">'+primary("Take photograph","photo","",!renderer)+btn("Rotate left","rotate",-30)+btn("Rotate right","rotate",30)+'</div>'+
+    '<div class="buttons">'+primary("Take photograph","photo","",!renderer||state.photos.length>=photoLimit)+btn("Rotate left","rotate",-30)+btn("Rotate right","rotate",30)+'</div>'+
+    '<p class="muted">'+state.photos.length+' / '+photoLimit+' saved'+(state.photos.length>=photoLimit?' · Download and remove a photo to make room.':'')+'</p>'+
     (state.photos.length?'<div class="choice-grid">'+state.photos.map((photo,i)=>'<article class="card"><img src="'+esc(photo.url)+'" alt="'+esc(photo.caption)+'"><small>'+esc(photo.caption)+'</small><a href="'+esc(photo.url)+'" download="fashion-look-'+(i+1)+'.jpg">Download photo</a>'+btn("Remove","photo-delete",i)+'</article>').join("")+'</div>':'<p class="muted">Captured portraits appear here and can be downloaded.</p>')+'</div>';
 }
 function passportPanel(){
@@ -163,16 +183,18 @@ function passportPanel(){
 }
 function lifestylePanel(){
   panel.innerHTML='<div class="fields"><article class="card"><p class="eyebrow">Overnight</p><h2>The Hotel</h2><p>Rest in your room for free or book a suite with late checkout. Both advance the calendar and reopen completed jobs.</p><div class="buttons">'+btn("Standard room · +57% energy","rest",0)+primary("Suite · full energy · $110","rest",110,state.cash<110)+'</div></article>'+
-    Object.entries(events).map(([id,event])=>{
+    Object.entries(localEvents()).map(([id,event])=>{
       const status=state.energy<event.energy?"Low energy":state.cash<event.cost?"Insufficient funds":state.record["social:"+id]?.day===state.day?"Already attended today":"";
       return '<article class="card"><p class="eyebrow">'+event.style+' dress brief</p><h2>'+event.name+'</h2><p>'+event.prompt+'</p><small>Invitation costs '+money(event.cost)+' and '+event.energy+'% energy</small>'+primary(status||"Attend","social",id,Boolean(status))+'</article>';
     }).join("")+'</div>';
 }
 function careerPanel(){
-  const rank=state.fame>=230?"International headliner":state.fame>=105?"International talent":state.fame>=45?"Fashion week regular":state.fame>=14?"Working model":"New face";
+  const ranks=[[0,"New face"],[14,"Working model"],[45,"Fashion week regular"],[105,"International talent"],[230,"International headliner"]];
+  const next=ranks.findIndex(([gate])=>state.fame<gate);
+  const [floor,rank]=ranks[next<0?ranks.length-1:next-1];
   const unlocked=state.milestones||[];
-  panel.innerHTML='<div class="fields"><div><p class="eyebrow">Professional standing</p><h2>'+rank+'</h2><p class="muted">'+hubs[state.home].city+' debut · '+state.contacts+' industry contacts · '+state.photos.length+' portfolio photos</p></div><h3>Next milestone</h3>'+
-    ([14,45,105,230].find(n=>state.fame<n)?'<progress max="230" value="'+state.fame+'"></progress>':'<p class="muted">International headliner reached.</p>')+
+  panel.innerHTML='<div class="fields"><div><p class="eyebrow">Professional standing</p><h2>'+rank+'</h2><p class="muted">'+hubs[state.home].city+' debut · '+state.contacts+' industry contacts · '+state.photos.length+' portfolio photos</p></div>'+
+    (next<0?'<p class="muted">Highest career rank reached.</p>':'<label class="field">Next rank: '+ranks[next][1]+' · '+(ranks[next][0]-state.fame)+' reputation to go<progress max="'+(ranks[next][0]-floor)+'" value="'+(state.fame-floor)+'"></progress></label>')+
     '<h3>Career Milestones ('+unlocked.length+'/'+milestoneDefs.length+')</h3><div class="milestone-grid">'+
     milestoneDefs.map(([id,title,desc])=>'<div class="milestone'+(unlocked.includes(id)?' unlocked':'')+'"><strong>'+(unlocked.includes(id)?'✦ ':'')+title+'</strong><small>'+desc+'</small></div>').join("")+
     '</div><h3>Career journal</h3>'+(state.log.length?state.log.map(x=>'<article class="card"><small>Day '+x.day+'</small><p>'+esc(x.text)+'</p></article>').join(""):'<p class="muted">Your first booking will appear here.</p>')+
@@ -212,7 +234,7 @@ const manilaFitting=[
   ["A stylist asks how to describe the woven fabric in the credits.",["Describe it as generic print","Guess the weaving community","Check the fabric name and maker credit with the designer"],2],
   ["The call time moves up and the team is split across Metro Manila.",["Confirm the updated times and tell the dresser your arrival estimate","Wait for someone to notice you are late","Ask the photographer to skip the fitting"],0]
 ];
-const fittingForCity=()=>state.city==="mnl"?manilaFitting:fittingSteps;
+const fittingForCity=()=>expandedBookings[state.city].includes(session.job)?marketFittings[state.city]:state.city==="mnl"?manilaFitting:fittingSteps;
 const pressSteps={
   lax:[
     ["The interviewer asks what you do differently for a commercial campaign.",["Describe hitting repeatable marks while keeping the movement natural","Say each take should surprise the product team","Say the crew can fix every pose in editing"],0],
@@ -239,7 +261,7 @@ const poseLabel=(id)=>poses.find(([,value])=>value===id)[0];
 
 function startJob(index){
   const job=jobs[state.city][index];
-  if(!job||state.fame<job[4]||state.energy<19||state.record[state.city+":"+index]?.day===state.day)return;
+  if(!job||bookingStatus(job,index))return;
   session={type:"job",job,index,step:0,points:0,combo:0,last:"",phase:0,started:performance.now()};
   const kind=job[1];
   scene={Casting:"shoot",Shoot:"shoot",Fitting:"studio",Press:"press",Runway:"runway"}[kind];
@@ -255,7 +277,7 @@ function sessionPanel(){
     return;
   }
   if(session.type==="social"){
-    const event=events[session.id];
+    const event=localEvents()[session.id];
     panel.innerHTML='<div class="fields"><h2>'+event.name+'</h2><p class="muted">'+(session.id==="dinner"&&state.city==="mnl"?"At a Makati dinner serving contemporary Filipino food, the designer asks how the collection felt on the runway.":event.prompt)+'</p>'+
       event.options.map(([label],i)=>btn(label,"social-answer",i)).join("")+btn("Return to hotel","cancel")+'</div>';
     return;
@@ -383,7 +405,7 @@ function tick(now){
   animation=requestAnimationFrame(tick);
 }
 function takePhoto(){
-  if(!renderer)return;
+  if(!renderer||state.photos.length>=photoLimit)return;
   if(typeof soundFX!=="undefined")soundFX.shutter();
   flash();
   const snapshot=document.createElement("canvas");
@@ -391,7 +413,6 @@ function takePhoto(){
   snapshot.height=570;
   snapshot.getContext("2d").drawImage(canvas,0,0,480,570);
   state.photos.unshift({url:snapshot.toDataURL("image/jpeg",.83),caption:state.name+" · "+hubs[state.city].city+" · "+poseLabel(pose)});
-  state.photos=state.photos.slice(0,12);
   checkMilestones();
   persist("Photograph added to your contact sheet.");
   photoPanel();
@@ -424,6 +445,7 @@ function handle(action,value){
   if(action==="reset-career"){
     if(!confirm("Start a new career? Your current progress will be reset."))return;
     state=structuredClone(initial);
+    bookingKind="";availableOnly=false;
     page="Studio";tab="Makeup";frame="full";pose="front";scene="studio";session=null;wrap=null;
     persist("Started a fresh career.");
     render();
@@ -438,6 +460,7 @@ function handle(action,value){
   if(action==="home"){
     if(state.home||!["nyc","mnl"].includes(value))return;
     state.home=state.city=value;
+    state.visited=[value];
     state.name=$("name-input").value.trim()||"Ari Chen";
     state.avatar.garment="column";
     addLog("Started modeling in "+hubs[value].city+".");
@@ -490,7 +513,7 @@ function handle(action,value){
     }
     if(action==="social-answer"){
       const {id}=session;
-      const event=events[id];
+      const event=localEvents()[id];
       const [,rep,network]=event.options[Number(value)];
       const bonus=styleOf()===event.style?5:0;
       state.cash-=event.cost;
@@ -501,6 +524,8 @@ function handle(action,value){
       const result=event.name+" · +"+(rep+bonus)+" reputation · +"+Math.floor(network/8)+" contacts";
       addLog(result);
       session=null;
+      scene="hotel";
+      checkMilestones();
       render();
       persist(result);
     }
@@ -546,7 +571,7 @@ function handle(action,value){
     say("Randomized look.");
   }
   if(action==="preset"){
-    state.avatar.customLip=state.avatar.customShadow=state.avatar.customBlush="";
+    for(const key of makeupKeys)state.avatar[key]=avatarDefault[key];
     Object.assign(state.avatar,presets[Number(value)][1]);
   }
   if(action==="swatch"){
@@ -562,6 +587,7 @@ function handle(action,value){
       if(state.cash<garment.cost){say("You need "+money(garment.cost)+" to buy this piece.");return;}
       state.cash-=garment.cost;
       state.owned.push(value);
+      checkMilestones();
       addLog("Added "+garment.name+" to the wardrobe.");
       say("Purchased "+garment.name+" for "+money(garment.cost)+".");
     }
@@ -600,10 +626,10 @@ function handle(action,value){
     say("Checked out rested. Your call sheet has reopened.");
   }
   if(action==="social"){
-    const event=events[value];
+    const event=localEvents()[value];
     if(state.cash<event.cost||state.energy<event.energy||state.record["social:"+value]?.day===state.day)return;
     session={type:"social",id:value};
-    scene=value;
+    scene=value==="dinner"?"dinner":"party";
     frame="full";
   }
   persist();
@@ -633,6 +659,18 @@ panel.addEventListener("input",e=>{
   draw();
 });
 panel.addEventListener("change",e=>{
+  if(e.target.id==="booking-kind"||e.target.id==="booking-available"){
+    const id=e.target.id;
+    bookingKind=$("booking-kind").value;
+    availableOnly=$("booking-available").checked;
+    bookingPanel();
+    $(id).focus({preventScroll:true});
+    return;
+  }
+  if(e.target.dataset.custom){
+    persist();
+    return;
+  }
   const key=e.target.dataset.avatar;
   if(e.target.id==="name-input"){
     state.name=e.target.value.trim()||state.name;

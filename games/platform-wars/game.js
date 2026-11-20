@@ -216,33 +216,6 @@
     rafId = requestAnimationFrame(loop);
   }
 
-  async function quickMatch() {
-    initAudio();
-    const request = window.FourWeirdServer?.request;
-    if (request && (location.protocol === 'http:' || location.protocol === 'https:')) {
-      $('#quick').disabled = true;
-      $('#quick').textContent = 'Searching…';
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 1100);
-        const r = await Promise.race([
-          request('/api/matches', { method: 'POST', body: { game_slug: 'platform-wars', platform: type.toLowerCase() } }),
-          new Promise((res) => setTimeout(() => res(null), 1100))
-        ]);
-        clearTimeout(t);
-        if (r?.status === 'matched') {
-          $('#quick').disabled = false;
-          $('#quick').textContent = '⚡ Quick Match';
-          startMatch('quick');
-          return;
-        }
-      } catch (_) {}
-      $('#quick').disabled = false;
-      $('#quick').textContent = '⚡ Quick Match';
-    }
-    startMatch('quick');
-  }
-
   function finishMatch() {
     stopLoop();
     run = false;
@@ -273,7 +246,7 @@
     $('#matchOver').hidden = false;
   }
 
-  $('#quick').onclick = quickMatch;
+  $('#quick').onclick = () => startMatch('quick');
   $('#practice').onclick = () => startMatch('practice');
   $('#local2p').onclick = () => startMatch('2p');
   $('#slot').onchange = refreshSlotUI;
@@ -294,10 +267,6 @@
     isMuted = !isMuted;
     $('#muteBtn').textContent = isMuted ? '🔇' : '🔊';
   };
-  $('#createLobby').onclick = () => {
-    $('#lobbyInfo').textContent = 'Online lobbies require the live server — launch 2P Local Versus or Quick Match right away!';
-  };
-
   // Input listeners
   const p1Map = (e) => ({ ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'jump', w: 'jump', W: 'jump', ' ': 'jump', s: 'down', S: 'down', ArrowDown: 'down', f: 'dash', F: 'dash' }[e.key]);
   addEventListener('keydown', (e) => {

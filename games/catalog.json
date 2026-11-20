@@ -17,6 +17,7 @@
       "featured": true,
       "recommended": true,
       "entrypoint": "gravegain2dD/index.html",
+      "guideEntrypoint": "gravegain2dD/guide.html",
       "inputs": [
         "touch",
         "keyboard"
@@ -49,7 +50,7 @@
     {
       "slug": "platform-wars",
       "title": "Platform Wars: Phone vs Desktop",
-      "description": "A fast cross-platform arena platformer. Phone team uses touch agility; Desktop team uses keyboard precision.",
+      "description": "An arena platformer with touch and keyboard controls, solo matches against AI, and two-player local versus.",
       "genre": "Action",
       "tags": [
         "Action",
@@ -66,7 +67,7 @@
         "touch",
         "keyboard"
       ],
-      "controls": "Phone: twin-thumb touch controls. Desktop: keyboard controls. Quick Match pairs phone and desktop players.",
+      "controls": "Phone: twin-thumb touch controls. Desktop: keyboard controls. Play against an AI rival or share a keyboard in 2P Local Versus.",
       "modes": [
         "solo",
         "multiplayer"

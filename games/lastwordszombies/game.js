@@ -1217,6 +1217,7 @@ class GameApp {
 
       // Never hijack keys while a settings slider is being adjusted
       if (e.target && e.target.type === 'range' && e.key !== 'Escape') return;
+      if (e.repeat && (e.key === 'Escape' || e.key === 'Enter')) return;
 
       if (this.state.currentState === GameState.MENU) {
         if (e.key === 'Escape') {

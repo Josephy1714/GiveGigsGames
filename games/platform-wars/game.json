@@ -4,6 +4,6 @@
   "description": "A fast cross-platform arena platformer. Phone team uses touch agility; Desktop team uses keyboard precision.",
   "genre": "Multiplayer Platformer",
   "controls": {"desktop": "A/D or arrows to move, W/Space to jump, F to dash", "phone": "Twin-thumb platformer pad + dash double-tap: left thumb ◀/▶ (double-tap to dash), right thumb ▲ jump / 🔥 fire, tap a platform to ping"},
-  "technical": {"mobileOptimized": true, "targetFPS": 60, "multiplayer": "Quick Match"},
+  "technical": {"mobileOptimized": true, "targetFPS": 60, "multiplayer": "2P Local Versus"},
   "meta": {"version": "1.0.0", "license": "MIT"}
 }

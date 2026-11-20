@@ -47,11 +47,10 @@ main>header h1{font-size:clamp(1.4rem,5vw,2.5rem)!important;margin:8px 0!importa
 </div>
 <p id="slotStats" class="slot-stats">Profile: 0 Wins · 0 KOs · Best Streak 0</p>
 <div class="mode">
-  <button id="quick">⚡ Quick Match</button>
+  <button id="quick">⚡ Quick Match vs AI</button>
   <button id="practice">Practice Arena</button>
   <button id="local2p" type="button">👥 2P Local Versus</button>
 </div>
-<div class="mode lobby-extra"><select id="lobbyVisibility" aria-label="Lobby visibility"><option value="public">Public</option><option value="friends">Friends</option><option value="private">Private invite</option></select><button id="createLobby">Create lobby</button></div>
 <p id="lobbyInfo" class="fine">Double-jump (W/Up), Dash Strike (F / Fire), Stomp (S/Down in air). First to 7 KOs or highest score in 90s wins!</p>
 </section><section id="game" hidden><div class="hud"><span id="role"></span><strong id="timer">01:30</strong><span>PHONE <b id="phoneScore">0</b> · <b id="desktopScore">0</b> DESKTOP</span><button id="muteBtn" type="button" title="Toggle sound" aria-label="Toggle sound">🔊</button><button id="leave">Leave</button><button id="fw-fs-btn" class="fw-fs-btn" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen">⛶</button></div><div id="cheatWatermark" hidden>CHEAT MODE</div><canvas id="arena" width="960" height="540" aria-label="Platform Wars arena"></canvas><div id="banner"></div>
 <div id="matchOver" class="match-over" hidden>
@@ -61,17 +60,5 @@ main>header h1{font-size:clamp(1.4rem,5vw,2.5rem)!important;margin:8px 0!importa
     <div class="mode"><button id="rematch" type="button">⚡ Play Again</button><button id="backLobby" type="button">← Lobby</button></div>
   </div>
 </div>
-<div class="touch" id="touchPad" aria-label="Twin-thumb platformer pad + dash double-tap"><div class="pad-cluster pad-left"><button data-key="left" aria-label="Move left">◀</button><button data-key="right" aria-label="Move right">▶</button></div><div class="pad-cluster pad-right"><button data-key="jump" aria-label="Jump">▲<small>JUMP</small></button><button data-key="dash" data-fire="1" aria-label="Fire / dash">🔥<small>FIRE</small></button></div></div><p id="touchHint" class="touch-hint">Twin-thumb pad · double-tap ◀/▶ to dash · tap a platform to ping</p></section></main><script>
-window.FourWeirdServer = { request: async function (path, options) {
-  path = String(path || '');
-  if (path.charAt(0) !== '/' || path.indexOf('/api/') !== 0) return { success: false, error: 'Refused.' };
-  var init = { method: (options && options.method) || 'GET', credentials: 'include', headers: { 'Content-Type': 'application/json' } };
-  if (options && options.body !== undefined) init.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
-  try {
-    var res = await fetch(path, init);
-    var data = await res.json().catch(function () { return {}; });
-    if (!res.ok) return { success: false, error: String(data.error || ('HTTP ' + res.status)).slice(0, 200) };
-    return data || { success: true };
-  } catch (e) { return { success: false, error: 'Service unreachable.' }; }
-} };
-</script><script src="game.js"></script><script src="../html/runtime-bridge.js" data-slug="platform-wars"></script><script src="../html/fourweird-workers.js" data-slug="platform-wars"></script><script src="../html/fourweird-music.js" data-slug="platform-wars"></script><script src="../_shared/game-select.js" defer></script></body></html>
+<div class="touch" id="touchPad" aria-label="Twin-thumb platformer pad + dash double-tap"><div class="pad-cluster pad-left"><button data-key="left" aria-label="Move left">◀</button><button data-key="right" aria-label="Move right">▶</button></div><div class="pad-cluster pad-right"><button data-key="jump" aria-label="Jump">▲<small>JUMP</small></button><button data-key="dash" data-fire="1" aria-label="Fire / dash">🔥<small>FIRE</small></button></div></div><p id="touchHint" class="touch-hint">Twin-thumb pad · double-tap ◀/▶ to dash · tap a platform to ping</p></section></main>
+<script src="game.js"></script><script src="../html/runtime-bridge.js" data-slug="platform-wars"></script><script src="../html/fourweird-workers.js" data-slug="platform-wars"></script><script src="../html/fourweird-music.js" data-slug="platform-wars"></script><script src="../_shared/game-select.js" defer></script></body></html>

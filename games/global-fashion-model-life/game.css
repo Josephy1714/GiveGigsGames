@@ -47,6 +47,10 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:640/760}
 .field>span,.palette legend{font-size:14px;font-weight:650}
 .field input[type=text],select{min-width:0;width:100%;padding:.55rem .65rem;border:1px solid var(--line);border-radius:8px;background:#1b141c;color:var(--ink)}
 .field input[type=range]{width:100%;margin:2px 0;accent-color:var(--accent)}
+.booking-filters{align-items:end;gap:12px}
+.booking-filters .field{flex:1 1 145px}
+.booking-availability{display:flex;align-items:center;min-height:44px;gap:8px}
+.booking-availability input{width:18px;height:18px;accent-color:var(--accent)}
 .slider-grid,.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 .slider-title{display:flex;justify-content:space-between;gap:5px}
 output{color:var(--accent);font-variant-numeric:tabular-nums}

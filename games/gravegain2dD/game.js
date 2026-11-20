@@ -321,6 +321,7 @@
       setPaused(!paused);
       return;
     }
+    if (paused) return;
     if (!running && event.target instanceof HTMLElement && event.target.closest('button, summary')) return;
     if (event.code === 'Enter' || event.code === 'Space') {
       if (!running && !event.repeat) {
@@ -822,9 +823,14 @@
     $stick.style.transform = 'translate(0,0)';
   }
 
-  addEventListener('blur', () => {
-    clearInput();
-    if (running && !paused && draftPanel.hidden) setPaused(true);
+  function pauseOnFocusLoss() {
+    if (draftPanel.hidden) setPaused(true);
+    else clearInput();
+  }
+
+  addEventListener('blur', pauseOnFocusLoss);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseOnFocusLoss();
   });
 
   function loop(now) {
