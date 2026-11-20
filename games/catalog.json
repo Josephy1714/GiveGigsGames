@@ -26,7 +26,7 @@
         "solo"
       ],
       "runtimeType": "static",
-      "packageBytes": 188091
+      "packageBytes": 169240
     },
     {
       "slug": "ecosystemic-evolver",
@@ -73,7 +73,7 @@
         "multiplayer"
       ],
       "runtimeType": "static",
-      "packageBytes": 42215
+      "packageBytes": 29060
     },
     {
       "slug": "lastwordszombies",
@@ -91,7 +91,7 @@
       "recommended": true,
       "entrypoint": "lastwordszombies/index.html",
       "runtimeType": "static",
-      "packageBytes": 350841
+      "packageBytes": 348102
     },
     {
       "slug": "venturemechanically",
@@ -197,7 +197,7 @@
       "recommended": true,
       "entrypoint": "battlesharks2/index.html",
       "runtimeType": "static",
-      "packageBytes": 138104
+      "packageBytes": 137702
     },
     {
       "slug": "gravegain2dA",
@@ -214,7 +214,7 @@
       "recommended": true,
       "entrypoint": "gravegain2dA/index.html",
       "runtimeType": "static",
-      "packageBytes": 1324718
+      "packageBytes": 1326032
     },
     {
       "slug": "gravegain2dC",
@@ -233,7 +233,7 @@
       "recommended": true,
       "entrypoint": "gravegain2dC/index.html",
       "runtimeType": "static",
-      "packageBytes": 1680292
+      "packageBytes": 1674772
     },
     {
       "slug": "gravegain2dB",
@@ -250,7 +250,7 @@
       "recommended": false,
       "entrypoint": "gravegain2dB/index.html",
       "runtimeType": "static",
-      "packageBytes": 525757
+      "packageBytes": 525114
     },
     {
       "slug": "gravegain3dA",
@@ -267,7 +267,7 @@
       "recommended": true,
       "entrypoint": "gravegain3dA/index.html",
       "runtimeType": "static",
-      "packageBytes": 818035
+      "packageBytes": 761647
     },
     {
       "slug": "gravegain1dA",
@@ -285,7 +285,7 @@
       "recommended": false,
       "entrypoint": "gravegain1dA/index.html",
       "runtimeType": "static",
-      "packageBytes": 166091
+      "packageBytes": 162274
     },
     {
       "slug": "demolichdom",
@@ -303,7 +303,7 @@
       "entrypoint": "demolichdom/index.html",
       "runtimeType": "static",
       "guideEntrypoint": "demolichdom/guide.html",
-      "packageBytes": 171045
+      "packageBytes": 170701
     },
     {
       "slug": "fridgesimulator",
@@ -320,7 +320,7 @@
       "entrypoint": "fridgesimulator/index.html",
       "runtimeType": "static",
       "guideEntrypoint": "fridgesimulator/guide.html",
-      "packageBytes": 208450
+      "packageBytes": 207657
     },
     {
       "slug": "discoveramerica",
@@ -338,7 +338,7 @@
       "entrypoint": "discoveramerica/index.html",
       "runtimeType": "static",
       "guideEntrypoint": "discoveramerica/guide.html",
-      "packageBytes": 83457
+      "packageBytes": 82927
     },
     {
       "slug": "orbitaldrift",
@@ -355,7 +355,7 @@
       "recommended": false,
       "entrypoint": "orbitaldrift/index.html",
       "runtimeType": "static",
-      "packageBytes": 243230
+      "packageBytes": 243151
     },
     {
       "slug": "aiwhackamole",
@@ -372,7 +372,7 @@
       "recommended": false,
       "entrypoint": "aiwhackamole/index.html",
       "runtimeType": "static",
-      "packageBytes": 137975
+      "packageBytes": 137264
     },
     {
       "slug": "soundpainter2",
@@ -423,7 +423,7 @@
       "recommended": false,
       "entrypoint": "friendslop/index.html",
       "runtimeType": "static",
-      "packageBytes": 111037
+      "packageBytes": 110684
     },
     {
       "slug": "semester-survival",
@@ -451,7 +451,7 @@
       "modes": [
         "solo"
       ],
-      "packageBytes": 5222261
+      "packageBytes": 5226921
     },
     {
       "slug": "gravegain5dA",
@@ -470,7 +470,7 @@
       "recommended": false,
       "entrypoint": "gravegain5dA/index.html",
       "runtimeType": "static",
-      "packageBytes": 108814
+      "packageBytes": 108755
     },
     {
       "slug": "gravegain4dA",
@@ -490,7 +490,7 @@
       "entrypoint": "gravegain4dA/index.html",
       "runtimeType": "static",
       "guideEntrypoint": "gravegain4dA/guide.html",
-      "packageBytes": 709192
+      "packageBytes": 708926
     },
     {
       "slug": "starship-simulator",
@@ -512,7 +512,7 @@
       "recommended": false,
       "entrypoint": "spaceships/index.html",
       "runtimeType": "static",
-      "packageBytes": 624686
+      "packageBytes": 661526
     },
     {
       "slug": "neonbreaker",
@@ -528,7 +528,7 @@
       "recommended": false,
       "entrypoint": "neonbreaker/index.html",
       "runtimeType": "static",
-      "packageBytes": 74659
+      "packageBytes": 72120
     },
     {
       "slug": "neoninvaders",
@@ -544,7 +544,7 @@
       "recommended": false,
       "entrypoint": "neoninvaders/index.html",
       "runtimeType": "static",
-      "packageBytes": 85857
+      "packageBytes": 85024
     },
     {
       "slug": "neonracer",
@@ -560,7 +560,7 @@
       "recommended": false,
       "entrypoint": "neonracer/index.html",
       "runtimeType": "static",
-      "packageBytes": 75913
+      "packageBytes": 74215
     },
     {
       "slug": "neonsnake",
@@ -576,7 +576,7 @@
       "recommended": false,
       "entrypoint": "neonsnake/index.html",
       "runtimeType": "static",
-      "packageBytes": 65469
+      "packageBytes": 64774
     },
     {
       "slug": "neonvoidrunner",
@@ -592,7 +592,7 @@
       "recommended": false,
       "entrypoint": "neonvoidrunner/index.html",
       "runtimeType": "static",
-      "packageBytes": 76413
+      "packageBytes": 75003
     },
     {
       "slug": "temple-of-lost-revenue",
@@ -608,7 +608,7 @@
       "recommended": false,
       "entrypoint": "temple-of-lost-revenue/index.html",
       "runtimeType": "static",
-      "packageBytes": 68302
+      "packageBytes": 56164
     },
     {
       "slug": "the-ai-expedition",
@@ -624,7 +624,7 @@
       "recommended": false,
       "entrypoint": "the-ai-expedition/index.html",
       "runtimeType": "static",
-      "packageBytes": 53860
+      "packageBytes": 41316
     },
     {
       "slug": "the-cave-of-bottlenecks",
@@ -640,7 +640,7 @@
       "recommended": false,
       "entrypoint": "the-cave-of-bottlenecks/index.html",
       "runtimeType": "static",
-      "packageBytes": 60241
+      "packageBytes": 47454
     },
     {
       "slug": "the-lost-city-of-customers",
@@ -656,7 +656,7 @@
       "recommended": false,
       "entrypoint": "the-lost-city-of-customers/index.html",
       "runtimeType": "static",
-      "packageBytes": 52477
+      "packageBytes": 43777
     },
     {
       "slug": "the-madi-ai-universe",
@@ -672,7 +672,7 @@
       "recommended": false,
       "entrypoint": "the-madi-ai-universe/index.html",
       "runtimeType": "static",
-      "packageBytes": 60536
+      "packageBytes": 33214
     },
     {
       "slug": "the-pipeline-mountain",
@@ -688,7 +688,7 @@
       "recommended": false,
       "entrypoint": "the-pipeline-mountain/index.html",
       "runtimeType": "static",
-      "packageBytes": 60090
+      "packageBytes": 49931
     },
     {
       "slug": "the-revenue-dragon",
@@ -704,7 +704,7 @@
       "recommended": false,
       "entrypoint": "the-revenue-dragon/index.html",
       "runtimeType": "static",
-      "packageBytes": 67597
+      "packageBytes": 54892
     },
     {
       "slug": "the-revenue-jungle",
@@ -720,7 +720,7 @@
       "recommended": false,
       "entrypoint": "the-revenue-jungle/index.html",
       "runtimeType": "static",
-      "packageBytes": 74393
+      "packageBytes": 53590
     },
     {
       "slug": "the-speed-portal",
@@ -736,7 +736,7 @@
       "recommended": false,
       "entrypoint": "the-speed-portal/index.html",
       "runtimeType": "static",
-      "packageBytes": 59400
+      "packageBytes": 50530
     },
     {
       "slug": "treasure-hunters",
@@ -752,7 +752,7 @@
       "recommended": false,
       "entrypoint": "treasure-hunters/index.html",
       "runtimeType": "static",
-      "packageBytes": 58932
+      "packageBytes": 47288
     },
     {
       "slug": "global-fashion-model-life",

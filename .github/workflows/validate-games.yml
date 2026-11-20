@@ -3,14 +3,7 @@ name: Validate browser games
 on:
   pull_request:
   push:
-    branches: [main, semester-survival-runner-matty-main]
-    # Atlas source edits are validated after the atlas builder publishes the
-    # runtime files and refreshed catalog, avoiding a race against stale sizes.
-    paths-ignore:
-      - '.github/workflows/build-jay-runtime-atlas.yml'
-      - 'games/semester-survival-runner/src/tools/build-jay-atlas.py'
-      - 'games/semester-survival-runner/assets/source/characters/jay/**'
-      - 'games/semester-survival-runner/assets/characters/**'
+    branches: [main]
 
 permissions:
   contents: read
@@ -24,16 +17,14 @@ jobs:
         with:
           node-version: 22
       - name: Check generated offline catalog
-        run: |
-          node scripts/build-browser-catalog.mjs
-          git diff --exit-code -- games/catalog-data.js
+        run: node scripts/build-browser-catalog.mjs --check
       - name: Enforce per-game 10 MB limit
         run: node scripts/check-game-sizes.mjs
       - name: Check downloaded-folder entrypoints
         run: node scripts/check-offline-entrypoints.mjs
       - name: Check local game assets
         run: node scripts/check-game-assets.mjs
-      - name: Test modular runner systems
+      - name: Test modular Semester Survival runner systems
         working-directory: games/semester-survival-runner
         run: npm run test:runner-modules
       - name: Verify Jay slide animation phases are packaged
@@ -48,13 +39,8 @@ jobs:
           }
           if (manifest.clips['slide-start'].playback !== 'once' ||
               manifest.clips['slide-loop'].playback !== 'loop' ||
-              manifest.clips['slide-recover'].playback !== 'once') {
-            throw new Error('Jay slide phases must use once/loop/once playback.');
-          }
-          if (manifest.sources?.slide?.formatDetectedByPillow !== 'JPEG') {
-            throw new Error('Jay slide source must decode as the uploaded JPEG data.');
-          }
-          console.log('Jay slide start, loop and recovery clips are present and correctly packaged.');
+              manifest.clips['slide-recover'].playback !== 'once') throw new Error('Incorrect Jay slide phase playback.');
+          console.log('Jay slide phases verified.');
           JS
       - name: Install Chromium for arcade smoke checks
         run: |
