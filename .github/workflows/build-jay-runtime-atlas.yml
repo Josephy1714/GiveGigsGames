@@ -10,6 +10,9 @@ on:
       - '.github/workflows/build-jay-runtime-atlas.yml'
 permissions:
   contents: write
+concurrency:
+  group: jay-runtime-atlas-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
