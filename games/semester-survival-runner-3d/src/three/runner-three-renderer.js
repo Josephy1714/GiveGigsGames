@@ -4,6 +4,14 @@ import { createAtlasAnimationPlayer, resolveRunnerAnimationState } from "../anim
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-3.05,0,3.05];
 const mat=(c,r=.82,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(p,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
+function asphaltTexture(){
+ const canvas=document.createElement("canvas");canvas.width=512;canvas.height=512;const ctx=canvas.getContext("2d");
+ ctx.fillStyle="#454d4d";ctx.fillRect(0,0,512,512);
+ let seed=37;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+ for(let i=0;i<5200;i++){const x=random()*512,y=random()*512,r=.25+random()*1.15,a=.025+random()*.09;ctx.fillStyle=`rgba(${random()>.5?210:18},${random()>.5?210:24},${random()>.5?205:26},${a})`;ctx.fillRect(x,y,r,r);}
+ for(let i=0;i<34;i++){const y=random()*512;ctx.fillStyle="rgba(20,27,28,.055)";ctx.fillRect(0,y,512,1+random()*3);}
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(1,22);texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return texture;
+}
 function signTexture(label){
  const c=document.createElement("canvas");c.width=512;c.height=128;const x=c.getContext("2d");
  x.fillStyle="#183b39";x.fillRect(0,0,512,128);x.strokeStyle="#e3d5b7";x.lineWidth=6;x.strokeRect(4,4,504,120);
@@ -23,8 +31,8 @@ function building(scene,side,z,i,m){
 }
 function tree(scene,x,z,m){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
- const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.24,2.1,8),m.bark);trunk.position.y=1.05;g.add(trunk);
- for(const [y,r] of [[2.15,1],[2.9,.82],[3.55,.58]]){const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),m.leaves);crown.position.y=y;crown.scale.y=.9;g.add(crown);}
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.24,2.1,8),m.bark);trunk.position.y=1.05;trunk.castShadow=true;trunk.receiveShadow=true;g.add(trunk);
+ for(const [y,r] of [[2.15,1],[2.9,.82],[3.55,.58]]){const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),m.leaves);crown.position.y=y;crown.scale.y=.9;crown.castShadow=true;g.add(crown);}
  const pot=new THREE.Mesh(new THREE.CylinderGeometry(.7,.78,.28,12),m.concrete);pot.position.y=.14;g.add(pot);
 }
 function lamp(scene,x,z,m){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.08,5.4,8),m.dark);pole.position.y=2.7;g.add(pole);box(g,.85,.08,.08,m.dark,x<0?.35:-.35,5.35,0);box(g,.42,.12,.3,m.lamp,x<0?.7:-.7,5.3,0);}
@@ -47,13 +55,13 @@ export async function createRunnerRenderer({mount}={}){
  if(!mount)throw new TypeError("Three.js mount missing");
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x9db8c0);scene.fog=new THREE.FogExp2(0x9db8c0,.0085);
  const camera=new THREE.PerspectiveCamera(61,1,.1,320);camera.position.set(0,5.2,10.8);camera.lookAt(0,1.1,-13);
- const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(mount.clientWidth||innerWidth,mount.clientHeight||innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;mount.appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xe5f1ff,0x56634c,2));const sun=new THREE.DirectionalLight(0xffe2be,2.7);sun.position.set(-18,28,12);scene.add(sun);
- const m={asphalt:mat(0x303b41,.96),grass:mat(0x536e4d),concrete:mat(0xbab8aa),curb:mat(0xe2dac8),warm:mat(0xcbb99a),stone:mat(0x9b9c91),sand:mat(0xd6c9ad),trim:mat(0xe4dac5),dark:mat(0x26373c),glass:mat(0x294b5a,.25,.2),tank:mat(0x6d8581),bark:mat(0x69503a),leaves:mat(0x557c54),lamp:mat(0xffe3a8,.3),tire:mat(0x171b1e),red:mat(0x9d3c34),white:mat(0xf3ecd9),gold:mat(0xf4c95d,.2,.65),obstacle:mat(0x805a45),warning:mat(0xe5b957),bonus:new THREE.MeshStandardMaterial({color:0x8ce6c5,emissive:0x164c40,metalness:.3,roughness:.25})};
+ const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(mount.clientWidth||innerWidth,mount.clientHeight||innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xe5f1ff,0x56634c,2));const sun=new THREE.DirectionalLight(0xffe2be,2.7);sun.position.set(-18,28,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-25;sun.shadow.camera.right=25;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.camera.near=.1;sun.shadow.camera.far=100;sun.shadow.bias=-.00025;sun.shadow.normalBias=.02;scene.add(sun);
+ const m={asphalt:new THREE.MeshStandardMaterial({color:0xb8b8b0,map:asphaltTexture(),roughness:.96}),grass:mat(0x536e4d),concrete:mat(0xbab8aa),curb:mat(0xe2dac8),warm:mat(0xcbb99a),stone:mat(0x9b9c91),sand:mat(0xd6c9ad),trim:mat(0xe4dac5),dark:mat(0x26373c),glass:mat(0x294b5a,.25,.2),tank:mat(0x6d8581),bark:mat(0x69503a),leaves:mat(0x557c54),lamp:mat(0xffe3a8,.3),tire:mat(0x171b1e),red:mat(0x9d3c34),white:mat(0xf3ecd9),gold:mat(0xf4c95d,.2,.65),obstacle:mat(0x805a45),warning:mat(0xe5b957),bonus:new THREE.MeshStandardMaterial({color:0x8ce6c5,emissive:0x164c40,metalness:.3,roughness:.25})};
  const world=new THREE.Group();scene.add(world);
- const ground=new THREE.Mesh(new THREE.PlaneGeometry(190,300),m.grass);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.16,-112);world.add(ground);
- const road=new THREE.Mesh(new THREE.PlaneGeometry(14,300),m.asphalt);road.rotation.x=-Math.PI/2;road.position.set(0,0,-112);world.add(road);
- for(const s of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(3,300),m.concrete);walk.rotation.x=-Math.PI/2;walk.position.set(s*8.5,.025,-112);world.add(walk);box(world,.2,.22,300,m.curb,s*7.05,.11,-112);box(world,.14,.18,300,m.curb,s*10.05,.09,-112);}
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(190,300),m.grass);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.16,-112);ground.receiveShadow=true;world.add(ground);
+ const road=new THREE.Mesh(new THREE.PlaneGeometry(14,300),m.asphalt);road.rotation.x=-Math.PI/2;road.position.set(0,0,-112);road.receiveShadow=true;world.add(road);
+ for(const s of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(3,300),m.concrete);walk.rotation.x=-Math.PI/2;walk.position.set(s*8.5,.025,-112);walk.receiveShadow=true;world.add(walk);box(world,.2,.22,300,m.curb,s*7.05,.11,-112);box(world,.14,.18,300,m.curb,s*10.05,.09,-112);}
  for(let z=-4;z>-292;z-=9)for(const x of [-2.34,2.34])box(world,.11,.018,4.1,m.white,x,.02,z);
  for(const z of [-24,-86,-148,-210,-272])for(let i=0;i<8;i++)box(world,1,.025,1.65,m.white,-5.4+i*1.54,.026,z);
  for(let i=0;i<6;i++){building(scene,-1,-14-i*38,i,m);building(scene,1,-30-i*38,(i+1)%4,m);}
