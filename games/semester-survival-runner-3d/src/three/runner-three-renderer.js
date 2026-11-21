@@ -22,12 +22,52 @@ function building(scene,side,z,i,m){
  const g=new THREE.Group();g.position.set(side*(13.2+i%2*.7),0,z);scene.add(g);
  const w=8+i%3*1.1,h=7.5+i%3*1.8,d=9+i%2*2,wall=[m.warm,m.stone,m.sand][i%3];
  box(g,w,h,d,wall,0,h/2,0);box(g,w+.45,.28,d+.45,m.trim,0,h+.12,0);box(g,w+.7,.18,d+.6,m.dark,0,h+.35,0);
+ // A visible plinth and floor plates give the block a believable campus-building silhouette.
+ box(g,w+.22,.42,d+.22,m.dark,0,.21,0);
  const floors=Math.round(h/2.7);
- for(let f=0;f<floors;f++){const y=1.4+f*2.3;for(let n=0;n<4;n++){const x=-w/2+1.1+n*(w-2.2)/3;box(g,1.15,1.35,.1,m.glass,x,y,d/2+.08);box(g,.08,1.44,.14,m.trim,x-.61,y,d/2+.1);box(g,.08,1.44,.14,m.trim,x+.61,y,d/2+.1);}}
+ for(let f=0;f<floors;f++){
+  const y=1.4+f*2.3;
+  // Deep window reveals, divided glazing, projecting sills and continuous floor bands.
+  box(g,w+.12,.13,d+.12,m.trim,0,y-.79,0);
+  for(let n=0;n<4;n++){
+   const x=-w/2+1.1+n*(w-2.2)/3;
+   box(g,1.28,1.5,.12,m.dark,x,y,d/2+.035);
+   box(g,1.08,1.27,.055,m.glass,x,y,d/2+.11);
+   box(g,.055,1.34,.07,m.trim,x-.55,y,d/2+.15);
+   box(g,.055,1.34,.07,m.trim,x+.55,y,d/2+.15);
+   box(g,1.12,.055,.07,m.trim,x,y-.65,d/2+.15);
+   box(g,1.12,.055,.07,m.trim,x,y+.65,d/2+.15);
+   box(g,.045,1.27,.06,m.trim,x,y,d/2+.19);
+   box(g,1.12,.045,.06,m.trim,x,y,d/2+.19);
+   box(g,1.32,.11,.24,m.trim,x,y-.78,d/2+.13);
+  }
+ }
+ // A proper entrance: recessed double doors, glazed side lights, canopy, columns and broad steps.
+ const entranceZ=d/2+.12;
+ box(g,2.65,2.65,.16,m.dark,0,1.35,entranceZ);
+ box(g,.86,2.12,.08,m.glass,-.48,1.12,entranceZ+.12);
+ box(g,.86,2.12,.08,m.glass,.48,1.12,entranceZ+.12);
+ box(g,.045,2.12,.1,m.trim,0,1.12,entranceZ+.18);
+ box(g,.07,.07,.1,m.gold,-.72,1.1,entranceZ+.2);
+ box(g,2.95,.18,1.85,m.dark,0,2.83,entranceZ+.75);
+ box(g,3.15,.12,1.98,m.trim,0,2.94,entranceZ+.75);
+ for(const x of [-1.42,1.42])box(g,.18,2.75,.2,m.trim,x,1.38,entranceZ+.78);
+ box(g,3.4,.16,1.25,m.concrete,0,.08,entranceZ+1.05);
+ box(g,3.05,.14,.95,m.concrete,0,.23,entranceZ+.88);
+ box(g,2.72,.12,.65,m.concrete,0,.38,entranceZ+.7);
  box(g,w*.5,.22,1.5,m.dark,0,1.8,d/2+.72);
  const plaque=new THREE.Mesh(new THREE.PlaneGeometry(w*.52,.42),signTexture(["SCHOOL OF SCIENCE","STUDENT CENTRE","LECTURE THEATRE","UNIVERSITY LIBRARY"][i%4]));
  plaque.position.set(0,h-.85,d/2+.12);g.add(plaque);
- const tank=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,1,12),m.tank);tank.position.set(w*.27,h+.7,-d*.15);g.add(tank);
+ // Roof parapet, service core and water storage are common details on campus blocks.
+ box(g,w+.32,.5,.22,m.trim,0,h+.42,d/2);
+ box(g,.22,.5,d+.25,m.trim,-w/2-.04,h+.42,0);
+ box(g,.22,.5,d+.25,m.trim,w/2+.04,h+.42,0);
+ const stairCore=box(g,1.6,1.1,2.1,m.stone,-w*.3,h+.55,-d*.2);
+ const tank=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,1,12),m.tank);tank.position.set(w*.27,h+.7,-d*.15);tank.castShadow=true;g.add(tank);
+ // A small rooftop solar array catches the warm directional light.
+ const solar=new THREE.Group();solar.position.set(-w*.25,h+.85,-d*.18);solar.rotation.x=-.22;g.add(solar);
+ box(solar,2.1,.07,1.25,m.dark,0,0,0);
+ for(let p=0;p<3;p++)box(solar,.62,.025,1.1,m.glass,-.68+p*.68,.045,0);
 }
 function tree(scene,x,z,m){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
