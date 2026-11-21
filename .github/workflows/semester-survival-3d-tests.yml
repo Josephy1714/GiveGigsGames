@@ -1,0 +1,30 @@
+name: Semester Survival 3D conversion checks
+
+on:
+  push:
+    branches: [semester-survival-3d-complete-edition]
+    paths:
+      - 'games/semester-survival-runner-3d/**'
+      - '.github/workflows/semester-survival-3d-tests.yml'
+  pull_request:
+    paths:
+      - 'games/semester-survival-runner-3d/**'
+      - '.github/workflows/semester-survival-3d-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  three-d-runner:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          find games/semester-survival-runner-3d -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Run focused runner and animation tests
+        working-directory: games/semester-survival-runner-3d
+        run: npm run test:runner-modules
