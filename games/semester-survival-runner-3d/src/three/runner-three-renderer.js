@@ -64,6 +64,7 @@ export async function createRunnerRenderer({mount}={}){
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  const makeJaySprite=(order)=>{const material=new THREE.SpriteMaterial({transparent:true,depthWrite:false,opacity:0});const sprite=new THREE.Sprite(material);sprite.renderOrder=order;sprite.position.set(0,.04,2);scene.add(sprite);return sprite;};
  const jay=makeJaySprite(7),jayPrevious=makeJaySprite(6);
+ const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  let atlas=null,atlasTexture=null,atlasPlayer=null,jayRig=null,rigBaseY=0,rigBaseScaleY=1,lastGameT=0,playerX=0;
  const targetJayHeight=2.08;
  function applyAtlasFrame(sprite,frame,opacity){
@@ -101,6 +102,7 @@ export async function createRunnerRenderer({mount}={}){
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
+  const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
   if(jayRig){
    jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY;jayRig.root.position.z=2;

@@ -136,6 +136,11 @@ export async function loadJayCharacter({
       return { ok: true, state, changed: false };
     }
     const previous = activeState ? actions[activeState] : null;
+    if (previous === action) {
+      activeState = state;
+      action.setEffectiveTimeScale(timeScale);
+      return { ok: true, state, changed: true, aliased: true };
+    }
     action.reset();
     action.enabled = true;
     action.setEffectiveTimeScale(timeScale);
