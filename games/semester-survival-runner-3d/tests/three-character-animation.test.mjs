@@ -33,7 +33,7 @@ test("once, loop and pingpong atlas frame timing is deterministic",()=>{
 });
 
 test("animation player crossfades clips and holds the last frame of one-shot actions",()=>{
- const player=createAtlasAnimationPlayer(manifest,{transitionSeconds:.2});
+ const player=createAtlasAnimationPlayer(manifest,{transitionSeconds:.2,maxDelta:2});
  assert.equal(player.play("jog").ok,true);
  player.update(.1);
  player.play("slide-start");

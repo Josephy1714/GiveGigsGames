@@ -6,7 +6,7 @@ export function resolveRunnerAnimationState(game){
   if(game.slidePhase==="loop")return "slide-loop";
   if(game.slidePhase==="recover")return "slide-recover";
   if((Number(game.jump)||0)>0)return "jump-running";
-  if((Number(game.energy)||0)<=0)return "fall-accidental";
+  if(game.energy!==undefined&&game.energy!==null&&Number(game.energy)<=0)return "fall-accidental";
   return (Number(game.speed)||0)>=500?"sprint":"jog";
 }
 
