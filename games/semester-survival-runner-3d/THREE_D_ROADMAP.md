@@ -19,11 +19,11 @@ Three.js is currently loaded from the pinned jsDelivr release `0.180.0`. A later
 
 ## Explicitly not production-ready
 
-The test avatar is a temporary 3D scale/animation stand-in, **not Jay's final character model**. The current prototype does not yet include the original runner's collision rules, obstacles, pickups, boss encounters, eight-semester progression, shop, upgrades, save migration, audio or final HUD. Those remain in the original Canvas build and must be integrated and regression-tested before the 3D preview can replace it.
+The current Jay sprite is a temporary 3D-world animation bridge using the approved runtime atlas, **not Jay's final 3D character model**. The current prototype does not yet include the original runner's collision rules, obstacles, pickups, boss encounters, eight-semester progression, shop, upgrades, save migration, audio or final HUD. Those remain in the original Canvas build and must be integrated and regression-tested before the 3D preview can replace it.
 
 ## Next implementation gates
 
-1. Replace the test avatar with a properly modelled, rigged Jay based on the approved source turnaround.
+1. Create and validate a properly modelled, rigged Jay GLB based on the approved source turnaround, with authored idle, jog, sprint, jump, slide, fall and recovery clips. The complete 2D atlas now drives the 3D bridge while the GLB is pending.
 2. Integrate the existing runner simulation and save store behind renderer-independent interfaces.
 3. Build authored, reusable traffic, campus, obstacle and pickup assets; replace prototype blockout geometry.
 4. Add animation state retargeting, collision parity, accessibility and graphics quality tiers.

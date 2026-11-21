@@ -6,6 +6,11 @@ const CLIP_ALIASES = Object.freeze({
   run: ["run", "running", "jog", "sprint"],
   jump: ["jump", "running_jump", "jump_running"],
   slide: ["slide", "sliding", "slide_loop"],
+  slideStart: ["slide_start", "slide-start", "slideanticipation"],
+  slideLoop: ["slide_loop", "slide-loop", "sliding"],
+  slideRecover: ["slide_recover", "slide-recover", "slideout"],
+  dodgeLeft: ["dodge_left", "dodge-left", "sidestep_left"],
+  dodgeRight: ["dodge_right", "dodge-right", "sidestep_right"],
   fall: ["fall", "falling", "accidental_fall"],
   getUp: ["getup", "get_up", "recovery", "stand_up"]
 });
