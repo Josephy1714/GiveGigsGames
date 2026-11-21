@@ -76,11 +76,65 @@ function tree(scene,x,z,m){
  const pot=new THREE.Mesh(new THREE.CylinderGeometry(.7,.78,.28,12),m.concrete);pot.position.y=.14;g.add(pot);
 }
 function lamp(scene,x,z,m){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.08,5.4,8),m.dark);pole.position.y=2.7;g.add(pole);box(g,.85,.08,.08,m.dark,x<0?.35:-.35,5.35,0);box(g,.42,.12,.3,m.lamp,x<0?.7:-.7,5.3,0);}
-function car(scene,x,z,color,m){
- const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const paint=mat(color,.35,.25);
- box(g,1.9,.62,3.8,paint,0,.65,0);box(g,1.55,.65,1.8,m.glass,0,1.22,-.1);
- for(const s of [-1,1])for(const zz of [-1.2,1.2]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),m.tire);w.rotation.z=Math.PI/2;w.position.set(s*.98,.34,zz);g.add(w);}
- for(const s of [-1,1]){box(g,.3,.14,.06,m.lamp,s*.65,.72,1.92);box(g,.28,.12,.06,m.red,s*.65,.72,-1.92);}
+function car(scene,x,z,color,m,kind="car"){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const isMatatu=kind==="matatu",isShuttle=kind==="shuttle";
+ const width=isShuttle?2.35:isMatatu?2.08:1.9,length=isShuttle?6.35:isMatatu?4.9:3.8;
+ const bodyH=isShuttle?1.22:isMatatu?1.08:.62,baseY=isShuttle?.78:.65;
+ const paint=mat(color,.34,.22),trim=m.dark,glass=m.glass;
+ box(g,width,bodyH,length,paint,0,baseY,0);
+ box(g,width*.91,.13,length*.94,trim,0,baseY-bodyH*.42,0);
+ // Raised cabin and wraparound front/rear glazing.
+ const cabinH=isShuttle?1.05:isMatatu?.86:.65,cabinY=baseY+bodyH*.48+cabinH*.46;
+ box(g,width*.88,cabinH,length*(isShuttle?.79:isMatatu?.68:.48),paint,0,cabinY,-length*.045);
+ box(g,width*.79,cabinH*.72,.075,glass,0,cabinY+.02,length*(isShuttle?.36:isMatatu?.31:.25));
+ box(g,width*.79,cabinH*.7,.075,glass,0,cabinY+.02,-length*(isShuttle?.42:isMatatu?.36:.23));
+ const windowCount=isShuttle?5:isMatatu?4:2;
+ for(const side of [-1,1]){
+  for(let n=0;n<windowCount;n++){
+   const wz=(n-(windowCount-1)/2)*(length*(isShuttle?.135:isMatatu?.145:.18));
+   box(g,.065,cabinH*.62,length*(isShuttle?.105:isMatatu?.115:.15),glass,side*(width*.445),cabinY+.035,wz);
+   box(g,.075,.055,length*(isShuttle?.11:isMatatu?.12:.16),m.trim,side*(width*.448),cabinY+cabinH*.36,wz);
+  }
+  // Side mirrors, sliding door seams and a continuous lower livery stripe.
+  box(g,.24,.12,.16,trim,side*(width*.54),cabinY-.12,length*.34);
+  box(g,.055,.65,.045,m.trim,side*(width*.502),baseY+.1,-length*.05);
+  box(g,.035,.13,length*.72,isShuttle?m.white:isMatatu?m.gold:m.trim,side*(width*.505),baseY-.13,0);
+ }
+ // Bumpers, front grille, headlamps and tail lamps.
+ box(g,width*.9,.16,.2,m.dark,0,.36,length*.51);
+ box(g,width*.9,.16,.2,m.dark,0,.36,-length*.51);
+ box(g,width*.34,.3,.07,m.dark,0,.68,length*.515);
+ for(const side of [-1,1]){
+  box(g,.34,.18,.08,m.lamp,side*width*.34,baseY+.02,length*.515);
+  box(g,.3,.16,.08,m.red,side*width*.34,baseY+.02,-length*.515);
+  box(g,.14,.11,.24,m.dark,side*width*.51,cabinY-.05,length*.31);
+ }
+ // Wheels are grouped so their rotation can be driven by distance travelled.
+ const wheels=[];
+ for(const side of [-1,1])for(const wz of [-length*.31,length*.31]){
+  const wheel=new THREE.Group();wheel.position.set(side*(width*.51),.42,wz);g.add(wheel);
+  const tire=new THREE.Mesh(new THREE.CylinderGeometry(isShuttle?.43:.35,isShuttle?.43:.35,.2,16),m.tire);tire.rotation.z=Math.PI/2;tire.castShadow=true;wheel.add(tire);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.215,12),m.gold);hub.rotation.z=Math.PI/2;wheel.add(hub);
+  wheels.push(wheel);
+ }
+ g.userData.wheels=wheels;
+ if(isMatatu){
+  // Roof rack, destination board and the bright route stripe typical of a city matatu.
+  box(g,width*.72,.09,length*.62,m.dark,0,baseY+bodyH*.5+cabinH+.12,0);
+  for(const side of [-1,1])box(g,.07,.28,length*.64,m.gold,side*width*.34,baseY+bodyH*.5+cabinH+.23,0);
+  const route=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.32),signTexture("MATATU 46"));route.position.set(0,cabinY+.12,length*.405);g.add(route);
+  for(const side of [-1,1]){
+   const strip=new THREE.Mesh(new THREE.PlaneGeometry(length*.56,.22),signTexture("CITY ROUTE"));strip.rotation.y=side*Math.PI/2;strip.position.set(side*(width*.507),baseY+.18,0);g.add(strip);
+  }
+ }else if(isShuttle){
+  // University shuttle roof pod and a clear campus-service destination board.
+  box(g,width*.56,.18,length*.28,m.dark,0,baseY+bodyH*.5+cabinH+.1,-length*.04);
+  const route=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.34),signTexture("UON SHUTTLE"));route.position.set(0,cabinY+.12,length*.405);g.add(route);
+  for(const side of [-1,1]){
+   const strip=new THREE.Mesh(new THREE.PlaneGeometry(length*.7,.16),signTexture("UNIVERSITY SERVICE"));strip.rotation.y=side*Math.PI/2;strip.position.set(side*(width*.507),baseY+.18,0);g.add(strip);
+  }
+ }
  return g;
 }
 async function jayFrames(){
@@ -107,7 +161,7 @@ export async function createRunnerRenderer({mount}={}){
  for(let i=0;i<6;i++){building(scene,-1,-14-i*38,i,m);building(scene,1,-30-i*38,(i+1)%4,m);}
  for(let i=0;i<10;i++){lamp(scene,-7.8,-8-i*27,m);lamp(scene,7.8,-20-i*27,m);}
  for(let i=0;i<16;i++){tree(scene,-10.8,-12-i*17,m);tree(scene,10.8,-20-i*17,m);}
- const traffic=[car(scene,-5.25,-38,0x315b7a,m),car(scene,5.25,-91,0x9a4c39,m),car(scene,-5.25,-146,0x777d78,m),car(scene,5.25,-198,0xc1a65e,m)];
+ const traffic=[car(scene,-5.25,-38,0x315b7a,m,"car"),car(scene,5.25,-91,0x9a4c39,m,"matatu"),car(scene,-5.25,-146,0x777d78,m,"shuttle"),car(scene,5.25,-198,0xc1a65e,m,"car")];
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  const makeJaySprite=(order)=>{const material=new THREE.SpriteMaterial({transparent:true,depthWrite:false,opacity:0});const sprite=new THREE.Sprite(material);sprite.renderOrder=order;sprite.position.set(0,.04,2);scene.add(sprite);return sprite;};
@@ -146,7 +200,7 @@ export async function createRunnerRenderer({mount}={}){
  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;if(ro)ro.observe(mount);else addEventListener("resize",resize);
  function render(g){
   if(!g)return;world.position.z=(g.d*.14)%54;
-  traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);});
+  traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x+=clamp(g.speed||360,180,620)*.0008;});
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
