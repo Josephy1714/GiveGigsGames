@@ -1,4 +1,5 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import { loadJayCharacter } from "./jay-character.js";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-3.05,0,3.05];
 const mat=(c,r=.82,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(p,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
@@ -62,7 +63,9 @@ export async function createRunnerRenderer({mount}={}){
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  const spriteMat=new THREE.SpriteMaterial({transparent:true,depthWrite:false}),jay=new THREE.Sprite(spriteMat);jay.scale.set(1.82,2.08,1);jay.position.set(0,1.08,2);scene.add(jay);
- let frames=null;try{frames=await jayFrames();jay.material.map=frames.run[0];jay.material.needsUpdate=true;}catch(e){console.warn("Jay 2D bridge atlas unavailable; final rigged 3D GLB still pending.",e);jay.visible=false;}
+ let frames=null,jayRig=null,rigBaseY=0,lastGameT=0;
+ try{jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});rigBaseY=jayRig.root.position.y;jay.visible=false;console.info("Jay production 3D rig loaded",jayRig.availableClips);}
+ catch(e){console.info("Jay GLB not installed yet; using the original animated sprite atlas bridge.",e);try{frames=await jayFrames();jay.material.map=frames.run[0];jay.material.needsUpdate=true;}catch(atlasError){console.warn("Jay runtime atlas unavailable; character remains hidden until a valid asset is added.",atlasError);jay.visible=false;}}
  const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
  const coins=Array.from({length:36},()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.34,.105,10,20),m.gold);o.rotation.x=Math.PI/2;scene.add(o);o.visible=false;return o;});
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
@@ -71,8 +74,9 @@ export async function createRunnerRenderer({mount}={}){
  function render(g){
   if(!g)return;world.position.z=(g.d*.14)%54;
   traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);});
-  jay.position.x=laneX[g.lane??1];jay.position.y=g.slidePhase ? .62 : 1.06+(g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0);jay.position.z=2;jay.scale.set(1.82,g.slidePhase?1.08:2.08,1);
-  if(frames){let clip="run",frame=Math.floor((g.runPhase||0)*frames.run.length)%frames.run.length;if(g.jump>0&&frames.jump?.length){clip="jump";frame=clamp(Math.floor((1-g.jump)*frames.jump.length),0,frames.jump.length-1);}else if(g.energy<=0&&frames.fall?.length){clip="fall";frame=Math.floor(g.t*10)%frames.fall.length;}const t=frames[clip]?.[frame]||frames.run[0];if(t&&jay.material.map!==t){jay.material.map=t;jay.material.needsUpdate=true;}jay.material.opacity=g.inv>0&&Math.floor(g.t*16)%2?.35:1;}
+  const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
+  if(jayRig){jayRig.root.position.x=laneX[g.lane??1];jayRig.root.position.y=rigBaseY+jumpY;jayRig.root.position.z=2;jayRig.root.scale.y=g.slidePhase?.72:1;const state=g.energy<=0&&jayRig.availableClips.includes("fall")?"fall":g.jump>0&&jayRig.availableClips.includes("jump")?"jump":"run";jayRig.play(state);const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;jayRig.update(dt);}
+  else{jay.position.x=laneX[g.lane??1];jay.position.y=g.slidePhase ? .62 : 1.06+jumpY;jay.position.z=2;jay.scale.set(1.82,g.slidePhase?1.08:2.08,1);if(frames){let clip="run",frame=Math.floor((g.runPhase||0)*frames.run.length)%frames.run.length;if(g.jump>0&&frames.jump?.length){clip="jump";frame=clamp(Math.floor((1-g.jump)*frames.jump.length),0,frames.jump.length-1);}else if(g.energy<=0&&frames.fall?.length){clip="fall";frame=Math.floor(g.t*10)%frames.fall.length;}const t=frames[clip]?.[frame]||frames.run[0];if(t&&jay.material.map!==t){jay.material.map=t;jay.material.needsUpdate=true;}jay.material.opacity=g.inv>0&&Math.floor(g.t*16)%2?.35:1;}}
   let n=0;for(const o of g.obs||[]){if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
