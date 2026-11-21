@@ -31,6 +31,7 @@ function building(scene,side,z,i,m){
   box(g,w+.12,.13,d+.12,m.trim,0,y-.79,0);
   for(let n=0;n<4;n++){
    const x=-w/2+1.1+n*(w-2.2)/3;
+   if(f===0&&Math.abs(x)<1.4)continue;
    box(g,1.28,1.5,.12,m.dark,x,y,d/2+.035);
    box(g,1.08,1.27,.055,m.glass,x,y,d/2+.11);
    box(g,.055,1.34,.07,m.trim,x-.55,y,d/2+.15);
@@ -200,7 +201,7 @@ export async function createRunnerRenderer({mount}={}){
  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;if(ro)ro.observe(mount);else addEventListener("resize",resize);
  function render(g){
   if(!g)return;world.position.z=(g.d*.14)%54;
-  traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x+=clamp(g.speed||360,180,620)*.0008;});
+  traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x=(Number(g.d)||0)*.22;});
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
