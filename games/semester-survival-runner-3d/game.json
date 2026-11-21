@@ -1,0 +1,56 @@
+{
+  "title": "Semester Survival 3D: The University Run",
+  "slug": "semester-survival-runner-3d",
+  "description": "A premium Three.js campus endless-runner conversion. The 3D world build is experimental while the original runner's eight-semester progression and gameplay systems are integrated.",
+  "genre": "Endless Runner",
+  "tags": [
+    "Endless Runner",
+    "3D",
+    "Three.js",
+    "University",
+    "Kenya",
+    "Mobile",
+    "WebGL"
+  ],
+  "maker": {
+    "name": "Joseph Ombati",
+    "bio": "Creator and Game Director of Semester Survival.",
+    "url": "https://github.com/Josephy1714/GiveGigsGames"
+  },
+  "controls": {
+    "keyboard": {
+      "Arrows / WASD": "Change lanes, jump and slide",
+      "Escape": "Pause"
+    },
+    "touch": {
+      "swipe": "Left/right to change lanes, up to jump, down to slide"
+    }
+  },
+  "technical": {
+    "rendering": "Three.js WebGL development build",
+    "mobileOptimized": true,
+    "targetFPS": 60
+  },
+  "assets": {
+    "external": [],
+    "local": [
+      "index.html",
+      "legacy-2d-reference.html",
+      "src/three/world-preview.js",
+      "src/three/jay-character.js"
+    ]
+  },
+  "meta": {
+    "version": "0.1.0",
+    "status": "experimental",
+    "license": "Private - All Rights Reserved"
+  },
+  "credits": [
+    {
+      "name": "Three.js",
+      "source": "Three.js",
+      "license": "MIT",
+      "url": "https://threejs.org/"
+    }
+  ]
+}

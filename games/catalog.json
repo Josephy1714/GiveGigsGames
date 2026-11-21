@@ -882,6 +882,36 @@
         "solo"
       ],
       "runtimeType": "static"
+    },
+    {
+      "slug": "semester-survival-runner-3d",
+      "title": "Semester Survival 3D: The University Run",
+      "description": "A premium Three.js campus runner conversion. Explore the experimental 3D world build while the original eight-semester gameplay systems are integrated.",
+      "genre": "Endless Runner",
+      "tags": [
+        "Endless Runner",
+        "3D",
+        "Three.js",
+        "University",
+        "Kenya",
+        "Mobile",
+        "WebGL"
+      ],
+      "emoji": "🏙️",
+      "featured": true,
+      "recommended": false,
+      "status": "experimental",
+      "entrypoint": "semester-survival-runner-3d/index.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Touch swipes or keyboard arrows/WASD to change lanes; jump and slide controls are shown in-game.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static",
+      "packageBytes": 6473220
     }
   ]
 }
