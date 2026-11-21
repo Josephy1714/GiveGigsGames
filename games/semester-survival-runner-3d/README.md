@@ -2,34 +2,35 @@
 
 This is the isolated Three.js conversion of the original Semester Survival Runner.
 
-## Non-negotiable preservation rule
+## Preservation contract
 - The original `games/semester-survival-runner/` remains untouched and independently playable.
 - This package is the working copy for the 3D conversion.
-- The original runner source is preserved here as `legacy-2d-reference.html`, alongside its original assets, gameplay catalogs, save modules, tests, and animation tooling.
+- The complete original 2D game is preserved as `legacy-2d-reference.html`, with its original assets, save modules, obstacle and power-up catalogs, animation tools, and regression tests.
+- The 3D entry now runs the original runner's gameplay simulation, progression, collision rules, scoring, save store, shop, upgrades, semester bosses, pickups, and HUD. The old canvas renderer is replaced by a Three.js scene.
 - Do not delete or replace the original game until the 3D edition is complete, regression-tested, and explicitly approved.
 
-## Current build status
-The catalogue entry launches the Three.js world-development build. It currently demonstrates the road, campus blockout, roadside scenery, traffic, camera, and lane/jump/slide controls. It is **not yet the complete converted runner**: the original progression/gameplay loop is being ported into the Three.js runtime, and Jay's rigged GLB is not yet available.
+## Current conversion status
+The playable 3D entry reuses the original game loop and state. Three.js renders the road, campus blocks, gate, sidewalks, lane markings, streetlights, trees, roadside furniture, traffic, obstacles, coins, power-ups, and Jay's existing animated sprite atlas as a temporary billboard in the 3D world.
 
-## Conversion target
-Keep the original runner's rules and progression intact while replacing its rendering layer with Three.js:
+Jay's final skinned 3D GLB is not yet present. The current billboard is a bridge using the approved 2D runtime animation atlas; it is not a finished 3D character. The environment buildings and vehicles are procedural blockout assets, not final authored production models.
+
+## Preserved game systems
 - eight-semester progression and graduation / alumni mode
 - distance, coins, GPA, energy, assignments, and persistent save data
 - obstacle patterns, semester bosses, pickups, power-ups, and collision outcomes
 - shop, upgrades, character unlocks, achievements, and results screens
 - pause/resume, keyboard, touch, and mobile-safe HUD
-- audio and accessibility settings
+- original audio and accessibility settings
 
 ## World and art direction
-Build a premium, believable Kenyan university road experience: a carefully profiled asphalt road with markings, drains, curbs, sidewalks, campus gates, academic blocks, student residences, shops, street lighting, signage, landscaping, traffic, and distant skyline. Buildings and vehicles should use authored, reusable low-to-mid-poly assets with coherent materials, lighting, scale, and performance budgets—not untextured placeholder cubes in the final build.
+The target is a premium, believable Kenyan university road experience: a carefully profiled asphalt road with markings, drains, curbs, sidewalks, campus gates, academic blocks, student residences, shops, street lighting, signage, landscaping, traffic, and a distant Nairobi skyline. Buildings and vehicles should graduate into authored, reusable assets with coherent materials, lighting, scale, and mobile performance budgets—not untextured placeholder cubes in the final build.
 
 ## Development
 - Entry point: `index.html`
-- Three.js scene: `src/three/world-preview.js`
+- Three.js renderer: `src/three/runner-three-renderer.js`
 - Jay GLB loader and animation gate: `src/three/jay-character.js`
 - Original 2D source: `legacy-2d-reference.html`
-- Original gameplay assets and modules are retained in this package.
-- Three.js is loaded from the pinned CDN version in the module imports; a production offline bundle still needs to be selected and tested.
+- Run the original module tests from this folder with `npm run test:runner-modules`.
 
 ## Release gate
 Do not mark this game stable until the 3D build passes the original runner's gameplay regression tests, save migration tests, keyboard/touch tests, mobile performance checks, asset loading checks, and visual QA on desktop and Android.

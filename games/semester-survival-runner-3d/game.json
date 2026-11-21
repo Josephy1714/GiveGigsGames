@@ -1,7 +1,7 @@
 {
   "title": "Semester Survival 3D: The University Run",
   "slug": "semester-survival-runner-3d",
-  "description": "A premium Three.js campus endless-runner conversion. The 3D world build is experimental while the original runner's eight-semester progression and gameplay systems are integrated.",
+  "description": "A Three.js conversion of the original eight-semester Kenyan university endless runner.",
   "genre": "Endless Runner",
   "tags": [
     "Endless Runner",
@@ -27,7 +27,7 @@
     }
   },
   "technical": {
-    "rendering": "Three.js WebGL development build",
+    "rendering": "Three.js WebGL renderer with original runner simulation",
     "mobileOptimized": true,
     "targetFPS": 60
   },
@@ -36,12 +36,13 @@
     "local": [
       "index.html",
       "legacy-2d-reference.html",
-      "src/three/world-preview.js",
-      "src/three/jay-character.js"
+      "src/three/runner-three-renderer.js",
+      "src/three/jay-character.js",
+      "assets/processed/jay-runtime/jay-atlas.png"
     ]
   },
   "meta": {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "status": "experimental",
     "license": "Private - All Rights Reserved"
   },
