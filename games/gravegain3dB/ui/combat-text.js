@@ -21,7 +21,11 @@
         showBanner(text, duration = 2500) {
             const banner = document.getElementById('hudNotification');
             if (!banner) return;
-            banner.textContent = text;
+            const resolvedText = (text && typeof text === 'object')
+                ? (text.text || text.message || text.title || '')
+                : String(text ?? '');
+            if (!resolvedText) return;
+            banner.textContent = resolvedText;
             banner.classList.remove('hidden');
             clearTimeout(this.bannerTimer);
             this.bannerTimer = setTimeout(() => banner.classList.add('hidden'), duration);

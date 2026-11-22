@@ -142,6 +142,147 @@ function applyShipSelection(id, rebuild = true) {
     if (!gameActive) { integrity = maxIntegrity; updateShieldUI(); }
 }
 
+function applyLevelSelection(id, rebuild = true) {
+    if (!LEVELS[id]) return;
+    selectedLevel = id;
+    store.set('orbitaldrift_level', id);
+    document.querySelectorAll('.od-level-card').forEach((el) => {
+        const on = el.dataset.level === id;
+        el.classList.toggle('selected', on);
+        el.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    if (rebuild && scene) buildLevelEnvironment();
+}
+
+function makePlanetTexture(type) {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 128;
+    const g = c.getContext('2d');
+    if (type === 'Moon') {
+        g.fillStyle = '#9ca3af';
+        g.fillRect(0, 0, 256, 128);
+        for (let i = 0; i < 45; i++) {
+            const x = Math.random() * 256, y = Math.random() * 128, r = 2 + Math.random() * 10;
+            g.fillStyle = i % 2 === 0 ? 'rgba(75,85,99,0.55)' : 'rgba(209,213,219,0.35)';
+            g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        }
+    } else if (type === 'Earth') {
+        g.fillStyle = '#0284c7';
+        g.fillRect(0, 0, 256, 128);
+        g.fillStyle = '#16a34a';
+        for (let i = 0; i < 18; i++) {
+            g.beginPath();
+            g.ellipse(Math.random() * 256, 20 + Math.random() * 88, 12 + Math.random() * 22, 6 + Math.random() * 14, Math.random() * Math.PI, 0, Math.PI * 2);
+            g.fill();
+        }
+        g.fillStyle = 'rgba(255,255,255,0.45)';
+        for (let i = 0; i < 24; i++) {
+            g.fillRect(Math.random() * 256, Math.random() * 128, 20 + Math.random() * 40, 3 + Math.random() * 4);
+        }
+    } else if (type === 'Mars') {
+        g.fillStyle = '#b91c1c';
+        g.fillRect(0, 0, 256, 128);
+        for (let i = 0; i < 25; i++) {
+            g.fillStyle = i % 2 === 0 ? 'rgba(127,29,29,0.5)' : 'rgba(248,113,113,0.35)';
+            g.beginPath();
+            g.ellipse(Math.random() * 256, Math.random() * 128, 10 + Math.random() * 20, 4 + Math.random() * 8, 0, 0, Math.PI * 2);
+            g.fill();
+        }
+        g.fillStyle = 'rgba(255,255,255,0.75)';
+        g.fillRect(0, 0, 256, 8);
+        g.fillRect(0, 120, 256, 8);
+    } else {
+        // Titan / gas moon bands
+        const grd = g.createLinearGradient(0, 0, 0, 128);
+        grd.addColorStop(0, '#92400e');
+        grd.addColorStop(0.3, '#f59e0b');
+        grd.addColorStop(0.5, '#fde68a');
+        grd.addColorStop(0.75, '#d97706');
+        grd.addColorStop(1, '#78350f');
+        g.fillStyle = grd;
+        g.fillRect(0, 0, 256, 128);
+    }
+    return new THREE.CanvasTexture(c);
+}
+
+function buildLevelEnvironment() {
+    if (!scene) return;
+    const cfg = levelCfg();
+
+    // Clear previous secondary bodies
+    secondaryBodies.forEach((b) => {
+        if (b.mesh) scene.remove(b.mesh);
+        if (b.track) scene.remove(b.track);
+    });
+    secondaryBodies = [];
+
+    // Configure central planet/sun appearance
+    if (planet) {
+        const scale = cfg.centerRadius / PLANET_RADIUS;
+        planet.scale.set(scale, scale, scale);
+    }
+    if (planetUniforms) {
+        if (cfg.centerType === 'sun') {
+            planetUniforms.uColorA.value.setHex(0xf97316);
+            planetUniforms.uColorB.value.setHex(0xfacc15);
+            planetUniforms.uGlow.value.setHex(0xfef08a);
+        } else if (cfg.centerType === 'saturn') {
+            planetUniforms.uColorA.value.setHex(0xd97706);
+            planetUniforms.uColorB.value.setHex(0xfde68a);
+            planetUniforms.uGlow.value.setHex(0xf59e0b);
+        } else {
+            planetUniforms.uColorA.value.setHex(0x1e1b4b);
+            planetUniforms.uColorB.value.setHex(0x0ea5e9);
+            planetUniforms.uGlow.value.setHex(0xa855f7);
+        }
+    }
+    if (rings) {
+        rings.visible = !!cfg.hasRings;
+        if (cfg.ringColor && rings.material) rings.material.color.setHex(cfg.ringColor);
+    }
+
+    // Spawn secondary orbiting bodies (Moon, Earth, Mars, Titan) with procedural textures & atmospheric rim glow
+    (cfg.bodies || []).forEach((bDef) => {
+        const geom = new THREE.SphereGeometry(bDef.radius, 32, 32);
+        const tex = makePlanetTexture(bDef.name);
+        const mat = new THREE.MeshPhongMaterial({
+            map: tex,
+            emissive: bDef.emissive || 0x111827,
+            emissiveIntensity: 0.28,
+            shininess: bDef.name === 'Earth' ? 55 : 20
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(Math.cos(bDef.angle) * bDef.orbitR, Math.sin(bDef.angle) * bDef.orbitR, 0);
+
+        // Atmospheric rim halo
+        const halo = new THREE.Mesh(
+            new THREE.SphereGeometry(bDef.radius * 1.18, 24, 24),
+            new THREE.MeshBasicMaterial({
+                color: bDef.color,
+                transparent: true,
+                opacity: 0.16,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide,
+                depthWrite: false
+            })
+        );
+        mesh.add(halo);
+        scene.add(mesh);
+
+        const trackGeom = new THREE.RingGeometry(bDef.orbitR - 0.45, bDef.orbitR + 0.45, 96);
+        const trackMat = new THREE.MeshBasicMaterial({ color: bDef.color, side: THREE.DoubleSide, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending });
+        const track = new THREE.Mesh(trackGeom, trackMat);
+        scene.add(track);
+
+        secondaryBodies.push({
+            ...bDef,
+            mesh,
+            track,
+            currentAngle: bDef.angle
+        });
+    });
+}
+
 
 function createOrbitTrack(radius, color, opacity) {
     const geom = new THREE.RingGeometry(radius - 0.4, radius + 0.4, 64);

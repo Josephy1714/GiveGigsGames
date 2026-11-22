@@ -1,4 +1,5 @@
 (() => {
+  const gamesRoot = new URL("games/", document.currentScript.src);
   const grid = document.getElementById("game-grid");
   const count = document.getElementById("catalog-count");
   const error = document.getElementById("catalog-error");
@@ -24,7 +25,7 @@
   let favorites = new Set();
   let recent = [];
   let savedView;
-  let visibleLimit = 10;
+  let visibleLimit = Number.MAX_SAFE_INTEGER;
   try {
     favorites = new Set(JSON.parse(localStorage.getItem("arcade:favorites") || "[]"));
     recent = JSON.parse(localStorage.getItem("arcade:recent") || "[]");
@@ -261,7 +262,7 @@
   }
 
   function render(resetLimit = true) {
-    if (resetLimit) visibleLimit = 10;
+    if (resetLimit) visibleLimit = Number.MAX_SAFE_INTEGER;
     const query = search.value.trim().toLowerCase();
     const rank = (game) => {
       const title = game.title.toLowerCase();
@@ -308,6 +309,24 @@
       emoji.setAttribute("aria-hidden", "true");
       emoji.textContent = game.emoji || "🎮";
       head.append(emoji);
+      if (game.capsule) {
+        const capsule = document.createElement("img");
+        capsule.className = "game-capsule";
+        capsule.alt = "";
+        capsule.width = 512;
+        capsule.height = 512;
+        capsule.loading = "lazy";
+        capsule.decoding = "async";
+        capsule.addEventListener("error", () => {
+          capsule.remove();
+          emoji.hidden = false;
+          head.classList.remove("has-capsule");
+        }, { once: true });
+        head.classList.add("has-capsule");
+        emoji.hidden = true;
+        capsule.src = new URL(game.capsule, gamesRoot).href;
+        head.prepend(capsule);
+      }
       if (game.featured) {
         const badge = document.createElement("span");
         badge.className = "featured";
@@ -378,7 +397,13 @@
           collection.focus();
         }
       });
-      actions.append(play, test, details, guide, roadmap, favorite);
+      const primaryActions = document.createElement("div");
+      primaryActions.className = "game-card-primary-actions";
+      primaryActions.append(play, favorite);
+      const secondaryLinks = document.createElement("div");
+      secondaryLinks.className = "game-card-links";
+      secondaryLinks.append(details, guide, test, roadmap);
+      actions.append(primaryActions, secondaryLinks);
       card.append(head, body, actions);
       grid.append(card);
     }
@@ -394,31 +419,40 @@
     return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(2)} MB` : `${Math.max(1, Math.round(value / 1_000))} KB`;
   }
 
-  try {
-    const catalog = window.GIVEGIGSGAMES_CATALOG;
-    if (!catalog || !Array.isArray(catalog.games)) throw new Error("Catalog data is missing.");
-    games = catalog.games;
-    if (savedView && location.hash === "#all-games") {
-      search.value = savedView.search;
-      if (savedView.version >= 2 && savedView.sort) sort.value = savedView.sort;
-      tagMatch.value = savedView.tagMatch;
-      collection.value = savedView.collection;
-      input.value = savedView.input || "";
-      gameMode.value = savedView.mode || "";
-      for (const tag of savedView.tags) selectedTags.add(tag);
-      updateSelectedTagCount();
-      requestAnimationFrame(() => {
-        document.querySelector(`[data-view="${savedView.view === "grid" ? "grid" : "list"}"]`).click();
-        document.getElementById(`launch-${savedView.slug}`)?.focus({ preventScroll: true });
-        window.scrollTo({ top: savedView.scroll, behavior: "instant" });
-      });
+  (async () => {
+    try {
+      let catalog = null;
+      if (location.protocol === "http:" || location.protocol === "https:") {
+        try {
+          const response = await fetch("/games/catalog.json", { cache: "no-store" });
+          if (response.ok) catalog = await response.json();
+        } catch {}
+      }
+      if (!catalog) catalog = window.GIVEGIGSGAMES_CATALOG;
+      if (!catalog || !Array.isArray(catalog.games)) throw new Error("Catalog data is missing.");
+      games = catalog.games;
+      if (savedView && location.hash === "#all-games") {
+        search.value = savedView.search;
+        if (savedView.version >= 2 && savedView.sort) sort.value = savedView.sort;
+        tagMatch.value = savedView.tagMatch;
+        collection.value = savedView.collection;
+        input.value = savedView.input || "";
+        gameMode.value = savedView.mode || "";
+        for (const tag of savedView.tags) selectedTags.add(tag);
+        updateSelectedTagCount();
+        requestAnimationFrame(() => {
+          document.querySelector(`[data-view="${savedView.view === "grid" ? "grid" : "list"}"]`).click();
+          document.getElementById(`launch-${savedView.slug}`)?.focus({ preventScroll: true });
+          window.scrollTo({ top: savedView.scroll, behavior: "instant" });
+        });
+      }
+      renderTagOptions();
+      render();
+    } catch {
+      count.textContent = "";
+      error.hidden = false;
     }
-    renderTagOptions();
-    render();
-  } catch {
-    count.textContent = "";
-    error.hidden = false;
-  }
+  })();
   search.addEventListener("input", render);
   collection.addEventListener("change", render);
   input.addEventListener("change", render);

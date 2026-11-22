@@ -220,9 +220,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 24px;
+    padding: clamp(8px, 2vw, 16px);
     box-sizing: border-box;
-    overflow-y: auto;
+    overflow: hidden;
     z-index: 1000;
     opacity: 1;
     transition: opacity 0.3s ease;
@@ -342,13 +342,57 @@
 }
 
 .menu-content {
-    width: 90%;
+    width: min(100%, 600px);
     max-width: 600px;
-    padding: 40px;
+    padding: clamp(14px, 2.5vh, 24px) clamp(14px, 3vw, 28px);
     text-align: center;
     box-sizing: border-box;
-    max-height: calc(100dvh - 48px);
+    max-height: calc(100dvh - 16px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.menu-content .btn-group,
+.menu-content .character-step-actions {
+    flex-shrink: 0;
+}
+
+#dailyChallengesList {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+}
+
+.character-step:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.character-step .char-grid,
+.character-step .class-select,
+.character-step .run-mode-select {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.hub-pane.active {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+@media (max-width: 700px) {
+    .screen-overlay { padding: 8px !important; align-items: stretch !important; }
+    .menu-content { width: 100% !important; max-width: 100% !important; max-height: calc(100dvh - 16px) !important; height: 100% !important; padding: 12px 14px !important; }
+    .menu-title { font-size: clamp(1.35rem, 5vw, 1.9rem) !important; margin-bottom: 4px !important; }
+    .menu-subtitle { font-size: 0.78rem !important; margin-bottom: 8px !important; }
+    .btn-game { padding: 8px 12px !important; font-size: 0.8rem !important; }
+    .btn-group { gap: 6px !important; }
 }
 
 /* Character selection has more content than the title/settings overlays. */

@@ -389,6 +389,7 @@
             const speaker = document.getElementById('dialogueSpeaker');
             const text = document.getElementById('dialogueText');
             const nextBtn = document.getElementById('btnNextDialogue');
+            const skipAllBtn = document.getElementById('btnSkipAllDialogue');
 
             if (!dialogueScreen) {
                 if (onComplete) onComplete();
@@ -402,7 +403,7 @@
             let fullText = '';
 
             const speakLine = (item) => {
-                try { this.game.audio.speak(`${item.speaker} says: ${item.text}`); } catch (_) { /* TTS garnish */ }
+                try { this.game.audio.speak(item.text, item.speaker); } catch (_) { /* TTS garnish */ }
             };
 
             const typeLine = (item) => {
@@ -435,6 +436,14 @@
                 speakLine(item);
             };
 
+            const finishDialogue = () => {
+                clearInterval(typeTimer);
+                nextBtn.onclick = null;
+                if (skipAllBtn) skipAllBtn.onclick = null;
+                dialogueScreen.classList.add('hidden');
+                if (onComplete) onComplete();
+            };
+
             const handleNext = () => {
                 // First click while typing = skip to full line; next click advances.
                 if (typing) {
@@ -448,14 +457,12 @@
                 if (idx < dialogueList.length) {
                     showLine();
                 } else {
-                    clearInterval(typeTimer);
-                    nextBtn.onclick = null;
-                    dialogueScreen.classList.add('hidden');
-                    if (onComplete) onComplete();
+                    finishDialogue();
                 }
             };
 
             nextBtn.onclick = handleNext;
+            if (skipAllBtn) skipAllBtn.onclick = finishDialogue;
             showLine();
         }
     }

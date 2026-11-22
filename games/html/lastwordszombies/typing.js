@@ -183,7 +183,7 @@ class TypingController {
     // Laser tracer from player to kill - sells the "decrypt shot"
     if (explosionPos && window.game && window.game.getMuzzleWorldPos) {
       try {
-        this.particles.spawnTracer(window.game.getMuzzleWorldPos(), explosionPos, 0x00f2fe);
+        this.particles.spawnTracer(window.game.getMuzzleWorldPos(), explosionPos, window.game.getTypingEffectColor());
       } catch (e) { /* cosmetic only */ }
     }
     try {

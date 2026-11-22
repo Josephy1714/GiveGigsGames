@@ -581,13 +581,31 @@
             }
         } catch (_) {}
     };
-    AudioController.prototype.speakFallback = function (text) {
+    AudioController.prototype.speakFallback = function (text, speaker) {
         if (this.muted) return;
         try {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 var u = new SpeechSynthesisUtterance(text);
                 u.volume = this.masterVolume;
+                if (speaker) {
+                    var h = 0;
+                    for (var i = 0; i < speaker.length; i++) h = ((h << 5) - h + speaker.charCodeAt(i)) | 0;
+                    h = Math.abs(h);
+                    var wantFemale = (h % 2) === 1;
+                    var voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+                    var enVoices = voices.filter(function (v) { return !v.lang || /^en/i.test(v.lang); });
+                    var pool = enVoices.length ? enVoices : voices;
+                    if (pool.length) {
+                        var femRe = /female|woman|zira|samantha|victoria|karen|moira|tessa|fiona|susan|hazel|aria|jenny|sonia|libby|natasha|ava|emma|allison/i;
+                        var maleRe = /\bmale\b|\bman\b|david|mark|alex|daniel|george|ryan|guy|christopher|eric|liam|thomas|fred|oliver|arthur/i;
+                        var gendered = pool.filter(function (v) { return wantFemale ? femRe.test(v.name) : maleRe.test(v.name); });
+                        var pick = gendered.length ? gendered : pool;
+                        u.voice = pick[h % pick.length];
+                    }
+                    u.pitch = 0.7 + ((h % 7) * 0.12);
+                    u.rate = 0.9 + (((h >> 3) % 5) * 0.07);
+                }
                 window.speechSynthesis.speak(u);
             }
         } catch (_) {}
@@ -4042,6 +4060,7 @@
         var speaker = document.getElementById('dialogueSpeaker');
         var text = document.getElementById('dialogueText');
         var nextBtn = document.getElementById('btnNextDialogue');
+        var skipAllBtn = document.getElementById('btnSkipAllDialogue');
         if (!screen) { if (onComplete) onComplete(); return; }
 
         this.isDialogueActive = true;
@@ -4053,22 +4072,26 @@
             portrait.textContent = item.portrait || '🤖';
             speaker.textContent = item.speaker;
             text.textContent = item.text;
-            self.audio.speakFallback(item.speaker + ' says: ' + item.text);
+            self.audio.speakFallback(item.text, item.speaker);
+        }
+        function finishDialogue() {
+            nextBtn.onclick = null;
+            if (skipAllBtn) skipAllBtn.onclick = null;
+            screen.classList.add('hidden');
+            self.isDialogueActive = false;
+            if (onComplete) onComplete();
+            var gameOver = document.getElementById('gameOverScreen');
+            if (!gameOver || gameOver.classList.contains('hidden')) {
+                var arena = document.getElementById('canvasContainer');
+                if (arena) arena.focus();
+            }
         }
         nextBtn.onclick = function () {
             idx++;
             if (idx < dialogueList.length) showLine();
-            else {
-                screen.classList.add('hidden');
-                self.isDialogueActive = false;
-                if (onComplete) onComplete();
-                var gameOver = document.getElementById('gameOverScreen');
-                if (!gameOver || gameOver.classList.contains('hidden')) {
-                    var arena = document.getElementById('canvasContainer');
-                    if (arena) arena.focus();
-                }
-            }
+            else finishDialogue();
         };
+        if (skipAllBtn) skipAllBtn.onclick = finishDialogue;
         showLine();
         nextBtn.focus();
     };

@@ -26,10 +26,10 @@
     
     <!-- Base Styles -->
     <link rel="stylesheet" href="../../../styles.css">
-    <link rel="stylesheet" href="game.css?v=8">
+    <link rel="stylesheet" href="game.css?v=9">
 
     <!-- Three.js Library with Failover Check (game boots only if THREE loads) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../vendor/three-r128.min.js"></script>
     <script>
         if (typeof THREE === 'undefined') {
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"><\/script>');
@@ -215,11 +215,10 @@
                     <!-- Level Selection -->
                     <section class="lwz-menu-page" data-menu-page="sector" aria-labelledby="lwz-sector-title" hidden>
                     <div class="level-select-container">
-                        <span id="lwz-sector-title" class="lwz-choice-title">SECTOR MAP</span>
+                        <span id="lwz-sector-title" class="lwz-choice-title">CHOOSE A MAP</span>
                         <div class="level-options" style="display: flex; gap: 8px; justify-content: center;">
-                            <button type="button" class="btn btn-level active" id="btn-level-hallway" data-level="hallway" aria-pressed="true" style="flex: 1; padding: 8px 5px; font-family: var(--font-cyber); font-size: 0.75rem;">HALLWAY</button>
-                            <button type="button" class="btn btn-level" id="btn-level-city" data-level="city" aria-pressed="false" style="flex: 1; padding: 8px 5px; font-family: var(--font-cyber); font-size: 0.75rem;">CITY</button>
-                            <button type="button" class="btn btn-level" id="btn-level-graveyard" data-level="graveyard" aria-pressed="false" style="flex: 1; padding: 8px 5px; font-family: var(--font-cyber); font-size: 0.75rem;">GRAVEYARD</button>
+                            <button type="button" class="btn btn-level active" id="btn-level-fantasy" data-level="fantasy" aria-pressed="true" style="flex: 1; padding: 8px 5px; font-family: var(--font-cyber); font-size: 0.75rem;">Fantasy</button>
+                            <button type="button" class="btn btn-level" id="btn-level-cyberpunk" data-level="cyberpunk" aria-pressed="false" style="flex: 1; padding: 8px 5px; font-family: var(--font-cyber); font-size: 0.75rem;">Cyberpunk</button>
                         </div>
                     </div>
                     </section>
@@ -442,14 +441,16 @@
     <!-- Scripts -->
     <script src="../../../components.js"></script>
     <script src="dictionary.js?v=8"></script>
-    <script src="state.js?v=8"></script>
+    <script src="state.js?v=9"></script>
     <script src="audio.js?v=8"></script>
     <script src="particles.js?v=8"></script>
-    <script src="zombie.js?v=8"></script>
-    <script src="typing.js?v=8"></script>
+    <script src="zombie.js?v=9"></script>
+    <script src="typing.js?v=9"></script>
     <script src="store.js?v=8"></script>
     <script src="menu-flow.js?v=1"></script>
-    <script src="game.js?v=8"></script>
+    <script src="fantasy.js?v=1"></script>
+    <script src="keyboard-visuals.js?v=1"></script>
+    <script src="game.js?v=9"></script>
     <script src="../game-meta.js"></script>
     <script>
         // Load game metadata and populate template fields

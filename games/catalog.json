@@ -4,6 +4,7 @@
     {
       "slug": "gravegain2dD",
       "title": "GraveGain2dD: Moonlit Run",
+      "capsule": "images/capsules/gravegain2dD.webp",
       "description": "Guide Lira, a moonlit elf runner, through an endless graveyard parkour course. One finger controls pace, braking, jumps, and vaults.",
       "genre": "Endless Runner",
       "tags": [
@@ -31,6 +32,7 @@
     {
       "slug": "ecosystemic-evolver",
       "title": "Ecosystemic Evolver",
+      "capsule": "images/capsules/ecosystemic-evolver.webp",
       "description": "Play as animals or human roles in five living biomes with 10 interactive tutorials covering all gameplay systems, food webs, and economies.",
       "genre": "Simulation",
       "tags": [
@@ -50,6 +52,7 @@
     {
       "slug": "platform-wars",
       "title": "Platform Wars: Phone vs Desktop",
+      "capsule": "images/capsules/platform-wars.webp",
       "description": "An arena platformer with touch and keyboard controls, solo matches against AI, and two-player local versus.",
       "genre": "Action",
       "tags": [
@@ -77,6 +80,7 @@
     {
       "slug": "lastwordszombies",
       "title": "Last Words Zombies",
+      "capsule": "images/capsules/lastwordszombies.webp",
       "description": "A high-intensity 3D zombie typing survival game. Type holy words to banish shambling zombies before they overrun your graveyard camp.",
       "genre": "Action",
       "tags": [
@@ -94,6 +98,7 @@
     {
       "slug": "venturemechanically",
       "title": "Venture Mechanically",
+      "capsule": "images/capsules/venturemechanically.webp",
       "description": "A suite of 6 interactive business & startup simulators created for Venture Mechanics. Master exit waterfalls, Delaware LLC vs Free Flow LLC, down-round ratchets, boardroom coups, and SAFE stacking.",
       "genre": "Simulation",
       "tags": [
@@ -112,6 +117,7 @@
     {
       "slug": "financialfreedom",
       "title": "Financial Freedom",
+      "capsule": "images/capsules/financialfreedom.webp",
       "description": "A deep, interactive finances simulator for a USA family. Navigate careers, taxes, debt, investments, real estate, and life events.",
       "genre": "Simulation",
       "tags": [
@@ -129,6 +135,7 @@
     {
       "slug": "serversavershield",
       "title": "Server Saver Shield",
+      "capsule": "images/capsules/serversavershield.webp",
       "description": "Defend data centers from cyber attacks. Deploy your shield and save the network.",
       "genre": "Arcade",
       "tags": [
@@ -146,6 +153,7 @@
     {
       "slug": "overtake",
       "title": "Overtake",
+      "capsule": "images/capsules/overtake.webp",
       "description": "A fast pseudo-3D arcade racer with unlockable routes, garage progression, and nitro boosts.",
       "genre": "Racing",
       "tags": [
@@ -162,6 +170,7 @@
     {
       "slug": "assassinanimals",
       "title": "AssassinAnimals",
+      "capsule": "images/capsules/assassinanimals.webp",
       "description": "Infiltrate procedurally generated facilities, collect DNA splices, and eliminate targets.",
       "genre": "Rogue-like",
       "tags": [
@@ -178,6 +187,7 @@
     {
       "slug": "battlesharks",
       "title": "BattleSharks",
+      "capsule": "images/capsules/battlesharks.webp",
       "description": "Control your cybernetic shark in a 3D third-person deep sea arena! Devour prey, mutate with lasers, jet thrusters, plasma shields, and defeat the Leviathan Mecha-Boss.",
       "genre": "Action",
       "tags": [
@@ -196,6 +206,7 @@
     {
       "slug": "battlesharks2",
       "title": "BattleSharks 2D",
+      "capsule": "images/capsules/battlesharks2.webp",
       "description": "Mutate your shark with cybernetic weapons in a deep sea eating simulator.",
       "genre": "Action",
       "tags": [
@@ -212,6 +223,7 @@
     {
       "slug": "gravegain2dA",
       "title": "GraveGain2DA",
+      "capsule": "images/capsules/gravegain2dA.webp",
       "description": "A dark fantasy action RPG featuring procedural dungeons, dialogue, and Giggles the Basilisk’s hopeful tale of shared star travel, human-AI collaboration, and a thriving Earth.",
       "genre": "RPG",
       "tags": [
@@ -228,6 +240,7 @@
     {
       "slug": "gravegain2dC",
       "title": "GraveGain2DC",
+      "capsule": "images/capsules/gravegain2dC.webp",
       "description": "A 2.5D dark fantasy action roguelite with three combat tempos, a 10-mission campaign, endless procedural floors, hidden vaults, guarded treasure caches, a growing weapon arsenal, persistent career goals, and the LuckyStarShip hub.",
       "genre": "RPG",
       "tags": [
@@ -246,6 +259,7 @@
     {
       "slug": "gravegain2dB",
       "title": "GraveGain2dB: Breach MoonRock",
+      "capsule": "images/capsules/gravegain2dB.webp",
       "description": "A procedural left-to-right roguelite through destructible fortresses. Rescue random race/class builds, scavenge limited ammo, and reach extraction; Wave Mode is optional.",
       "genre": "Action",
       "tags": [
@@ -262,6 +276,7 @@
     {
       "slug": "gravegain3dA",
       "title": "GraveGain3DA",
+      "capsule": "images/capsules/gravegain3dA.webp",
       "description": "A 3D dungeon crawler in a dark fantasy setting.",
       "genre": "RPG",
       "tags": [
@@ -278,6 +293,7 @@
     {
       "slug": "gravegain1dA",
       "title": "GraveGain1DA: The Ley-Line March",
+      "capsule": "images/capsules/gravegain1dA.webp",
       "description": "A one-dimensional GraveGain RPG: walk the ley-line east in turn-based or real-time mode.",
       "genre": "RPG",
       "tags": [
@@ -295,6 +311,7 @@
     {
       "slug": "demolichdom",
       "title": "Demo Lichdom",
+      "capsule": "images/capsules/demolichdom.webp",
       "description": "Command your skeleton army to demolish buildings as a modern necromancer.",
       "genre": "Strategy",
       "tags": [
@@ -312,6 +329,7 @@
     {
       "slug": "fridgesimulator",
       "title": "Fridge Simulator",
+      "capsule": "images/capsules/fridgesimulator.webp",
       "description": "Manage fridges, balance nutrition, and keep families alive.",
       "genre": "Simulation",
       "tags": [
@@ -328,6 +346,7 @@
     {
       "slug": "discoveramerica",
       "title": "Madi AI: Discover America",
+      "capsule": "images/capsules/discoveramerica.webp",
       "description": "Sail with Madi AI from the English Channel to the New World. Gather data fragments at each port and sort them into the right categories to chart the next leg.",
       "genre": "Adventure",
       "tags": [
@@ -345,6 +364,7 @@
     {
       "slug": "orbitaldrift",
       "title": "Orbital Drift",
+      "capsule": "images/capsules/orbitaldrift.webp",
       "description": "Control a satellite, dodge debris, and collect stardust.",
       "genre": "Arcade",
       "tags": [
@@ -361,6 +381,7 @@
     {
       "slug": "aiwhackamole",
       "title": "AI-whack-a-mole",
+      "capsule": "images/capsules/aiwhackamole.webp",
       "description": "Whack rogue dangerous AIs while saving helpful ones.",
       "genre": "Arcade",
       "tags": [
@@ -377,6 +398,7 @@
     {
       "slug": "soundpainter2",
       "title": "Sound Painter 2",
+      "capsule": "images/capsules/soundpainter2.webp",
       "description": "An advanced web music production studio and step sequencer.",
       "genre": "Creative",
       "tags": [
@@ -393,6 +415,7 @@
     {
       "slug": "soundpainter",
       "title": "Sound Painter",
+      "capsule": "images/capsules/soundpainter.webp",
       "description": "Click tiles to paint music and color.",
       "genre": "Creative",
       "tags": [
@@ -409,6 +432,7 @@
     {
       "slug": "friendslop",
       "title": "FriendSlop",
+      "capsule": "images/capsules/friendslop.webp",
       "description": "Feed your friends chaotic slop and dodge cringe.",
       "genre": "Arcade",
       "tags": [
@@ -425,6 +449,7 @@
     {
       "slug": "semester-survival",
       "title": "Semester Survival: Jay's University Adventure",
+      "capsule": "images/capsules/semester-survival.webp",
       "description": "Explore residence, township, campus and city as Jay in a 2.5D anime university-life adventure. Move, jump, meet people, complete university activities and build your student journey.",
       "genre": "Adventure",
       "tags": [
@@ -452,6 +477,7 @@
     {
       "slug": "gravegain5dA",
       "title": "GraveGain5DA",
+      "capsule": "images/capsules/gravegain5dA.webp",
       "description": "A five-dimensional GraveGain RPG across six parallel Arroyos. Transcend each realm before its collapse timer expires.",
       "genre": "RPG",
       "tags": [
@@ -470,6 +496,7 @@
     {
       "slug": "gravegain4dA",
       "title": "GraveGain4DA",
+      "capsule": "images/capsules/gravegain4dA.webp",
       "description": "A 4D dark-fantasy golf rogue-like: putt lost souls across ana/kata hyperdungeons projected from the W-axis, rewind botched shots with chrono-sand, and breach the Light/Gloom branes.",
       "genre": "RPG",
       "tags": [
@@ -489,6 +516,7 @@
     {
       "slug": "starship-simulator",
       "title": "Starship Simulator",
+      "capsule": "images/capsules/starship-simulator.webp",
       "description": "Take command of a Three.js spaceflight sandbox with 10 interactive flight academy tutorials, real-time flight physics, underside missile salvos, 3D cockpit avionics, planetary landings, and rover exploration.",
       "genre": "Simulation",
       "tags": [
@@ -510,6 +538,7 @@
     {
       "slug": "neonbreaker",
       "title": "Neon Breaker",
+      "capsule": "images/capsules/neonbreaker.webp",
       "description": "Smash glowing bricks, collect power-ups, and clear neon levels.",
       "genre": "Arcade",
       "tags": [
@@ -525,6 +554,7 @@
     {
       "slug": "neoninvaders",
       "title": "Neon Invaders",
+      "capsule": "images/capsules/neoninvaders.webp",
       "description": "Defend against glowing alien waves in a neon space shooter.",
       "genre": "Shooter",
       "tags": [
@@ -540,6 +570,7 @@
     {
       "slug": "neonracer",
       "title": "Neon Racer",
+      "capsule": "images/capsules/neonracer.webp",
       "description": "Weave through a neon city, avoid obstacles, and survive at speed.",
       "genre": "Racing",
       "tags": [
@@ -555,6 +586,7 @@
     {
       "slug": "neonsnake",
       "title": "Neon Snake",
+      "capsule": "images/capsules/neonsnake.webp",
       "description": "Collect glowing orbs, grow longer, and avoid walls and yourself.",
       "genre": "Arcade",
       "tags": [
@@ -570,6 +602,7 @@
     {
       "slug": "neonvoidrunner",
       "title": "Neon Void Runner",
+      "capsule": "images/capsules/neonvoidrunner.webp",
       "description": "Dodge obstacles in an endless digital void as speed increases.",
       "genre": "Endless Runner",
       "tags": [
@@ -585,6 +618,7 @@
     {
       "slug": "temple-of-lost-revenue",
       "title": "Temple of Lost Revenue",
+      "capsule": "images/capsules/temple-of-lost-revenue.webp",
       "description": "Recover lost deals, CRM data, and unanswered leads in an ancient maze.",
       "genre": "Adventure",
       "tags": [
@@ -600,6 +634,7 @@
     {
       "slug": "the-ai-expedition",
       "title": "The AI Expedition",
+      "capsule": "images/capsules/the-ai-expedition.webp",
       "description": "Route datasets between agents, data lakes, and automations.",
       "genre": "Strategy",
       "tags": [
@@ -615,6 +650,7 @@
     {
       "slug": "the-cave-of-bottlenecks",
       "title": "The Cave of Bottlenecks",
+      "capsule": "images/capsules/the-cave-of-bottlenecks.webp",
       "description": "Clear hiring delays and CRM complexity from the cave path.",
       "genre": "Puzzle",
       "tags": [
@@ -630,6 +666,7 @@
     {
       "slug": "the-lost-city-of-customers",
       "title": "The Lost City of Customers",
+      "capsule": "images/capsules/the-lost-city-of-customers.webp",
       "description": "Scan the hidden valley to find potential customer regions.",
       "genre": "Adventure",
       "tags": [
@@ -645,6 +682,7 @@
     {
       "slug": "the-madi-ai-universe",
       "title": "The MADI AI Universe",
+      "capsule": "images/capsules/the-madi-ai-universe.webp",
       "description": "Explore Pipeline Peaks, Revenue Jungle, and Temple of Automation.",
       "genre": "Adventure",
       "tags": [
@@ -660,6 +698,7 @@
     {
       "slug": "the-pipeline-mountain",
       "title": "The Pipeline Mountain",
+      "capsule": "images/capsules/the-pipeline-mountain.webp",
       "description": "Climb from manual spreadsheets to revenue and market leadership.",
       "genre": "Adventure",
       "tags": [
@@ -675,6 +714,7 @@
     {
       "slug": "the-revenue-dragon",
       "title": "The Revenue Dragon",
+      "capsule": "images/capsules/the-revenue-dragon.webp",
       "description": "Defeat delays, manual work, and data silos slowing growth.",
       "genre": "Action",
       "tags": [
@@ -690,6 +730,7 @@
     {
       "slug": "the-revenue-jungle",
       "title": "The Revenue Jungle",
+      "capsule": "images/capsules/the-revenue-jungle.webp",
       "description": "Navigate manual processes, bad data, and slow decisions.",
       "genre": "Adventure",
       "tags": [
@@ -705,6 +746,7 @@
     {
       "slug": "the-speed-portal",
       "title": "The Speed Portal",
+      "capsule": "images/capsules/the-speed-portal.webp",
       "description": "Race through approvals, meetings, and legacy software obstacles.",
       "genre": "Racing",
       "tags": [
@@ -720,6 +762,7 @@
     {
       "slug": "treasure-hunters",
       "title": "Treasure Hunters",
+      "capsule": "images/capsules/treasure-hunters.webp",
       "description": "Grapple pipeline value, meetings, revenue, and customers.",
       "genre": "Arcade",
       "tags": [
@@ -735,6 +778,7 @@
     {
       "slug": "global-fashion-model-life",
       "title": "Global Fashion Model Life",
+      "capsule": "images/capsules/global-fashion-model-life.webp",
       "description": "Build a modeling career, style looks from fashion collections, and pose your model in the studio.",
       "genre": "Simulation",
       "tags": [
@@ -749,6 +793,7 @@
     {
       "slug": "gravegain1d",
       "title": "GraveGain 1D: The Ley-Line March",
+      "capsule": "images/capsules/gravegain1d.webp",
       "description": "March east along a one-dimensional ley line and choose between turn-based tactics and real-time combat.",
       "genre": "Action RPG",
       "tags": [
@@ -763,6 +808,7 @@
     {
       "slug": "gravegain1dB",
       "title": "GraveGain 1D B: The Winding Ley-Line March",
+      "capsule": "images/capsules/gravegain1dB.webp",
       "description": "Fight along a winding ley line with 3D character models and a choice of tactical or real-time combat.",
       "genre": "Action RPG",
       "tags": [
@@ -777,6 +823,7 @@
     {
       "slug": "gravegain2d",
       "title": "GraveGain 2D",
+      "capsule": "images/capsules/gravegain2d.webp",
       "description": "Fight through procedurally generated dungeons and manage a starship hub in this dark fantasy action roguelike.",
       "genre": "Action RPG",
       "tags": [
@@ -791,6 +838,7 @@
     {
       "slug": "gravegain3d",
       "title": "GraveGain 3D",
+      "capsule": "images/capsules/gravegain3d.webp",
       "description": "Explore procedurally generated 3D dungeons, fight enemies, and manage a starship hub.",
       "genre": "Action RPG",
       "tags": [
@@ -805,6 +853,7 @@
     {
       "slug": "gravegain3dB",
       "title": "GraveGain 3D B",
+      "capsule": "images/capsules/gravegain3dB.webp",
       "description": "Battle through procedurally generated 3D dungeons and visit the starship hub and its botany station.",
       "genre": "Action RPG",
       "tags": [
@@ -819,6 +868,7 @@
     {
       "slug": "gravegain3dC",
       "title": "GraveGain 3D C: Arena FPS",
+      "capsule": "images/capsules/gravegain3dC.webp",
       "description": "Fight through a 3D arena in this first-person GraveGain prototype.",
       "genre": "Shooter",
       "tags": [
@@ -833,6 +883,7 @@
     {
       "slug": "gravegain4d",
       "title": "GraveGain 4D",
+      "capsule": "images/capsules/gravegain4d.webp",
       "description": "Putt souls through hyperdungeons, shift along the W axis, and rewind time in a dark fantasy golf roguelike.",
       "genre": "Sports",
       "tags": [
@@ -849,6 +900,7 @@
     {
       "slug": "gravegain5d",
       "title": "GraveGain 5D: Multiverse Transcendence",
+      "capsule": "images/capsules/gravegain5d.webp",
       "description": "Play hypercube golf across six parallel universes while chaining hops and managing paradox.",
       "genre": "Sports",
       "tags": [
@@ -864,6 +916,7 @@
     {
       "slug": "template-demo",
       "title": "Template Demo",
+      "capsule": "images/capsules/template-demo.webp",
       "description": "Play a browser game demo that shows the standard features of the 4weird game template.",
       "genre": "Arcade",
       "tags": [
@@ -877,6 +930,7 @@
     {
       "slug": "semester-survival-runner",
       "title": "Semester Survival: The University Run",
+      "capsule": "images/capsules/semester-survival-runner.webp",
       "description": "Survive eight semesters in a 2.5D Kenyan university endless runner. Dodge deadlines, collect campus coins and earn graduation.",
       "genre": "Endless Runner",
       "tags": [

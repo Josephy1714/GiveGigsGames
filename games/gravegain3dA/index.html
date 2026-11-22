@@ -82,6 +82,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
 [class*="game-overlay"]::-webkit-scrollbar{width:8px}
 [class*="game-overlay"]::-webkit-scrollbar-track{background:transparent}
 [class*="game-overlay"]::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:4px}
+@media (max-width: 700px){body .game-wrapper{width:100vw!important;height:100dvh!important;max-height:100dvh!important;aspect-ratio:auto!important}body .screen-overlay{padding:8px!important;overflow:hidden!important}}
 </style><style id="fourweird-game-stage">
 html,body{width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;margin:0!important;padding:0!important;background:#000!important;display:flex!important;align-items:center!important;justify-content:center!important}
 .TEMPLATE-4weird-game-main,[class*="game-main"]{width:100%!important;height:100%!important;min-height:0!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0!important}
@@ -288,12 +289,12 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             </div>
 
             <!-- Bottom action row (desktop only) -->
-            <div class="desktop-bottom-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px; max-width: 100%;">
+            <div class="desktop-bottom-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px; max-width: 100%; padding-right: 175px; box-sizing: border-box;">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; max-width: 100%;">
                     <button class="btn-game" id="btnPause">⏸️ Pause</button>
                     <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | Left-Click Attack | Right-Click Block | F Ability | Space Jump | Q Potion</span>
                 </div>
-                <button class="btn-game btn-primary" id="btnReturnToHub">🚀 Return to Starship</button>
+                <button class="btn-game btn-primary" id="btnReturnToHub" style="margin-right: 175px;">🚀 Return to Starship</button>
             </div>
         </div>
 
@@ -307,7 +308,18 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <div class="daily-challenges-container">
                     <h3 style="margin-top: 0; font-family: 'Orbitron'; font-size: 1rem; color: var(--grave-gold);">📅 Daily Mission Logs</h3>
                     <div id="dailyChallengesList">
-                        <!-- Filled by JS -->
+                        <div class="daily-challenge-item" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:0.82rem;color:#e2e8f0;">
+                            <span>⚔️ Clear 10 Undead in MoonRock</span>
+                            <span style="color:var(--grave-gold);font-weight:700;">+150 Gold</span>
+                        </div>
+                        <div class="daily-challenge-item" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:0.82rem;color:#e2e8f0;">
+                            <span>🛡️ Survive 120s without falling</span>
+                            <span style="color:var(--grave-gold);font-weight:700;">+200 Gold</span>
+                        </div>
+                        <div class="daily-challenge-item" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:0.82rem;color:#e2e8f0;">
+                            <span>💎 Collect 3 Supply Caches</span>
+                            <span style="color:#38bdf8;font-weight:700;">+100 $UUSD</span>
+                        </div>
                     </div>
                 </div>
 
@@ -322,13 +334,13 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
         <!-- 1B. STORY MISSION SELECT SCREEN -->
         <div class="screen-overlay hidden" id="storyMissionScreen">
-            <div class="menu-content glass-panel" style="max-width: 900px; text-align: left;">
-                <h2 class="menu-title" style="font-size: 2rem; margin-bottom: 5px;">📜 Story Campaign (10 Missions)</h2>
-                <p class="menu-subtitle" style="text-align: left; margin-bottom: 15px;">MoonRock Colonial Defense - Shared 2D & 3D Progress</p>
-                <div class="story-missions-grid" id="storyMissionsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; max-height: 420px; overflow-y: auto; padding-right: 8px;">
+            <div class="menu-content glass-panel" style="max-width: 900px; text-align: left; display: flex; flex-direction: column; max-height: 90vh; padding: 20px 24px;">
+                <h2 class="menu-title" style="font-size: 1.8rem; margin: 0 0 4px 0; text-align: left;">📜 Story Campaign (10 Missions)</h2>
+                <p class="menu-subtitle" style="text-align: left; margin: 0 0 12px 0; padding: 0;">MoonRock Colonial Defense - Shared 2D & 3D Progress</p>
+                <div class="story-missions-grid" id="storyMissionsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; flex: 1 1 auto; min-height: 0; max-height: 55vh; overflow-y: auto; padding-right: 8px;">
                     <!-- Filled dynamically by JS -->
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-shrink: 0;">
                     <button class="btn-game" id="btnStoryBack">← Main Menu</button>
                     <button class="btn-game btn-primary" id="btnStartStoryMission" disabled>⚔️ Launch Selected Mission</button>
                 </div>
@@ -345,7 +357,8 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                         <p id="dialogueText" style="font-size: 1rem; line-height: 1.5; color: white; margin: 0; min-height: 60px;">Dialogue message text goes here...</p>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button class="btn-game btn-secondary" id="btnSkipAllDialogue">Skip All</button>
                     <button class="btn-game btn-primary" id="btnNextDialogue">Continue ➔</button>
                 </div>
             </div>
@@ -378,21 +391,21 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                     <p class="menu-subtitle" id="selectedBuildSummary">Pick how time behaves in your run.</p>
                     <div class="run-mode-select" aria-label="Choose simulation mode">
                     <div class="mode-select-grid" id="charModeSelectGrid">
-                        <div class="char-mode-card selected" data-mode="realtime">
+                        <button type="button" class="char-mode-card selected" data-mode="realtime" aria-pressed="true">
                             <span class="mode-card-icon">⚡</span>
                             <div class="mode-card-title">Realtime Action</div>
                             <div class="mode-card-desc">Fluid combat with variable speed scaling (0.25x - 2.0x).</div>
-                        </div>
-                        <div class="char-mode-card" data-mode="chrono">
+                        </button>
+                        <button type="button" class="char-mode-card" data-mode="chrono" aria-pressed="false">
                             <span class="mode-card-icon">⏳</span>
                             <div class="mode-card-title">Chrono-Lock</div>
                             <div class="mode-card-desc">Superhot style: Time moves ONLY when you move or attack.</div>
-                        </div>
-                        <div class="char-mode-card" data-mode="turnbased">
+                        </button>
+                        <button type="button" class="char-mode-card" data-mode="turnbased" aria-pressed="false">
                             <span class="mode-card-icon">🎲</span>
                             <div class="mode-card-title">Turn-Based</div>
                             <div class="mode-card-desc">Classic grid RPG: Each step or attack executes 1 discrete turn.</div>
-                        </div>
+                        </button>
                     </div>
                     </div>
                     <div class="character-step-actions">
@@ -716,7 +729,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
         })();
     </script>
     <script>
-        (function(){function open(){var g=window.GraveGainGame;if(g&&g.player&&!g.isPaused&&!document.getElementById('gigglesHelpDraft')&&window.GigglesHelpDraft)window.GigglesHelpDraft.present('gravegain3dA',g,function(){g.updateHUD();});}document.addEventListener('keydown',function(e){if(e.key==='g'||e.key==='G')open();});var b=document.createElement('button');b.type='button';b.textContent='▰ GG · HELP';b.style.cssText='position:fixed;right:12px;top:12px;z-index:9999;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer';b.addEventListener('click',open);document.body.appendChild(b);})();
+        // Giggles Help button is provided by GigglesHelpDraft; duplicate inline button removed.
     </script>
 <script src="../html/ui/flow-core.js"></script><script src="../html/ui/choice-deck.js"></script><script src="../html/ui/gravegain-setup.js"></script><script src="../html/runtime-bridge.js" data-slug="gravegain3dA"></script><script src="../html/fourweird-workers.js" data-slug="gravegain3dA"></script><script src="../html/fourweird-music.js" data-slug="gravegain3dA"></script><script src="../_shared/game-select.js" defer></script></body>
 </html>

@@ -1109,7 +1109,7 @@
             btn.id = 'btnAiSpectator';
             btn.type = 'button';
             btn.textContent = '🤖 AI Spectator [V]';
-            btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(56,189,248,0.45);background:rgba(12,10,24,0.88);color:#e0f2fe;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
+            btn.style.cssText = 'position:fixed;bottom:68px;right:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(56,189,248,0.45);background:rgba(12,10,24,0.88);color:#e0f2fe;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
             btn.addEventListener('click', () => this.toggleAiSpectator());
             document.body.appendChild(btn);
         }

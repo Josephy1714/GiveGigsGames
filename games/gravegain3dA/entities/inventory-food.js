@@ -127,7 +127,7 @@
             btn.id = 'btnInventoryToggle';
             btn.type = 'button';
             btn.textContent = '🎒 Bag [I]';
-            btn.style.cssText = 'position:fixed;bottom:16px;left:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.28);background:rgba(12,10,24,0.88);color:#f8fafc;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
+            btn.style.cssText = 'position:fixed;bottom:68px;left:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.28);background:rgba(12,10,24,0.88);color:#f8fafc;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
             btn.addEventListener('click', () => this.toggle());
             document.body.appendChild(btn);
         }
@@ -179,7 +179,7 @@
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
                     <div>
-                        <div style="font-size:0.78rem;color:#4ade80;margin-bottom:8px;font-weight:700;">🍖 FOOD & CONSUMABLES (Quick-Eat: [F])</div>
+                        <div style="font-size:0.78rem;color:#4ade80;margin-bottom:8px;font-weight:700;">🍖 FOOD & CONSUMABLES (Click to Eat)</div>
                         <div style="display:flex;flex-direction:column;gap:8px;">${foodHtml}</div>
                     </div>
                     <div>

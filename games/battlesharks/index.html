@@ -90,11 +90,14 @@
             <div class="hud-top-right">
                 <div class="resource-panel">
                     <div class="res-item" title="Gold Coins">🪙 <span id="hudCoins">0</span></div>
+                    <div class="res-item" title="Treasure Coins (Premium)">💎 <span id="hudTreasureCoins">0</span></div>
                     <div class="res-item" title="Biomass (from Prey)">🧬 <span id="hudBiomass">0</span></div>
                     <div class="res-item" title="Cyber-Debris (from Enemies)">⚙️ <span id="hudDebris">0</span></div>
                     <div class="res-item" title="Mutagens (Rare)">🧪 <span id="hudMutagens">0</span></div>
                 </div>
                 <div class="hud-actions">
+                    <button id="btnHudAquarium" class="hud-btn" title="My Aquarium">🐠 TANK</button>
+                    <button id="btnHudColosseum" class="hud-btn" title="Atlantis Colosseum">🏛️ ARENA</button>
                     <button id="btnShop" class="hud-btn" title="BattleSharks Shop">🛒 SHOP</button>
                     <button id="btnInventory" class="hud-btn" title="Inventory (I)">🎒 INV</button>
                     <button id="btnLab" class="hud-btn lab-btn" title="Upgrade Lab (Tab / U)">🧬 LAB <span class="badge-dot hidden" id="labBadge">!</span></button>
@@ -143,7 +146,7 @@
                 </div>
                 <div class="start-info">
                     <h1 class="game-title">BATTLESHARKS</h1>
-                    <p class="game-subtitle">3D THIRD-PERSON CYBER-SHARK ARENA</p>
+                    <p class="game-subtitle">HUNT • CAPTURE • MUTATE • DOMINATE</p>
                     <p class="game-desc">
                         Dive into the abyssal arena in full 3D third-person! Devour prey to grow into a massive apex predator,
                         harvest Cyber-Debris &amp; Mutagens, unlock 7 deadly bio-cybernetic mutations, and obliterate the Leviathan Mecha-Sub.
@@ -171,6 +174,12 @@
                     <div class="start-btn-row">
                         <button id="btnStart" class="primary-btn">🦈 PLAY AS SHARK</button>
                         <button id="btnStartHuman" class="secondary-btn">🚤 PLAY AS HUMAN (SUB GUNNER)</button>
+                    </div>
+                    <div class="start-btn-row" style="margin-top:8px; flex-wrap:wrap;">
+                        <button id="btnStartAquarium" class="secondary-btn">🐠 MY AQUARIUM</button>
+                        <button id="btnStartBase" class="secondary-btn">🧱 BASE BUILDER</button>
+                        <button id="btnStartColosseum" class="secondary-btn">🏛️ ATLANTIS COLOSSEUM</button>
+                        <button id="btnStartArsenal" class="secondary-btn">🤿 HUMAN ARSENAL</button>
                     </div>
                 </div>
             </div>
@@ -214,6 +223,7 @@
                     <button id="btnCloseLab" class="close-btn">✕</button>
                 </div>
                 <div class="upgrades-grid" id="upgradesGrid"></div>
+                <div id="labCustomContainer" style="margin-top:14px;"></div>
             </div>
         </div>
 
@@ -242,13 +252,135 @@
                 <button id="btnRestart" class="primary-btn">DIVE AGAIN</button>
             </div>
         </div>
+        <!-- Aquarium Modal (Tamagotchi Style) -->
+        <div id="aquariumModal" class="overlay hidden">
+            <div class="modal-card lab-card" style="max-width:780px;">
+                <div class="modal-header">
+                    <h2>🐠 MY AQUARIUM — TAMAGOTCHI</h2>
+                    <div class="lab-resources">
+                        <span>🪙 <b id="aqCoins">0</b></span>
+                        <span>💎 <b id="aqTreasure">0</b></span>
+                        <span>Tank: <b id="aqTankSize">SMALL</b></span>
+                    </div>
+                    <button id="btnCloseAq" class="close-btn">✕</button>
+                </div>
+                <div class="aq-top-bar">
+                    <select id="aqSharkSelect" class="aq-input"></select>
+                    <input id="aqSharkName" type="text" class="aq-input" placeholder="Name your shark..." maxlength="20">
+                    <span id="aqSharkSpecies" class="aq-badge">Reef Shark</span>
+                    <span id="aqSharkPersonality" class="aq-badge accent">Playful</span>
+                </div>
+                <canvas id="aquariumCanvas" width="540" height="240" class="aq-canvas"></canvas>
+                <div class="aq-needs-grid">
+                    <div class="aq-need"><span>🍖 Hunger <b id="aqValHunger">85%</b></span><div class="bar-wrap"><div class="bar-fill health-fill" id="aqBarHunger"></div></div></div>
+                    <div class="aq-need"><span>✨ Cleanliness <b id="aqValCleanliness">92%</b></span><div class="bar-wrap"><div class="bar-fill xp-fill" id="aqBarCleanliness"></div></div></div>
+                    <div class="aq-need"><span>❤️ Happiness <b id="aqValHappiness">96%</b></span><div class="bar-wrap"><div class="bar-fill health-fill" id="aqBarHappiness"></div></div></div>
+                    <div class="aq-need"><span>🩺 Health <b id="aqValHealth">100%</b></span><div class="bar-wrap"><div class="bar-fill health-fill" id="aqBarHealth"></div></div></div>
+                    <div class="aq-need"><span>⚡ Energy <b id="aqValEnergy">78%</b></span><div class="bar-wrap"><div class="bar-fill xp-fill" id="aqBarEnergy"></div></div></div>
+                </div>
+                <div class="aq-actions-row">
+                    <button id="btnAqFeed" class="primary-btn small-btn">🍖 Feed</button>
+                    <button id="btnAqClean" class="secondary-btn small-btn">🫧 Clean</button>
+                    <button id="btnAqPlay" class="secondary-btn small-btn">⚽ Play</button>
+                    <button id="btnAqRest" class="secondary-btn small-btn">😴 Rest</button>
+                    <button id="btnAqHeal" class="secondary-btn small-btn">🩺 Heal</button>
+                    <button id="btnAqDecorate" class="secondary-btn small-btn">🏰 Decorate</button>
+                    <button id="btnAqBuild" class="secondary-btn small-btn">🧱 Build</button>
+                    <button id="btnAqExpand" class="secondary-btn small-btn">📐 Expand Tank</button>
+                    <button id="btnAqWatchAd" class="primary-btn small-btn">🎬 Watch Ad (+10💎)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aquarium Shop Modal -->
+        <div id="aquariumShopModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🏰 AQUARIUM SHOP &amp; DECORATIONS</h2>
+                    <button id="btnCloseAqShop" class="close-btn">✕</button>
+                </div>
+                <div class="upgrades-grid" id="aqShopGrid"></div>
+            </div>
+        </div>
+
+        <!-- Base Builder Modal -->
+        <div id="baseBuilderModal" class="overlay hidden">
+            <div class="modal-card lab-card" style="max-width:780px;">
+                <div class="modal-header">
+                    <h2>🧱 UNDERWATER BASE BUILDER (SNAP-TO-GRID)</h2>
+                    <div class="lab-resources">
+                        <span>🪙 Coins: <b id="baseCoins">0</b></span>
+                        <span id="baseStats"></span>
+                    </div>
+                    <button id="btnCloseBase" class="close-btn">✕</button>
+                </div>
+                <div id="basePalette" class="base-palette"></div>
+                <div id="baseGridContainer" class="base-grid"></div>
+            </div>
+        </div>
+
+        <!-- Atlantis Colosseum Modal -->
+        <div id="colosseumModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🏛️ ATLANTIS COLOSSEUM &amp; MULTIPLAYER</h2>
+                    <div class="lab-resources">
+                        <span>🏆 Trophies: <b id="colosseumTrophies">0</b></span>
+                        <span>⚔️ Wins: <b id="colosseumWins">0</b></span>
+                    </div>
+                    <button id="btnCloseColosseum" class="close-btn">✕</button>
+                </div>
+                <div class="upgrades-grid" id="colosseumGrid"></div>
+            </div>
+        </div>
+
+        <!-- Human Arsenal Modal -->
+        <div id="humanArsenalModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🤿 HUMAN DIVER ARSENAL (PLAYER LVL <span id="humanPlayerLevel">1</span>)</h2>
+                    <button id="btnCloseHumanArsenal" class="close-btn">✕</button>
+                </div>
+                <h3 style="margin:6px 0; color:#38bdf8;">Weapons</h3>
+                <div class="upgrades-grid" id="humanWeaponsGrid"></div>
+                <h3 style="margin:10px 0 6px; color:#38bdf8;">Diving Equipment</h3>
+                <div class="upgrades-grid" id="humanEquipGrid"></div>
+            </div>
+        </div>
     </div>
 
     <script src="lore-data.js?v=6"></script>
+    <script src="bs-state.js?v=1"></script>
+    <script src="lab-custom.js?v=1"></script>
+    <script src="aquarium.js?v=1"></script>
+    <script src="base-builder.js?v=1"></script>
+    <script src="colosseum.js?v=1"></script>
     <script src="ocean-hunter.js?v=6"></script>
     <script src="world.js?v=6"></script>
     <script src="creatures.js?v=6"></script>
     <script src="game.js?v=6"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.BSAquarium) BSAquarium.bindEvents();
+            if (window.BSBaseBuilder) BSBaseBuilder.bindEvents();
+            if (window.BSColosseum) BSColosseum.bindEvents();
+            document.getElementById('btnStartAquarium')?.addEventListener('click', () => BSAquarium.open());
+            document.getElementById('btnHudAquarium')?.addEventListener('click', () => BSAquarium.open());
+            document.getElementById('btnStartBase')?.addEventListener('click', () => BSBaseBuilder.open());
+            document.getElementById('btnStartColosseum')?.addEventListener('click', () => BSColosseum.open());
+            document.getElementById('btnHudColosseum')?.addEventListener('click', () => BSColosseum.open());
+            document.getElementById('btnStartArsenal')?.addEventListener('click', () => BSColosseum.openArsenal());
+            document.getElementById('btnLab')?.addEventListener('click', () => { if (window.BSLabCustom) BSLabCustom.render(); });
+            if (window.BSState) {
+                const syncTreasure = () => {
+                    const el = document.getElementById('hudTreasureCoins');
+                    if (el) el.textContent = BSState.data.treasureCoins;
+                };
+                BSState.onChange(syncTreasure);
+                syncTreasure();
+            }
+        });
+    </script>
     <script src="../_shared/game-select.js" defer></script>
 </body>
 </html>

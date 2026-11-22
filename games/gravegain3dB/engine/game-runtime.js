@@ -4436,8 +4436,8 @@
                     : 0;
                 const reloadDip = Math.sin(reloadProgress * Math.PI);
                 const firearm = !!weaponId;
-                const baseX = -swapDip * 1.25 + aimX * this.weaponAimBlend;
-                const baseY = -swapDip * 8 + aimY * this.weaponAimBlend - reloadDip * 4;
+                let baseX = -swapDip * 1.25 + aimX * this.weaponAimBlend;
+                let baseY = -swapDip * 8 + aimY * this.weaponAimBlend - reloadDip * 4;
                 const hand = this.weaponGroup.mainHand;
                 const pose = hand?.userData.idlePose;
                 const supportHand = this.weaponGroup.supportHand;

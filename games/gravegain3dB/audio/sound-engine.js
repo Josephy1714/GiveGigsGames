@@ -470,12 +470,30 @@ class SoundEngine {
         this._teardownAmbientNodes();
     }
 
-    speak(text) {
+    speak(text, speaker) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.volume = Math.min(1.0, this.masterVolume);
             u.rate = 1.05;
+            if (speaker) {
+                let h = 0;
+                for (let i = 0; i < speaker.length; i++) h = ((h << 5) - h + speaker.charCodeAt(i)) | 0;
+                h = Math.abs(h);
+                const wantFemale = (h % 2) === 1;
+                const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+                const enVoices = voices.filter(v => !v.lang || /^en/i.test(v.lang));
+                const pool = enVoices.length ? enVoices : voices;
+                if (pool.length) {
+                    const femRe = /female|woman|zira|samantha|victoria|karen|moira|tessa|fiona|susan|hazel|aria|jenny|sonia|libby|natasha|ava|emma|allison/i;
+                    const maleRe = /\bmale\b|\bman\b|david|mark|alex|daniel|george|ryan|guy|christopher|eric|liam|thomas|fred|oliver|arthur/i;
+                    const gendered = pool.filter(v => wantFemale ? femRe.test(v.name) : maleRe.test(v.name));
+                    const pick = gendered.length ? gendered : pool;
+                    u.voice = pick[h % pick.length];
+                }
+                u.pitch = 0.7 + ((h % 7) * 0.12);
+                u.rate = 0.9 + (((h >> 3) % 5) * 0.07);
+            }
             window.speechSynthesis.speak(u);
         }
     }

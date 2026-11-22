@@ -22,9 +22,55 @@
     if (instructions) {
         instructions.replaceChildren();
         const text = document.createElement('p');
-        text.textContent = 'Hold Space, click, or touch to push outward. Release to fall inward. Collect stardust; avoid debris. Use Pause to take a break.';
+        text.textContent = 'Hold Space, click, or touch to push outward. Release to fall inward. Press V or C to switch camera views (3rd Person / Forward / Solar).';
         instructions.appendChild(text);
         briefing.appendChild(instructions);
+    }
+
+    // Level selector in Hangar
+    const levelBox = document.createElement('div');
+    Object.assign(levelBox.style, { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px', margin: '10px auto', maxWidth: '420px' });
+    Object.values(LEVELS).forEach((lvl) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'od-level-card btn btn-secondary' + (lvl.id === selectedLevel ? ' selected' : '');
+        card.dataset.level = lvl.id;
+        card.setAttribute('aria-checked', lvl.id === selectedLevel ? 'true' : 'false');
+        Object.assign(card.style, {
+            padding: '8px 10px', textAlign: 'left', borderRadius: '10px',
+            border: lvl.id === selectedLevel ? '1.5px solid #38bdf8' : '1px solid rgba(148,163,184,0.3)',
+            background: lvl.id === selectedLevel ? 'rgba(56,189,248,0.16)' : 'rgba(15,23,42,0.75)',
+            color: '#f8fafc', cursor: 'pointer', fontSize: '12px', lineHeight: '1.3'
+        });
+        card.innerHTML = `<div style="font-weight:700;font-size:13px">${lvl.emoji} ${lvl.name}</div><div style="opacity:0.8;font-size:11px;margin-top:2px">${lvl.scoreMult}x pts</div>`;
+        card.addEventListener('click', () => {
+            applyLevelSelection(lvl.id, true);
+            levelBox.querySelectorAll('.od-level-card').forEach((c) => {
+                const on = c.dataset.level === lvl.id;
+                c.style.border = on ? '1.5px solid #38bdf8' : '1px solid rgba(148,163,184,0.3)';
+                c.style.background = on ? 'rgba(56,189,248,0.16)' : 'rgba(15,23,42,0.75)';
+            });
+        });
+        levelBox.appendChild(card);
+    });
+    briefing.insertBefore(levelBox, launch);
+
+    // Camera view toggle button in game container
+    const gc = document.getElementById('game-container');
+    if (gc && !document.getElementById('od-cam-btn')) {
+        const camBtn = document.createElement('button');
+        camBtn.id = 'od-cam-btn';
+        camBtn.type = 'button';
+        camBtn.title = 'Switch Camera View (V / C)';
+        camBtn.textContent = '📷 ' + CAMERA_LABELS[cameraMode];
+        Object.assign(camBtn.style, {
+            position: 'absolute', top: '12px', right: '62px', zIndex: '900',
+            padding: '6px 12px', borderRadius: '9999px', border: '1px solid rgba(56,189,248,0.5)',
+            background: 'rgba(15,23,42,0.78)', color: '#e0f2fe', fontSize: '12px',
+            fontWeight: '700', cursor: 'pointer', backdropFilter: 'blur(6px)'
+        });
+        camBtn.addEventListener('click', (e) => { e.stopPropagation(); cycleCameraView(); });
+        gc.appendChild(camBtn);
     }
     briefing.appendChild(launch);
     content.querySelector('.TEMPLATE-4weird-hangar-eyebrow')?.remove();

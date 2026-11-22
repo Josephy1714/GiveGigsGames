@@ -27,6 +27,13 @@ for (const game of catalog.games) {
   if (slugs.has(slug)) fail("Use a unique slug.");
   slugs.add(slug);
   if (typeof game.title !== "string" || !game.title.trim()) fail("Provide a game title.");
+  if (game.capsule !== undefined) {
+    if (typeof game.capsule !== "string" || !/^(?:[\w-]+\/)+[\w-]+\.(?:webp|jpe?g|png)$/i.test(game.capsule)) {
+      fail("Use a relative capsule image path inside games/.");
+    }
+    const image = await stat(new URL(game.capsule, catalogUrl)).catch(() => null);
+    if (!image?.isFile()) fail(`Create the missing capsule ${game.capsule}.`);
+  }
   if (game.status !== undefined && !["stable", "preview", "experimental"].includes(game.status)) {
     fail("Set status to stable, preview, or experimental.");
   }
