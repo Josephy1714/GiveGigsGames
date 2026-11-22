@@ -279,6 +279,7 @@ export async function loadJayCharacter({
     play,
     update,
     dispose,
-    get activeState() { return activeState; }
+    get activeState() { return activeState; },
+    get runApproachCompleted() { return runApproachCompleted; }
   });
 }
