@@ -182,13 +182,29 @@ class SoundEngine {
             gain.connect(this.ctx.destination);
             osc.start(now);
             osc.stop(now + 0.11);
-        } else if (type === 'hit') {
+        } else if (type === 'ward_hit' || type === 'ward_break') {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const shattered = type === 'ward_break';
+            const duration = shattered ? 0.24 : 0.085;
+            osc.type = shattered ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(shattered ? 780 : 540, now);
+            osc.frequency.exponentialRampToValueAtTime(shattered ? 95 : 920, now + duration);
+            gain.gain.setValueAtTime((shattered ? 0.32 : 0.16) * mainVol, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+        } else if (type === 'hit' || type === 'hit_armor' || type === 'hit_kill') {
             // Crunchy impact with low punch
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(160 * pitchMod, now);
-            osc.frequency.exponentialRampToValueAtTime(20, now + 0.12);
+            const armor = type === 'hit_armor';
+            const kill = type === 'hit_kill';
+            osc.type = armor ? 'triangle' : 'sawtooth';
+            osc.frequency.setValueAtTime((armor ? 1180 : kill ? 310 : 160) * pitchMod, now);
+            osc.frequency.exponentialRampToValueAtTime(armor ? 520 : kill ? 55 : 20, now + 0.12);
             gain.gain.setValueAtTime(0.4 * mainVol, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
             osc.connect(gain);

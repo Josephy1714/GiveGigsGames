@@ -56,6 +56,7 @@
             this.dodgeCooldown = 0;
             this.dodgeVx = 0;
             this.dodgeVy = 0;
+            this.dodgeRequested = false;
             this.parryWindow = 0;
 
             this.potions = 1 + (permanentStats.potions || 0);
@@ -66,6 +67,10 @@
             this.platVy = 0;
             this.doubleJumpsLeft = 0;
             this.jumpPressConsumed = false;
+            this.jumpBuffer = 0;
+            this.dropThroughTimer = 0;
+            this.mantleMotion = null;
+            this.airSpeed = 0;
             this.abilityCooldown = 0;
             this.crouching = false;
             this.isSliding = false;
@@ -132,6 +137,35 @@
             this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
         }
 
+        findMantleTarget(physics, tilemap, obstacles, directionX, directionY, bodyHeight) {
+            if (!physics?.arenaSurfacesAt) return null;
+            let best = null;
+            let bestDistance = Infinity;
+            for (const surface of tilemap?.arena?.surfaces || []) {
+                const rise = surface.top - this.yElevation;
+                if (rise < 12 || rise > 108) continue;
+                const minX = surface.minX + this.radius + 2;
+                const maxX = surface.maxX - this.radius - 2;
+                const minZ = surface.minZ + this.radius + 2;
+                const maxZ = surface.maxZ - this.radius - 2;
+                if (minX >= maxX || minZ >= maxZ) continue;
+                const alreadyOnDeck = this.x >= minX && this.x <= maxX && this.y >= minZ && this.y <= maxZ;
+                if (alreadyOnDeck) continue;
+                const x = Math.max(minX, Math.min(maxX, this.x));
+                const z = Math.max(minZ, Math.min(maxZ, this.y));
+                const distance = Math.hypot(x - this.x, z - this.y);
+                if (distance > 42 || distance >= bestDistance) continue;
+                if (directionX * (x - this.x) + directionY * (z - this.y) < -2) continue;
+                if (physics.isColliding(x, z, this.radius, tilemap, obstacles, this)) continue;
+                if (physics.ceilingAt(tilemap, x, z) < surface.top + bodyHeight) continue;
+                const landingSurfaces = physics.arenaSurfacesAt(tilemap, x, z);
+                if (landingSurfaces.some(other => other.top > surface.top && other.bottom < surface.top + bodyHeight)) continue;
+                best = { x, z, elevation: surface.top };
+                bestDistance = distance;
+            }
+            return best;
+        }
+
         update(dt, input, physics, tilemap) {
             if (this.isDead) return;
 
@@ -154,9 +188,13 @@
                 moveZ += input.joystick.y;
             }
             const moveLen = Math.hypot(moveX, moveZ);
+            const wasGrounded = this.grounded;
+            const priorVx = this.vx;
+            const priorVy = this.vy;
 
             this.slideTimer = Math.max(0, this.slideTimer - dt);
             this.slideCooldown = Math.max(0, this.slideCooldown - dt);
+            this.dropThroughTimer = Math.max(0, this.dropThroughTimer - dt);
             this.isSliding = this.slideTimer > 0;
             this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
             this.dodgeCooldown = Math.max(0, this.dodgeCooldown - dt);
@@ -171,21 +209,30 @@
             const directionX = (moveX * cosYaw + moveZ * sinYaw) / Math.max(1, moveLen);
             const directionY = (-moveX * sinYaw + moveZ * cosYaw) / Math.max(1, moveLen);
             const touchSprint = Boolean(input.cryptStick?.sprint);
-            if (shiftHeld && !this.shiftHeld && !touchSprint && (Math.abs(moveX) > 0.05 || moveZ > 0.05) &&
+            const dedicatedDodge = this.dodgeRequested;
+            const shiftDodge = shiftHeld && !this.shiftHeld && !touchSprint && (Math.abs(moveX) > 0.05 || moveZ > 0.05);
+            this.dodgeRequested = false;
+            if ((dedicatedDodge || shiftDodge) &&
                 this.grounded && !this.crouching && !this.isBlocking && this.dodgeCooldown === 0) {
                 this.dodgeTimer = 0.16;
                 this.dodgeCooldown = 0.45;
-                this.dodgeVx = directionX * currentSpeed * 2.6;
-                this.dodgeVy = directionY * currentSpeed * 2.6;
+                const dodgeSpeed = currentSpeed * 2.6;
+                const directionLength = Math.hypot(directionX, directionY);
+                this.dodgeVx = moveLen > 0.05 ? directionX * dodgeSpeed / directionLength : -sinYaw * dodgeSpeed;
+                this.dodgeVy = moveLen > 0.05 ? directionY * dodgeSpeed / directionLength : -cosYaw * dodgeSpeed;
             }
             this.shiftHeld = shiftHeld;
             const isRunning = !this.crouching && !this.isBlocking && shiftHeld &&
                 this.dodgeTimer === 0 && (moveZ < -0.05 || (touchSprint && moveLen > 0.05));
+            const carriesSprintThroughAir = shiftHeld && !this.crouching && !this.isBlocking &&
+                (moveZ < -0.05 || (touchSprint && moveLen > 0.05));
             this.sprinting = isRunning;
             const aiming = !!input.mouse?.aiming && !isRunning;
-            this.sprintBlend = isRunning
-                ? Math.min(1, this.sprintBlend + dt)
-                : Math.max(0, this.sprintBlend - dt * 6);
+            if (isRunning) {
+                this.sprintBlend = Math.min(1, this.sprintBlend + (wasGrounded ? dt : 0));
+            } else if (!carriesSprintThroughAir) {
+                this.sprintBlend = Math.max(0, this.sprintBlend - dt * 6);
+            }
             if (!this.crouching && !this.isBlocking && !aiming) {
                 currentSpeed *= 1 + 1.2 * Math.pow(this.sprintBlend, 0.8);
             }
@@ -201,6 +248,17 @@
             if (this.isSliding) {
                 const progress = this.slideTimer / this.slideDuration;
                 const momentum = 0.62 + 0.48 * progress;
+                if (moveLen > 0.05) {
+                    const slideSpeed = Math.hypot(this.slideVx, this.slideVy);
+                    const steer = Math.min(0.25, dt * 2.4);
+                    const x = this.slideVx * (1 - steer) + directionX * slideSpeed * steer;
+                    const y = this.slideVy * (1 - steer) + directionY * slideSpeed * steer;
+                    const length = Math.hypot(x, y);
+                    if (length > 0) {
+                        this.slideVx = x * slideSpeed / length;
+                        this.slideVy = y * slideSpeed / length;
+                    }
+                }
                 this.vx = this.slideVx * momentum;
                 this.vy = this.slideVy * momentum;
             } else if (this.dodgeTimer > 0) {
@@ -223,7 +281,7 @@
             const game = window.GraveGainGame;
             const movementObstacles = [
                 ...(game?.props || []),
-                ...(game?.enemies || []).filter(enemy => enemy && enemy.hp > 0)
+                ...(game?.enemies || []).filter(enemy => enemy && enemy.hp > 0 && Math.abs(this.yElevation - enemy.yElevation) < 26)
             ];
             if (targetLean && physics?.isColliding(leanX, leanY, 5, tilemap, movementObstacles)) targetLean = 0;
             this.lean += (targetLean - this.lean) * Math.min(1, dt * 10);
@@ -231,7 +289,7 @@
             // Hazard floor effects
             const tx = Math.floor(this.x / 48);
             const ty = Math.floor(this.y / 48);
-            if (tilemap && tilemap.grid && tilemap.grid[tx]) {
+            if (this.yElevation < 14 && tilemap?.grid?.[tx]) {
                 const cell = tilemap.grid[tx][ty];
                 if (cell === 2) { // Water
                     this.vx *= 0.6;
@@ -244,38 +302,119 @@
             }
 
             // Jump & Vertical physics
+            const pad = tilemap?.arena?.launchPad;
+            const launching = pad && this.grounded && this.yElevation <= 4 &&
+                Math.hypot(this.x - pad.x, this.y - pad.z) <= pad.radius;
+            this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
             if (!input.keys['Space']) this.jumpPressConsumed = false;
-            if (input.keys['Space'] && this.grounded && !this.jumpPressConsumed) {
+            const jumpPressed = input.keys['Space'] && !this.jumpPressConsumed;
+            const renderedEyeHeight = window.GraveGainGame?.cameraEyeHeight || 20;
+            const bodyHeight = Math.max(renderedEyeHeight, this.crouching ? 13 : 20) + 6;
+            const mantleTarget = jumpPressed && !this.grounded
+                ? this.findMantleTarget(physics, tilemap, movementObstacles, directionX, directionY, bodyHeight)
+                : null;
+            if (jumpPressed) {
                 this.jumpPressConsumed = true;
+                this.jumpBuffer = 0.11;
+            }
+            // Down + jump drops through a raised combat deck. Move just below
+            // its top before gravity runs so floor selection picks the next
+            // lower deck instead of immediately grounding us again.
+            const dropThrough = jumpPressed && this.grounded && this.yElevation >= 18 && moveZ > 0.05;
+            if (launching) {
+                this.jumpBuffer = 0;
                 this.slideTimer = 0;
                 this.isSliding = false;
-                this.platVy = 280;
+                this.dodgeTimer = 0;
+                this.platVy = 425;
+                this.grounded = false;
+                this.vx = (pad.landingX - this.x) / 0.9;
+                this.vy = (pad.landingZ - this.y) / 0.9;
+                this.doubleJumpsLeft = this.race === Race.DWARF ? 1 : 0;
+                const game = window.GraveGainGame;
+                game?.audio?.playSfx('spell', 1.8);
+                game?.vfx?.spawnSparks(pad.x, pad.z, 0x7df5dd, 12, 3);
+            } else if (dropThrough) {
+                this.jumpBuffer = 0;
+                this.yElevation -= 2;
+                this.platVy = -48;
+                this.dropThroughTimer = 0.24;
+                this.grounded = false;
+                this.doubleJumpsLeft = 0;
+                window.GraveGainGame?.audio?.playSfx('footstep', 0.72);
+            } else if (mantleTarget) {
+                this.jumpBuffer = 0;
+                this.mantleMotion = {
+                    startX: this.x, startZ: this.y, startElevation: this.yElevation,
+                    ...mantleTarget, elapsed: 0, duration: 0.18
+                };
+                this.platVy = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.doubleJumpsLeft = 0;
+                window.GraveGainGame?.audio?.playSfx('swing', 1.15);
+            } else if (this.grounded && this.jumpBuffer > 0) {
+                this.jumpBuffer = 0;
+                if (this.isSliding) {
+                    this.vx *= 0.9;
+                    this.vy *= 0.9;
+                }
+                this.slideTimer = 0;
+                this.isSliding = false;
+                // A high, floaty jump supports the expanded multi-level rooms.
+                this.platVy = 520;
                 this.grounded = false;
                 this.doubleJumpsLeft = this.race === Race.DWARF ? 1 : 0;
                 if (window.GraveGainGame) window.GraveGainGame.audio.playSfx('swing', 1.4);
-            } else if (input.keys['Space'] && !this.grounded && this.race === Race.DWARF && this.doubleJumpsLeft > 0 && !this.jumpPressConsumed) {
-                this.jumpPressConsumed = true;
-                this.platVy = 230;
+            } else if (jumpPressed && !this.grounded && this.race === Race.DWARF && this.doubleJumpsLeft > 0) {
+                this.jumpBuffer = 0;
+                this.platVy = 420;
                 this.doubleJumpsLeft--;
                 if (window.GraveGainGame) window.GraveGainGame.audio.playSfx('swing', 1.7);
-            } else if (input.keys['Space'] && !this.grounded && this.race === Race.HUMAN && this.stamina > 5) {
+            } else if (input.keys['Space'] && !this.grounded && this.dropThroughTimer <= 0 && this.race === Race.HUMAN && this.stamina > 5) {
                 this.platVy = Math.min(180, this.platVy + 400 * dt);
                 this.stamina = Math.max(0, this.stamina - 30 * dt);
             }
 
-            if (!this.grounded) {
+            const surfaces = physics.arenaSurfacesAt(tilemap, this.x, this.y);
+            const floorHeight = surfaces.reduce((floor, s) => s.top <= this.yElevation ? Math.max(floor, s.top) : floor, 0);
+            if (this.mantleMotion) {
+                const mantle = this.mantleMotion;
+                mantle.elapsed = Math.min(mantle.duration, mantle.elapsed + dt);
+                const progress = mantle.elapsed / mantle.duration;
+                const eased = progress * progress * (3 - 2 * progress);
+                this.x = mantle.startX + (mantle.x - mantle.startX) * eased;
+                this.y = mantle.startZ + (mantle.z - mantle.startZ) * eased;
+                this.yElevation = mantle.startElevation + (mantle.elevation - mantle.startElevation) * eased;
+                this.grounded = progress >= 1;
+                if (this.grounded) {
+                    this.yElevation = mantle.elevation;
+                    this.platVy = 0;
+                    this.mantleMotion = null;
+                    window.GraveGainGame?.combatText?.spawnText(this.x, this.yElevation + 28, this.y, 'MANTLE', 'block');
+                }
+            } else if (!this.grounded || this.yElevation > floorHeight) {
+                if (wasGrounded) {
+                    this.airSpeed = Math.hypot(this.vx, this.vy);
+                } else {
+                    const steer = moveLen > 0.05 ? Math.min(0.35, dt * 3) : 0;
+                    const speedLimit = Math.max(this.airSpeed, this.speed * 0.95);
+                    this.vx = priorVx * (1 - steer) + directionX * speedLimit * steer;
+                    this.vy = priorVy * (1 - steer) + directionY * speedLimit * steer;
+                }
+                this.grounded = false;
                 this.platVy -= 750 * dt;
                 this.yElevation += this.platVy * dt;
-                const renderedEyeHeight = window.GraveGainGame?.cameraEyeHeight || 20;
-                const bodyEyeHeight = this.crouching ? 13 : 20;
-                const ceilingLimit = Math.max(0, 72 - Math.max(renderedEyeHeight, bodyEyeHeight) - 6);
+                const roomCeiling = physics.ceilingAt(tilemap, this.x, this.y);
+                const ceilingHeight = surfaces.reduce((ceiling, s) => s.bottom >= floorHeight + bodyHeight ? Math.min(ceiling, s.bottom) : ceiling, roomCeiling);
+                const ceilingLimit = ceilingHeight - bodyHeight;
                 if (this.yElevation > ceilingLimit) {
                     this.yElevation = ceilingLimit;
                     if (this.platVy > 0) this.platVy = 0;
                 }
-                if (this.yElevation <= 0) {
+                if (this.yElevation <= floorHeight) {
                     const impact = Math.min(1, Math.max(0, -this.platVy) / 420);
-                    this.yElevation = 0;
+                    this.yElevation = floorHeight;
                     this.platVy = 0;
                     this.grounded = true;
                     const game = window.GraveGainGame;
@@ -290,7 +429,11 @@
 
             const previousX = this.x;
             const previousY = this.y;
-            physics.moveEntityWithCollision(this, this.vx * dt, this.vy * dt, tilemap, movementObstacles);
+            physics.moveEntityWithCollision(this, this.vx * dt, this.vy * dt, tilemap, movementObstacles, bodyHeight);
+            if (!this.grounded && dt > 0) {
+                this.vx = (this.x - previousX) / dt;
+                this.vy = (this.y - previousY) / dt;
+            }
             const actualMove = Math.hypot(this.x - previousX, this.y - previousY);
             this.footstepTimer -= dt;
             if (this.grounded && !this.isSliding && actualMove > 0.75) {
@@ -311,6 +454,8 @@
 
         takeDamage(dmg, type = 'normal', source = null) {
             if (window.gameDebug?.godMode || this.stoneForm || this.isDead) return;
+            const companion = window.GraveGainGame?.companion;
+            if (companion && companion.time < companion.rescueUntil) return;
 
             const GameData = window.GraveGainGameData || {};
             const ClassType = GameData.ClassType || { TANK: 'tank' };
@@ -361,6 +506,10 @@
             }
 
             if (this.hp <= 0 && !this.isDead) {
+                if (companion?.revive(this)) {
+                    window.GraveGainGame.combatText.showBanner(`${companion.name.toUpperCase()} REVIVED YOU`);
+                    return;
+                }
                 this.isDead = true;
                 if (window.GraveGainGame) window.GraveGainGame.gameOver(false);
             }

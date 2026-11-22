@@ -2,18 +2,48 @@
     'use strict';
 
     class PhysicsController {
-        moveEntityWithCollision(entity, dx, dy, tilemap, obstacles = []) {
-            const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 12));
+        arenaSurfacesAt(tilemap, x, z) {
+            const arena = tilemap?.arena;
+            return arena ? arena.surfaces.filter(s => x >= s.minX && x < s.maxX && z >= s.minZ && z < s.maxZ) : [];
+        }
+
+        ceilingAt(tilemap, x, z) {
+            const arena = tilemap?.arena;
+            const contains = room => x >= room.x * 48 && x < (room.x + room.w) * 48 &&
+                z >= room.y * 48 && z < (room.y + room.h) * 48;
+            if (arena && (contains(arena.room) || arena.overlookRooms?.some(contains))) return arena.ceiling;
+            return tilemap?.ceiling || 124;
+        }
+
+        moveEntityWithCollision(entity, dx, dy, tilemap, obstacles = [], bodyHeight = 0) {
+            const hasArena = bodyHeight > 0 && Boolean(tilemap?.arena);
+            const stepSize = hasArena ? 6 : 12;
+            const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / stepSize));
             const stepX = dx / steps;
             const stepY = dy / steps;
-            for (let i = 0; i < steps; i++) {
-                const oldX = entity.x;
-                entity.x += stepX;
-                if (this.isColliding(entity.x, entity.y, entity.radius, tilemap, obstacles, { x: oldX, y: entity.y })) entity.x = oldX;
 
-                const oldY = entity.y;
-                entity.y += stepY;
-                if (this.isColliding(entity.x, entity.y, entity.radius, tilemap, obstacles, { x: entity.x, y: oldY })) entity.y = oldY;
+            const move = (x, z) => {
+                if (this.isColliding(x, z, entity.radius, tilemap, obstacles, entity)) return;
+                if (hasArena) {
+                    const feet = entity.yElevation;
+                    const stepLimit = feet + (entity.grounded ? 7 : 0);
+                    let stepTop = feet;
+                    const surfaces = this.arenaSurfacesAt(tilemap, x, z);
+                    for (const surface of surfaces) {
+                        if (surface.top <= stepLimit) stepTop = Math.max(stepTop, surface.top);
+                    }
+                    const head = stepTop + bodyHeight;
+                    if (head > this.ceilingAt(tilemap, x, z) ||
+                        surfaces.some(s => s.top > stepTop && s.bottom < head)) return;
+                    entity.yElevation = stepTop;
+                }
+                entity.x = x;
+                entity.y = z;
+            };
+
+            for (let i = 0; i < steps; i++) {
+                if (stepX) move(entity.x + stepX, entity.y);
+                if (stepY) move(entity.x, entity.y + stepY);
             }
         }
 

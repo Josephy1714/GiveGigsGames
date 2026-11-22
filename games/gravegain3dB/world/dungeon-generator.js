@@ -192,8 +192,71 @@ class DungeonGenerator {
             }
         }
         const spawnRoom = rooms.find(r => r.type === 'spawn') || rooms[0];
+        if (rooms.length === 1) {
+            const x = spawnRoom.cx < this.gridSize / 2 ? this.gridSize - 10 : 3;
+            const y = spawnRoom.cy < this.gridSize / 2 ? this.gridSize - 10 : 3;
+            const exit = { x, y, w: 7, h: 7, cx: x + 3, cy: y + 3, type: floorNum % 3 === 0 ? 'boss' : 'safespace' };
+            rooms.push(exit);
+            for (let rx = x; rx < x + exit.w; rx++) {
+                for (let ry = y; ry < y + exit.h; ry++) grid[rx][ry] = TILE.FLOOR;
+            }
+        }
+        this.ensureRoomRoutes(grid, spawnRoom, rooms);
+        const combatRooms = rooms.filter(room => room.type !== 'spawn' && room.type !== 'safespace')
+            .sort((a, b) => b.w * b.h - a.w * a.h);
+        const [arenaRoom, ...otherCombatRooms] = combatRooms;
+        let arena = null;
+        if (arenaRoom) {
+            const x = (arenaRoom.x + arenaRoom.w / 2) * 48;
+            const z = (arenaRoom.y + arenaRoom.h / 2) * 48;
+            const surfaces = [];
+            const add = (minX, maxX, minZ, maxZ, top, thickness, level) => {
+                surfaces.push({ minX: x + minX, maxX: x + maxX, minZ: z + minZ, maxZ: z + maxZ, top, bottom: top - thickness, level });
+            };
+            add(-112, 45, -29, 29, 42, 6, 1);
+            add(-45, 112, 29, 82, 84, 6, 2);
+            for (let step = 1; step <= 7; step++) {
+                const offset = (step - 1) * 12;
+                add(-112, -64, -113 + offset, -101 + offset, step * 6, 7, 1);
+                add(-45 + offset, -33 + offset, -29, 29, 42 + step * 6, 7, 2);
+            }
+            // The second staircase runs east from the bridge into the upper landing.
+            add(39, 112, -29, 29, 84, 6, 2);
+            const pursuitRoute = [
+                [-88, -118, 0], [-88, 0, 42], [78, 0, 84], [78, 54, 84]
+            ].map(([dx, dz, elevation]) => ({ x: x + dx, z: z + dz, elevation }));
+            const launchPad = { x: x + 78, z: z + 112, radius: 12, landingX: x + 78, landingZ: z + 56, landingHeight: 84 };
+            // Carry the vertical combat language beyond the main arena: four
+            // rooms per floor gain traversable balconies and jump-up perches.
+            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss').slice(0, 4);
+            for (const [roomIndex, room] of overlookRooms.entries()) {
+                const roomX = (room.x + room.w / 2) * 48;
+                const roomZ = (room.y + room.h / 2) * 48;
+                const addOverlook = (minX, maxX, minZ, maxZ, top, level) => {
+                    surfaces.push({ minX: roomX + minX, maxX: roomX + maxX, minZ: roomZ + minZ,
+                        maxZ: roomZ + maxZ, top, bottom: top - 7, level });
+                };
+                addOverlook(-44, 32, -36, 36, 42, 1);
+                addOverlook(75, 125, -36, 36, 84, 2);
+                for (let step = 1; step <= 7; step++) {
+                    const west = -128 + (step - 1) * 12;
+                    addOverlook(west, west + 12, -25, 25, step * 6, 1);
+                }
+                // Tall rooms get an exposed third tier. The offset makes the
+                // top perch a jump destination rather than a vertical stack.
+                if (roomIndex % 2 === 0) {
+                    addOverlook(-20, 34, -112, -64, 126, 3);
+                    addOverlook(-64, -20, -64, -20, 108, 3);
+                    addOverlook(34, 82, -112, -64, 108, 3);
+                } else {
+                    addOverlook(-120, -72, 62, 110, 126, 3);
+                    addOverlook(-72, -24, 20, 62, 108, 3);
+                }
+            }
+            arena = { room: arenaRoom, ceiling: 224, overlookRooms, surfaces, pursuitRoute, launchPad };
+        }
         return {
-            grid, rooms, spawnRoom, gridSize: this.gridSize,
+            grid, rooms, spawnRoom, arena, ceiling: 216, gridSize: this.gridSize,
             theme: theme,
             atmosphere: {
                 fogColor: cfg.atmosphere.fogColor,
@@ -202,6 +265,40 @@ class DungeonGenerator {
             },
             hazardLegend: HAZARD_LEGEND
         };
+    }
+
+    ensureRoomRoutes(grid, spawnRoom, rooms) {
+        let reached = this.safeTilesFrom(grid, spawnRoom.cx, spawnRoom.cy);
+        for (const room of rooms) {
+            if (reached[room.cx * this.gridSize + room.cy]) continue;
+            this.digCorridor(grid, spawnRoom.cx, spawnRoom.cy, room.cx, room.cy, 1);
+            reached = this.safeTilesFrom(grid, spawnRoom.cx, spawnRoom.cy);
+        }
+    }
+
+    safeTilesFrom(grid, x, y) {
+        const size = this.gridSize;
+        const reached = new Uint8Array(size * size);
+        const start = x * size + y;
+        const queue = [start];
+        reached[start] = 1;
+        const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        for (let index = 0; index < queue.length; index++) {
+            const tx = Math.floor(queue[index] / size);
+            const ty = queue[index] % size;
+            for (const [dx, dy] of neighbors) {
+                const nx = tx + dx;
+                const ny = ty + dy;
+                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                const cell = grid[nx][ny];
+                if (cell === TILE.WALL || cell === TILE.SAND || cell === TILE.TOXIC || cell === TILE.LAVA) continue;
+                const key = nx * size + ny;
+                if (reached[key]) continue;
+                reached[key] = 1;
+                queue.push(key);
+            }
+        }
+        return reached;
     }
 
     digCorridor(grid, x1, y1, x2, y2, width) {

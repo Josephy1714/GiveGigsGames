@@ -171,8 +171,8 @@
       renderHearts();
       addCallout('CONTRACT +1 ♥', player.x + 20, player.y - 80, '#a6f4c5');
     }
-    if (complete || gems >= nextDraft) {
-      if (gems >= nextDraft) nextDraft += 5 + Math.min(drafts, 5) - (build.experience || 0);
+    if (gems >= nextDraft) {
+      nextDraft += 30 + 5 * Math.min(drafts, 6) - (build.experience || 0);
       showDraft();
     }
     updateObjectiveHud();
@@ -189,7 +189,7 @@
     GraveGainAudio?.unlock();
     build = GraveGainProgression.createBuild();
     drafts = 0;
-    nextDraft = Math.max(2, 5 - (build.experience || 0));
+    nextDraft = 24 - (build.experience || 0);
     draftPanel.hidden = true;
     pausePanel.hidden = true;
     paused = false;
@@ -455,8 +455,7 @@
     ctx.restore();
   }
 
-  function drawBg(dt, velocity = 0, lift = 0) {
-    world += dt * velocity;
+  function drawBg(lift = 0) {
     const biome = getBiome();
     const sky = ctx.createLinearGradient(0, -lift, 0, ground);
     sky.addColorStop(0, biome.skyTop);
@@ -688,7 +687,9 @@
     let o;
     if (r < 0.30) o = { type: 'stump', x, w: 54, h: 43 };
     else if (r < 0.56) o = { type: 'bramble', x, w: 61, h: 60 };
-    else if (r < 0.72) o = { type: 'wall', x, w: 38, h: 72 };
+    else if (r < 0.72) o = r < 0.66
+      ? { type: 'wall', x, w: 38, h: 72 }
+      : { type: 'climbwall', x, w: 36, h: 130 };
     else if (r < 0.86) o = { type: 'arch', x, w: 74, h: 86, clearance: 34 };
     else o = { type: 'gap', x, w: 76, h: 0 };
 
@@ -807,7 +808,7 @@
   function renderIntro() {
     if (running) return;
     applyTransform();
-    drawBg(0);
+    drawBg();
     atlasDraw(0, player.x - 18, ground - 77, 76, 77);
   }
   atlas.addEventListener('load', renderIntro);
@@ -911,8 +912,8 @@
       jumpBuffer = coyote = 0;
       GraveGainAudio?.sfx.wallJump();
     } else if (jumpBuffer > 0 && coyote > 0 && !wallGrip) {
+      player.vy = -(run.onLaunchLedge ? 830 : 575) - (build.jump || 0);
       run.leavePlatform();
-      player.vy = -575 - (build.jump || 0);
       player.jump = true;
       jumpBuffer = coyote = 0;
       GraveGainAudio?.sfx.jump();
@@ -927,7 +928,9 @@
     // Platform drop-through when pressing down on an upper platform
     if (!player.jump && player.y < ground && vertical > 0.45 && dropTimer <= 0) {
       run.leavePlatform();
-      dropTimer = 0.22;
+      dropTimer = 0.16;
+      coyote = 0;
+      player.y += 1;
       player.jump = true;
       player.vy = 180;
     }
@@ -940,10 +943,12 @@
     if (wallGrip) player.vy = Math.min(105, Math.max(0, player.vy));
     player.y += player.vy * dt;
 
-    run.advance(distance, velocity * dt, W, ground, loot, obstacles);
+    world += velocity * dt;
+    run.advance(world, velocity * dt, W, ground, loot);
     const feetX = player.x + 20;
-    const floor = dropTimer > 0 ? { y: ground, visited: false } : run.surface(previousY, player.y, feetX, ground);
-    const overPit = obstacles.some(o => o.type === 'gap' && feetX > o.x + 4 && feetX < o.x + o.w - 4);
+    const floor = run.surface(previousY, player.y, feetX, ground);
+    const overPit = obstacles.some(o => o.type === 'gap' &&
+      feetX > o.x - velocity * dt + 4 && feetX < o.x - velocity * dt + o.w - 4);
     if (overPit && floor.y === ground) floor.y = ground + 100;
 
     if (player.y > ground + 72) {
@@ -1079,11 +1084,11 @@
       }
     }
 
-    const desiredLift = Math.max(0, 196 - player.y);
+    const desiredLift = Math.max(0, 255 - player.y);
     cameraLift += (desiredLift - cameraLift) * (1 - Math.exp(-dt * 10));
     ctx.save();
     ctx.translate(0, cameraLift);
-    drawBg(dt, velocity, cameraLift);
+    drawBg(cameraLift);
     ctx.save();
     shake = Math.max(0, shake - dt);
     if (!reducedMotion.matches && shake > 0) ctx.translate(Math.sin(time * 96) * shake * 9, 0);

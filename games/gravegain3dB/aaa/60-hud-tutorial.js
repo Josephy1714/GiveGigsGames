@@ -33,7 +33,7 @@
                 '<b>1–4 / WHEEL</b> swap weapons · <b>N / MMB</b> bash with your weapon · <b>G</b> grenade · <b>Y</b> M4 underbarrel launcher · <b>R</b> reloads both ammo types · <b>H</b> drop weapon · 💣 find grenade loot',
                 '<b>BOSSES / ELITES</b> drop 🔫 caches · unlock the Wraith sniper, refill ammo, or reclaim dropped guns after stepping away',
                 '<b>V</b> class attack · <b>SHIFT</b> sprint · tap <b>C</b> to slide · hold <b>C</b> to crouch · <b>B</b> block',
-                '<b>F</b> ability · <b>SPACE</b> jump (hold as Human to glide; tap again midair as Dwarf) · <b>Q</b> heal · find the ⬇ <b>portal</b> to descend',
+                '<b>F</b> ability · <b>SPACE</b> jump (hold as Human to glide; tap again midair as Dwarf or near a ledge to mantle) · <b>S + SPACE</b> drop through raised decks · <b>Q</b> heal · find the ⬇ <b>portal</b> to descend',
             ];
 
         const toast = AAA.mk('aaaToast', 'aaa-toast');
