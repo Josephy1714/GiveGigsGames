@@ -35,6 +35,65 @@ def find_armature(objects, label):
     rigs.sort(key=lambda obj: len(obj.data.bones), reverse=True)
     return rigs[0]
 
+def remove_horizontal_root_drift(action):
+    """Convert the Mixamo locomotion clip into an in-place cyclic run.
+
+    Blender uses Y-up, so X and Z are horizontal. Preserve the initial hips
+    position and every cyclic bob/rotation, but subtract the linear net travel
+    from any horizontal Hips location channel.
+    """
+    frame_start, frame_end = action.frame_range
+    if frame_end <= frame_start:
+        raise RuntimeError("Run action has an invalid frame range.")
+
+    hips_path = 'pose.bones["mixamorig:Hips"].location'
+    horizontal_curves = [
+        fc for fc in action.fcurves
+        if fc.data_path == hips_path and fc.array_index in (0, 2)
+    ]
+    if not horizontal_curves:
+        raise RuntimeError("Run action has no horizontal Mixamo Hips location channels.")
+
+    corrected = []
+    for fc in horizontal_curves:
+        start_value = float(fc.evaluate(frame_start))
+        end_value = float(fc.evaluate(frame_end))
+        drift = end_value - start_value
+        if abs(drift) < 1e-4:
+            continue
+
+        duration = frame_end - frame_start
+        for point in fc.keyframe_points:
+            t = (float(point.co.x) - frame_start) / duration
+            point.co.y -= drift * t
+            for handle in (point.handle_left, point.handle_right):
+                handle_t = (float(handle.x) - frame_start) / duration
+                handle.y -= drift * handle_t
+        fc.update()
+
+        remaining = float(fc.evaluate(frame_end)) - float(fc.evaluate(frame_start))
+        if abs(remaining) > 1e-3:
+            raise RuntimeError(
+                f"Failed to remove root drift from {fc.data_path}[{fc.array_index}]: "
+                f"remaining={remaining:.6f}"
+            )
+        corrected.append({
+            "axis": fc.array_index,
+            "removed_drift": round(drift, 6),
+            "remaining_drift": round(remaining, 8),
+        })
+
+    if not corrected:
+        raise RuntimeError("Run action contains no measurable horizontal root drift to remove.")
+
+    return {
+        "frame_start": frame_start,
+        "frame_end": frame_end,
+        "duration_frames": frame_end - frame_start,
+        "corrected_channels": corrected,
+    }
+
+
 def main():
     reset_scene()
     base_path = ASSETS / "Aj.fbx"
@@ -65,6 +124,20 @@ def main():
         action.name = clip_name
         action.use_fake_user = True
 
+        if clip_name == "Run":
+            # Preserve the supplied root-motion Run clip, and add a second
+            # animation with its linear forward travel removed. This new clip
+            # is designed for endless runners where the game world moves.
+            run_loop = action.copy()
+            run_loop.name = "Run_InPlace"
+            run_loop.use_fake_user = True
+            run_report = remove_horizontal_root_drift(run_loop)
+            rig.animation_data_create()
+            rig.animation_data.action = run_loop
+            installed.append(("Run_InPlace", len(run_loop.fcurves),
+                              len({fc.data_path for fc in run_loop.fcurves}), run_report))
+            print("RUN_IN_PLACE_VERIFIED", run_report)
+
         paths = [fc.data_path for fc in action.fcurves]
         animated_bones = {
             p.split('"')[1] for p in paths
@@ -89,7 +162,7 @@ def main():
 
     # FBX imports leave their original temporary actions in Blender's datablocks.
     # Remove those source actions so only the five production clips are exported.
-    production_actions = {"Idle", "Run", "Jump", "Slide", "Fall"}
+    production_actions = {"Idle", "Run", "Run_InPlace", "Jump", "Slide", "Fall"}
     for candidate in list(bpy.data.actions):
         if candidate.name not in production_actions:
             bpy.data.actions.remove(candidate)
@@ -137,7 +210,7 @@ def main():
     if not document.get("skins") or not document.get("meshes"):
         raise RuntimeError("GLB must contain a skinned character mesh.")
     exported_names = [item.get("name") for item in document.get("animations", [])]
-    required_names = {"Idle", "Run", "Jump", "Slide", "Fall"}
+    required_names = {"Idle", "Run", "Run_InPlace", "Jump", "Slide", "Fall"}
     if set(exported_names) != required_names or len(exported_names) != len(required_names):
         raise RuntimeError(
             "GLB must contain exactly the five production clips. Exported: "
