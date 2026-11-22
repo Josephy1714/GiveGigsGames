@@ -35,8 +35,8 @@ jobs:
       - name: Install Chromium for real-browser smoke test
         working-directory: games/semester-survival-runner-3d
         run: |
-          npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npm install --prefix /tmp/semester-survival-browser playwright@1.56.1
+          /tmp/semester-survival-browser/node_modules/.bin/playwright install --with-deps chromium
       - name: Start local game server
         working-directory: games/semester-survival-runner-3d
         run: |
@@ -50,6 +50,8 @@ jobs:
           exit 1
       - name: Verify the live 3D game, model, animations and graphics settings in Chromium
         working-directory: games/semester-survival-runner-3d
+        env:
+          PLAYWRIGHT_MODULE: /tmp/semester-survival-browser/node_modules/playwright/index.mjs
         run: node --test tests/three-browser-smoke.mjs
       - name: Verify the 10 MB package budget and final Jay GLB
         run: |
