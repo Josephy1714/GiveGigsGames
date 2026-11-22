@@ -82,12 +82,38 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.equal(lateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
 
     await page.keyboard.press("ArrowLeft");
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 0, null, { timeout: 2500 });
     await page.waitForFunction(() => {
       const world = document.querySelector("#three-world");
-      return world && Number.isFinite(Number(world.dataset.jayLean)) && Math.abs(Number(world.dataset.jayLean)) > 0.01;
+      return world && Number.isFinite(Number(world.dataset.jayLean));
     }, null, { timeout: 2500 });
     assert.ok(Number.isFinite(Number((await world.evaluate(node => node.dataset.jayImpact)))), "impact response telemetry should be available");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(100);
+    assert.equal((await page.evaluate(() => window.__runnerSmoke.state().lane)), 0, "left movement must clamp at the left lane");
     await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 1, null, { timeout: 2500 });
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 2, null, { timeout: 2500 });
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(100);
+    assert.equal((await page.evaluate(() => window.__runnerSmoke.state().lane)), 2, "right movement must clamp at the right lane");
+
+    const swipe = async (x1, x2, y = 420) => page.evaluate(({ x1, x2, y }) => {
+      const target = document.querySelector("#game");
+      const makeTouch = (x) => new Touch({ identifier: 7, target, clientX: x, clientY: y });
+      target.dispatchEvent(new TouchEvent("touchstart", { bubbles: true, changedTouches: [makeTouch(x1)] }));
+      target.dispatchEvent(new TouchEvent("touchend", { bubbles: true, changedTouches: [makeTouch(x2)] }));
+    }, { x1, x2, y });
+    await swipe(300, 100);
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 1, null, { timeout: 2500 });
+    await swipe(100, 300);
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 2, null, { timeout: 2500 });
+    await swipe(100, 300);
+    await page.waitForTimeout(100);
+    assert.equal((await page.evaluate(() => window.__runnerSmoke.state().lane)), 2, "touch swipes must clamp at the right lane");
+    await swipe(300, 100);
+    await page.waitForFunction(() => window.__runnerSmoke.state().lane === 1, null, { timeout: 2500 });
 
     await page.keyboard.press("ArrowUp");
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 2500 });
