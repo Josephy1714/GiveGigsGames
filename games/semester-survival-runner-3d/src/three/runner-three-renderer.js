@@ -229,7 +229,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const airborne=Number(g.jump)>0.02;
    g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.vehicleImpactType=airborne?"airborne":"front";
    g.vehicleImpactStartHeight=airborne?Math.sin((1-Number(g.jump))*Math.PI)*1.12:0;
-   g.impactTrafficIndex=vehicle.userData.trafficIndex;g.impactShakeScale=airborne?.78:.34;g.speed=0;g.inv=999;
+   g.impactTrafficIndex=vehicle.userData.trafficIndex;g.impactPlayerX=playerX;g.impactShakeScale=airborne?.78:.34;g.speed=0;g.inv=999;
    g.pendingFinish="TRAFFIC COLLISION";g.hitTimer=1.18;g.recoveryTimer=0;
    g.lastCollision={label:"TRAFFIC CAR",action:airborne?"jump":"front",distance:g.d,energyBefore,energyAfter:0,vehicle:true};
    mount.dataset.trafficCollision="true";
@@ -262,7 +262,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
   });
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
-  playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
+  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
   collideWithTraffic(g);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
   const laneLean=clamp(-lateralSpeed*.035,-.14,.14);
@@ -291,7 +291,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const vehicleElapsed=clamp(1.18-(Number(g.hitTimer)||0),0,1.18);
    const airborneImpact=g.vehicleImpactType==="airborne";
    const vehicleThrowHeight=airborneImpact?Math.max(0,7.8*vehicleElapsed-6.6*vehicleElapsed*vehicleElapsed):0;
-   const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:2+(impactPulse*.18);
+   const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:g.vehicleImpactType==="front"?2:2+(impactPulse*.18);
    jayRig.root.position.x=playerX+(airborneImpact?Math.sin(vehicleElapsed*7)*.48:0);
    jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:jumpY-landingPulse*.045);
    jayRig.root.position.z=vehicleThrowZ;
@@ -318,10 +318,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  return {render,resize,setQuality:applyQuality,get quality(){return quality;},probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
   const vehicle=traffic[vehicleIndex]||traffic[0],savedPositions=traffic.map(item=>item.position.clone()),savedPlayerX=playerX;
-  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactShakeScale","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
+  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactPlayerX","impactShakeScale","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
   const saved={};for(const key of keys)saved[key]=g[key];
   const internal={lastGameT,wasHit,impactPulse,landingPulse,previousJump,cameraBaseX};
-  traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.speed=367;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactTrafficIndex=null;g.impactShakeScale=1;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
+  traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.speed=367;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactTrafficIndex=null;g.impactPlayerX=playerX;g.impactShakeScale=1;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
   const hit=collideWithTraffic(g);
   let throwHeight=0,throwZ=2;
   if(hit){
