@@ -171,6 +171,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const traffic=[car(scene,-5.25,-38,0x315b7a,m,"car"),car(scene,5.25,-91,0x9a4c39,m,"matatu"),car(scene,-5.25,-146,0x777d78,m,"shuttle"),car(scene,5.25,-198,0xc1a65e,m,"car")];
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
+ // A second 300-unit scenery segment follows the first so the road never runs out as the world scrolls.
+ const repeatWorld=world.clone(true);repeatWorld.position.z=-300;scene.add(repeatWorld);
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
@@ -191,7 +193,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  function resize(){const w=mount.clientWidth||innerWidth,h=mount.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;if(ro)ro.observe(mount);else addEventListener("resize",resize);
  function render(g){
-  if(!g)return;world.position.z=(g.d*.14)%300;
+  if(!g)return;world.position.z=(g.d*.14)%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x=(Number(g.d)||0)*.22;});
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
