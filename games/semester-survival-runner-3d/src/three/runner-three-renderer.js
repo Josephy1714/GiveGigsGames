@@ -318,7 +318,6 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   }
   vehicle.position.copy(savedPosition);playerX=savedPlayerX;
   for(const key of keys){if(saved[key]===undefined)delete g[key];else g[key]=saved[key];}
-  Object.assign({},{});
   lastGameT=internal.lastGameT;wasHit=internal.wasHit;impactPulse=internal.impactPulse;landingPulse=internal.landingPulse;previousJump=internal.previousJump;cameraBaseX=internal.cameraBaseX;
   mount.dataset.trafficCollision="false";
   render(g);
