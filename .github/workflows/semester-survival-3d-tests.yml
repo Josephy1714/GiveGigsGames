@@ -11,6 +11,10 @@ on:
       - 'games/semester-survival-runner-3d/**'
       - '.github/workflows/semester-survival-3d-tests.yml'
 
+concurrency:
+  group: semester-survival-3d-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -64,5 +68,7 @@ jobs:
             echo "GLB unchanged."
           else
             git commit -m "Build unified animated Jay GLB character [skip ci]"
+            git fetch origin semester-survival-3d-complete-edition
+            git rebase origin/semester-survival-3d-complete-edition
             git push origin HEAD:semester-survival-3d-complete-edition
           fi
