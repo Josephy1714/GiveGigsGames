@@ -69,6 +69,13 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     const collisionProbe = await page.evaluate(() => window.__runnerSmoke.probeObstacle({ action: "jump", jump: 0 }));
     assert.equal(collisionProbe.hit, true, "a mistimed jump must register an obstacle collision");
     assert.ok(Math.abs(collisionProbe.energy - 68) < 0.02, "a standard obstacle collision must apply the expected energy penalty, allowing the frame energy drain");
+    const carProbe = await page.evaluate(() => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1 }));
+    assert.equal(carProbe.hit, true, "a traffic car must collide with Jay even while he is jumping");
+    assert.equal(carProbe.vehicle, true, "traffic impact must be classified as a vehicle collision");
+    assert.equal(carProbe.energy, 0, "a car impact must end the run regardless of jump height");
+    assert.equal(carProbe.thrown, true, "a car impact must launch Jay into a visible throw trajectory");
+    assert.ok(carProbe.throwHeight > 1, "the vehicle impact must visibly lift Jay off the road");
+    assert.ok(carProbe.throwZ > 2, "the vehicle impact must throw Jay toward the camera");
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
     assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
