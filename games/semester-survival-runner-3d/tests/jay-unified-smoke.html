@@ -60,8 +60,19 @@ try {
   action.clampWhenFinished = false;
   action.play();
 
+  // Apply the animation at t=0 before capturing the baseline. Before the
+  // first mixer update, bones still hold their bind pose, which is NOT the
+  // first frame of the authored run and creates a false seam failure.
+  mixer.update(0);
+  const boneSnapshot = () => [...boneObjects.values()].map(bone => ({
+    name: bone.name,
+    position: bone.position.clone(),
+    quaternion: bone.quaternion.clone()
+  }));
+  const initialPose = boneSnapshot();
   const initialHips = hips.position.clone();
   const initialFoot = leftFoot.quaternion.clone();
+
   mixer.update(run.duration * 0.5);
   const midHips = hips.position.clone();
   const midFoot = leftFoot.quaternion.clone();
@@ -73,24 +84,39 @@ try {
     throw new Error("Run_InPlace appears static; no meaningful skeletal motion was detected.");
   }
 
+  const poseError = () => {
+    const current = boneSnapshot();
+    let maxPosition = 0;
+    let maxRotation = 0;
+    for (let i = 0; i < initialPose.length; i++) {
+      maxPosition = Math.max(maxPosition, current[i].position.distanceTo(initialPose[i].position));
+      maxRotation = Math.max(maxRotation, 1 - Math.abs(current[i].quaternion.dot(initialPose[i].quaternion)));
+    }
+    return { maxPosition, maxRotation };
+  };
+
   mixer.update(run.duration * 0.5);
-  const firstSeamError = hips.position.distanceTo(initialHips);
-  result.checks.firstLoopSeamHipsError = firstSeamError;
-  if (firstSeamError > 0.003) {
-    throw new Error("First run-loop seam moved the hips by " + firstSeamError);
+  let seam = poseError();
+  result.checks.firstLoopSeamMaxBonePositionError = seam.maxPosition;
+  result.checks.firstLoopSeamMaxBoneRotationError = seam.maxRotation;
+  if (seam.maxPosition > 0.003 || seam.maxRotation > 0.002) {
+    throw new Error("First run-loop seam mismatch: " + JSON.stringify(seam));
   }
 
-  let maxLoopSeamError = firstSeamError;
+  let maxPositionError = seam.maxPosition;
+  let maxRotationError = seam.maxRotation;
   for (let i = 0; i < 100; i++) {
     mixer.update(run.duration);
-    const seamError = hips.position.distanceTo(initialHips);
-    maxLoopSeamError = Math.max(maxLoopSeamError, seamError);
-    if (seamError > 0.003) {
-      throw new Error("Hips drift detected after loop " + (i + 2) + ": " + seamError);
+    seam = poseError();
+    maxPositionError = Math.max(maxPositionError, seam.maxPosition);
+    maxRotationError = Math.max(maxRotationError, seam.maxRotation);
+    if (seam.maxPosition > 0.003 || seam.maxRotation > 0.002) {
+      throw new Error("Pose drift detected after loop " + (i + 2) + ": " + JSON.stringify(seam));
     }
   }
   result.checks.loopsSimulated = 101;
-  result.checks.maxHipsSeamErrorAcrossLoops = maxLoopSeamError;
+  result.checks.maxBonePositionErrorAcrossLoops = maxPositionError;
+  result.checks.maxBoneRotationErrorAcrossLoops = maxRotationError;
   result.checks.actionStillRunning = action.isRunning();
   if (!action.isRunning()) throw new Error("Run_InPlace stopped during repeated playback.");
 
