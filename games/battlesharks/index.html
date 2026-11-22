@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BattleSharks - 3D Cyber-Shark Action</title>
+    <link rel="stylesheet" href="game.css">
+    <script src="../html/vendor/three-r128.min.js"></script>
+    <script>
+        if (!window.THREE) {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
+        }
+    </script>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Crosshair for aiming lasers -->
+        <div id="crosshair" class="hidden">
+            <div class="crosshair-ring"></div>
+            <div class="crosshair-dot"></div>
+        </div>
+
+        <!-- Boss Alert Banner -->
+        <div id="bossAlert" class="hidden">
+            <div class="alert-stripe"></div>
+            <div class="alert-text">⚠️ LEVIATHAN MECHA-SUB DETECTED ⚠️</div>
+            <div class="alert-stripe"></div>
+        </div>
+
+        <!-- Damage / Heal Screen Vignette -->
+        <div id="vignette"></div>
+
+        <!-- In-Game HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-top-left">
+                <div class="stat-panel">
+                    <div class="level-row">
+                        <span class="level-badge" id="hudLevel">LVL 1</span>
+                        <span class="shark-rank" id="hudRank">Cyber Pup</span>
+                    </div>
+                    <div class="bar-wrap health-wrap">
+                        <div class="bar-fill health-fill" id="healthBar"></div>
+                        <span class="bar-label" id="healthText">100 / 100 HP</span>
+                    </div>
+                    <div class="bar-wrap xp-wrap">
+                        <div class="bar-fill xp-fill" id="xpBar"></div>
+                        <span class="bar-label" id="xpText">XP 0 / 120</span>
+                    </div>
+                    <div class="status-pills">
+                        <span class="pill hidden" id="pillShield">🛡️ SHIELD READY</span>
+                        <span class="pill hidden" id="pillDash">⚡ JET READY</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-top-center">
+                <div class="score-panel">
+                    <div class="score-main">SCORE <span id="hudScore">0</span></div>
+                    <div class="score-best">BEST <span id="hudHighScore">0</span></div>
+                </div>
+                <div id="bossHud" class="hidden">
+                    <div class="boss-name">LEVIATHAN MECHA-SUB</div>
+                    <div class="bar-wrap boss-wrap">
+                        <div class="bar-fill boss-fill" id="bossHealthBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hud-top-right">
+                <div class="resource-panel">
+                    <div class="res-item" title="Biomass (from Prey)">🧬 <span id="hudBiomass">0</span></div>
+                    <div class="res-item" title="Cyber-Debris (from Enemies)">⚙️ <span id="hudDebris">0</span></div>
+                    <div class="res-item" title="Mutagens (Rare)">🧪 <span id="hudMutagens">0</span></div>
+                </div>
+                <div class="hud-actions">
+                    <button id="btnLab" class="hud-btn lab-btn" title="Upgrade Lab (Tab / U)">🧬 LAB <span class="badge-dot hidden" id="labBadge">!</span></button>
+                    <button id="btnMute" class="hud-btn" title="Toggle Audio">🔊</button>
+                    <button id="btnPause" class="hud-btn" title="Pause (Esc)">⏸️</button>
+                </div>
+            </div>
+
+            <!-- 3D Radar / Minimap -->
+            <div class="radar-wrap">
+                <canvas id="radarCanvas" width="140" height="140"></canvas>
+                <div class="radar-label">SONAR</div>
+            </div>
+
+            <!-- Controls Hint -->
+            <div class="controls-hint" id="controlsHint">
+                <span><b>WASD</b> Swim</span>
+                <span><b>Q/E</b> or <b>Mouse</b> Dive/Climb</span>
+                <span><b>Space</b> Jet Dash</span>
+                <span><b>Click / F</b> Lasers</span>
+                <span><b>Tab / U</b> Lab</span>
+            </div>
+
+            <!-- Mobile Touch Controls -->
+            <div id="touchControls" class="hidden">
+                <div id="joystickZone">
+                    <div id="joystickBase">
+                        <div id="joystickKnob"></div>
+                    </div>
+                </div>
+                <div class="touch-buttons">
+                    <button id="touchUp" class="touch-btn">▲</button>
+                    <button id="touchDown" class="touch-btn">▼</button>
+                    <button id="touchLaser" class="touch-btn accent">LASER</button>
+                    <button id="touchDash" class="touch-btn primary">DASH</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="overlay">
+            <div class="start-card">
+                <div class="cover-wrap">
+                    <img src="cover.jpg" alt="BattleSharks" class="cover-img">
+                    <div class="cover-glow"></div>
+                </div>
+                <div class="start-info">
+                    <h1 class="game-title">BATTLESHARKS</h1>
+                    <p class="game-subtitle">3D THIRD-PERSON CYBER-SHARK ARENA</p>
+                    <p class="game-desc">
+                        Dive into the abyssal arena in full 3D third-person! Devour prey to grow into a massive apex predator,
+                        harvest Cyber-Debris &amp; Mutagens, unlock 7 deadly bio-cybernetic mutations, and obliterate the Leviathan Mecha-Sub.
+                    </p>
+                    <div class="start-stats">
+                        <div class="start-stat">🏆 HIGH SCORE: <span id="startHighScore">0</span></div>
+                    </div>
+                    <div class="start-controls-grid">
+                        <div><b>WASD / Arrows</b> Swim &amp; Turn</div>
+                        <div><b>Q / E or Mouse</b> Dive / Climb</div>
+                        <div><b>Space</b> Jet Dash</div>
+                        <div><b>Left Click / F</b> Fire Lasers</div>
+                        <div><b>Tab / U</b> Upgrade Lab</div>
+                        <div><b>Esc</b> Pause</div>
+                    </div>
+                    <button id="btnStart" class="primary-btn">DIVE IN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upgrade Lab Modal -->
+        <div id="labModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🧬 CYBER-BIO UPGRADE LAB</h2>
+                    <div class="lab-resources">
+                        <span>🧬 Biomass: <b id="labBiomass">0</b></span>
+                        <span>⚙️ Debris: <b id="labDebris">0</b></span>
+                        <span>🧪 Mutagens: <b id="labMutagens">0</b></span>
+                    </div>
+                    <button id="btnCloseLab" class="close-btn">✕</button>
+                </div>
+                <div class="upgrades-grid" id="upgradesGrid"></div>
+            </div>
+        </div>
+
+        <!-- Pause Modal -->
+        <div id="pauseModal" class="overlay hidden">
+            <div class="modal-card small-card">
+                <h2>PAUSED</h2>
+                <p>The abyss awaits your return.</p>
+                <div class="modal-actions">
+                    <button id="btnResume" class="primary-btn">RESUME</button>
+                    <button id="btnRestartPause" class="secondary-btn">RESTART</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameOverModal" class="overlay hidden">
+            <div class="modal-card small-card">
+                <h2 class="gameover-title">SHARK TERMINATED</h2>
+                <div class="gameover-stats">
+                    <div>FINAL SCORE: <b id="finalScore">0</b></div>
+                    <div>HIGH SCORE: <b id="finalHighScore">0</b></div>
+                    <div>LEVEL REACHED: <b id="finalLevel">1</b></div>
+                    <div>MUTATIONS: <b id="finalMutations">0 / 7</b></div>
+                </div>
+                <button id="btnRestart" class="primary-btn">DIVE AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script src="../_shared/game-select.js" defer></script>
+</body>
+</html>

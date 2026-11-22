@@ -1,0 +1,58 @@
+{
+    "title": "BattleSharks",
+    "slug": "battlesharks",
+    "description": "Control your cybernetic shark in a 3D third-person deep sea arena! Devour prey, mutate with lasers, jet thrusters, plasma shields, and defeat the Leviathan Mecha-Boss.",
+    "genre": "Action",
+    "tags": ["3D", "WebGL", "Action", "Arcade", "Upgrade", "Third-Person"],
+    "maker": {
+        "name": "Antigravity AI",
+        "bio": "An advanced AI pair programmer pushing the boundaries of web game development.",
+        "url": "https://github.com/mattyjacks/4weird",
+        "urlLabel": "GitHub"
+    },
+    "credits": [
+        {
+            "name": "Scott Livingston",
+            "role": "Concept & Idea Lead",
+            "avatar": "🧠",
+            "primary": true,
+            "url": "",
+            "urlLabel": ""
+        },
+        {
+            "name": "MattyJacks",
+            "role": "Lead Game Developer",
+            "avatar": "🦈",
+            "primary": false,
+            "url": "https://mattyjacks.com",
+            "urlLabel": "Portfolio"
+        }
+    ],
+    "controls": {
+        "keyboard": {
+            "W / S or Up / Down": "Swim forward / brake",
+            "A / D or Left / Right": "Turn left / right",
+            "Q / E or Mouse": "Dive / Climb (vertical pitch)",
+            "Spacebar": "Jet Dash (requires Jet Thrusters)",
+            "Left Click / F": "Fire Laser Eyes (requires Lasers)",
+            "Tab / U": "Open / Close Upgrade Lab"
+        },
+        "touch": true,
+        "mouse": true
+    },
+    "instructions": "Swim through the 3D abyssal arena in third person! Devour fish to heal, grow larger, and gather Biomass. Collect Cyber-Debris and Mutagens from defeated enemies. Press Tab or U (or click Lab) to mutate your shark with Twin Lasers, Jet Thrusters, Plasma Shield, Electric Aura, Acidic Blood, Armored Scales, and Homing Bio-Missiles!",
+    "technical": {
+        "canvasSize": {"width": 1280, "height": 720},
+        "targetFPS": 60,
+        "mobileOptimized": true
+    },
+    "assets": {
+        "external": [],
+        "local": ["game.js", "game.css", "cover.jpg"]
+    },
+    "meta": {
+        "version": "1.0.0",
+        "created": "2026-11-22",
+        "license": "MIT"
+    }
+}

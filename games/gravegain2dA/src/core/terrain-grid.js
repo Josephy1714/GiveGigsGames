@@ -225,14 +225,15 @@
         return true;
     };
 
-    TerrainGrid.prototype.canStepBetween = function (fromGx, fromGz, toGx, toGz) {
+    TerrainGrid.prototype.canStepBetween = function (fromGx, fromGz, toGx, toGz, opts) {
         var fromCell = this.getCell(fromGx, fromGz);
         var toCell = this.getCell(toGx, toGz);
         if (!fromCell || !toCell) return false;
         if (!this.isPassable(toGx, toGz)) return false;
-        var delta = Math.abs(toCell.elevation - fromCell.elevation);
-        if (delta === 0) return true;
-        if (delta > 1) return false;
+        var diff = toCell.elevation - fromCell.elevation;
+        if (diff === 0) return true;
+        if (opts && opts.allowDrop && diff < 0 && toCell.type !== 'chasm') return true;
+        if (Math.abs(diff) > 1) return false;
         return fromCell.type === 'ramp' || toCell.type === 'ramp';
     };
 
@@ -285,10 +286,24 @@
         var floorIndex = Math.max(1, Number(opts.floorIndex) || 1);
         var rng = makeRng((this.seed + floorIndex * 977) >>> 0).fork('terrain_' + this.biome);
 
+        var openWorld = opts.openWorld !== false;
+        var halfW = this.width * 0.5;
+        var halfH = this.height * 0.5;
         this.cells = new Array(this.width * this.height);
         for (var z = 0; z < this.height; z++) {
             for (var x = 0; x < this.width; x++) {
-                this.cells[z * this.width + x] = createCell(x, z, this.biome);
+                var cellBiome = this.biome;
+                if (openWorld) {
+                    var jitterX = Math.sin(z * 0.22 + this.seed) * 4.5;
+                    var jitterZ = Math.cos(x * 0.22 + this.seed) * 4.5;
+                    var east = (x + jitterX) >= halfW;
+                    var south = (z + jitterZ) >= halfH;
+                    if (!east && !south) cellBiome = 'cathedral';
+                    else if (east && !south) cellBiome = 'manufactorum';
+                    else if (!east && south) cellBiome = 'void_hull';
+                    else cellBiome = 'trench';
+                }
+                this.cells[z * this.width + x] = createCell(x, z, cellBiome);
             }
         }
         this.rooms = [];
@@ -310,8 +325,8 @@
         var attempts = 0;
         while (this.rooms.length < targetRooms && attempts < 220) {
             attempts++;
-            var rw = rng.int(7, 13);
-            var rh = rng.int(7, 13);
+            var rw = rng.int(8, 15);
+            var rh = rng.int(8, 15);
             var rx = rng.int(3, this.width - rw - 4);
             var rz = rng.int(3, this.height - rh - 4);
 
@@ -364,9 +379,10 @@
                     if (isInterior) {
                         this.roofGroups[room.roofGroupId].cells.push({ gx: ix, gz: iz });
                     }
-                    // Biome surface patches
-                    if (rng.chance(0.18)) {
-                        var surf = rng.pick(cfg.surfaces);
+                    // Biome surface patches (respecting each cell's regional biome)
+                    if (rng.chance(0.24)) {
+                        var cellCfg = BIOME_CONFIG[cell.biome] || cfg;
+                        var surf = rng.pick(cellCfg.surfaces);
                         cell.surface = surf;
                         cell.terrainPenalty = SURFACE_PENALTY[surf] || 1.0;
                     }
@@ -386,14 +402,40 @@
         this.spawnRoom = this.rooms[0];
         this.safespaceRoom = this.rooms[this.rooms.length - 1];
 
-        // 2. Connect rooms with 2-tile wide gothic-industrial corridors + loops
+        // 2. Connect rooms with 3-tile wide gothic-industrial main corridors + 2-tile tactical loops
         for (var ci = 0; ci < this.rooms.length - 1; ci++) {
-            this._digCorridor(this.rooms[ci].cx, this.rooms[ci].cz, this.rooms[ci + 1].cx, this.rooms[ci + 1].cz, 2);
+            this._digCorridor(this.rooms[ci].cx, this.rooms[ci].cz, this.rooms[ci + 1].cx, this.rooms[ci + 1].cz, 3);
         }
-        for (var li = 0; li < 3 && this.rooms.length > 3; li++) {
+        for (var li = 0; li < 4 && this.rooms.length > 3; li++) {
             var ra = this.rooms[rng.int(0, this.rooms.length - 1)];
             var rb = this.rooms[rng.int(0, this.rooms.length - 1)];
             if (ra !== rb) this._digCorridor(ra.cx, ra.cz, rb.cx, rb.cz, 2);
+        }
+
+        // Open-world biome plazas / ruined courtyards for varied sightlines
+        if (openWorld) {
+            var plazaCenters = [
+                { cx: Math.floor(this.width * 0.25), cz: Math.floor(this.height * 0.25) },
+                { cx: Math.floor(this.width * 0.75), cz: Math.floor(this.height * 0.25) },
+                { cx: Math.floor(this.width * 0.25), cz: Math.floor(this.height * 0.75) },
+                { cx: Math.floor(this.width * 0.75), cz: Math.floor(this.height * 0.75) }
+            ];
+            for (var pi = 0; pi < plazaCenters.length; pi++) {
+                var pc = plazaCenters[pi];
+                var rad = rng.int(4, 6);
+                for (var px = pc.cx - rad; px <= pc.cx + rad; px++) {
+                    for (var pz = pc.cz - rad; pz <= pc.cz + rad; pz++) {
+                        if (px <= 1 || pz <= 1 || px >= this.width - 2 || pz >= this.height - 2) continue;
+                        if ((px - pc.cx) * (px - pc.cx) + (pz - pc.cz) * (pz - pc.cz) <= rad * rad) {
+                            var pCell = this.getCell(px, pz);
+                            if (pCell && pCell.type === 'wall') {
+                                pCell.type = 'floor';
+                                pCell.zoneType = 'exterior';
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 3. Multi-tier elevation (0..3) & walkable ramps (delta == 1)
@@ -477,7 +519,9 @@
             var wantPlat = (room.type === 'bunker_overlook' || room.type === 'catwalk_hall' || room.type === 'pillared_sanctum' || room.type === 'safespace' || rng.chance(0.55));
             if (!wantPlat || room.w < 7 || room.h < 7) continue;
 
-            var tier = room.type === 'catwalk_hall' ? 2 : (room.type === 'bunker_overlook' ? rng.int(1, 3) : 1);
+            var tier = (room.type === 'bunker_overlook' || room.type === 'catwalk_hall' || room.type === 'pillared_sanctum')
+                ? rng.int(2, 3)
+                : rng.int(1, 3);
             var px = room.x + 2;
             var pz = room.z + 2;
             var pw = Math.max(3, room.w - 4);
@@ -500,20 +544,27 @@
                         }
                     }
                 }
-                // Place a ramp on one side connecting tier (t - 1) to tier t
+                // Place a wider staircase/ramp (up to 3 tiles wide) connecting tier (t - 1) to tier t
                 var rampGx = sx - 1;
-                var rampGz = sz + Math.floor(sh / 2);
-                var rampCell = this.getCell(rampGx, rampGz);
-                if (rampCell && rampCell.type === 'floor' && rampCell.elevation === t - 1) {
-                    rampCell.type = 'ramp';
-                    rampCell.rampDir = 'e';
-                } else {
-                    rampGx = sx + Math.floor(sw / 2);
-                    rampGz = sz - 1;
-                    rampCell = this.getCell(rampGx, rampGz);
+                var midZ = sz + Math.floor(sh / 2);
+                var placedWide = false;
+                for (var rz = midZ - 1; rz <= midZ + 1; rz++) {
+                    var rampCell = this.getCell(rampGx, rz);
                     if (rampCell && rampCell.type === 'floor' && rampCell.elevation === t - 1) {
                         rampCell.type = 'ramp';
-                        rampCell.rampDir = 's';
+                        rampCell.rampDir = 'e';
+                        placedWide = true;
+                    }
+                }
+                if (!placedWide) {
+                    var midX = sx + Math.floor(sw / 2);
+                    var rampGz = sz - 1;
+                    for (var rx = midX - 1; rx <= midX + 1; rx++) {
+                        var rampCell2 = this.getCell(rx, rampGz);
+                        if (rampCell2 && rampCell2.type === 'floor' && rampCell2.elevation === t - 1) {
+                            rampCell2.type = 'ramp';
+                            rampCell2.rampDir = 's';
+                        }
                     }
                 }
             }
@@ -1053,8 +1104,9 @@
         var effDmg = dmg * mult;
         var worldPos = this.gridToWorld(gx, gz);
 
-        // Breachable wall
-        if (cell.type === 'breachable') {
+        // Destructible & breachable walls (allow tunneling anywhere inside map bounds)
+        if ((cell.type === 'breachable' || cell.type === 'wall') && gx > 0 && gz > 0 && gx < this.width - 1 && gz < this.height - 1) {
+            if (cell.wallHp === undefined || cell.wallHp === null) cell.wallHp = 60;
             cell.wallHp = Math.max(0, cell.wallHp - effDmg);
             if (cell.wallHp <= 0) {
                 cell.type = 'floor';
