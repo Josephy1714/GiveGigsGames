@@ -70,13 +70,31 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.equal(collisionProbe.hit, true, "a mistimed jump must register an obstacle collision");
     assert.ok(Math.abs(collisionProbe.energy - 68) < 0.02, "a standard obstacle collision must apply the expected energy penalty, allowing the frame energy drain");
     for (const vehicleIndex of [0, 1, 2]) {
-      const carProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1, vehicleIndex }), vehicleIndex);
-      assert.equal(carProbe.hit, true, "every traffic vehicle must collide with Jay even while he is jumping");
-      assert.equal(carProbe.vehicle, true, "traffic impact must be classified as a vehicle collision");
-      assert.equal(carProbe.energy, 0, "a car impact must end the run regardless of jump height");
-      assert.equal(carProbe.thrown, true, "a car impact must launch Jay into a visible throw trajectory");
-      assert.ok(carProbe.throwHeight > 1, "the vehicle impact must visibly lift Jay off the road");
-      assert.ok(carProbe.throwZ > 2, "the vehicle impact must throw Jay toward the camera");
+      const frontProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex }), vehicleIndex);
+      assert.equal(frontProbe.hit, true, "a direct front impact must register for every traffic vehicle type");
+      assert.equal(frontProbe.impactType, "front", "a grounded collision must use the direct-front reaction");
+      assert.equal(frontProbe.impactAnimation, "fall", "a direct front collision must play Shoulder Hit And Fall");
+      assert.equal(frontProbe.speed, 0, "a direct front collision must stop Jay and the road immediately");
+      assert.equal(frontProbe.thrown, false, "a direct front collision must not use the airborne throw");
+      assert.equal(frontProbe.vehicleVisible, true, "the vehicle must remain visible after a direct collision");
+
+      const airborneProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1, vehicleIndex }), vehicleIndex);
+      assert.equal(airborneProbe.hit, true, "a jumping collision must register for every traffic vehicle type");
+      assert.equal(airborneProbe.impactType, "airborne", "a jumping collision must use a separate airborne reaction");
+      assert.equal(airborneProbe.impactAnimation, "jump", "an airborne collision must not reuse the direct shoulder-hit clip");
+      assert.equal(airborneProbe.speed, 0, "an airborne vehicle impact must stop road movement");
+      assert.equal(airborneProbe.thrown, true, "a jumping collision must launch Jay into a distinct throw trajectory");
+      assert.ok(airborneProbe.throwHeight > 1, "the airborne vehicle impact must visibly lift Jay");
+      assert.ok(airborneProbe.throwZ > 2, "the airborne impact must throw Jay toward the camera");
+      assert.equal(airborneProbe.vehicleVisible, true, "the vehicle must remain visible after an airborne collision");
+    }
+    for (const jump of [0, 1]) {
+      const obstacleProbe = await page.evaluate(value => window.__runnerSmoke.probeVehicleObstacle({ jump: value }), jump);
+      assert.equal(obstacleProbe.pendingFinish, true, "a vehicle obstacle collision must lead to game over");
+      assert.equal(obstacleProbe.impactType, jump > 0 ? "airborne" : "front", "vehicle obstacle impact type must depend on Jay's airborne state");
+      assert.equal(obstacleProbe.speed, 0, "vehicle obstacle impact must stop the game world immediately");
+      assert.equal(obstacleProbe.remaining, 1, "the collided vehicle obstacle must remain in the world");
+      assert.equal(obstacleProbe.holdInfinite, true, "the collided vehicle must not be removed during its impact animation");
     }
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
