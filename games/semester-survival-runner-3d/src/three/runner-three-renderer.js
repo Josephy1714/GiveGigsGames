@@ -216,9 +216,14 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   for(const vehicle of traffic){
    const halfLength=(vehicle.userData.collisionLength||3.8)/2;
    const halfWidth=(vehicle.userData.collisionWidth||1.9)/2;
-   const overlapsLongitudinal=Math.abs(vehicle.position.z-2)<=halfLength+.42;
+   const contactRadius=halfLength+.42;
+   const contactBoundary=2-contactRadius;
+   const previousZ=Number(vehicle.userData.previousCollisionZ??vehicle.position.z);
+   const currentZ=vehicle.position.z;
+   const overlapsLongitudinal=Math.abs(currentZ-2)<=contactRadius;
+   const sweptLongitudinal=currentZ>=previousZ&&previousZ<contactBoundary&&currentZ>=contactBoundary;
    const overlapsLateral=Math.abs(vehicle.position.x-playerX)<=halfWidth+.42;
-   if(!overlapsLongitudinal||!overlapsLateral)continue;
+   if((!overlapsLongitudinal&&!sweptLongitudinal)||!overlapsLateral)continue;
    const energyBefore=Number(g.energy)||0;
    g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.inv=999;
    g.pendingFinish="TRAFFIC COLLISION";g.hitTimer=1.18;g.recoveryTimer=0;
@@ -244,8 +249,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const distance=((phase%cycle)+cycle)%cycle;
    const lap=Math.floor((worldTravel-i*43-36)/cycle);
    const lane=((v.userData.baseLane+Math.max(0,lap))%3+3)%3;
+   const previousZ=v.position.z;
    v.position.x=laneX[lane];
    v.position.z=-distance;
+   v.userData.previousCollisionZ=previousZ;
    for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
   });
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
