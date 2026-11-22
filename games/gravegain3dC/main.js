@@ -735,6 +735,7 @@ function createScene() {
 
     window.addEventListener('mousemove', (e) => {
         if (mode !== 'player' || document.pointerLockElement !== canvas) return;
+        firing = Boolean(e.buttons & 1);
         turnCamera(e.movementX, e.movementY, 0.0022);
     });
 
@@ -777,16 +778,20 @@ function createScene() {
         playSfx(weapon.sound[0], weapon.sound[1], weapon.sound[2], .07);
     }
 
-    window.addEventListener('mouseup', e => { if (e.button === 0) firing = false; });
-    window.addEventListener('mousedown', (e) => {
-        if (e.target !== canvas && document.pointerLockElement !== canvas) return;
-        if (mode === 'player' && e.button === 0) {
-            if (document.pointerLockElement !== canvas) {
-                lockPointer();
-            }
-            firing = true;
-            firePlayerWeapon();
+    const stopMouseFire = (e) => {
+        if (e.pointerType !== 'touch' && e.button === 0) firing = false;
+    };
+    window.addEventListener('pointerup', stopMouseFire);
+    window.addEventListener('pointercancel', stopMouseFire);
+    window.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch' || mode !== 'player' || e.button !== 0) return;
+        if (document.pointerLockElement !== canvas &&
+            e.target?.closest?.('button, a, input, select, #overlay, #upgrade-modal')) return;
+        if (document.pointerLockElement !== canvas) {
+            lockPointer();
         }
+        firing = true;
+        firePlayerWeapon();
     });
 
     canvas.addEventListener('pointerdown', e => {
