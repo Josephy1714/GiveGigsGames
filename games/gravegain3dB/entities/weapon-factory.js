@@ -21,21 +21,33 @@
                     launcher: { body: 0x442e3d, accent: 0xff814a, barrel: 12 }
                 }[weaponId] || { body: 0x263244, accent: 0x64748b, barrel: 10 };
                 const parts = weapon?.parts;
+                const elementColor = { shock: 0x8f9fff, fire: 0xff6548, rot: 0xa7d85a }[weapon?.element];
                 const traitColor = {
                     impact: 0xef8851, heat: 0xf8bf45, handling: 0x71dab3, ricochet: 0xa9a4ff,
                     charged: 0x7de8f7, triad: 0x57dfff, poison: 0xb6df58, burn: 0xff5a48
                 }[weapon?.trait];
                 const metal = new THREE.MeshStandardMaterial({ color: palette.body, metalness: 0.68, roughness: 0.34 });
-                const trim = new THREE.MeshStandardMaterial({ color: traitColor ?? palette.accent, metalness: 0.78, roughness: 0.28 });
+                const signatureColor = elementColor ?? traitColor ?? palette.accent;
+                const trim = new THREE.MeshStandardMaterial({ color: signatureColor, metalness: 0.78, roughness: 0.28,
+                    emissive: elementColor ?? 0x000000, emissiveIntensity: elementColor ? 0.12 : 0 });
                 const receiver = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.4, weaponId === 'sidearm' ? 5.2 : 7.5), metal);
                 receiver.position.set(2.25, -2.7, -6.2);
                 group.add(receiver);
                 const barrelExtension = parts ? (2 - parts.barrel) * 0.8 : 0;
-                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.62, palette.barrel + barrelExtension, 10), trim);
+                const barrelIndex = parts ? parts.barrel : 2;
+                const barrelRadius = [0.42, 0.5, 0.62, 0.78, 0.95][barrelIndex] || 0.62;
+                const barrelLength = palette.barrel + barrelExtension;
+                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(barrelRadius * 0.84, barrelRadius, barrelLength, 10), trim);
                 barrel.name = 'barrel';
                 barrel.rotation.x = Math.PI / 2;
                 barrel.position.set(2.25, -2.2, -10.2 - barrelExtension / 2);
                 group.add(barrel);
+                if (parts && barrelIndex >= 3 && weaponId !== 'launcher') {
+                    const muzzleCollar = new THREE.Mesh(new THREE.TorusGeometry(barrelRadius * 0.82, 0.16, 6, 12), trim);
+                    muzzleCollar.name = 'wide-bore muzzle';
+                    muzzleCollar.position.set(2.25, -2.2, barrel.position.z - barrelLength / 2);
+                    group.add(muzzleCollar);
+                }
                 const grip = new THREE.Mesh(new THREE.BoxGeometry(1.25, 3.1, 1.55), metal);
                 grip.position.set(2.25, -4.9, -4.8);
                 grip.rotation.x = -0.18;
@@ -155,7 +167,7 @@
                 const muzzleFlash = new THREE.Mesh(
                     new THREE.SphereGeometry(1.35, 8, 6),
                     new THREE.MeshBasicMaterial({
-                        color: (weaponId === 'sidearm' || weaponId === 'sniper') ? 0x7dd3fc : 0xffc15a,
+                        color: elementColor ?? ((weaponId === 'sidearm' || weaponId === 'sniper') ? 0x7dd3fc : 0xffc15a),
                         transparent: true,
                         opacity: 0,
                         depthWrite: false,
@@ -168,7 +180,7 @@
                 muzzleFlash.scale.set(1.1, 1.1, 1.8);
                 muzzleFlash.visible = false;
                 group.add(muzzleFlash);
-                const muzzleLight = new THREE.PointLight(weaponId === 'sniper' ? 0x7dd3fc : 0xffb34d, 0, 38, 2);
+                const muzzleLight = new THREE.PointLight(elementColor ?? (weaponId === 'sniper' ? 0x7dd3fc : 0xffb34d), 0, 38, 2);
                 muzzleLight.position.copy(muzzleFlash.position);
                 group.add(muzzleLight);
                 group.muzzleFlash = muzzleFlash;

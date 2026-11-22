@@ -5,7 +5,10 @@
         ember: [0x6b322e, 0xffac57],
         glacier: [0x244363, 0x6ff5ff],
         orchid: [0x4e2d68, 0xf5a1ff],
-        moss: [0x30493c, 0xa2f287]
+        moss: [0x30493c, 0xa2f287],
+        void: [0x28264f, 0x9b8cff],
+        sunflare: [0x674321, 0xffd166],
+        deepsea: [0x174e5f, 0x55e6cf]
     };
 
     class Companion {
@@ -43,6 +46,33 @@
                 add(new THREE.BoxGeometry(3, 1, 7), light, side * 10, -5, 5);
             }
             this.tail = add(new THREE.BoxGeometry(2, 2, this.cat ? 13 : 8), shell, 0, 1, 17);
+            this.hoverRing = add(new THREE.TorusGeometry(this.cat ? 14 : 17, 0.65, 6, 28),
+                new THREE.MeshBasicMaterial({ color: glow, transparent: true, opacity: 0.34,
+                    blending: THREE.AdditiveBlending, depthWrite: false }), 0, -13, 3);
+            this.hoverRing.rotation.x = Math.PI / 2;
+            this.thrusters = [];
+            for (const side of [-1, 1]) {
+                const engine = add(new THREE.CylinderGeometry(2.8, 2.2, 5, 8), shell, side * 7, -8, 5);
+                engine.rotation.z = side * 0.12;
+                const flame = add(new THREE.ConeGeometry(2.3, 7, 7), light, side * 7, -13, 5);
+                flame.rotation.z = Math.PI;
+                this.thrusters.push(flame);
+            }
+            if (!this.cat) {
+                const cannon = add(new THREE.CylinderGeometry(2.3, 2.9, 7, 8), shell, 0, 1, -16);
+                cannon.rotation.x = Math.PI / 2;
+                const muzzle = add(new THREE.TorusGeometry(2.4, 0.48, 6, 12), light, 0, 1, -19.5);
+                muzzle.rotation.x = Math.PI / 2;
+            }
+            const flashMaterial = new THREE.MeshBasicMaterial({ color: glow, transparent: true, opacity: 0.9,
+                blending: THREE.AdditiveBlending, depthWrite: false });
+            this.attackFlash = add(new THREE.SphereGeometry(this.cat ? 2 : 3.2, 8, 6), flashMaterial,
+                0, this.cat ? 4 : 1, this.cat ? -14 : -20);
+            this.attackFlash.visible = false;
+            this.attackFlashTimer = 0;
+            this.attackLight = new THREE.PointLight(glow, 0, 52, 2);
+            this.attackLight.position.copy(this.attackFlash.position);
+            this.mesh.add(this.attackLight);
         }
 
         place(game) {
@@ -98,6 +128,14 @@
                 at.set(stepX, at.y + (desiredY - at.y) * blend, stepZ);
             }
             this.tail.rotation.y = Math.sin(this.time * (this.mood > this.time ? 14 : 4)) * 0.45;
+            this.hoverRing.rotation.y = this.time * (this.cat ? 1.6 : -0.9);
+            this.hoverRing.material.opacity = 0.25 + (Math.sin(this.time * 7) + 1) * 0.08;
+            const thrust = 0.78 + (Math.sin(this.time * 13) + 1) * 0.18;
+            for (const flame of this.thrusters) flame.scale.y = thrust;
+            this.attackFlashTimer = Math.max(0, this.attackFlashTimer - dt);
+            this.attackFlash.visible = this.attackFlashTimer > 0;
+            this.attackFlash.scale.setScalar(0.8 + this.attackFlashTimer * 3.5);
+            this.attackLight.intensity = this.attackFlashTimer > 0 ? (this.cat ? 2.8 : 5.5) : 0;
             this.lightMaterial.color.setHex(this.mood > this.time
                 ? (Math.sin(this.time * 12) > -0.2 ? 0xff9ed3 : this.glow)
                 : this.glow);
@@ -116,6 +154,7 @@
             const hit = new THREE.Vector3(target.x, target.yElevation + 20, target.y);
             const direction = hit.clone().sub(at).normalize();
             this.mesh.rotation.y = Math.atan2(-direction.x, -direction.z);
+            this.attackFlashTimer = this.cat ? 0.09 : 0.16;
             game.spawnWeaponTracer(at, hit, this.glow);
             game.applyHitToEnemy(target, this.cat ? 7 : 23, direction, 1, 0, null, hit, 'shot', this.cat ? undefined : 'impact');
         }

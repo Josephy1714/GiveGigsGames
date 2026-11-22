@@ -29,12 +29,14 @@
         { name: 'Ashforge', damage: 1.16, fireRate: 1.18, trait: 'impact', label: 'Heavy Knockback' },
         { name: 'Hollowcoil', damage: 0.83, fireRate: 0.93, trait: 'heat', label: 'Heat Drive · Shock', element: 'shock' },
         { name: 'Pale Meridian', damage: 0.96, fireRate: 1.06, trait: 'handling', label: 'Quickdraw' },
-        { name: 'Gravetide', damage: 0.94, fireRate: 1.04, trait: 'ricochet', label: 'Bank Shot' },
-        { name: 'Cinder Abbey', damage: 0.93, fireRate: 1.05, trait: 'charged', label: 'Frost Opener' }
+        { name: 'Gravetide', damage: 0.94, fireRate: 1.04, trait: 'ricochet', label: 'Bank Shot · Fire', element: 'fire' },
+        { name: 'Cinder Abbey', damage: 0.93, fireRate: 1.05, trait: 'charged', label: 'Frost Opener' },
+        { name: 'Mire Courier', damage: 1.02, fireRate: 0.96, trait: 'poison', label: 'Rot Chambers', element: 'rot' }
     ];
     const ROLL_BARRELS = ['Pinpoint', 'Tight', 'Standard', 'Sweep', 'Scatter'];
     const ROLL_FEEDS = ['Stub', 'Light', 'Field', 'Extended', 'Deep', 'Siege'];
-    const ROLL_TRAIT_BUDGET = { impact: 1.04, heat: 1.06, handling: 1.04, ricochet: 1.06, charged: 1.06 };
+    const ROLL_TRAIT_BUDGET = { impact: 1.04, heat: 1.06, handling: 1.04, ricochet: 1.06, charged: 1.06, poison: 1.05 };
+    const ROLL_ELEMENT_BUDGET = { shock: 1.05, fire: 1.1, rot: 1.08 };
     const ROLL_RARITIES = [
         { id: 'common', name: 'Common', weight: 55, budget: 1, color: 0xcbd5e1 },
         { id: 'uncommon', name: 'Uncommon', weight: 27, budget: 1.04, color: 0x4ade80 },
@@ -42,12 +44,13 @@
         { id: 'epic', name: 'Epic', weight: 5, budget: 1.12, color: 0xc084fc },
         { id: 'legendary', name: 'Legendary', weight: 1, budget: 1.17, color: 0xfbbf24 }
     ];
-    const ROLL_BEHAVIOR_BUDGET = { execution: 1.1, skyfall: 1.08, wardbreaker: 1.05, echo: 1.3 };
+    const ROLL_BEHAVIOR_BUDGET = { execution: 1.1, skyfall: 1.08, wardbreaker: 1.05, echo: 1.3, chain: 1.38 };
     const ROLL_BEHAVIORS = {
         execution: { label: 'Execution Protocol', description: '+25% damage to enemies below 35% health' },
         skyfall: { label: 'Skyfall Capacitor', description: '+18% damage while above your target' },
         wardbreaker: { label: 'Wardbreaker Coil', description: 'Drains magical wards twice as fast' },
-        echo: { label: 'Echo Chamber', description: 'Repeats 30% of the hit after 0.18 seconds' }
+        echo: { label: 'Echo Chamber', description: 'Repeats 30% of the hit after 0.18 seconds' },
+        chain: { label: 'Chain Conduit', description: 'Arcs 38% damage to one nearby enemy after a hit' }
     };
 
     function rollRarity() {
@@ -127,8 +130,8 @@
         const maker = ROLL_MAKERS[makerIndex];
         const rarity = ROLL_RARITIES.find(item => item.id === rarityId) || (rarityId ? ROLL_RARITIES[0] : rollRarity());
         const behaviorPool = rarity.id === 'legendary'
-            ? ['execution', 'skyfall', 'wardbreaker', 'echo']
-            : rarity.id === 'epic' ? ['execution', 'skyfall', 'echo'] : [];
+            ? ['execution', 'skyfall', 'wardbreaker', 'echo', 'chain']
+            : rarity.id === 'epic' ? ['execution', 'skyfall', 'echo', 'chain'] : [];
         const behaviorIndex = (makerIndex * 7 + barrel * 3 + feed + FPS_WEAPONS.indexOf(definition)) % Math.max(1, behaviorPool.length);
         const behavior = behaviorPool[behaviorIndex] || null;
         const magazine = Math.max(1, definition.magazine + feed - 2);
@@ -139,7 +142,7 @@
             : null;
         const weapon = {
             ...definition,
-            rollId: `7:${definition.id}:${makerIndex}:${barrel}:${feed}:${rarity.id}`,
+            rollId: `9:${definition.id}:${makerIndex}:${barrel}:${feed}:${rarity.id}`,
             name: `${rarity.name} ${maker.name} ${ROLL_BARRELS[barrel]} ${definition.name} · ${ROLL_FEEDS[feed]}`,
             rarity: rarity.id,
             rarityName: rarity.name,
@@ -169,7 +172,8 @@
         // costs. Maker mechanics receive a small budget allowance, while
         // barrel/feed choices still create visible damage, range and handling
         // trades. This prevents one maker-part pair from winning on raw DPS.
-        const targetDps = sustainedWeaponDps(definition) * (ROLL_TRAIT_BUDGET[maker.trait] || 1) * rarity.budget;
+        const targetDps = sustainedWeaponDps(definition) * (ROLL_TRAIT_BUDGET[maker.trait] || 1) *
+            (ROLL_ELEMENT_BUDGET[maker.element] || 1) * rarity.budget;
         const rawBudget = sustainedWeaponDps(weapon) * (ROLL_BEHAVIOR_BUDGET[behavior] || 1) / Math.max(0.001, targetDps);
         const balancedBudget = Math.max(0.90, Math.min(1.10, rawBudget));
         weapon.damage *= balancedBudget / Math.max(0.001, rawBudget);
@@ -431,6 +435,8 @@
             this.isPaused = false;
             this.lastFrameTime = performance.now();
             this.hordeTimer = 35.0;
+            this.hordeEncounter = null;
+            this.hordeEventsThisFloor = 0;
 
             // Control Modes & Game Speed
             this.controlMode = 'realtime'; // 'realtime' | 'chrono' | 'turnbased'
@@ -805,6 +811,9 @@
                 }
             } catch (_) { /* offline/file:// without shared missions: classic crypt */ }
             this.dungeon = this.generator.generate(this.floorIndex, missionTheme);
+            this.hordeTimer = 35;
+            this.hordeEncounter = null;
+            this.hordeEventsThisFloor = 0;
             this.dungeonTheme = this.dungeon.theme;
             // Atmosphere hook: fog + background + ambient follow the theme.
             try {
@@ -976,6 +985,19 @@
                     supply.group3d.position.y = supply.elevation;
                     this.scene.add(supply.group3d);
                     this.loot.push(supply);
+                }
+                for (const [roomIndex, room] of this.dungeon.arena.overlookRooms.entries()) {
+                    if (roomIndex % 4 === 2) continue;
+                    const roomX = (room.x + room.w / 2) * 48;
+                    const roomZ = (room.y + room.h / 2) * 48;
+                    const x = roomIndex % 2 === 0 ? roomX + 7 : roomX - 96;
+                    const z = roomIndex % 2 === 0 ? roomZ - 88 : roomZ + 86;
+                    const highSupply = new LootItem(x, z, 'ammo', 42);
+                    highSupply.elevation = 126;
+                    highSupply.verticalRouteSupply = true;
+                    highSupply.group3d.position.y = highSupply.elevation;
+                    this.scene.add(highSupply.group3d);
+                    this.loot.push(highSupply);
                 }
                 const pad = this.dungeon.arena.launchPad;
                 const addPadMark = (geometry, x, y, z, color) => {
@@ -1179,6 +1201,25 @@
 
             if (this.dungeon.arena) {
                 const arena = this.dungeon.arena;
+                if (arena.overlookRooms?.length) {
+                    const perchIndex = Math.abs(this.floorIndex - 1) % arena.overlookRooms.length;
+                    const room = arena.overlookRooms[perchIndex];
+                    const roomX = (room.x + room.w / 2) * 48;
+                    const roomZ = (room.y + room.h / 2) * 48;
+                    const hasUpperPerch = perchIndex % 4 !== 2;
+                    const perch = hasUpperPerch
+                        ? (perchIndex % 2 === 0
+                            ? { x: roomX + 7, z: roomZ - 88, elevation: 126 }
+                            : { x: roomX - 96, z: roomZ + 86, elevation: 126 })
+                        : { x: roomX + 100, z: roomZ, elevation: 84 };
+                    const lookout = new EnemyEntity({
+                        name: 'HIGH-GROUND WATCHER', type: 'mage', isLookout: true,
+                        hp: 42, dmg: 10, speed: 0, scale: 0.94, elevation: perch.elevation,
+                        hpMultiplier: difficulty.hpMultiplier, damageMultiplier: difficulty.damageMultiplier
+                    }, perch.x, perch.z, diffScale);
+                    this.scene.add(lookout.group3d);
+                    this.enemies.push(lookout);
+                }
                 const entry = arena.pursuitRoute[0];
                 const guard = new EnemyEntity({
                     name: 'BALCONY WARDEN', type: 'skeleton', elite: true, armored: true, arenaPursuer: true,
@@ -1250,7 +1291,9 @@
             const stats = document.getElementById('companionPreviewStats');
             const palettes = {
                 glacier: ['#244363', '#6ff5ff'], ember: ['#6b322e', '#ffac57'],
-                orchid: ['#4e2d68', '#f5a1ff'], moss: ['#30493c', '#a2f287']
+                orchid: ['#4e2d68', '#f5a1ff'], moss: ['#30493c', '#a2f287'],
+                void: ['#28264f', '#9b8cff'], sunflare: ['#674321', '#ffd166'],
+                deepsea: ['#174e5f', '#55e6cf']
             };
             const [shell, glow] = palettes[skin] || palettes.glacier;
             preview.dataset.chassis = chassis;
@@ -1473,6 +1516,115 @@
                 this.enemies.push(enemy);
                 return enemy;
             });
+        }
+
+        updateHordeDirector(dt) {
+            if (dt <= 0 || !this.player || this.player.isDead || this.isPaused ||
+                this.controlMode === 'turnbased' || !this.dungeon) return;
+            const encounter = this.hordeEncounter;
+            if (encounter) {
+                if (encounter.phase === 'wave') {
+                    if (encounter.wave.some(enemy => enemy.hp > 0)) return;
+                    if (encounter.wavesRemaining > 0) {
+                        encounter.wavesRemaining--;
+                        encounter.phase = 'breather';
+                        encounter.countdown = 3.2;
+                        this.combatText.showBanner('BREATHER · MOVEMENT INBOUND');
+                        this.audio.playSfx('loot', 0.68);
+                    } else {
+                        this.combatText.showBanner('HORDE CLEARED · ROUTE OPEN');
+                        this.audio.playSfx('loot', 0.86);
+                        this.hordeEncounter = null;
+                        return;
+                    }
+                }
+                if (encounter.phase === 'breather') {
+                    encounter.countdown -= dt;
+                    if (encounter.countdown > 0) return;
+                    encounter.phase = 'warning';
+                    encounter.countdown = 1.8;
+                    this.combatText.showBanner('HORDE SURGE · WATCH THE DOORWAYS');
+                    this.audio.playSfx('horde_warning', 1.12);
+                }
+                if (encounter.phase === 'warning') {
+                    encounter.countdown -= dt;
+                    if (encounter.countdown > 0) return;
+                    encounter.phase = 'wave';
+                    const room = encounter.room;
+                    const bounds = {
+                        left: room.x * 48 + 48,
+                        right: (room.x + room.w) * 48 - 48,
+                        top: room.y * 48 + 48,
+                        bottom: (room.y + room.h) * 48 - 48
+                    };
+                    const p = this.player;
+                    const sides = [
+                        { distance: p.x - bounds.left, point: i => ({ x: bounds.left, z: p.y + (i - 1.5) * 30 }) },
+                        { distance: bounds.right - p.x, point: i => ({ x: bounds.right, z: p.y + (i - 1.5) * 30 }) },
+                        { distance: p.y - bounds.top, point: i => ({ x: p.x + (i - 1.5) * 30, z: bounds.top }) },
+                        { distance: bounds.bottom - p.y, point: i => ({ x: p.x + (i - 1.5) * 30, z: bounds.bottom }) }
+                    ].sort((a, b) => b.distance - a.distance);
+                    const entry = sides[0];
+                    const mobPool = EnemyEntity.mobsForTheme?.(this.dungeon.theme) || [];
+                    const runners = mobPool.filter(mob => mob.type === 'skeleton' && mob.speed >= 100 && !mob.elite && !mob.armored);
+                    const fallback = { name: 'CRYPT RUNNER', type: 'skeleton', hp: 28, dmg: 8, speed: 180, scale: 0.8 };
+                    const waveIndex = encounter.wavesSpawned || 0;
+                    let specialists = waveIndex === 0
+                        ? mobPool.filter(mob => mob.type === 'mage' && !mob.elite)
+                        : mobPool.filter(mob => mob.armored && !mob.elite);
+                    if (!specialists.length) specialists = mobPool.filter(mob => mob.type !== 'skeleton' && !mob.elite);
+                    const specialist = specialists[0] || null;
+                    encounter.wave = Array.from({ length: 4 }, (_, i) => {
+                        let template = runners.length ? runners[(i + waveIndex) % runners.length] : fallback;
+                        if (i === 3 && specialist) {
+                            template = { ...specialist, hp: Math.max(22, Math.round(specialist.hp * 0.82)),
+                                dmg: Math.max(7, Math.round(specialist.dmg * 0.72)) };
+                        }
+                        const point = entry.point(i);
+                        point.z = Math.max(bounds.top + 12, Math.min(bounds.bottom - 12, point.z));
+                        point.x = Math.max(bounds.left + 12, Math.min(bounds.right - 12, point.x));
+                        const enemy = new EnemyEntity({ ...template,
+                            hpMultiplier: encounter.difficulty.hpMultiplier,
+                            damageMultiplier: encounter.difficulty.damageMultiplier
+                        }, point.x, point.z, encounter.diffScale);
+                        enemy.state = 'chase';
+                        this.scene.add(enemy.group3d);
+                        this.enemies.push(enemy);
+                        return enemy;
+                    });
+                    encounter.wavesSpawned = waveIndex + 1;
+                    const rangedSpecial = specialist && (specialist.type === 'mage' || specialist.type === 'skull');
+                    const specialCue = specialist ? (rangedSpecial ? ' · RANGED SUPPORT' : ' · HEAVY SUPPORT') : '';
+                    this.combatText.showBanner(`HORDE IN THE ROOM${specialCue} · KEEP MOVING`);
+                    return;
+                }
+                return;
+            }
+
+            if (this.hordeEventsThisFloor >= 1 || this.activeBoss?.hp > 0) return;
+            const arena = this.arenaEncounter;
+            if (arena) {
+                const inArena = this.player.x >= arena.room.x * 48 - 220 && this.player.x < (arena.room.x + arena.room.w) * 48 + 220 &&
+                    this.player.y >= arena.room.y * 48 - 220 && this.player.y < (arena.room.y + arena.room.h) * 48 + 220;
+                if (inArena || ['warden', 'warning', 'wave', 'breather'].includes(arena.phase)) return;
+            }
+            if (this.player.yElevation > 18) return;
+            const room = this.dungeon.rooms.find(candidate =>
+                this.player.x >= candidate.x * 48 && this.player.x < (candidate.x + candidate.w) * 48 &&
+                this.player.y >= candidate.y * 48 && this.player.y < (candidate.y + candidate.h) * 48);
+            if (!room || ['spawn', 'safespace', 'boss'].includes(room.type) || room === arena?.room) return;
+            this.hordeTimer -= dt;
+            if (this.hordeTimer > 0) return;
+            const nearbyThreats = this.enemies.filter(enemy => enemy.hp > 0 &&
+                Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) < 270).length;
+            if (nearbyThreats > 0) return;
+            const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
+            const diffScale = (1 + Math.min(this.floorIndex, 30) * 0.18) * this.getMissionScaleMult();
+            this.hordeEncounter = { room, phase: 'warning', countdown: 2.8,
+                wave: [], wavesRemaining: 1, wavesSpawned: 0, difficulty, diffScale };
+            this.hordeEventsThisFloor++;
+            this.combatText.showBanner('DISTANT HORDE · CLEAR THE ROOM');
+            this.audio.playSfx('horde_warning', 0.78);
         }
 
         tryDescend() {
@@ -1843,8 +1995,14 @@
                 if (distance > radius || !this.hasBlastLineOfSight(projectile.x, projectile.z, enemy.x, enemy.y, projectile.y, enemyHeight)) return;
                 const falloff = 1 - distance / (radius * 1.5);
                 if (projectile.shotStats) projectile.shotStats.hit = true;
+                const hpBefore = enemy.hp;
                 this.applyHitToEnemy(enemy, Math.round(projectile.dmg * Math.max(0.35, falloff)), new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize(),
                     1, 0, null, { x: projectile.x, y: projectile.y, z: projectile.z }, 'blast', projectile.trait, projectile.charged, null, projectile.element, projectile.behavior);
+                if (projectile.shotStats) {
+                    projectile.shotStats.healthDamage = (projectile.shotStats.healthDamage || 0) +
+                        Math.max(0, Math.min(hpBefore, hpBefore - enemy.hp));
+                    if (hpBefore > 0 && enemy.hp <= 0) projectile.shotStats.kills = (projectile.shotStats.kills || 0) + 1;
+                }
                 if (projectile.shotStats && enemy.hp <= 0 && projectile.shooterElevation - enemy.yElevation >= 24) {
                     this.runCombatStats.elevatedKills++;
                 }
@@ -1929,6 +2087,9 @@
 
         buildWeaponViewmodel(classType, weapon) {
             this.weaponGroup = WeaponFactory.buildWeapon(classType, weapon.id, weapon);
+            // Keep the gun readable without letting the close camera mount
+            // cover the center and lower half of the combat view.
+            this.weaponGroup.scale.setScalar(0.78);
             const hand = this.weaponGroup.mainHand;
             if (hand) {
                 hand.userData.idlePose = {
@@ -2090,6 +2251,16 @@
             }
         }
 
+        announceLegendaryDrop(enemy, weapon) {
+            if (!weapon || weapon.rarity !== 'legendary') return;
+            this.combatText.showBanner('LEGENDARY DROP · GOLD BEAM MARKED');
+            this.combatText.spawnText(enemy.x, enemy.yElevation + 38, enemy.y,
+                `LEGENDARY · ${weapon.name}`, 'crit');
+            this.vfx.spawnSparks(enemy.x, enemy.y, 0xfbbf24, 20, enemy.yElevation + 18);
+            this.audio.playSfx('levelup', 1.2);
+            this.cameraController.applyPunch(0.035, 0);
+        }
+
         spawnEnemyLoot(enemy, goldValue) {
             const roll = Math.random();
             const type = enemy.isBoss || roll < 0.16 ? 'ammo' : (roll < 0.38 ? 'potion' : 'gold');
@@ -2113,6 +2284,7 @@
                 const definition = contract.weapon || FPS_WEAPONS[Math.floor(Math.random() * FPS_WEAPONS.length)];
                 const weapon = rollWeapon(definition, contract.makerIndex);
                 this.spawnLoadedWeapon(enemy.x, enemy.y, weapon, enemy.yElevation);
+                this.announceLegendaryDrop(enemy, weapon);
                 this.weaponContract = null;
                 this.combatText.spawnText(enemy.x, enemy.yElevation + 35, enemy.y, `CONTRACT COMPLETE · ${weapon.name}`, 'crit');
             } else if (enemy.isBoss) {
@@ -2121,7 +2293,9 @@
                 const specialty = eliteWeaponSpecialty(enemy);
                 const definition = FPS_WEAPONS.find(weapon => weapon.id === specialty.classId);
                 const makerIndex = ROLL_MAKERS.findIndex(maker => maker.trait === specialty.maker);
-                this.spawnLoadedWeapon(enemy.x, enemy.y, rollWeapon(definition, makerIndex), enemy.yElevation);
+                const weapon = rollWeapon(definition, makerIndex);
+                this.spawnLoadedWeapon(enemy.x, enemy.y, weapon, enemy.yElevation);
+                this.announceLegendaryDrop(enemy, weapon);
             }
             if (enemy.isBoss || (enemy.elite && Math.random() < 0.25)) {
                 this.spawnGrenadeLoot(enemy.x + 12, enemy.y + 8);
@@ -2286,14 +2460,15 @@
                 const alternate = weapon.aimedProfile ? ` · Aim: ${weapon.aimedProfile.label}` : '';
                 const budget = `Budget ${Math.round((weapon.rollBudget || 1) * 100)}%`;
                 const behavior = weapon.behaviorLabel ? ` · ${weapon.behaviorLabel}` : '';
-                return `${weapon.name}${weapon.traitLabel ? ` · ${weapon.traitLabel}` : ''}${behavior}${alternate} | ${Math.round(burst)} burst / ${Math.round(sustained)} sustained DPS | ${weapon.magazine} mag · ${weapon.spreadScale.toFixed(2)} spread · ${budget}`;
+                const element = weapon.element ? ` · ${weapon.element.toUpperCase()}` : '';
+                return `${weapon.name}${weapon.traitLabel ? ` · ${weapon.traitLabel}` : ''}${element}${behavior}${alternate} | ${Math.round(burst)} burst / ${Math.round(sustained)} sustained DPS | ${weapon.magazine} mag · ${weapon.spreadScale.toFixed(2)} spread · ${budget}`;
             };
             const incoming = `Drop: ${describe(loot.weaponData)}`;
             const current = `Equipped: ${describe(equipped)}`;
             if (card.children[0].textContent !== incoming) card.children[0].textContent = incoming;
             if (card.children[1].textContent !== current) card.children[1].textContent = current;
-            card.children[0].title = loot.weaponData.behaviorDescription || loot.weaponData.traitLabel || '';
-            card.children[1].title = equipped.behaviorDescription || equipped.traitLabel || '';
+            card.children[0].title = [loot.weaponData.element && `${loot.weaponData.element.toUpperCase()} element`, loot.weaponData.behaviorDescription, loot.weaponData.traitLabel].filter(Boolean).join(' · ');
+            card.children[1].title = [equipped.element && `${equipped.element.toUpperCase()} element`, equipped.behaviorDescription, equipped.traitLabel].filter(Boolean).join(' · ');
         }
 
         swapNearbyWeapon() {
@@ -2409,6 +2584,7 @@
             let baseSpread = this.ads ? (moving ? 0.006 : 0.002) : (moving ? 0.024 : 0.012);
             if (this.player?.sprinting && moving) baseSpread *= 1.25;
             if (this.player && !this.player.grounded) baseSpread *= 1.35;
+            if (!this.ads && this.player && !this.player.grounded && Math.abs(this.player.platVy) <= 90) baseSpread *= 0.78;
             if (this.player?.grounded && this.player?.crouching && !this.player?.isSliding) baseSpread *= 0.72;
             const weapon = this.weaponInventory[this.activeWeaponIndex];
             if (moving && !this.ads && weapon?.trait === 'handling') baseSpread *= 0.62;
@@ -2444,7 +2620,7 @@
             if (name) {
                 name.textContent = `${weapon.name}  ·  ${this.activeWeaponIndex + 1}/${this.weaponInventory.length}`;
                 name.style.color = weapon.rarityColor ? `#${weapon.rarityColor.toString(16).padStart(6, '0')}` : '';
-                name.title = [weapon.rarityName, weapon.traitLabel, weapon.behaviorDescription,
+                name.title = [weapon.rarityName, weapon.traitLabel, weapon.element && `${weapon.element.toUpperCase()} element`, weapon.behaviorDescription,
                     weapon.aimedProfile && `Aim: ${weapon.aimedProfile.label}`].filter(Boolean).join(' · ');
             }
             if (ammo) {
@@ -2527,6 +2703,8 @@
             if (crosshair) {
                 crosshair.classList.toggle('aiming', this.ads);
                 crosshair.classList.toggle('sniper-scope', sniperScopeActive);
+                crosshair.classList.toggle('flow', this.player.momentumShotTimer > 0);
+                crosshair.title = this.player.momentumShotTimer > 0 ? 'Flow shot ready · +10% damage' : '';
                 const spread = this.getCurrentWeaponSpread();
                 const spreadPixels = spread * (this.container?.clientWidth || 1000) * 0.25;
                 crosshair.style.setProperty('--crosshair-gap', `${(sniperScopeActive ? 3 : (this.ads ? 6 : 8)) + spreadPixels}px`);
@@ -2549,7 +2727,9 @@
             }
 
             const charged = weapon.trait === 'charged' && weapon.ammo === weapon.magazine;
+            const momentumShot = this.player.momentumShotTimer > 0;
             const aimed = this.activeAimProfile(weapon);
+            if (momentumShot) this.player.momentumShotTimer = 0;
             weapon.ammo--;
             const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
             this.weaponCooldown = weapon.fireRate * (aimed?.cooldownScale ?? 1) / attackSpeedMultiplier;
@@ -2571,7 +2751,7 @@
             }
             if (this.weaponGroup?.muzzleLight) this.weaponGroup.muzzleLight.intensity = 2.2;
             const cData = ClassData[this.player.classType];
-            const classScale = (cData ? cData.baseDmg / 20 : 1) * (charged ? 1.35 : 1);
+            const classScale = (cData ? cData.baseDmg / 20 : 1) * (charged ? 1.35 : 1) * (momentumShot ? 1.1 : 1);
             const moving = Math.hypot(this.player.vx, this.player.vy) > this.player.speed * 0.45;
             const now = this.weaponAnimTime * 1000;
             if (now - this.weaponLastShotAt > 420) {
@@ -2584,9 +2764,11 @@
             const raycaster = new THREE.Raycaster();
             raycaster.far = weapon.range;
             const hits = new Map();
-            const shotStats = { hit: false, weakPoint: false };
+            const shotStats = { hit: false, weakPoint: false, healthDamage: 0, kills: 0 };
             const shooterElevation = this.player.yElevation;
-            const tracerColor = weapon.element === 'shock' ? 0xa9a2ff : weapon.blastRadius ? 0xff6b1a : weapon.id === 'sniper' ? 0x7dd3fc : (weapon.id === 'scattergun' ? 0xff8a3d : (weapon.id === 'sidearm' ? 0x8be9fd : 0xffd166));
+            const tracerColor = momentumShot ? 0x67e8f9 : weapon.element === 'shock' ? 0xa9a2ff : weapon.element === 'fire' ? 0xff5a48 :
+                weapon.element === 'rot' ? 0xa2df58 : weapon.blastRadius ? 0xff6b1a : weapon.id === 'sniper' ? 0x7dd3fc :
+                    (weapon.id === 'scattergun' ? 0xff8a3d : (weapon.id === 'sidearm' ? 0x8be9fd : 0xffd166));
             const targets = this.mapMeshes[0] ? [this.mapMeshes[0], ...this.arenaMeshes] : [];
             this.enemies.forEach(enemy => { if (enemy && enemy.hp > 0 && enemy.group3d) targets.push(enemy.group3d); });
             this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
@@ -2663,6 +2845,8 @@
                 shotStats.hit = true;
                 shotStats.weakPoint ||= hit.headshots > 0;
                 const wasAlive = enemy.hp > 0;
+                const hpBefore = enemy.hp;
+                if (momentumShot && hit.impact) this.vfx.spawnSparks(hit.impact.x, hit.impact.z, 0x67e8f9, 8, hit.impact.y);
                 this.applyHitToEnemy(
                     enemy,
                     weapon.damage * classScale * hit.damageScale * (aimed?.damageScale ?? 1),
@@ -2678,15 +2862,19 @@
                     weapon.element,
                     weapon.behavior
                 );
+                shotStats.healthDamage += Math.max(0, Math.min(hpBefore, hpBefore - enemy.hp));
+                if (wasAlive && enemy.hp <= 0) shotStats.kills++;
                 if (wasAlive && enemy.hp <= 0 && shooterElevation - enemy.yElevation >= 24) this.runCombatStats.elevatedKills++;
             });
             const key = weapon.rollId || weapon.id;
             const weapons = this.runCombatStats.weapons;
-            if (!weapons.has(key)) weapons.set(key, { name: weapon.name, shots: 0, hits: 0, weakPoints: 0 });
+            if (!weapons.has(key)) weapons.set(key, { name: weapon.name, shots: 0, hits: 0, weakPoints: 0, kills: 0, healthDamage: 0 });
             const stats = weapons.get(key);
             stats.shots++;
             if (shotStats.hit) stats.hits++;
             if (shotStats.weakPoint) stats.weakPoints++;
+            stats.kills += shotStats.kills;
+            stats.healthDamage += shotStats.healthDamage;
             this.triggerShockwaveCleave(this.player, forward, new Set(hits.keys()));
             const hasAdsRecoil = this.ads && Array.isArray(weapon.adsRecoilPattern);
             const recoilPattern = hasAdsRecoil ? weapon.adsRecoilPattern : (weapon.recoilPattern || [[0, this.ads ? 0.018 : 0.035]]);
@@ -2848,15 +3036,30 @@
                     pending.push(echo);
                     continue;
                 }
-                const enemy = echo.enemy;
-                if (!enemy || enemy.hp <= 0 || !this.enemies.includes(enemy)) continue;
-                const start = new THREE.Vector3(this.player.x, this.player.yElevation + this.cameraEyeHeight, this.player.y);
+                let enemy = echo.enemy;
+                let start;
+                if (echo.kind === 'chain') {
+                    const origin = echo.origin;
+                    enemy = this.enemies.filter(candidate => candidate && candidate !== echo.enemy && candidate.hp > 0)
+                        .map(candidate => ({ candidate, distance: Math.hypot(candidate.x - origin.x, candidate.y - origin.z) }))
+                        .filter(hit => hit.distance <= 190)
+                        .sort((a, b) => a.distance - b.distance)[0]?.candidate;
+                    if (!enemy) continue;
+                    start = new THREE.Vector3(origin.x, origin.y, origin.z);
+                } else {
+                    if (!enemy || enemy.hp <= 0 || !this.enemies.includes(enemy)) continue;
+                    start = new THREE.Vector3(this.player.x, this.player.yElevation + this.cameraEyeHeight, this.player.y);
+                }
                 const end = new THREE.Vector3(enemy.x, enemy.yElevation + 20, enemy.y);
                 if (!this.hasBlastLineOfSight(start.x, start.z, end.x, end.z, start.y, end.y)) continue;
-                this.spawnWeaponTracer(start, end, 0xc084fc);
-                this.applyHitToEnemy(enemy, echo.damage, echo.direction, 1, 0, echo.sourceWeapon,
+                const color = echo.kind === 'chain' ? 0x4dece0 : 0xc084fc;
+                this.spawnWeaponTracer(start, end, color);
+                const direction = echo.kind === 'chain'
+                    ? new THREE.Vector3(end.x - start.x, end.y - start.y, end.z - start.z).normalize()
+                    : echo.direction;
+                this.applyHitToEnemy(enemy, echo.damage, direction, 1, 0, echo.sourceWeapon,
                     { x: end.x, y: end.y, z: end.z }, 'shot', echo.trait, echo.charged, null, echo.element);
-                this.vfx.spawnSparks(end.x, end.z, 0xc084fc, 7, end.y);
+                this.vfx.spawnSparks(end.x, end.z, color, 7, end.y);
             }
             this.pendingWeaponEchoes = pending;
         }
@@ -2936,8 +3139,11 @@
             } else {
                 this.vfx.spawnBlood(hitX, hitZ, enemy.bloodColor, strongHit ? 14 : 7, hitY, dir);
             }
-            if (strongHit) this.vfx.spawnSparks(hitX, hitZ, 0xffcc4c, 8, hitY);
-            this.emitGraphicsBurst(hitX, hitZ, strongHit ? '#fbbf24' : '#ef4444', strongHit ? 1.5 : 0.8);
+            const elementFlash = { shock: 0x8f9fff, fire: 0xff6548, rot: 0xa7d85a }[element];
+            if (elementFlash) this.vfx.spawnSparks(hitX, hitZ, elementFlash, strongHit ? 14 : 5, hitY);
+            else if (strongHit) this.vfx.spawnSparks(hitX, hitZ, 0xffcc4c, 8, hitY);
+            const impactFlash = elementFlash ?? (strongHit ? 0xfbbf24 : 0xef4444);
+            this.emitGraphicsBurst(hitX, hitZ, `#${impactFlash.toString(16).padStart(6, '0')}`, strongHit ? 1.5 : 0.8);
             const hitSound = enemy.hp <= 0 ? 'hit_kill' : wardBroke ? 'ward_break' : warded ? 'ward_hit'
                 : isCrit || isHeadshot ? 'crit' : armored ? 'hit_armor' : 'hit';
             this.audio.playSfx(hitSound, isHeadshot ? 1.2 : 1);
@@ -2966,11 +3172,11 @@
                 }
             }
 
-            if (trait === 'burn' || this.player.hasPerk('pyromancy')) {
+            if (trait === 'burn' || element === 'fire' || this.player.hasPerk('pyromancy')) {
                 enemy.burnTimer = Math.max(enemy.burnTimer || 0, 3);
                 enemy.burnFxTimer = 0;
             }
-            if (trait === 'poison') {
+            if (trait === 'poison' || element === 'rot') {
                 enemy.poisonTimer = Math.max(enemy.poisonTimer || 0, 3);
                 enemy.poisonFxTimer = 0;
             }
@@ -2984,6 +3190,12 @@
                     trait,
                     charged,
                     element
+                });
+            }
+            if (behavior === 'chain' && sourceWeapon && kind === 'shot') {
+                this.pendingWeaponEchoes.push({
+                    kind: 'chain', enemy, origin: { x: enemy.x, y: enemy.yElevation + 20, z: enemy.y },
+                    remaining: 0.12, damage: baseDmg * 0.38, sourceWeapon
                 });
             }
             if (charged || this.player.hasPerk('frostbite')) {
@@ -3615,6 +3827,7 @@
                 }
                 this.companion?.update(effectiveDt, this);
                 this.updateArenaEncounter(effectiveDt);
+                this.updateHordeDirector(effectiveDt);
 
                 // Update enemies
                 this.enemies.forEach(e => e.update(effectiveDt, this.player, this.physics, this.dungeon, this));
@@ -3864,8 +4077,10 @@
             const leanOffset = this.player.lean * 9;
             const horizontalSpeed = Math.hypot(this.player.vx, this.player.vy);
             const bobbing = this.player.grounded && !this.player.isSliding && horizontalSpeed > 2;
-            const bobScale = this.ads ? 0.28 : (this.player.crouching ? 0.38 : (sprinting ? 1.2 : 0.75));
-            if (bobbing) this.cameraBobTime += dt * (sprinting ? 14 : 9.5);
+            const sprintFeedback = !this.player.crouching
+                ? THREE.MathUtils.clamp(this.player.sprintBlend || 0, 0, 1) : 0;
+            const bobScale = this.ads ? 0.28 : (this.player.crouching ? 0.38 : 0.75 + 0.45 * sprintFeedback);
+            if (bobbing) this.cameraBobTime += dt * (9.5 + 4.5 * sprintFeedback);
             const targetBobX = bobbing ? Math.cos(this.cameraBobTime) * 0.45 * bobScale : 0;
             const targetBobY = bobbing ? Math.sin(this.cameraBobTime * 2) * 0.55 * bobScale : 0;
             const bobBlend = Math.min(1, dt * 10);
@@ -3964,7 +4179,9 @@
                 mark(safespace.cx * 48 + 24, safespace.cy * 48 + 24, 0, '#38bdf8', 5);
             }
             for (const loot of this.loot) {
-                if (!loot.picked && loot.type === 'weapon') mark(loot.x, loot.y, loot.elevation, '#f7c46c', 4);
+                if (loot.picked) continue;
+                if (loot.type === 'weapon') mark(loot.x, loot.y, loot.elevation, '#f7c46c', 4);
+                else if (loot.verticalRouteSupply) mark(loot.x, loot.y, loot.elevation, '#7df5dd', 3);
             }
             const cache = this.starterCache?.marker;
             if (cache) mark(cache.x, cache.y, 0, '#f7c46c', 4);
@@ -4079,13 +4296,15 @@
 
         emitGraphicsBurst(worldX, worldZ, color = '#ffcc4c', strength = 1) {
             if (!this.graphics.enabled) return;
+            const flashIntensity = (Number(document.getElementById('settingsHitFlash')?.value) || 0) / 100;
+            if (flashIntensity <= 0) return;
             const point = this.graphicsPoint.set(worldX, 16, worldZ).project(this.camera3d);
             if (point.z < -1 || point.z > 1) return;
             this.graphics.burst(
                 (point.x * 0.5 + 0.5) * this.graphics.width,
                 (-point.y * 0.5 + 0.5) * this.graphics.height,
                 color,
-                strength
+                strength * flashIntensity
             );
         }
 
@@ -4132,7 +4351,7 @@
             weaponReport.replaceChildren(...Array.from(this.runCombatStats.weapons.values(), stats => {
                 const row = document.createElement('li');
                 const accuracy = Math.round(stats.hits / stats.shots * 100);
-                row.textContent = `${stats.name} · ${stats.hits}/${stats.shots} hits (${accuracy}%) · ${stats.weakPoints} weak-point shots`;
+                row.textContent = `${stats.name} · ${stats.kills || 0} kills · ${Math.round(stats.healthDamage || 0)} health damage · ${stats.hits}/${stats.shots} hits (${accuracy}%) · ${stats.weakPoints} weak-point shots`;
                 return row;
             }));
             weaponReport.hidden = this.runCombatStats.weapons.size === 0;
@@ -4203,6 +4422,7 @@
                 try {
                     localStorage.setItem('gravegain3dB:accessibility', JSON.stringify({
                         shake: document.getElementById('settingsShakeIntensity').value,
+                        hitFlash: document.getElementById('settingsHitFlash').value,
                         sprintFov: document.getElementById('settingsSprintFov').value,
                         damageNumbers: document.getElementById('settingsDamageNumbers').checked
                     }));
@@ -4232,9 +4452,11 @@
             try {
                 const accessibility = JSON.parse(localStorage.getItem('gravegain3dB:accessibility') || '{}');
                 const shake = document.getElementById('settingsShakeIntensity');
+                const hitFlash = document.getElementById('settingsHitFlash');
                 const sprintFov = document.getElementById('settingsSprintFov');
                 const damageNumbers = document.getElementById('settingsDamageNumbers');
                 if (shake && accessibility.shake !== undefined) shake.value = accessibility.shake;
+                if (hitFlash && accessibility.hitFlash !== undefined) hitFlash.value = accessibility.hitFlash;
                 if (sprintFov && accessibility.sprintFov !== undefined) sprintFov.value = accessibility.sprintFov;
                 if (damageNumbers && accessibility.damageNumbers !== undefined) damageNumbers.checked = accessibility.damageNumbers;
             } catch (_) { /* keep accessible defaults if storage is unavailable */ }
@@ -4805,7 +5027,7 @@
     });
 
     window.gameDebug = {
-        name: "GraveGain3D (Complete FPS Edition)",
+        name: "GraveGain 3d B: Dungeon Gunner",
         getScore: () => window.GraveGainGame ? window.GraveGainGame.gold : 0,
         setScore: (g) => { if (window.GraveGainGame) window.GraveGainGame.gold = g; },
         getHealth: () => window.GraveGainGame && window.GraveGainGame.player ? window.GraveGainGame.player.hp : 0,

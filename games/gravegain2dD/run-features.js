@@ -100,6 +100,13 @@
         platforms = platforms.filter(platform => platform.x + platform.span > -20);
       },
       leavePlatform() { supported = null; },
+      hasLowPlatformAt(x, w, ground) {
+        return platforms.some(platform =>
+          x - 24 < platform.x + platform.span &&
+          x + w + 24 > platform.x &&
+          (ground - platform.y) < 115
+        );
+      },
       surface(previousY, nextY, feetX, ground) {
         if (nextY < previousY) return { y: ground, visited: false };
         const landing = platforms.filter(platform =>
@@ -111,7 +118,7 @@
         landing.visited = true;
         return { y: landing.y, visited };
       },
-      draw(ctx) {
+      draw(ctx, time = 0) {
         for (const { x, y, span, label, theme, tier } of platforms) {
           const stone = ctx.createLinearGradient(0, y, 0, y + 25);
           stone.addColorStop(0, tier === 'summit' ? '#6d6683' : theme === 'castle' ? '#66647b' : '#56665b');
@@ -132,36 +139,59 @@
             }
           }
           if (theme === 'cave') {
-            for (let tooth = x + 8; tooth < x + span - 12; tooth += 17) {
+            for (let offset = 8, idx = 0; offset < span - 14; offset += 22, idx++) {
+              const tooth = x + offset;
+              const width = 9 + (idx % 3) * 4;
+              const depth = 6 + ((idx * 5) % 7);
+              ctx.fillStyle = idx % 2 === 0 ? '#202e29' : '#18221e';
               ctx.beginPath();
-              ctx.moveTo(tooth, y + 12);
-              ctx.lineTo(tooth + 6, y + 24);
-              ctx.lineTo(tooth + 12, y + 12);
+              ctx.moveTo(tooth, y + 21);
+              ctx.lineTo(tooth + width * 0.48, y + 21 + depth);
+              ctx.lineTo(tooth + width, y + 21);
               ctx.fill();
             }
           }
           if (tier === 'launch') {
+            const pulse = 0.58 + 0.42 * Math.sin(time * 5.2 + x * 0.02);
             ctx.fillStyle = '#82d8bb';
             ctx.fillRect(x, y, span, 4);
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = '#9ef7d7';
+            ctx.fillRect(x, y, span, 2);
+            ctx.restore();
+            const lift = ((time * 16) % 4);
+            ctx.strokeStyle = '#9ef7d7';
+            ctx.lineWidth = 1.6;
             for (let mark = x + 12; mark < x + span - 10; mark += 22) {
               ctx.beginPath();
-              ctx.moveTo(mark, y + 12);
-              ctx.lineTo(mark + 5, y + 7);
-              ctx.lineTo(mark + 10, y + 12);
-              ctx.strokeStyle = '#82d8bb';
+              ctx.moveTo(mark, y + 13 - lift);
+              ctx.lineTo(mark + 5, y + 8 - lift);
+              ctx.lineTo(mark + 10, y + 13 - lift);
               ctx.stroke();
             }
           }
           ctx.fillStyle = '#202b26';
           for (let joint = x + 18; joint < x + span; joint += 21) ctx.fillRect(joint, y + 4, 2, 9);
           if (label) {
+            ctx.save();
             ctx.font = 'bold 12px system-ui';
             const text = label;
             const width = ctx.measureText(text).width + 18;
-            ctx.fillStyle = '#101c28';
-            ctx.fillRect(x, y - 70, width, 22);
-            ctx.fillStyle = '#f4e7a5';
-            ctx.fillText(text, x + 9, y - 55);
+            const boxX = x;
+            const boxY = y - 64;
+            const boxH = 22;
+            ctx.fillStyle = '#0c1722e8';
+            ctx.strokeStyle = tier === 'launch' ? '#9ef7d777' : '#8df0cf44';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(boxX, boxY, width, boxH, 6);
+            else ctx.rect(boxX, boxY, width, boxH);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = tier === 'launch' ? '#a6f9dc' : '#f4e7a5';
+            ctx.fillText(text, boxX + 9, boxY + 15);
+            ctx.restore();
           }
         }
       }

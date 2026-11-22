@@ -10,6 +10,8 @@
             this.chunks = [];   // box debris (gravity + floor bounce)
             this.glows = [];    // additive sprites (embers/wisps, gravity + fade)
             this.rings = [];    // expanding aura rings (fade + grow)
+            this._chunkMeshPool = [];
+            this._chunkMeshPoolLimit = 240;
             this.particleMult = opts.particleMult || 1;
             this.maxParticles = opts.maxParticles || 900;
             this.gravity = opts.gravity || 600;
@@ -47,11 +49,27 @@
 
         _evict(n) {
             for (let i = 0; i < n; i++) {
-                if (this.chunks.length) this._killChunk(this.chunks.shift());
+                if (this.chunks.length) {
+                    const chunk = this.chunks.shift();
+                    this._killChunk(chunk);
+                    if (chunk.mat && !this.chunks.some(active => active.mat === chunk.mat)) {
+                        try { chunk.mat.dispose(); } catch (_) {}
+                    }
+                }
                 else if (this.glows.length) this._killGlow(this.glows.shift());
                 else if (this.rings.length) this._killRing(this.rings.shift());
                 else break;
             }
+        }
+
+        _takeChunkMesh(geometry, material) {
+            const mesh = this._chunkMeshPool.pop() || new THREE.Mesh(geometry, material);
+            mesh.geometry = geometry;
+            mesh.material = material;
+            mesh.visible = true;
+            mesh.scale.set(1, 1, 1);
+            mesh.rotation.set(0, 0, 0);
+            return mesh;
         }
 
         _additiveMat(hexColor, opacity = 1) {
@@ -66,7 +84,7 @@
             if (!n) return;
             const mat = this._additiveMat(hexColor);
             for (let i = 0; i < n; i++) {
-                const mesh = new THREE.Mesh(this._boxGeo || new THREE.BoxGeometry(1.8, 1.8, 1.8), mat);
+                const mesh = this._takeChunkMesh(this._boxGeo || new THREE.BoxGeometry(1.8, 1.8, 1.8), mat);
                 mesh.position.set(x, y, z);
                 this.scene.add(mesh);
                 const maxLife = 0.4 + Math.random() * 0.3;
@@ -95,7 +113,7 @@
             const shiny = material === 'steel' || material === 'ward' || material === 'shock';
             const mat = shiny ? this._additiveMat(style.color) : new THREE.MeshBasicMaterial({ color: style.color });
             for (let i = 0; i < n; i++) {
-                const mesh = new THREE.Mesh(this._boxGeo, mat);
+                const mesh = this._takeChunkMesh(this._boxGeo, mat);
                 mesh.position.copy(point).addScaledVector(normal, 0.5);
                 this.scene.add(mesh);
                 const speed = style.speed * (0.6 + Math.random() * 0.8);
@@ -111,7 +129,7 @@
             if (!n) return;
             const mat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 1 });
             for (let i = 0; i < n; i++) {
-                const mesh = new THREE.Mesh(this._bloodGeo || new THREE.BoxGeometry(2.5, 2.5, 2.5), mat);
+                const mesh = this._takeChunkMesh(this._bloodGeo || new THREE.BoxGeometry(2.5, 2.5, 2.5), mat);
                 mesh.position.set(x + (Math.random() * 6 - 3), y, z + (Math.random() * 6 - 3));
                 this.scene.add(mesh);
                 const maxLife = 0.5 + Math.random() * 0.3;
@@ -229,7 +247,9 @@
         _killChunk(c) {
             try {
                 this.scene.remove(c.mesh);
-                if (c.mesh.geometry && c.mesh.geometry !== this._boxGeo && c.mesh.geometry !== this._bloodGeo) c.mesh.geometry.dispose();
+                c.mesh.visible = false;
+                c.mesh.material = null;
+                if (this._chunkMeshPool.length < this._chunkMeshPoolLimit) this._chunkMeshPool.push(c.mesh);
             } catch (_) {}
         }
 
@@ -299,10 +319,12 @@
 
             const dead = this.chunks.filter(c => c.life <= 0);
             const liveMats = new Set(this.chunks.filter(c => c.life > 0).map(c => c.mat));
+            const deadMats = new Set();
             dead.forEach(c => {
                 this._killChunk(c);
-                if (c.mat && !liveMats.has(c.mat)) { try { c.mat.dispose(); } catch (_) {} }
+                if (c.mat) deadMats.add(c.mat);
             });
+            deadMats.forEach(mat => { if (!liveMats.has(mat)) { try { mat.dispose(); } catch (_) {} } });
             this.chunks = this.chunks.filter(c => c.life > 0);
 
             const deadG = this.glows.filter(g => g.life <= 0);

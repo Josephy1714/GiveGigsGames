@@ -305,6 +305,42 @@ class SoundEngine {
                 osc.start(now + idx * 0.09);
                 osc.stop(now + idx * 0.09 + 0.4);
             });
+        } else if (type === 'horde_warning') {
+            // A rattling rise distinct from the boss roar, signaling a pack
+            // entering through the routes around the player.
+            const duration = 0.42;
+            const buffer = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+            const noise = this.ctx.createBufferSource();
+            const filter = this.ctx.createBiquadFilter();
+            const noiseGain = this.ctx.createGain();
+            noise.buffer = buffer;
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(520 * pitchMod, now);
+            filter.frequency.exponentialRampToValueAtTime(1500 * pitchMod, now + duration * 0.75);
+            filter.Q.value = 2.5;
+            noiseGain.gain.setValueAtTime(0.001, now);
+            noiseGain.gain.linearRampToValueAtTime(0.22 * mainVol, now + 0.05);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + duration);
+
+            const call = this.ctx.createOscillator();
+            const callGain = this.ctx.createGain();
+            call.type = 'triangle';
+            call.frequency.setValueAtTime(360 * pitchMod, now + 0.08);
+            call.frequency.exponentialRampToValueAtTime(170 * pitchMod, now + duration);
+            callGain.gain.setValueAtTime(0.001, now + 0.08);
+            callGain.gain.linearRampToValueAtTime(0.18 * mainVol, now + 0.13);
+            callGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            call.connect(callGain);
+            callGain.connect(this.ctx.destination);
+            call.start(now + 0.08);
+            call.stop(now + duration);
         } else if (type === 'boss_roar') {
             // Low rumbling beast roar
             const osc = this.ctx.createOscillator();

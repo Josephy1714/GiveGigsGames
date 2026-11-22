@@ -69,7 +69,11 @@
                     canvas: opts.canvas || undefined,
                     antialias: opts.antialias !== false
                 });
-                renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+                renderer.setPixelRatio(Math.min(
+                    (window.GG4D_MOBILE_PERF && window.GG4D_MOBILE_PERF.pixelRatioCap) ||
+                    (((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+                        (navigator && navigator.maxTouchPoints > 0)) ? 1.5 : 2),
+                    window.devicePixelRatio || 1));
                 renderer.setSize(w, h, false);
                 styleCanvasLetterboxed(renderer);
 

@@ -202,6 +202,35 @@ class DungeonGenerator {
             }
         }
         this.ensureRoomRoutes(grid, spawnRoom, rooms);
+        // Add a small number of short cross-links after the safe route is
+        // guaranteed. These create readable loops and alternate approaches
+        // for flanking or retreating without turning the whole floor into a
+        // featureless maze of wide corridors.
+        const routeCandidates = [];
+        for (let from = 1; from < rooms.length - 1; from++) {
+            const source = rooms[from];
+            if (source.type === 'safespace' || source.type === 'boss') continue;
+            for (let to = from + 2; to < rooms.length - 1; to++) {
+                const target = rooms[to];
+                if (target.type === 'safespace' || target.type === 'boss') continue;
+                const distance = Math.abs(source.cx - target.cx) + Math.abs(source.cy - target.cy);
+                if (distance >= 6 && distance <= 30) routeCandidates.push({ from, to, distance });
+            }
+        }
+        routeCandidates.sort((a, b) => a.distance - b.distance);
+        const routeLinks = [];
+        const linkedRooms = new Set();
+        const linkLimit = Math.min(3, Math.max(1, Math.floor(rooms.length / 6)));
+        for (const link of routeCandidates) {
+            if (routeLinks.length >= linkLimit) break;
+            if (linkedRooms.has(link.from) || linkedRooms.has(link.to)) continue;
+            const source = rooms[link.from];
+            const target = rooms[link.to];
+            this.digCorridor(grid, source.cx, source.cy, target.cx, target.cy, 1);
+            routeLinks.push(link);
+            linkedRooms.add(link.from);
+            linkedRooms.add(link.to);
+        }
         const combatRooms = rooms.filter(room => room.type !== 'spawn' && room.type !== 'safespace')
             .sort((a, b) => b.w * b.h - a.w * a.h);
         const [arenaRoom, ...otherCombatRooms] = combatRooms;
@@ -226,9 +255,9 @@ class DungeonGenerator {
                 [-88, -118, 0], [-88, 0, 42], [78, 0, 84], [78, 54, 84]
             ].map(([dx, dz, elevation]) => ({ x: x + dx, z: z + dz, elevation }));
             const launchPad = { x: x + 78, z: z + 112, radius: 12, landingX: x + 78, landingZ: z + 56, landingHeight: 84 };
-            // Carry the vertical combat language beyond the main arena: four
-            // rooms per floor gain traversable balconies and jump-up perches.
-            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss').slice(0, 4);
+            // Carry the vertical combat language beyond the main arena: up to
+            // eight rooms per floor gain traversable balconies and jump-up perches.
+            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss').slice(0, 8);
             for (const [roomIndex, room] of overlookRooms.entries()) {
                 const roomX = (room.x + room.w / 2) * 48;
                 const roomZ = (room.y + room.h / 2) * 48;
@@ -244,7 +273,7 @@ class DungeonGenerator {
                 }
                 // Tall rooms get an exposed third tier. The offset makes the
                 // top perch a jump destination rather than a vertical stack.
-                if (roomIndex % 2 === 0) {
+                if (roomIndex % 4 !== 2) {
                     addOverlook(-20, 34, -112, -64, 126, 3);
                     addOverlook(-64, -20, -64, -20, 108, 3);
                     addOverlook(34, 82, -112, -64, 108, 3);
@@ -256,7 +285,7 @@ class DungeonGenerator {
             arena = { room: arenaRoom, ceiling: 224, overlookRooms, surfaces, pursuitRoute, launchPad };
         }
         return {
-            grid, rooms, spawnRoom, arena, ceiling: 216, gridSize: this.gridSize,
+            grid, rooms, spawnRoom, arena, routeLinks, ceiling: 216, gridSize: this.gridSize,
             theme: theme,
             atmosphere: {
                 fogColor: cfg.atmosphere.fogColor,

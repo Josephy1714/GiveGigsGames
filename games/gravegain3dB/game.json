@@ -1,13 +1,14 @@
 {
-    "title": "GraveGain3D",
+    "title": "GraveGain 3d B: Dungeon Gunner",
     "slug": "gravegain3dB",
-    "description": "A dark fantasy first-person action roguelite with a 10-mission campaign, procedural dungeons, boss fights, a starship hub, and a growing armory of weapons and combat boons.",
-    "genre": "RPG",
+    "description": "A fast dark-fantasy looter-shooter with a 10-mission campaign, hundreds of procedural gun builds, vertical dungeons, boss fights, a starship hub, and a customizable flying companion.",
+    "genre": "Looter Shooter",
     "tags": [
         "HTML5",
         "Action",
         "FPS",
         "Shooter",
+        "Looter-Shooter",
         "RPG",
         "Rogue-like",
         "Three.js",
@@ -50,10 +51,10 @@
             "R": "Reload",
             "Z / X": "Lean left / right",
             "Shift": "Hold while moving forward to build sprint speed. Press with sideways or backward movement to dodge.",
-            "C": "Slide while sprinting; crouch when held without sprint",
+            "C": "Slide while sprinting; crouch when held without sprint. Jump within 0.32 seconds of starting a slide to carry extra speed into a slide-hop.",
             "Ctrl": "Crouch",
             "B": "Block (defend / wait in turn-based mode)",
-            "Space": "Jump (wait one turn in turn-based mode; hold to glide as Human; tap again midair to double-jump as Dwarf)",
+            "Space": "Jump; tap again near a ledge to mantle, or press S + Space on a raised deck to drop through. In turn-based mode, wait a turn. Humans can hold to glide; Dwarves can double-jump.",
             "F": "Use class ability",
             "Q": "Drink healing potion",
             "Escape / P": "Pause Game"
@@ -61,7 +62,7 @@
         "touch": true,
         "mouse": true
     },
-        "instructions": "Choose your race and class, then fight through procedural first-person dungeon floors. Start with the M4, service pistol, and shotgun; elite and boss weapon caches can unlock the scoped Wraith sniper or restore dropped guns. Aim down sights, reload, bash with your equipped weapon, and track enemy health under the reticle. Use grenades or the M4 underbarrel launcher for area damage. Sprint, crouch, slide, lean, jump, and use your race or class abilities to control each fight. Enemies telegraph attacks, and bosses enrage below half health. Collect Gold, earn combat boons, and challenge the campaign bosses. Return to the LuckyStarShip hub to grow offline crops, exchange gold, and repair modules.",
+        "instructions": "Choose your race and class, equip a cat or dog battle drone, then fight through procedural first-person dungeon floors. The drone follows, attacks at range, and can revive you once; press E nearby to pet and repair it. Start with the M4, service pistol, and shotgun, then chase hundreds of procedural gun builds from caches and enemies. Sprint, Shift-dodge, slide-hop, mantle, jump between tiers, or drop through raised decks to control each fight. Enemies telegraph attacks, and bosses enrage below half health. Collect Gold, earn combat boons, and challenge the campaign bosses. Return to the LuckyStarShip hub to grow offline crops, exchange gold, and repair modules.",
     "technical": {
         "canvasSize": {
             "width": 1000,

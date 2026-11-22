@@ -1248,6 +1248,11 @@ body.touch-enabled .mobile-action-buttons {
     transition: transform 0.05s ease-out, border-color 0.1s;
 }
 
+.hud-crosshair.flow {
+    border-color: #67e8f9;
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.9), 0 0 24px rgba(34, 211, 238, 0.4);
+}
+
 .damage-vignette {
     position: absolute;
     inset: 0;
@@ -1349,6 +1354,22 @@ body.touch-enabled .mobile-action-buttons {
 .hud-crosshair.headshot { border-color: #67e8f9; box-shadow: 0 0 14px #06b6d4; }
 .hud-crosshair.kill .hit-arm { color: #fb7185; background: #fb7185; box-shadow: 0 0 8px #f43f5e; }
 .hud-crosshair.kill { border-color: #fb7185; box-shadow: 0 0 14px #f43f5e; }
+
+.hud-crosshair.hit::after {
+    position: absolute;
+    inset: -4px;
+    display: grid;
+    place-items: center;
+    color: #fde68a;
+    content: '';
+    font: 900 9px/1 system-ui, sans-serif;
+    text-shadow: 0 0 5px #000, 0 0 7px currentColor;
+    pointer-events: none;
+}
+.hud-crosshair.armor-hit.hit::after { content: '□'; color: #ffd5a1; }
+.hud-crosshair.crit.hit::after { content: '◆'; color: #facc15; }
+.hud-crosshair.headshot.hit::after { content: '◇'; color: #67e8f9; }
+.hud-crosshair.kill.hit::after { content: '×'; color: #fb7185; font-size: 14px; }
 
 .hud-crosshair.aiming {
     width: 4px;
@@ -1473,10 +1494,12 @@ body.touch-enabled .mobile-action-buttons {
     left: 50%;
     transform: translateX(-50%);
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
     gap: 2px 12px;
+    width: min(420px, calc(100% - 20px));
     min-width: 190px;
+    box-sizing: border-box;
     padding: 8px 13px;
     border: 1px solid rgba(148, 163, 184, 0.35);
     border-radius: 8px;
@@ -1495,6 +1518,22 @@ body.touch-enabled .mobile-action-buttons {
     font-size: 18px;
     letter-spacing: 0.02em;
 }
+
+#hudWeaponName {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#hudWeaponStatus { grid-column: 1; grid-row: 2; }
+#hudDodge { grid-column: 1; grid-row: 3; justify-self: start; }
+#hudFavoriteWeapon { grid-column: 2; grid-row: 3; justify-self: end; }
+#hudGrenades { grid-column: 1; grid-row: 4; }
+#hudLauncherAmmo { grid-column: 2; grid-row: 4; justify-self: end; }
+#hudFireModeToggle { grid-column: 1 / -1; grid-row: 5; justify-self: end; }
 
 .hud-weapon-readout strong.low { color: #facc15; }
 .hud-weapon-readout strong.empty { color: #fb7185; text-shadow: 0 0 10px rgba(244, 63, 94, 0.5); }

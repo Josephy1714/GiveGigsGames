@@ -59,7 +59,10 @@
                     ball.w = Math.max(self.putt.wMin || 0, Math.min(self.putt.wMax || 3, ball.w + direction));
                 }
             }
-            if (e.code === 'Space') self.jumpPressed = true;
+            if (e.code === 'Space' && self.putt && !e.target.closest('button, input, select, textarea, a')) {
+                e.preventDefault();
+                if (!e.repeat) self.startPuttCharge();
+            }
             if (e.code === 'KeyT' && !self.rewindHeld) {
                 self.rewindHeld = true;
                 if (self.timefold && typeof self.timefold.beginRewind === 'function') {
@@ -72,7 +75,7 @@
         window.addEventListener('keyup', function (e) {
             if (e.code === 'KeyF') return;
             self.keys[e.code] = false;
-            if (e.code === 'Space') self.jumpPressed = false;
+            if (e.code === 'Space' && self.puttCharging) self.releasePutt();
             if (e.code === 'KeyT' && self.rewindHeld) {
                 self.rewindHeld = false;
                 if (self.timefold && typeof self.timefold.endRewind === 'function') {
@@ -96,18 +99,15 @@
 
         container.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-        // Pointer-lock-safe click (same pattern as GG3D input-manager):
-        // first click locks; only putt when locked. Synthetic/bot presses
-        // bypass the lock gate like GG3D does.
         container.addEventListener('mousedown', function (e) {
+            if (e.button !== 0 || e.target.closest('button, input, select, textarea, a')) return;
             var botDriven = e.isTrusted === false ||
                 (window.GraveGainBotInput && window.GraveGainBotInput.isBotControl &&
                     window.GraveGainBotInput.isBotControl());
             if (document.pointerLockElement !== container && !botDriven) {
                 requestPointerLockSafely(container);
-            } else if (e.button === 0) {
-                self.startPuttCharge();
             }
+            self.startPuttCharge();
         });
 
         window.addEventListener('mouseup', function (e) {

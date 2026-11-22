@@ -104,6 +104,7 @@ body.TEMPLATE-4weird-game-page {
     margin: 0 0 8px 0;
     background: linear-gradient(90deg, #00f0ff, #ff007f);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -277,6 +278,21 @@ body.TEMPLATE-4weird-game-page {
     transform: scale(1.25);
 }
 
+.studio-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.studio-slider::-moz-range-thumb:hover {
+    transform: scale(1.25);
+}
+
 /* Selector & Input Configs */
 .selector-container {
     display: flex;
@@ -436,6 +452,7 @@ body.TEMPLATE-4weird-game-page {
     width: 100%;
     height: 4px;
     -webkit-appearance: none;
+    appearance: none;
     background: rgba(255,255,255,0.08);
     border-radius: 2px;
     outline: none;
@@ -443,8 +460,18 @@ body.TEMPLATE-4weird-game-page {
 
 .fader-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 10px;
     height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
+
+.fader-group input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border: none;
     border-radius: 50%;
     background: #fff;
     cursor: pointer;

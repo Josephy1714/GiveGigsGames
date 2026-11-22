@@ -77,6 +77,8 @@
             this.slideTimer = 0;
             this.slideCooldown = 0;
             this.slideDuration = 0.68;
+            this.slideHopTimer = 0;
+            this.momentumShotTimer = 0;
             this.slideVx = 0;
             this.slideVy = 0;
             this.footstepTimer = 0.05;
@@ -96,6 +98,7 @@
             this.slideVx = directionX * slideSpeed;
             this.slideVy = directionY * slideSpeed;
             this.slideTimer = this.slideDuration;
+            this.slideHopTimer = 0.32;
             this.slideCooldown = 0.8;
             this.isSliding = true;
             this.crouching = true;
@@ -193,6 +196,8 @@
             const priorVy = this.vy;
 
             this.slideTimer = Math.max(0, this.slideTimer - dt);
+            this.slideHopTimer = Math.max(0, this.slideHopTimer - dt);
+            this.momentumShotTimer = Math.max(0, this.momentumShotTimer - dt);
             this.slideCooldown = Math.max(0, this.slideCooldown - dt);
             this.dropThroughTimer = Math.max(0, this.dropThroughTimer - dt);
             this.isSliding = this.slideTimer > 0;
@@ -356,9 +361,16 @@
             } else if (this.grounded && this.jumpBuffer > 0) {
                 this.jumpBuffer = 0;
                 if (this.isSliding) {
-                    this.vx *= 0.9;
-                    this.vy *= 0.9;
+                    const timedHop = this.slideHopTimer > 0;
+                    const carry = timedHop ? 1.18 : 0.9;
+                    this.vx *= carry;
+                    this.vy *= carry;
+                    if (timedHop) {
+                        this.momentumShotTimer = 2.5;
+                        window.GraveGainGame?.combatText?.spawnText(this.x, 27, this.y, 'SLIDE HOP · FLOW SHOT READY', 'block');
+                    }
                 }
+                this.slideHopTimer = 0;
                 this.slideTimer = 0;
                 this.isSliding = false;
                 // A high, floaty jump supports the expanded multi-level rooms.
@@ -391,7 +403,8 @@
                     this.yElevation = mantle.elevation;
                     this.platVy = 0;
                     this.mantleMotion = null;
-                    window.GraveGainGame?.combatText?.spawnText(this.x, this.yElevation + 28, this.y, 'MANTLE', 'block');
+                    this.momentumShotTimer = 2.5;
+                    window.GraveGainGame?.combatText?.spawnText(this.x, this.yElevation + 28, this.y, 'MANTLE · FLOW SHOT READY', 'block');
                 }
             } else if (!this.grounded || this.yElevation > floorHeight) {
                 if (wasGrounded) {
@@ -438,10 +451,12 @@
             this.footstepTimer -= dt;
             if (this.grounded && !this.isSliding && actualMove > 0.75) {
                 if (this.footstepTimer <= 0 && window.GraveGainGame?.audio) {
-                    const pitch = (this.sprinting ? 1.18 : (this.crouching ? 0.78 : 1)) * (this.footstepSide ? 1.04 : 0.96);
+                    const sprintFeedback = this.crouching ? 0 : Math.max(0, Math.min(1, this.sprintBlend));
+                    const basePitch = this.crouching ? 0.78 : 1 + 0.18 * sprintFeedback;
+                    const pitch = basePitch * (this.footstepSide ? 1.04 : 0.96);
                     window.GraveGainGame.audio.playSfx('footstep', pitch);
                     this.footstepSide = 1 - this.footstepSide;
-                    this.footstepTimer = this.sprinting ? 0.27 : (this.crouching ? 0.52 : 0.39);
+                    this.footstepTimer = this.crouching ? 0.52 : 0.39 - 0.12 * sprintFeedback;
                 }
             } else if (!this.grounded || this.isSliding) {
                 this.footstepTimer = Math.min(this.footstepTimer, 0.08);

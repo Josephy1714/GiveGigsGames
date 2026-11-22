@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
 
-const browser = await chromium.launch();
+const require = createRequire(import.meta.url);
+const { chromium, firefox, webkit } = require(process.env.ARCADE_PLAYWRIGHT_PATH || "playwright");
+const engines = { chromium, firefox, webkit };
+const engine = process.env.ARCADE_BROWSER || "chromium";
+const channel = process.env.ARCADE_CHROMIUM_CHANNEL;
+assert.ok(engines[engine], "ARCADE_BROWSER must be chromium, firefox, or webkit");
+const browser = await engines[engine].launch(engine === "chromium" && channel ? { channel } : {});
 const errors = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -87,12 +93,13 @@ try {
   await page.evaluate(() => window.SemesterAdventureRuntimeInstance.closePhone());
   await page.evaluate(() => window.SemesterAdventureRuntimeInstance.destroy());
 
-  const mobile = await browser.newPage({
+  const mobileOptions = {
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
-    isMobile: true,
     hasTouch: true
-  });
+  };
+  if (engine !== "firefox") mobileOptions.isMobile = true;
+  const mobile = await browser.newPage(mobileOptions);
   mobile.on("pageerror", error => errors.push(error.message));
   await mobile.goto(`${baseUrl}/games/semester-survival/index.html`, { waitUntil: "domcontentloaded" });
   await mobile.waitForFunction(() => {
