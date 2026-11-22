@@ -41,7 +41,7 @@ jobs:
           sudo apt-get install -y blender
           # Install NumPy into Blender's bundled Python (required by FBX importer).
           blender --background --python-expr "import ensurepip; ensurepip.bootstrap()"
-          BLENDER_PYTHON=$(blender --background --python-expr "import sys; print(sys.executable)" 2>/dev/null | tail -n 1)
+          BLENDER_PYTHON=$(blender --background --python-expr "import sys; print(sys.executable)" 2>/dev/null | grep "^/" | tail -n 1)
           "$BLENDER_PYTHON" -m pip install --upgrade pip numpy
           # Ubuntu's Blender 3.0 ships a reduced OCIO config without the
           # newer Non-Color label used by Mixamo FBX materials.
