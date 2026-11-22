@@ -5,7 +5,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-ATLAS_DIR = ROOT / "assets" / "processed" / "jay-runtime"
+ATLAS_DIR = ROOT.parent / "semester-survival-runner" / "assets" / "processed" / "jay-runtime"
 MANIFEST = ATLAS_DIR / "jay-atlas.json"
 ATLAS = ATLAS_DIR / "jay-atlas.png"
 OUTPUT = ROOT / "assets" / "3d" / "jay" / "jay-portrait.webp"
