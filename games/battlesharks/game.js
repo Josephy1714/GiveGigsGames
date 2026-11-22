@@ -268,6 +268,8 @@
 
         scene.add(baseGroup);
     }
+
+    function buildEnvironment() {
         // Seafloor (Abyssal Floor at y = -280)
         const floorGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.6, ARENA_RADIUS * 2.6, 48, 48);
         floorGeo.rotateX(-Math.PI / 2);
@@ -1850,7 +1852,7 @@
         Object.assign(player, {
             yaw: 0, pitch: 0, speed: 0, health: 100, maxHealth: 100,
             level: 1, xp: 0, nextLevelXp: 120, scale: 1.0,
-            dashCooldown: 0, dashTimer: 0, isDashing: false, laserCooldown: 0, jawTimer: 0, invulnTimer: 0
+            dashCooldown: 0, dashTimer: 0, isDashing: false, laserCooldown: 0, jawTimer: 0, invulnTimer: 2.0
         });
         player.pos.set(0, 6, 12);
         tutorial.active = localStorage.getItem('battlesharks_tut_done') !== 'true';
