@@ -39,6 +39,26 @@ jobs:
       - name: Inspect the original running animation for root motion and cyclic seams
         run: |
           blender --background --python games/semester-survival-runner-3d/tools/inspect-jay-run.py
+      - name: Install Three.js and Chromium browser test dependencies
+        run: |
+          npm install --prefix games/semester-survival-runner-3d/.ci-test three@0.180.0
+          npm install --prefix /tmp/jay-browser playwright@1.56.1
+          /tmp/jay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Serve the isolated GLB fixture
+        run: |
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/jay-unified-server.log 2>&1 &
+          echo $! > /tmp/jay-unified-server.pid
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4174/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/jay-unified-server.log
+          exit 1
+      - name: Play the in-place run clip for 101 cycles in Chromium
+        env:
+          PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
+        run: |
+          node games/semester-survival-runner-3d/tests/jay-unified-smoke.mjs
       - name: Commit the separate unified character asset
         run: |
           git config user.name "github-actions[bot]"
