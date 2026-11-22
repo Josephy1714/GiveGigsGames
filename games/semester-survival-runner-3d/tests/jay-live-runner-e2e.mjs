@@ -33,7 +33,7 @@ try{
  assert.equal(running.jayRunPhase,"loop","The game should use the authored in-place loop from the first gameplay frame.");
  await page.keyboard.press("ArrowRight");
  await page.waitForTimeout(180);
- const lane=await mount.getAttribute("data-jayLean");
+ const lane=await mount.getAttribute("data-jay-lean");
  assert.notEqual(lane,null,"Lane lean telemetry should be available.");
  await page.keyboard.press("ArrowUp");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="jump",{timeout:5000});
