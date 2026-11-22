@@ -171,6 +171,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
+ const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
+ impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
  let jayRig=null,rigBaseY=0,rigBaseScaleY=1,lastGameT=0,playerX=0;
  jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleY=jayRig.root.scale.y;
@@ -186,6 +188,11 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
+  const impact=clamp((Number(g.hitTimer)||0)/.62,0,1);
+  camera.position.x=THREE.MathUtils.damp(camera.position.x,playerX*.075,2.8,dt)+Math.sin(g.t*48)*impact*.035;
+  camera.position.y=5.2+Math.sin(g.t*36)*impact*.025;
+  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(playerX*.035,1.1,-13);
+  impactRing.visible=impact>.015;impactRing.position.x=playerX;impactRing.scale.setScalar(.75+(1-impact)*1.8);impactRing.material.opacity=impact*.58;
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
   {
@@ -200,5 +207,5 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
  }
- return {render,resize,setQuality:applyQuality,get quality(){return quality;},dispose(){ro?.disconnect();removeEventListener("resize",resize);jayRig.dispose();renderer.dispose();mount.replaceChildren();}};
+ return {render,resize,setQuality:applyQuality,get quality(){return quality;},dispose(){ro?.disconnect();removeEventListener("resize",resize);jayRig.dispose();impactRing.geometry.dispose();impactRing.material.dispose();renderer.dispose();mount.replaceChildren();}};
 }
