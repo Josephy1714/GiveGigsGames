@@ -33,7 +33,7 @@ def main():
     curve_rows = []
     for fc in fcurves:
         path = fc.data_path
-        match = re.search(r'pose\\.bones\\["([^"]+)"\\]\\.(location|rotation_euler|rotation_quaternion)', path)
+        match = re.search(r'pose\.bones\["([^"]+)"\]\.(location|rotation_euler|rotation_quaternion)', path)
         bone = match.group(1) if match else ("<object>" if path in ("location", "rotation_euler", "rotation_quaternion") else None)
         prop = match.group(2) if match else path
         points = list(fc.keyframe_points)
