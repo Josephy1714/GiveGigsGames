@@ -46,7 +46,7 @@
             // Combat & stats
             this.level = 1;
             this.xp = 0;
-            this.xpNext = 60;
+            this.xpNext = 220;
             this.isDead = false;
             this.isBlocking = false;
             this.sprinting = false;
@@ -538,7 +538,7 @@
             if (this.xp >= this.xpNext) {
                 this.xp -= this.xpNext;
                 this.level++;
-                this.xpNext = Math.floor(this.xpNext * 1.55);
+                this.xpNext = Math.floor(this.xpNext * 2.1);
                 if (window.GraveGainGame) window.GraveGainGame.triggerLevelUp();
             }
         }

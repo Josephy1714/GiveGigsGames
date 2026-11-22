@@ -70,6 +70,39 @@
         }
 
         buildModel(typeData) {
+            const catalog = Array.isArray(window.GGG_MODEL_CATALOG) ? window.GGG_MODEL_CATALOG : [];
+            if (catalog.length) {
+                const nameLower = String(this.name || '').toLowerCase();
+                let modelId = 'gg-enemy-goblin-skeleton';
+                if (this.isBoss) {
+                    if (nameLower.includes('lucifer') || nameLower.includes('hades')) modelId = 'gg-enemy-lucifer-hades';
+                    else if (nameLower.includes('titan')) modelId = 'gg-enemy-necro-titan';
+                    else modelId = 'gg-enemy-bone-goliath';
+                } else if (this.type === 'skull' || nameLower.includes('skull')) {
+                    modelId = 'gg-enemy-flaming-skull';
+                } else if (this.type === 'mage' || nameLower.includes('necro') || nameLower.includes('elven')) {
+                    modelId = 'gg-enemy-elven-necromancer';
+                } else if (nameLower.includes('dwarf') || nameLower.includes('thane') || nameLower.includes('armored')) {
+                    modelId = 'gg-enemy-dwarven-thane';
+                } else if (nameLower.includes('orc') || nameLower.includes('berserk')) {
+                    modelId = 'gg-enemy-orc-berserker';
+                } else if (nameLower.includes('golem') || nameLower.includes('chem')) {
+                    modelId = 'gg-enemy-chem-golem';
+                } else if (nameLower.includes('spider')) {
+                    modelId = 'gg-enemy-tomb-spider';
+                }
+                const entry = catalog.find(m => m && m.id === modelId && typeof m.build === 'function');
+                if (entry) {
+                    try {
+                        const sharedMesh = entry.build(THREE);
+                        if (sharedMesh) {
+                            sharedMesh.scale.setScalar(14);
+                            this.group3d.add(sharedMesh);
+                            return;
+                        }
+                    } catch (_) {}
+                }
+            }
             const ProceduralTextures = window.GraveGainProceduralTextures;
             const style = EnemyEntity.STYLES[this.variantKey] || {};
             const bodyColor = (style.body !== undefined) ? style.body : this.bloodColor;

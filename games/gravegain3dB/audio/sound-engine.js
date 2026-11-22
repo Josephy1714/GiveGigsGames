@@ -385,6 +385,8 @@ class SoundEngine {
     }
 
     startAmbientMusic() {
+        // Constant background hum disabled
+        return;
         this.initCtx();
         if (!this.ctx) return;
         if (this.ctx.state === 'closed') return;
