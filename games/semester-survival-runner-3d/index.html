@@ -272,7 +272,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  probeObstacle:({action="jump",jump=0,slide=0,lane=1,obstacleLane=1}={})=>{
   if(!g||!g.on)return null;
   const saved={energy:g.energy,hit:g.hit,hitTimer:g.hitTimer,recoveryTimer:g.recoveryTimer,pendingFinish:g.pendingFinish,inv:g.inv,obs:g.obs,pick:g.pick,spawn:g.spawn,jump:g.jump,slide:g.slide,lane:g.lane,d:g.d,coins:g.coins,t:g.t,speed:g.speed,shield:g.shield};
-  g.energy=100;g.hit=false;g.hitTimer=0;g.recoveryTimer=0;g.pendingFinish=null;g.inv=0;g.obs=[{lane:obstacleLane,z:.83,action,label:"SMOKE TEST"}];g.pick=[];g.spawn=10;g.jump=jump;g.slide=slide;g.lane=lane;g.shield=false;
+  g.energy=100;g.hit=false;g.hitTimer=0;g.recoveryTimer=0;g.pendingFinish=null;g.inv=0;g.obs=[{lane:obstacleLane,z:.87,action,label:"SMOKE TEST"}];g.pick=[];g.spawn=10;g.jump=jump;g.slide=slide;g.lane=lane;g.shield=false;
   tick(.03);
   const result={hit:g.hit,energy:g.energy,damage:100-g.energy};
   Object.assign(g,saved);
