@@ -1,0 +1,48 @@
+name: Jay unified animation asset build
+
+on:
+  push:
+    branches: [jay-continuous-run-asset-work]
+    paths:
+      - 'games/semester-survival-runner-3d/assets/*.fbx'
+      - 'games/semester-survival-runner-3d/tools/build-jay-unified.py'
+      - 'games/semester-survival-runner-3d/tools/inspect-jay-run.py'
+      - '.github/workflows/jay-continuous-run-asset-work.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Blender and FBX compatibility dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          sudo grep -RIl 'Non-Color' /usr/share/blender/scripts | xargs -r sudo sed -i 's/Non-Color/Linear/g'
+          BLENDER_PYTHON=$(blender --background --python-expr "import sys; print(sys.executable)" 2>/dev/null | grep "^/" | tail -n 1)
+          test -x "$BLENDER_PYTHON"
+          curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+          "$BLENDER_PYTHON" /tmp/get-pip.py
+          "$BLENDER_PYTHON" -m pip install --no-cache-dir numpy
+      - name: Build one unified Jay GLB from the original FBX sources
+        run: |
+          blender --background --python games/semester-survival-runner-3d/tools/build-jay-unified.py
+      - name: Inspect the original running animation for root motion and cyclic seams
+        run: |
+          blender --background --python games/semester-survival-runner-3d/tools/inspect-jay-run.py
+      - name: Commit the separate unified character asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add games/semester-survival-runner-3d/assets/3d/jay/jay-unified.glb
+          if git diff --cached --quiet; then
+            echo "Unified Jay asset unchanged."
+          else
+            git commit -m "Build separate unified Jay character and animation asset [skip ci]"
+            git push origin HEAD:jay-continuous-run-asset-work
+          fi
