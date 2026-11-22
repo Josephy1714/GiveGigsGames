@@ -262,7 +262,11 @@ export async function loadJayCharacter({
       }
       return { ok: true, state, changed: false };
     }
-    const previous = activeState ? actions[activeState] : null;
+    const previous = activeState
+      ? activeState === "run" && runApproachCompleted
+        ? runLoopAction
+        : actions[activeState]
+      : null;
     if (previous === action) {
       activeState = state;
       action.setEffectiveTimeScale(timeScale);
