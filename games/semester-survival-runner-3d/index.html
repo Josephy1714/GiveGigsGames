@@ -257,6 +257,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   g.d=1000;g.bossAt=2000;g.bossActive=true;g.bossQueue=[];g.bossClock=1;g.bossLabel="SMOKE BOSS";g.bossNumber=1;g.bossCleared=0;g.spawn=10;g.obs=[];g.energy=40;g.inv=1;g.hit=false;g.hitTimer=0;g.recoveryTimer=0;g.pendingFinish=null;g.t=0;g.speed=345;g.lane=1;g.jump=0;g.slide=0;g.bonus=[];g.pick=[];g.coins=0;
   tick(.01);
   const result={active:g.bossActive,cleared:g.bossCleared,coins:g.coins,energy:g.energy,nextAt:g.bossAt};
+  for(const key of Object.keys(g)){if(!(key in saved))delete g[key];}
   Object.assign(g,saved);
   return result;
  },
