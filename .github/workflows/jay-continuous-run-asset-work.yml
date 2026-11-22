@@ -7,6 +7,8 @@ on:
       - 'games/semester-survival-runner-3d/assets/*.fbx'
       - 'games/semester-survival-runner-3d/tools/build-jay-unified.py'
       - 'games/semester-survival-runner-3d/tools/inspect-jay-run.py'
+      - 'games/semester-survival-runner-3d/tests/jay-unified-smoke.html'
+      - 'games/semester-survival-runner-3d/tests/jay-unified-smoke.mjs'
       - '.github/workflows/jay-continuous-run-asset-work.yml'
 
 permissions:
