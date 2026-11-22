@@ -291,7 +291,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  },
  probeCarCollision:({lane=1,jump=1,vehicleIndex=0}={})=>threeRenderer?.probeTrafficCollision(g,{lane,jump,vehicleIndex})??null,
  probeVehicleObstacle:({jump=0}={})=>{
-  if(!g||!g.on)return null;
+  if(!g)return null;
   const saved={...g};
   g.t=0;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactShakeScale=1;g.hitTimer=0;g.recoveryTimer=0;g.pendingFinish=null;g.inv=0;g.energy=100;g.speed=367;g.baseSpeed=367;g.d=0;g.jump=jump;g.slide=0;g.slidePhase=null;g.lane=1;g.spawn=10;g.obs=[{vehicle:true,label:"SMOKE TEST CAR",action:"lane",lane:1,z:.87}];g.pick=[];g.coins=0;g.focusTime=0;g.shield=false;
   tick(.01);
