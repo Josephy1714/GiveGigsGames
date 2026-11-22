@@ -194,7 +194,14 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  mount.dataset.jayClips=jayRig.availableClips.join(",");
  mount.dataset.jayMouthMorphsNeutralized=String(jayRig.neutralizedMouthMorphs.length);
  mount.dataset.jayMouthPose="neutral";
- const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
+ const obstacles=Array.from({length:18},()=>{
+  const g=new THREE.Group(),jump=new THREE.Group(),slide=new THREE.Group();
+  box(jump,2.55,.66,.72,m.obstacle,0,.36,0);box(jump,2.62,.1,.78,m.warning,0,.72,0);box(jump,.9,.12,.08,m.white,0,.42,.38);
+  g.add(jump);
+  box(slide,3.05,.28,.62,m.warning,0,1.58,0);box(slide,3.12,.08,.68,m.white,0,1.4,.02);
+  for(const x of [-1.42,1.42])box(slide,.22,1.48,.58,m.obstacle,x,.74,0);
+  g.add(slide);g.userData.jump=jump;g.userData.slide=slide;scene.add(g);g.visible=false;return g;
+});
  const lateBuses=Array.from({length:8},(_,i)=>{const v=car(scene,0,-500,[0x315d78,0x9a4c39,0xc1a65e][i],m,["shuttle","matatu","car"][i]);v.visible=false;return v;});
  mount.dataset.vehicleObstacleModels=String(lateBuses.length);
  const coins=Array.from({length:36},()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.34,.105,10,20),m.gold);o.rotation.x=Math.PI/2;scene.add(o);o.visible=false;return o;});
@@ -234,7 +241,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
   {
-   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2+(impactPulse*.9);
+   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2+(impactPulse*.18);
    jayRig.root.rotation.y=Math.PI; // Face down the track, away from the follow camera.
    jayRig.root.rotation.z=laneLean+impactPulse*(playerX<-.1?.075:playerX>.1?-.075:0);
    jayRig.root.rotation.x=impactPulse*.065;
@@ -244,9 +251,9 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;
-   const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);jayRig.root.position.z=2+(impactPulse*.9);
+   const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);jayRig.root.position.z=2+(impactPulse*.18);
   }
-  let n=0,busN=0;for(const o of g.obs||[]){if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
+  let n=0,busN=0;for(const o of g.obs||[]){if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const scale=o.boss?1.25:1;v.scale.setScalar(scale);v.userData.slide.visible=o.action==="slide";v.userData.jump.visible=o.action!=="slide";}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
