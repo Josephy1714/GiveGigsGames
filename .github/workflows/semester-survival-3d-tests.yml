@@ -78,7 +78,7 @@ jobs:
           doc = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" "))
           names = {a.get("name") for a in doc.get("animations", [])}
           expected = {"Idle", "Run", "Run_InPlace", "Jump", "Slide", "Fall"}
-          if names != expected or len(doc.get("animations", [])) != 5:
+          if names != expected or len(doc.get("animations", [])) != 6:
               raise SystemExit(f"Expected the six unified Jay animations; found {sorted(names)}.")
           if not doc.get("skins") or not doc.get("meshes"):
               raise SystemExit("Jay GLB must contain a skinned mesh.")
