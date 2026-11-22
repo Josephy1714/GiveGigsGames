@@ -45,8 +45,6 @@ jobs:
           curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
           "$BLENDER_PYTHON" /tmp/get-pip.py
           "$BLENDER_PYTHON" -m pip install --no-cache-dir numpy
-          # Normalize the color-space label expected by Mixamo FBX materials.
-          sudo grep -RIl 'Non-Color' /usr/share/blender/scripts | xargs -r sudo sed -i 's/Non-Color/Linear/g'
       - name: Merge Ajay rig and all supplied Mixamo clips
         run: |
           blender --background --python games/semester-survival-runner-3d/tools/build-jay-glb.py
