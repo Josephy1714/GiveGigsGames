@@ -75,7 +75,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     const bossClearProbe = await page.evaluate(() => window.__runnerSmoke.probeBossClear());
     assert.equal(bossClearProbe.cleared, 1, "clearing the boss must advance its cleared count");
     assert.equal(bossClearProbe.coins, 125, "semester-eight boss reward must be awarded");
-    assert.equal(bossClearProbe.energy, 52, "boss victory must restore energy");
+    assert.ok(Math.abs(bossClearProbe.energy - 52) < 0.01, "boss victory must restore energy, allowing the frame energy drain");
     await page.waitForTimeout(6000);
     assert.equal(await world.getAttribute("data-jay-run-phase"), "loop", "Jay must remain in the endless run loop after the forward approach finishes");
     const lateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
