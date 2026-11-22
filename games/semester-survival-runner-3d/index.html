@@ -280,9 +280,12 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  },
  probeImpactCamera:()=>{
   if(!g||!g.on||!threeRenderer)return null;
-  const sample=(hitTimer,offset)=>{threeRenderer.render({...g,t:g.t+offset,hitTimer});const node=$("#three-world");return {base:Number(node.dataset.cameraBaseX),world:Number(node.dataset.cameraWorldX),shakeX:Number(node.dataset.cameraShakeX),shakeY:Number(node.dataset.cameraShakeY)};};
-  const impact=sample(.62,.031);
-  const recovered=sample(0,.062);
+  const sample=(hitTimer,time)=>{threeRenderer.render({...g,t:time,hitTimer});const node=$("#three-world");return {base:Number(node.dataset.cameraBaseX),world:Number(node.dataset.cameraWorldX),shakeX:Number(node.dataset.cameraShakeX),shakeY:Number(node.dataset.cameraShakeY)};};
+  // Choose a nearby phase where both original shake oscillators are visibly active.
+  let impactTime=g.t+.001,best=-1;
+  for(let i=0;i<24;i++){const candidate=g.t+.001+i*.035;const score=Math.abs(Math.sin(candidate*48))+.7*Math.abs(Math.sin(candidate*36));if(score>best){best=score;impactTime=candidate;}}
+  const impact=sample(.62,impactTime);
+  const recovered=sample(0,impactTime+.031);
   return {impact,recovered};
  },
  probeLateBus:()=>{
