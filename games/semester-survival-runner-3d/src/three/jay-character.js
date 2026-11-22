@@ -1,5 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+import { prepareRunClips } from "./run-motion.js";
 
 const CLIP_ALIASES = Object.freeze({
   idle: ["idle", "breathing", "breathingidle", "stand"],
@@ -75,73 +76,6 @@ function neutralizeOpenMouthMorphs(root) {
   return [...new Set(neutralized)];
 }
 
-function makeRunInPlace(clip) {
-  if (!clip) return { clip, removedTracks: 0, lockedAxes: 0, trackNames: [] };
-
-  const copy = clip.clone();
-  let removedTracks = 0;
-  let lockedAxes = 0;
-  const trackNames = [];
-
-  copy.tracks = copy.tracks.map(track => {
-    if (!/\\.position$/i.test(track.name || "")) return track;
-
-    const bindingPath = String(track.name).replace(/\\.position$/i, "");
-    const nodePath = bindingPath.replace(/[^a-z0-9]/gi, "").toLowerCase();
-    const isHips = /(hips|pelvis|waist)/i.test(nodePath);
-    const isRoot = !isHips && /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
-    if (!isHips && !isRoot) return track;
-
-    const size = track.getValueSize();
-    if (size < 3 || !track.values || track.values.length < size) return track;
-
-    const values = Array.from(track.values);
-    const keyCount = Math.floor(values.length / size);
-    if (keyCount < 2) return track;
-
-    // Do not assume the last key is the forward endpoint. Some authored run
-    // cycles travel forward and then return before the clip ends. Find the
-    // keyframe furthest from the starting horizontal position instead.
-    const firstX = values[0];
-    const firstZ = values[2];
-    let endpoint = 0;
-    let greatestTravelSquared = -1;
-    for (let key = 0; key < keyCount; key += 1) {
-      const offset = key * size;
-      const dx = values[offset] - firstX;
-      const dz = values[offset + 2] - firstZ;
-      const travelSquared = dx * dx + dz * dz;
-      if (travelSquared > greatestTravelSquared) {
-        greatestTravelSquared = travelSquared;
-        endpoint = key;
-      }
-    }
-
-    const endpointOffset = endpoint * size;
-    const frontX = values[endpointOffset];
-    const frontY = values[endpointOffset + 1];
-    const frontZ = values[endpointOffset + 2];
-
-    // Freeze horizontal travel at the actual frontmost sampled pose. Preserve
-    // pelvis bounce; freeze the armature/root vertically to avoid drift.
-    for (let key = 0; key < keyCount; key += 1) {
-      const offset = key * size;
-      values[offset] = frontX;
-      values[offset + 2] = frontZ;
-      if (isRoot) values[offset + 1] = frontY;
-    }
-
-    removedTracks += 1;
-    lockedAxes += isRoot ? 3 : 2;
-    trackNames.push(track.name);
-    return new track.constructor(track.name, track.times, values, track.getInterpolation());
-  });
-
-  copy.name = "Run_In_Place";
-  copy.resetDuration();
-  return { clip: copy, removedTracks, lockedAxes, trackNames };
-}
-
 function resolveClips(clips) {
   const byName = new Map(clips.map(clip => [normaliseClipName(clip.name), clip]));
   const resolved = {};
@@ -204,10 +138,11 @@ export async function loadJayCharacter({
   }
 
   const { resolved, missing } = resolveClips(gltf.animations || []);
-  // Jay gets one authored forward-moving run. A second, in-place clip is
-  // prepared from its final/root-forward pose for all subsequent run cycles.
-  const runApproachClip = resolved.run;
-  const runMotion = makeRunInPlace(runApproachClip);
+  // Split the authored run at its furthest forward root pose. The approach
+  // plays once and stops there; the endless loop keeps the skeleton running
+  // while the world supplies continuous forward travel.
+  const runMotion = prepareRunClips(resolved.run, THREE);
+  resolved.run = runMotion.approachClip;
   const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
@@ -241,7 +176,7 @@ export async function loadJayCharacter({
 
   // The first run uses the untouched authored clip exactly once. When it
   // finishes, the stationary loop holds the clip's final forward position.
-  const runLoopAction = mixer.clipAction(runMotion.clip);
+  const runLoopAction = mixer.clipAction(runMotion.loopClip);
   runLoopAction.enabled = true;
   runLoopAction.clampWhenFinished = false;
   runLoopAction.setLoop(THREE.LoopRepeat, Infinity);
@@ -335,9 +270,12 @@ export async function loadJayCharacter({
     availableClips: Object.freeze(Object.keys(actions)),
     missingClips: Object.freeze(missing),
     neutralizedMouthMorphs: Object.freeze(neutralizedMouthMorphs),
-    runMotionTracksRemoved: runMotion.removedTracks,
-    runMotionAxesLocked: runMotion.lockedAxes,
-    runMotionTrackNames: Object.freeze(runMotion.trackNames),
+    runMotionTracksRemoved: runMotion.rootMotionTrackNames.length,
+    runMotionAxesLocked: runMotion.rootMotionTrackNames.length * 2,
+    runMotionTrackNames: Object.freeze(runMotion.rootMotionTrackNames),
+    runApproachEndpointSeconds: runMotion.endpointTime,
+    runMotionFound: runMotion.rootMotionFound,
+    runMotionUsedFallback: Boolean(runMotion.usedFallback),
     play,
     update,
     dispose,
