@@ -174,9 +174,9 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
- let jayRig=null,rigBaseY=0,rigBaseScaleY=1,lastGameT=0,playerX=0;
+ let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0;
  jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});
- rigBaseY=jayRig.root.position.y;rigBaseScaleY=jayRig.root.scale.y;
+ rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
  console.info("Jay production 3D rig loaded",jayRig.availableClips);
  mount.dataset.rendererReady="true";
  mount.dataset.jayClipCount=String(jayRig.availableClips.length);
@@ -192,18 +192,26 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
+  const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
+  const laneLean=clamp(-lateralSpeed*.035,-.14,.14);
+  if(g.hit&&!wasHit)impactPulse=1;wasHit=!!g.hit;impactPulse=Math.max(0,impactPulse-dt*3.8);
+  const airborne=Number(g.jump)>0;if(previousJump>0&&!airborne)landingPulse=1;previousJump=airborne?g.jump:0;landingPulse=Math.max(0,landingPulse-dt*5.5);
   const impact=clamp((Number(g.hitTimer)||0)/.62,0,1);
   camera.position.x=THREE.MathUtils.damp(camera.position.x,playerX*.075,2.8,dt)+Math.sin(g.t*48)*impact*.035;
   camera.position.y=5.2+Math.sin(g.t*36)*impact*.025;
-  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(playerX*.035,1.1,-13);
+  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(playerX*.035,1.1+jumpY*.055,-13);
   impactRing.visible=impact>.015;impactRing.position.x=playerX;impactRing.scale.setScalar(.75+(1-impact)*1.8);impactRing.material.opacity=impact*.58;
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
   {
-   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY;jayRig.root.position.z=2;
+   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2;
+   jayRig.root.rotation.z=laneLean+impactPulse*(playerX<-.1?.075:playerX>.1?-.075:0);
+   jayRig.root.rotation.x=impactPulse*.065;
+   const slideScale=animationState.startsWith("slide-")?.94:1;
+   jayRig.root.scale.set(rigBaseScaleX*(1+landingPulse*.035),rigBaseScaleY*slideScale*(1-landingPulse*.075),rigBaseScaleZ*(1+landingPulse*.035));
+   mount.dataset.jayLean=laneLean.toFixed(3);mount.dataset.jayImpact=impactPulse.toFixed(2);mount.dataset.jayLanding=landingPulse.toFixed(2);
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
-   jayRig.root.scale.y=rigBaseScaleY*(animationState.startsWith("slide-")?.94:1);
    mount.dataset.activeAnimation=chosen;
    jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
   }
