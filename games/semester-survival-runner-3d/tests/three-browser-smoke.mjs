@@ -8,6 +8,14 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"]
   });
   const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
+  await page.addInitScript(() => {
+    localStorage.setItem("semester-survival-runner-3d-v1", JSON.stringify({
+      version: 1, semester: 8, semesterDistance: 990, gpa: 3.2, coins: 0,
+      totalDistance: 0, best: 0, runs: 0, collected: 0, cats: 0,
+      up: { magnet: 0, shield: 0, double: 0, head: 0, score: 0, coffee: 0 },
+      sound: true, vibration: true, motion: false, quality: "High", shop: []
+    }));
+  });
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(error.message));
   try {
@@ -50,6 +58,24 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.jayRunPhase === "loop", null, { timeout: 12000 });
+    const coinProbe = await page.evaluate(() => window.__runnerSmoke.probeCoin());
+    assert.equal(coinProbe.coins, 1, "same-lane coin pickup must award a coin");
+    assert.equal(coinProbe.remaining, 0, "collected coins must leave the active world");
+    const powerupProbe = await page.evaluate(() => window.__runnerSmoke.probePowerup({ kind: "COFFEE", type: "food" }));
+    assert.equal(powerupProbe.collected, 1, "campus power-ups must be collectible");
+    assert.ok(powerupProbe.energy > 50, "energy power-ups must restore energy");
+    assert.equal(powerupProbe.remaining, 0, "collected power-ups must leave the active world");
+    const collisionProbe = await page.evaluate(() => window.__runnerSmoke.probeObstacle({ action: "jump", jump: 0 }));
+    assert.equal(collisionProbe.hit, true, "a mistimed jump must register an obstacle collision");
+    assert.equal(collisionProbe.energy, 68, "a standard obstacle collision must apply the expected energy penalty");
+    const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
+    assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
+    assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
+    assert.equal(bossProbe.queued, 3, "boss challenge must queue all three attacks");
+    const bossClearProbe = await page.evaluate(() => window.__runnerSmoke.probeBossClear());
+    assert.equal(bossClearProbe.cleared, 1, "clearing the boss must advance its cleared count");
+    assert.equal(bossClearProbe.coins, 125, "semester-eight boss reward must be awarded");
+    assert.equal(bossClearProbe.energy, 52, "boss victory must restore energy");
     await page.waitForTimeout(6000);
     assert.equal(await world.getAttribute("data-jay-run-phase"), "loop", "Jay must remain in the endless run loop after the forward approach finishes");
     const lateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
@@ -71,6 +97,22 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "slide", null, { timeout: 2500 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 4000 });
 
+    await page.locator("#pause").click();
+    await page.waitForFunction(() => document.querySelector("#pause-modal")?.classList.contains("show"), null, { timeout: 2000 });
+    assert.equal(await page.evaluate(() => window.__runnerSmoke.state().paused), true, "pause must stop the simulation");
+    await page.locator("#resume").click();
+    await page.waitForFunction(() => !window.__runnerSmoke.state().paused, null, { timeout: 2000 });
+    await page.evaluate(() => window.__runnerSmoke.endRun(20));
+    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 2000 });
+    assert.equal(await page.locator("#result-title").textContent(), "YOU GRADUATED!", "finishing the eighth semester must unlock graduation");
+    const graduationSave = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
+    assert.equal(graduationSave.semester, 9, "graduation must persist the alumni semester");
+    assert.equal(graduationSave.graduated, true, "graduation status must persist");
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.rendererReady === "true", null, { timeout: 60000 });
+    await page.locator('[data-page="journey"]').first().click();
+    assert.equal(await page.locator("#semester-grid .semester-card").count(), 8, "the journey must display all eight semesters");
+    assert.equal(await page.locator("#semester-grid .semester-card:not(.locked)").count(), 8, "all semesters must remain cleared after reload");
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
   } finally {
     await browser.close();
