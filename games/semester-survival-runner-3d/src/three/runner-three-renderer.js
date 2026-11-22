@@ -177,10 +177,10 @@ export async function createRunnerRenderer({mount}={}){
   const animationState=resolveRunnerAnimationState(g);
   {
    jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY;jayRig.root.position.z=2;
-   const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState;
+   const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    jayRig.root.scale.y=rigBaseScaleY*(animationState.startsWith("slide-")?.94:1);
-   jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:animationState==="fall-accidental"?1.45:1});jayRig.update(dt);
+   jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
   }
   let n=0;for(const o of g.obs||[]){if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
