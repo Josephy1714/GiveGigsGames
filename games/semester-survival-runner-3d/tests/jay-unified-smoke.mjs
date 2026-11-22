@@ -18,7 +18,8 @@ try {
   assert.equal(result.ok, true, result.error || "Jay unified browser validation failed.");
   assert.equal(result.checks.loopsSimulated, 101);
   assert.equal(result.checks.actionStillRunning, true);
-  assert.ok(result.checks.maxHipsSeamErrorAcrossLoops <= 0.003);
+  assert.ok(result.checks.maxBonePositionErrorAcrossLoops <= 0.003);
+  assert.ok(result.checks.maxBoneRotationErrorAcrossLoops <= 0.002);
   assert.ok(result.checks.footMidCycleQuaternionDelta > 0.002);
 } finally {
   await browser.close();
