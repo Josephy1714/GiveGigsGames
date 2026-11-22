@@ -180,7 +180,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  console.info("Jay production 3D rig loaded",jayRig.availableClips);
  mount.dataset.rendererReady="true";
  mount.dataset.jayClipCount=String(jayRig.availableClips.length);
- mount.dataset.jayClips=jayRig.availableClips.join(",");
+ mount.dataset.jayClips=jayRig.availableClips.join(",");\n mount.dataset.jayMouthMorphsNeutralized=String(jayRig.neutralizedMouthMorphs.length);\n mount.dataset.jayMouthPose="neutral";
  const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
  const lateBuses=Array.from({length:3},()=>{const v=car(scene,0,-500,0x315d78,m,"shuttle");v.visible=false;return v;});
  mount.dataset.vehicleObstacleModels=String(lateBuses.length);
