@@ -15,6 +15,8 @@ const manifest={clips:{
 test("runner state maps to authored jump, slide phases, jog and sprint clips",()=>{
  assert.equal(resolveRunnerAnimationState({jump:1,speed:400}),"jump-running");
  assert.equal(resolveRunnerAnimationState({hitTimer:.5,jump:1}),"fall-accidental");
+ assert.equal(resolveRunnerAnimationState({hitTimer:0,recoveryTimer:.8}),"get-up");
+ assert.equal(resolveRunnerAnimationState({hitTimer:.2,recoveryTimer:.8}),"fall-accidental");
  assert.equal(resolveRunnerAnimationState({hitTimer:0,jump:1}),"jump-running");
  assert.equal(resolveRunnerAnimationState({slidePhase:"start",speed:400}),"slide-start");
  assert.equal(resolveRunnerAnimationState({slidePhase:"loop",speed:400}),"slide-loop");
