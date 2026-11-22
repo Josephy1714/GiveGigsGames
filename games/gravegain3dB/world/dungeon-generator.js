@@ -107,7 +107,7 @@
 
 class DungeonGenerator {
     constructor() {
-        this.gridSize = 70;
+        this.gridSize = 48;
         this.tileSize = 48;
     }
 
@@ -126,7 +126,7 @@ class DungeonGenerator {
 
             let overlaps = false;
             for (const r of rooms) {
-                if (x < r.x + r.w + 2 && x + w > r.x - 2 && y < r.y + r.h + 2 && y + h > r.y - 2) {
+                if (x < r.x + r.w + 1 && x + w > r.x - 1 && y < r.y + r.h + 1 && y + h > r.y - 1) {
                     overlaps = true;
                     break;
                 }
@@ -255,9 +255,9 @@ class DungeonGenerator {
                 [-88, -118, 0], [-88, 0, 42], [78, 0, 84], [78, 54, 84]
             ].map(([dx, dz, elevation]) => ({ x: x + dx, z: z + dz, elevation }));
             const launchPad = { x: x + 78, z: z + 112, radius: 12, landingX: x + 78, landingZ: z + 56, landingHeight: 84 };
-            // Carry the vertical combat language beyond the main arena: up to
-            // eight rooms per floor gain traversable balconies and jump-up perches.
-            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss').slice(0, 8);
+            // Carry the vertical combat language beyond the main arena: all
+            // combat rooms gain traversable balconies, stairs, and jump-up perches.
+            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss');
             for (const [roomIndex, room] of overlookRooms.entries()) {
                 const roomX = (room.x + room.w / 2) * 48;
                 const roomZ = (room.y + room.h / 2) * 48;
@@ -282,6 +282,7 @@ class DungeonGenerator {
                     addOverlook(-72, -24, 20, 62, 108, 3);
                 }
             }
+            this.connectAdjacentRooms(grid, rooms, surfaces);
             arena = { room: arenaRoom, ceiling: 224, overlookRooms, surfaces, pursuitRoute, launchPad };
         }
         return {
@@ -294,6 +295,71 @@ class DungeonGenerator {
             },
             hazardLegend: HAZARD_LEGEND
         };
+    }
+
+    connectAdjacentRooms(grid, rooms, surfaces) {
+        const ts = this.tileSize || 48;
+        const addWindowSill = (gx, gy) => {
+            const cx = (gx + 0.5) * ts;
+            const cz = (gy + 0.5) * ts;
+            surfaces.push({
+                minX: cx - ts * 0.5,
+                maxX: cx + ts * 0.5,
+                minZ: cz - ts * 0.5,
+                maxZ: cz + ts * 0.5,
+                top: 22,
+                bottom: 0,
+                level: 1
+            });
+        };
+
+        for (let i = 0; i < rooms.length; i++) {
+            const a = rooms[i];
+            for (let j = i + 1; j < rooms.length; j++) {
+                const b = rooms[j];
+                // Check horizontal adjacency (1-tile or 2-tile wall between them)
+                const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w));
+                const overlapYStart = Math.max(a.y, b.y) + 1;
+                const overlapYEnd = Math.min(a.y + a.h, b.y + b.h) - 1;
+                if (gapX >= 1 && gapX <= 2 && overlapYEnd - overlapYStart >= 2) {
+                    const wallStart = a.x + a.w <= b.x ? a.x + a.w : b.x + b.w;
+                    const midY = Math.floor((overlapYStart + overlapYEnd) / 2);
+                    for (let wx = wallStart; wx < wallStart + gapX; wx++) {
+                        grid[wx][midY] = TILE.FLOOR;
+                        if (midY + 1 < this.gridSize - 1) grid[wx][midY + 1] = TILE.FLOOR;
+                    }
+                    // Add a window on the other side of the shared wall if wide enough
+                    if (overlapYEnd - overlapYStart >= 4) {
+                        const winY = overlapYStart;
+                        for (let wx = wallStart; wx < wallStart + gapX; wx++) {
+                            grid[wx][winY] = TILE.FLOOR;
+                            addWindowSill(wx, winY);
+                        }
+                    }
+                    continue;
+                }
+
+                // Check vertical adjacency (1-tile or 2-tile wall between them)
+                const gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+                const overlapXStart = Math.max(a.x, b.x) + 1;
+                const overlapXEnd = Math.min(a.x + a.w, b.x + b.w) - 1;
+                if (gapY >= 1 && gapY <= 2 && overlapXEnd - overlapXStart >= 2) {
+                    const wallStart = a.y + a.h <= b.y ? a.y + a.h : b.y + b.h;
+                    const midX = Math.floor((overlapXStart + overlapXEnd) / 2);
+                    for (let wy = wallStart; wy < wallStart + gapY; wy++) {
+                        grid[midX][wy] = TILE.FLOOR;
+                        if (midX + 1 < this.gridSize - 1) grid[midX + 1][wy] = TILE.FLOOR;
+                    }
+                    if (overlapXEnd - overlapXStart >= 4) {
+                        const winX = overlapXStart;
+                        for (let wy = wallStart; wy < wallStart + gapY; wy++) {
+                            grid[winX][wy] = TILE.FLOOR;
+                            addWindowSill(winX, wy);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     ensureRoomRoutes(grid, spawnRoom, rooms) {

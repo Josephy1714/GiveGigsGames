@@ -14,7 +14,7 @@
     const BotanySeeds = GameData.BotanySeeds;
     const ArmoryUpgrades = GameData.ArmoryUpgrades;
     const RoguelikePerks = GameData.RoguelikePerks;
-    const FPS_STARTING_WEAPON_IDS = ['rifle', 'sidearm', 'scattergun'];
+    const FPS_STARTING_WEAPON_IDS = ['sidearm'];
     const WEAPON_SLOT_LIMIT = 4;
     const FPS_WEAPONS = [
         { id: 'smg', name: 'WICK SMG', magazine: 36, reserve: 144, damage: 15, meleeDamage: 18, fireRate: 0.065, reload: 1.28, range: 490, falloffStart: 205, minDamageScale: 0.36, adsFov: 65, spreadScale: 1.15, pellets: 1, automatic: true, recoilPattern: [[-0.003, 0.004], [0.003, 0.005], [0, 0.006]] },
@@ -22,7 +22,15 @@
         { id: 'rifle', name: 'M4 CARBINE', magazine: 30, reserve: 120, damage: 24, meleeDamage: 22, fireRate: 0.105, reload: 1.65, range: 850, falloffStart: 500, minDamageScale: 0.68, adsFov: 58, spreadScale: 1, pellets: 1, automatic: true, secondaryMagazine: 2, secondaryReserve: 4, secondaryDamage: 78, secondaryRadius: 96, secondaryFireRate: 0.78, recoilPattern: [[0.0015, 0.005], [-0.002, 0.006], [0.0025, 0.0065], [-0.003, 0.007], [0.0015, 0.008], [-0.001, 0.0085], [0.003, 0.009], [-0.002, 0.0095]], adsRecoilPattern: [[0.0005, 0.0028], [-0.0008, 0.0031], [0.001, 0.0035], [-0.0012, 0.0038], [0.0006, 0.0042], [-0.0005, 0.0045], [0.0012, 0.0048], [-0.0008, 0.005]] },
         { id: 'sidearm', name: 'SERVICE PISTOL', magazine: 12, reserve: 60, damage: 31, meleeDamage: 18, fireRate: 0.26, reload: 1.25, range: 650, falloffStart: 300, minDamageScale: 0.6, adsFov: 62, spreadScale: 0.8, pellets: 1, automatic: false, recoilPattern: [[0, 0.013], [0.002, 0.015], [-0.002, 0.014], [0.001, 0.016]], adsRecoilPattern: [[0, 0.008], [0.001, 0.009], [-0.001, 0.0085], [0.0005, 0.0095]] },
         { id: 'scattergun', name: 'BREACH SHOTGUN', magazine: 6, reserve: 36, damage: 9, meleeDamage: 27, fireRate: 0.72, reload: 1.9, shellReload: 0.48, continuousReload: true, range: 360, falloffStart: 120, minDamageScale: 0.28, adsFov: 64, spreadScale: 4.5, pellets: 7, automatic: false, recoilPattern: [[0, 0.028]], adsRecoilPattern: [[0, 0.019]] },
-        { id: 'sniper', name: 'WRAITH BOLT SNIPER', magazine: 5, reserve: 25, damage: 84, meleeDamage: 24, fireRate: 0.82, boltCycle: 0.28, reload: 2.15, range: 1250, falloffStart: 720, minDamageScale: 0.58, adsFov: 26, spreadScale: 0.46, pellets: 1, automatic: false, recoilPattern: [[0.0008, 0.042]], adsRecoilPattern: [[0.0003, 0.019]] }
+        { id: 'sniper', name: 'WRAITH BOLT SNIPER', magazine: 5, reserve: 25, damage: 84, meleeDamage: 24, fireRate: 0.82, boltCycle: 0.28, reload: 2.15, range: 1250, falloffStart: 720, minDamageScale: 0.58, adsFov: 26, spreadScale: 0.46, pellets: 1, automatic: false, recoilPattern: [[0.0008, 0.042]], adsRecoilPattern: [[0.0003, 0.019]] },
+        { id: 'lmg', name: 'IRONCLAD LMG', magazine: 75, reserve: 225, damage: 20, meleeDamage: 25, fireRate: 0.092, reload: 2.6, range: 780, falloffStart: 420, minDamageScale: 0.58, adsFov: 60, spreadScale: 1.25, pellets: 1, automatic: true, recoilPattern: [[0.002, 0.006], [-0.0025, 0.0065], [0.0015, 0.007], [-0.0015, 0.0075]], adsRecoilPattern: [[0.0008, 0.0035], [-0.001, 0.0038]] },
+        { id: 'dmr', name: 'SEPULCHER DMR', magazine: 14, reserve: 70, damage: 48, meleeDamage: 22, fireRate: 0.28, reload: 1.75, range: 1050, falloffStart: 620, minDamageScale: 0.65, adsFov: 42, spreadScale: 0.55, pellets: 1, automatic: false, recoilPattern: [[0.001, 0.02], [-0.001, 0.022]], adsRecoilPattern: [[0.0004, 0.011]] },
+        { id: 'burst', name: 'TRIAD PULSE RIFLE', magazine: 27, reserve: 135, damage: 26, meleeDamage: 21, fireRate: 0.085, reload: 1.55, range: 820, falloffStart: 480, minDamageScale: 0.66, adsFov: 54, spreadScale: 0.72, pellets: 1, automatic: true, recoilPattern: [[0.001, 0.0045], [-0.001, 0.005], [0, 0.0055]], adsRecoilPattern: [[0.0004, 0.0024], [-0.0004, 0.0026]] },
+        { id: 'revolver', name: 'GRAVEBREAKER REVOLVER', magazine: 6, reserve: 42, damage: 58, meleeDamage: 22, fireRate: 0.42, reload: 1.6, range: 720, falloffStart: 360, minDamageScale: 0.62, adsFov: 58, spreadScale: 0.65, pellets: 1, automatic: false, recoilPattern: [[0, 0.026], [0.002, 0.028]], adsRecoilPattern: [[0, 0.015]] },
+        { id: 'devastator', name: 'DEVASTATOR', magazine: 6, reserve: 24, damage: 70, meleeDamage: 26, fireRate: 0.6, reload: 2.1, range: 720, falloffStart: 720, minDamageScale: 1, adsFov: 60, spreadScale: 0.85, pellets: 1, automatic: false, blastRadius: 82, recoilPattern: [[0, 0.036]] },
+        { id: 'vortex', name: 'VORTEX', magazine: 6, reserve: 30, damage: 90, meleeDamage: 22, fireRate: 0.85, reload: 2.0, range: 1300, falloffStart: 800, minDamageScale: 0.75, adsFov: 32, spreadScale: 0.38, pellets: 1, automatic: false, recoilPattern: [[0, 0.032]], adsRecoilPattern: [[0, 0.014]] },
+        { id: 'c_shotgun', name: 'SHOTGUN', magazine: 8, reserve: 40, damage: 10, meleeDamage: 26, fireRate: 0.48, reload: 1.7, range: 400, falloffStart: 140, minDamageScale: 0.32, adsFov: 64, spreadScale: 4.0, pellets: 5, automatic: false, recoilPattern: [[0, 0.024]], adsRecoilPattern: [[0, 0.016]] },
+        { id: 'electro', name: 'ELECTRO', magazine: 24, reserve: 120, damage: 26, meleeDamage: 20, fireRate: 0.13, reload: 1.5, range: 680, falloffStart: 380, minDamageScale: 0.65, adsFov: 60, spreadScale: 0.9, pellets: 1, automatic: true, blastRadius: 42, recoilPattern: [[0.001, 0.006], [-0.001, 0.006]], adsRecoilPattern: [[0.0005, 0.003]] }
     ];
 
     const ROLL_MAKERS = [
@@ -289,7 +297,7 @@
             this.container = document.getElementById('canvasContainer');
 
             this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: 'high-performance' });
-            this.renderer.setSize(this.container.clientWidth || 1000, this.container.clientHeight || 600);
+            this.renderer.setSize(this.container.clientWidth || 1000, this.container.clientHeight || 600, false);
             // ACES-ish tone mapping when the build supports it (r128 does).
             // Guarded: unknown builds keep the legacy linear pipeline.
             try {
@@ -513,8 +521,8 @@
                     this.performance.pixelRatio = pr;
                     const w = this.container.clientWidth || 1000;
                     const h = this.container.clientHeight || 600;
-                    if (this.canvas.style.width !== w + 'px' || this.canvas.style.height !== h + 'px') {
-                        this.renderer.setSize(w, h);
+                    if (this.canvas.width !== Math.round(w * pr) || this.canvas.height !== Math.round(h * pr)) {
+                        this.renderer.setSize(w, h, false);
                     }
                     if (this.renderer.getPixelRatio() !== pr) this.renderer.setPixelRatio(pr);
                 }
@@ -551,12 +559,17 @@
                         this.camera3d.aspect = w / h;
                         if (typeof this.camera3d.updateProjectionMatrix === 'function') this.camera3d.updateProjectionMatrix();
                     }
-                    if (this.renderer && typeof this.renderer.setSize === 'function') this.renderer.setSize(w, h);
+                    if (this.renderer && typeof this.renderer.setSize === 'function') this.renderer.setSize(w, h, false);
                     if (this.graphics && typeof this.graphics.resize === 'function') this.graphics.resize();
                 } catch (_) { /* pre-init resize must not throw */ }
             };
             window.addEventListener('resize', onResize);
             document.addEventListener('fullscreenchange', onResize);
+            if (typeof ResizeObserver !== 'undefined' && this.container) {
+                this.containerResizeObserver = new ResizeObserver(onResize);
+                this.containerResizeObserver.observe(this.container);
+            }
+            onResize();
             document.addEventListener('visibilitychange', () => {
                 this.graphics.setActive(this.gfxPreset.postFX && !document.hidden);
             });
@@ -790,6 +803,109 @@
 
             const bossBar = document.getElementById('bossBarContainer');
             if (bossBar) bossBar.classList.add('hidden');
+        }
+
+        buildCastleDecorations(wallHeight) {
+            const rooms = this.dungeon?.rooms || [];
+            if (!rooms.length) return;
+            const ts = 48;
+            const dummy = new THREE.Object3D();
+            const pillarTransforms = [];
+            const capTransforms = [];
+            const beamTransforms = [];
+            const bannerTransforms = [];
+
+            for (const room of rooms) {
+                const x0 = room.x * ts;
+                const z0 = room.y * ts;
+                const x1 = (room.x + room.w) * ts;
+                const z1 = (room.y + room.h) * ts;
+
+                // Cornerstone castle pillars in larger rooms
+                if (room.w >= 7 && room.h >= 7) {
+                    const inset = ts * 1.15;
+                    const corners = [
+                        [x0 + inset, z0 + inset],
+                        [x1 - inset, z0 + inset],
+                        [x0 + inset, z1 - inset],
+                        [x1 - inset, z1 - inset]
+                    ];
+                    for (const [px, pz] of corners) {
+                        pillarTransforms.push({ x: px, y: wallHeight * 0.5, z: pz, sx: 1, sy: 1, sz: 1 });
+                        capTransforms.push({ x: px, y: 5, z: pz });
+                        capTransforms.push({ x: px, y: wallHeight - 5, z: pz });
+                    }
+                }
+
+                // Overhead castle timber/stone ceiling beams
+                if (room.w >= 6) {
+                    for (let bz = z0 + ts * 1.5; bz < z1 - ts; bz += ts * 2) {
+                        beamTransforms.push({ x: (x0 + x1) * 0.5, y: wallHeight - 7, z: bz, w: room.w * ts * 0.96 });
+                    }
+                }
+
+                // Hanging royal banners on north/south walls
+                const bannerY = Math.min(wallHeight - 36, 92);
+                bannerTransforms.push({ x: (x0 + x1) * 0.5 - 32, y: bannerY, z: z0 + 2 });
+                bannerTransforms.push({ x: (x0 + x1) * 0.5 + 32, y: bannerY, z: z0 + 2 });
+            }
+
+            const addInstanced = (geo, mat, items, setupFn) => {
+                if (!items.length) return;
+                const mesh = new THREE.InstancedMesh(geo, mat, items.length);
+                mesh.frustumCulled = false;
+                items.forEach((item, i) => {
+                    setupFn(dummy, item);
+                    dummy.updateMatrix();
+                    mesh.setMatrixAt(i, dummy.matrix);
+                });
+                mesh.instanceMatrix.needsUpdate = true;
+                this.scene.add(mesh);
+                this.dungeonMeshes.push(mesh);
+            };
+
+            const stoneMat = new THREE.MeshStandardMaterial({ map: this.textures.wall, color: 0x6b7280, roughness: 0.88, metalness: 0.1 });
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0x3b2618, roughness: 0.9, metalness: 0.08 });
+            const bannerMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.85, side: THREE.DoubleSide });
+
+            addInstanced(new THREE.CylinderGeometry(7, 8, wallHeight, 8), stoneMat, pillarTransforms, (d, p) => {
+                d.position.set(p.x, p.y, p.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.BoxGeometry(20, 10, 20), stoneMat, capTransforms, (d, c) => {
+                d.position.set(c.x, c.y, c.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.BoxGeometry(1, 12, 10), beamMat, beamTransforms, (d, b) => {
+                d.position.set(b.x, b.y, b.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(b.w, 1, 1);
+            });
+            addInstanced(new THREE.PlaneGeometry(18, 42), bannerMat, bannerTransforms, (d, b) => {
+                d.position.set(b.x, b.y, b.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+
+            // Place shared 3D models from /models/ (window.GGG_MODEL_CATALOG) in rooms
+            const catalog = Array.isArray(window.GGG_MODEL_CATALOG) ? window.GGG_MODEL_CATALOG : [];
+            const propEntries = catalog.filter(m => m && typeof m.build === 'function' && (m.category === 'prop' || m.category === 'props' || !m.category));
+            if (propEntries.length) {
+                rooms.forEach((room, idx) => {
+                    const entry = propEntries[idx % propEntries.length];
+                    try {
+                        const mesh = entry.build(THREE);
+                        if (mesh) {
+                            mesh.position.set(room.x * ts + 28, 0, room.y * ts + 28);
+                            mesh.scale.setScalar(12);
+                            this.scene.add(mesh);
+                            this.dungeonMeshes.push(mesh);
+                        }
+                    } catch (_) {}
+                });
+            }
         }
 
         buildDungeonLayer() {
@@ -1035,6 +1151,7 @@
             // Soft cap: past depth 30 the curve plateaus so endless stays hard but finite.
             const diffScale = (1.0 + (Math.min(this.floorIndex, 30) * 0.18)) * this.getMissionScaleMult();
             const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
+            this.buildCastleDecorations(wallHeight);
 
             this.dungeon.rooms.forEach((room, roomIdx) => {
                 // Spawn torch on room wall. PointLights are capped by the

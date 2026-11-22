@@ -18,7 +18,15 @@
                     scattergun: { body: 0x4a3325, accent: 0xb08a55, barrel: 12 },
                     sniper: { body: 0x172b3d, accent: 0x7dd3fc, barrel: 18 },
                     smg: { body: 0x263d34, accent: 0x79b89c, barrel: 8 },
-                    launcher: { body: 0x442e3d, accent: 0xff814a, barrel: 12 }
+                    launcher: { body: 0x442e3d, accent: 0xff814a, barrel: 12 },
+                    lmg: { body: 0x2d3a2e, accent: 0xa3e635, barrel: 14 },
+                    dmr: { body: 0x312e45, accent: 0xc084fc, barrel: 15 },
+                    burst: { body: 0x1e3a4c, accent: 0x38bdf8, barrel: 11 },
+                    revolver: { body: 0x452b2b, accent: 0xfbbf24, barrel: 7 },
+                    devastator: { body: 0x4a2618, accent: 0xff8235, barrel: 13 },
+                    vortex: { body: 0x0f2d3a, accent: 0x3af4ff, barrel: 17 },
+                    c_shotgun: { body: 0x423522, accent: 0xffdb59, barrel: 11 },
+                    electro: { body: 0x2f1e47, accent: 0xca8bff, barrel: 10 }
                 }[weaponId] || { body: 0x263244, accent: 0x64748b, barrel: 10 };
                 const parts = weapon?.parts;
                 const elementColor = { shock: 0x8f9fff, fire: 0xff6548, rot: 0xa7d85a }[weapon?.element];
