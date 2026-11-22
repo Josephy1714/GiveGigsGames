@@ -75,6 +75,28 @@ function neutralizeOpenMouthMorphs(root) {
   return [...new Set(neutralized)];
 }
 
+function makeRunInPlace(clip) {
+  if (!clip) return clip;
+  const copy = clip.clone();
+  copy.tracks = copy.tracks.map(track => {
+    // Mixamo/Blender root and hips translation can move the whole character
+    // forward, then snap it back when LoopRepeat wraps. Keep the authored
+    // vertical bob but lock horizontal root travel for an endless-runner rig.
+    if (!/(?:hips|root|armature)(?:[|:/._]|$)/i.test(track.name) || !/\.position$/i.test(track.name)) return track;
+    const size = track.getValueSize();
+    if (size < 3 || !track.values || track.values.length < size) return track;
+    const values = Array.from(track.values);
+    const firstX = values[0], firstZ = values[2];
+    for (let i = 0; i < values.length; i += size) {
+      values[i] = firstX;
+      values[i + 2] = firstZ;
+    }
+    return new track.constructor(track.name, track.times, values, track.getInterpolation());
+  });
+  copy.name = "Run_In_Place";
+  return copy;
+}
+
 function resolveClips(clips) {
   const byName = new Map(clips.map(clip => [normaliseClipName(clip.name), clip]));
   const resolved = {};
@@ -137,6 +159,7 @@ export async function loadJayCharacter({
   }
 
   const { resolved, missing } = resolveClips(gltf.animations || []);
+  if (resolved.run) resolved.run = makeRunInPlace(resolved.run);
   const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
