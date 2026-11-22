@@ -100,24 +100,20 @@ function makeRunInPlace(clip) {
     if (size < 3 || !track.values || track.values.length < size) return track;
 
     const values = Array.from(track.values);
-    const firstX = values[0];
-    const firstY = values[1];
-    const firstZ = values[2];
     const keyCount = Math.floor(values.length / size);
+    const lastOffset = (keyCount - 1) * size;
+    const frontX = values[lastOffset];
+    const frontY = values[lastOffset + 1];
+    const frontZ = values[lastOffset + 2];
 
+    // This clip is the SECOND phase: once the authored first run reaches its
+    // forward endpoint, hold that exact endpoint for every later loop.
+    // Keep the pelvis' vertical bounce, but remove its horizontal root travel.
     for (let i = 0; i < keyCount; i += 1) {
       const offset = i * size;
-      // The armature/root must remain fixed in world space. The pelvis keeps
-      // its authored vertical bounce, but cannot translate forward/backward.
-      values[offset] = firstX;
-      values[offset + 2] = firstZ;
-      if (isRoot) values[offset + 1] = firstY;
-    }
-
-    // A looping clip must meet itself at the seam. Preserve the pelvis bob
-    // throughout the cycle, but make its final vertical sample meet the first.
-    if (isHips && keyCount > 1) {
-      values[(keyCount - 1) * size + 1] = firstY;
+      values[offset] = frontX;
+      values[offset + 2] = frontZ;
+      if (isRoot) values[offset + 1] = frontY;
     }
 
     removedTracks += 1;
@@ -193,8 +189,10 @@ export async function loadJayCharacter({
   }
 
   const { resolved, missing } = resolveClips(gltf.animations || []);
-  const runMotion = makeRunInPlace(resolved.run);
-  if (resolved.run) resolved.run = runMotion.clip;
+  // Jay gets one authored forward-moving run. A second, in-place clip is
+  // prepared from its final/root-forward pose for all subsequent run cycles.
+  const runApproachClip = resolved.run;
+  const runMotion = makeRunInPlace(runApproachClip);
   const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
@@ -220,18 +218,37 @@ export async function loadJayCharacter({
     action.enabled = true;
     action.clampWhenFinished = state !== "idle" && state !== "run";
     action.setLoop(
-      state === "idle" || state === "run" ? THREE.LoopRepeat : THREE.LoopOnce,
-      state === "idle" || state === "run" ? Infinity : 1
+      state === "idle" ? THREE.LoopRepeat : THREE.LoopOnce,
+      state === "idle" ? Infinity : 1
     );
     actions[state] = action;
   }
 
+  // The first run uses the untouched authored clip exactly once. When it
+  // finishes, the stationary loop holds the clip's final forward position.
+  const runLoopAction = mixer.clipAction(runMotion.clip);
+  runLoopAction.enabled = true;
+  runLoopAction.clampWhenFinished = false;
+  runLoopAction.setLoop(THREE.LoopRepeat, Infinity);
+
   let activeState = null;
+  let runApproachCompleted = false;
   let disposed = false;
+
+  mixer.addEventListener("finished", event => {
+    if (event.action !== actions.run || activeState !== "run" || disposed) return;
+    runApproachCompleted = true;
+    actions.run.stop();
+    runLoopAction.reset();
+    runLoopAction.enabled = true;
+    runLoopAction.setEffectiveTimeScale(actions.run.getEffectiveTimeScale());
+    runLoopAction.setEffectiveWeight(1);
+    runLoopAction.play();
+  });
 
   function play(state, options = {}) {
     if (disposed) return { ok: false, reason: "disposed" };
-    const action = actions[state];
+    const action = state === "run" && runApproachCompleted ? runLoopAction : actions[state];
     if (!action) {
       return { ok: false, reason: "missing-clip", state, available: Object.keys(actions) };
     }
@@ -239,6 +256,10 @@ export async function loadJayCharacter({
     const timeScale = Number.isFinite(options.timeScale) ? options.timeScale : 1;
     if (activeState === state) {
       action.setEffectiveTimeScale(timeScale);
+      if (state === "run") {
+        actions.run.setEffectiveTimeScale(timeScale);
+        runLoopAction.setEffectiveTimeScale(timeScale);
+      }
       return { ok: true, state, changed: false };
     }
     const previous = activeState ? actions[activeState] : null;
@@ -247,10 +268,18 @@ export async function loadJayCharacter({
       action.setEffectiveTimeScale(timeScale);
       return { ok: true, state, changed: true, aliased: true };
     }
+    if (state === "run") {
+      actions.run.stop();
+      runLoopAction.stop();
+    }
     action.reset();
     action.enabled = true;
     action.setEffectiveTimeScale(timeScale);
     action.setEffectiveWeight(1);
+    if (state === "run" && !runApproachCompleted) {
+      action.clampWhenFinished = true;
+      action.setLoop(THREE.LoopOnce, 1);
+    }
     action.play();
     if (previous && fade > 0) action.crossFadeFrom(previous, fade, true);
     else if (previous) previous.stop();
