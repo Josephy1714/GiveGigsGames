@@ -11,7 +11,16 @@
     <canvas id="renderCanvas"></canvas>
 
     <div id="hud">
-        <div id="crosshair"></div>
+        <div id="crosshair" class="hidden"></div>
+        <section id="squad-hud" class="hidden" aria-label="Your squad">
+            <div class="squad-header">
+                <button type="button" id="squad-command" aria-pressed="false"><kbd>Q</kbd> <span id="squad-order">Follow</span></button>
+                <span class="squad-scrap">Scrap <strong id="field-scrap">0</strong></span>
+            </div>
+            <div class="squad-status"></div>
+            <div class="squad-status"></div>
+            <button type="button" id="interact-prompt" class="hidden"><kbd>E</kbd> <span id="interact-text"></span></button>
+        </section>
         <div id="top-bar">
             <span id="mode-label">MODE: PLAYER</span>
             <span id="map-label">MAP: NEON COURTYARD</span>
@@ -25,7 +34,7 @@
         <div id="bottom-bar">
             <div class="stat-box">HP <span id="hp-val">100</span></div>
             <div class="stat-box" id="lives-box">LIVES <span id="lives-val">3</span></div>
-            <button type="button" class="stat-box" id="weapon-switch" aria-label="Switch weapon">WEAPON <span id="weapon-val">DEVASTATOR</span></button>
+            <button type="button" class="stat-box hidden" id="weapon-switch" aria-label="Switch weapon">WEAPON <span id="weapon-val">DEVASTATOR</span><progress id="weapon-charge" aria-label="Weapon ready" value="1" max="1"></progress></button>
             <div class="stat-box">KILLS <span id="score-val">0</span></div>
             <button id="menu-btn">MENU</button>
         </div>
@@ -43,7 +52,7 @@
             <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>
             <button class="mode-btn" data-mode="rts">3. RTS SQUAD (4+ BOTS)</button>
         </div>
-        <p class="controls-hint">Player: WASD, Space to jump, Shift to dash, hold click to fire, 1–4 to switch weapons | Touch: move pad, drag to aim, tap weapon to swap | Auto: Spectate &amp; Upgrade | RTS: Tap to Rally</p>
+        <p class="controls-hint">Player: WASD, Space to jump, Shift to dash, hold click to fire, 1–4 to switch weapons, Q to hold or follow, E to upgrade a nearby bot you’re aiming at | Touch: move pad, drag to aim, tap HUD controls | Auto: Spectate &amp; Upgrade | RTS: Tap to Rally</p>
     </div>
 
     <div id="upgrade-modal" class="hidden">

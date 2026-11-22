@@ -1,5 +1,9 @@
 // GraveGain3DC — Xonotic-inspired Arena FPS (Player, Auto-Battler Roguelite, RTS Squad, 3 Maps)
 import { MAPS, MAP_LIST } from './maps.js';
+import { createWeaponView } from './weapon-view.js';
+import { createBotComms } from './bot-comms.js';
+import { createBotModels } from './bot-models.js';
+import { findCover, lineBlocked } from './squad-tactics.js';
 import * as BABYLON from './vendor/babylon-arena.js';
 
 const canvas = document.getElementById('renderCanvas');
@@ -12,10 +16,10 @@ const BOT_RADIUS = 0.55;
 const BOT_HEIGHT = 2.2;
 
 const WEAPONS = [
-    { name: 'DEVASTATOR', speed: 52, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6 },
-    { name: 'VORTEX', speed: 165, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85 },
-    { name: 'SHOTGUN', speed: 90, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48 },
-    { name: 'ELECTRO', speed: 68, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13 }
+    { name: 'DEVASTATOR', speed: 52, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
+    { name: 'VORTEX', speed: 165, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
+    { name: 'SHOTGUN', speed: 90, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, sound: [105, .12, "square"], hudColor: "#ffdb59" },
+    { name: 'ELECTRO', speed: 68, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
 ];
 
 // Lightweight Web Audio synth for Xonotic-style SFX
@@ -83,7 +87,11 @@ function createScene() {
     camera.minZ = 0.1;
     camera.fov = 1.05;
 
-    // RTS Rally visual marker
+    const weaponView = createWeaponView(scene, camera, WEAPONS);
+    const buildBotModel = createBotModels(scene);
+    const comms = createBotComms();
+
+    // Squad rally marker
     const rallyMarker = BABYLON.MeshBuilder.CreateTorus('rallyMarker', { diameter: 3.2, thickness: 0.25, tessellation: 24 }, scene);
     const rallyMat = new BABYLON.StandardMaterial('rallyMat', scene);
     rallyMat.diffuseColor = new BABYLON.Color3(0, 1, 0.75);
@@ -208,38 +216,51 @@ function createScene() {
         dashTimer: 0
     };
 
-    const heroMat = new BABYLON.StandardMaterial('heroMat', scene);
-    heroMat.diffuseColor = new BABYLON.Color3(0.1, 0.9, 1);
-    heroMat.emissiveColor = new BABYLON.Color3(0.05, 0.35, 0.45);
-
-    const enemyMat = new BABYLON.StandardMaterial('enemyMat', scene);
-    enemyMat.diffuseColor = new BABYLON.Color3(1, 0.2, 0.35);
-    enemyMat.emissiveColor = new BABYLON.Color3(0.35, 0.04, 0.08);
-
     const friendlies = [];
     const enemies = [];
     const projectiles = [];
     const voxelDebris = [];
-    const voxelSource = BABYLON.MeshBuilder.CreateBox('enemyVoxel', { size: 0.36 }, scene);
-    voxelSource.material = enemyMat;
-    voxelSource.isVisible = false;
-    voxelSource.isPickable = false;
+    const salvage = [];
+    const salvageMat = new BABYLON.StandardMaterial('salvage', scene);
+    salvageMat.emissiveColor = new BABYLON.Color3(1, .72, .12);
+    let scrap = 0;
+    let squadHolding = false;
 
-    function buildBotVoxels(root) {
-        const cells = [];
-        for (let y = -2; y <= 2; y++) {
-            for (let x = -1; x <= 1; x++) {
-                for (let z = -1; z <= 1; z++) {
-                    if (Math.abs(x) + Math.abs(z) + Math.max(0, Math.abs(y) - 1) > 2) continue;
-                    const cell = voxelSource.createInstance('botVoxel');
-                    cell.parent = root;
-                    cell.position.set(x * 0.36, y * 0.36, z * 0.36);
-                    cell.isPickable = false;
-                    cells.push(cell);
-                }
+    function dropScrap(position) {
+        let surface = currentMap.hasFloor ? 0 : -Infinity;
+        for (const block of solidBlocks) {
+            if (position.x >= block.minX && position.x <= block.maxX &&
+                position.z >= block.minZ && position.z <= block.maxZ && block.maxY < position.y - .2) {
+                surface = Math.max(surface, block.maxY);
             }
         }
-        return cells;
+        const mesh = BABYLON.MeshBuilder.CreateTorus('scrap pickup', {
+            diameter: .68, thickness: .17, tessellation: 6
+        }, scene);
+        mesh.position.copyFrom(position);
+        if (Number.isFinite(surface)) mesh.position.y = surface + .85;
+        mesh.material = salvageMat;
+        mesh.isPickable = false;
+        salvage.push({ mesh, y: position.y, age: 0 });
+        if (salvage.length > 32) salvage.shift().mesh.dispose();
+    }
+
+    function updateScrap(dt) {
+        for (let i = salvage.length - 1; i >= 0; i--) {
+            const item = salvage[i];
+            item.age += dt;
+            item.mesh.position.y = item.y + Math.sin(item.age * 4) * .24;
+            item.mesh.rotation.set(item.age * 1.8, item.age * 2.4, .4);
+            const collected = BABYLON.Vector3.Distance(camera.position, item.mesh.position) < 2.2;
+            if (collected) {
+                scrap++;
+                playSfx(780, .13, 'triangle', .05);
+            }
+            if (collected || item.age >= 30) {
+                item.mesh.dispose();
+                salvage.splice(i, 1);
+            }
+        }
     }
 
     function fractureBot(bot, damage, impact, blast) {
@@ -261,7 +282,7 @@ function createScene() {
             const length = velocity.length();
             if (length > 0) velocity.scaleInPlace((blast ? 13 : 5) / length);
             velocity.y += 3 + Math.random() * 4;
-            voxelDebris.push({ cell, velocity, life: 0.65 + Math.random() * 0.35 });
+            voxelDebris.push({ cell, velocity, size: cell.scaling.clone(), life: 0.65 + Math.random() * 0.35 });
             removed.add(cell);
         }
         bot.voxels = bot.voxels.filter(cell => !removed.has(cell));
@@ -281,7 +302,7 @@ function createScene() {
             chunk.cell.position.addInPlace(chunk.velocity.scale(dt));
             chunk.cell.rotation.x += 5 * dt;
             chunk.cell.rotation.z += 3 * dt;
-            chunk.cell.scaling.setAll(Math.min(1, chunk.life * 5));
+            chunk.size.scaleToRef(Math.min(1, chunk.life * 5), chunk.cell.scaling);
         }
     }
 
@@ -290,21 +311,22 @@ function createScene() {
         return arr[idx !== null ? idx % arr.length : Math.floor(Math.random() * arr.length)];
     }
 
-    function createBot(team, spawnCoord) {
+    function createBot(team, spawnCoord, melee = false) {
         const [sx, sy, sz] = spawnCoord;
-        const mesh = team === 'enemy'
-            ? new BABYLON.TransformNode('enemy_bot', scene)
-            : BABYLON.MeshBuilder.CreateCapsule('friendly_bot', { height: BOT_HEIGHT, radius: BOT_RADIUS }, scene);
+        const mesh = new BABYLON.TransformNode(team + (melee ? ' melee bot' : ' ranged bot'), scene);
         mesh.position.set(sx, sy + 1.1, sz);
-        if (team === 'friendly') {
-            mesh.material = heroMat;
-            mesh.isPickable = false;
-        }
         const maxHp = team === 'friendly' ? 100 + upgrades.maxHp * 25 : 90;
         return {
             team,
             mesh,
-            voxels: team === 'enemy' ? buildBotVoxels(mesh) : [],
+            voxels: buildBotModel(mesh, team, melee),
+            melee,
+            windup: 0,
+            rank: 0,
+            cover: null,
+            coverTimer: 0,
+            hurtTimer: 0,
+            action: 'Following',
             pos: new BABYLON.Vector3(sx, sy, sz),
             vel: new BABYLON.Vector3(0, 0, 0),
             hp: maxHp,
@@ -323,12 +345,13 @@ function createScene() {
 
     function respawnBot(bot) {
         const list = bot.team === 'friendly' ? currentMap.friendlySpawns : currentMap.enemySpawns;
-        const [sx, sy, sz] = pickSpawn(list);
+        const [sx, sy, sz] = pickSpawn(list, mode === 'player' && bot.team === 'friendly' ? friendlies.indexOf(bot) + 1 : null);
         bot.hp = bot.maxHp;
-        if (bot.team === 'enemy') {
-            bot.voxels.forEach(cell => cell.dispose());
-            bot.voxels = buildBotVoxels(bot.mesh);
-        }
+        bot.voxels.forEach(cell => cell.dispose());
+        bot.voxels = buildBotModel(bot.mesh, bot.team, bot.melee);
+        bot.windup = 0;
+        bot.cover = null;
+        bot.coverTimer = bot.hurtTimer = 0;
         bot.gaitPhase = 0;
         bot.mesh.rotation.set(0, 0, 0);
         bot.mesh.scaling.setAll(1);
@@ -357,6 +380,8 @@ function createScene() {
         projectiles.forEach(p => p.mesh.dispose());
         voxelDebris.forEach(chunk => chunk.cell.dispose());
         voxelDebris.length = 0;
+        salvage.forEach(item => item.mesh.dispose());
+        salvage.length = 0;
         friendlies.length = 0;
         enemies.length = 0;
         projectiles.length = 0;
@@ -364,7 +389,7 @@ function createScene() {
 
     function spawnEnemyWave(count = 5) {
         for (let i = 0; i < count; i++) {
-            enemies.push(createBot('enemy', pickSpawn(currentMap.enemySpawns, i)));
+            enemies.push(createBot('enemy', pickSpawn(currentMap.enemySpawns, i), i % 3 === 1));
         }
     }
 
@@ -504,7 +529,15 @@ function createScene() {
     function startMode(newMode) {
         loadMap(selectedMapId);
         clearHeldInput();
+        comms.reset();
         mode = newMode;
+        weaponView.setVisible(mode === 'player');
+        player.fireTimer = 0;
+        scrap = 0;
+        squadHolding = false;
+        squadOrderLabel.setAttribute('aria-pressed', 'false');
+        squadHud.classList.toggle('hidden', mode !== 'player');
+        weaponSwitch.classList.toggle('hidden', mode !== 'player');
         clearEntities();
         overlay.classList.add('hidden');
         upgradeModal.classList.add('hidden');
@@ -521,6 +554,9 @@ function createScene() {
         if (newMode === 'player') {
             camera.rotation.set(0, 0, 0);
             camera.fov = 1.05;
+            for (let i = 0; i < 2; i++) {
+                friendlies.push(createBot('friendly', pickSpawn(currentMap.friendlySpawns, i + 1)));
+            }
             spawnEnemyWave(5);
             lockPointer();
         } else if (newMode === 'autobattler') {
@@ -552,6 +588,9 @@ function createScene() {
     document.getElementById('menu-btn').addEventListener('click', () => {
         clearHeldInput();
         mode = 'menu';
+        comms.reset();
+        weaponView.setVisible(false);
+        squadHud.classList.add('hidden');
         rallyMarker.isVisible = false;
         if (document.pointerLockElement === canvas) document.exitPointerLock?.();
         overlay.classList.remove('hidden');
@@ -580,6 +619,7 @@ function createScene() {
 
     function openUpgradeShop() {
         mode = 'menu';
+        comms.reset();
         rallyMarker.isVisible = false;
         upgradeModal.classList.remove('hidden');
         document.getElementById('scrap-val').textContent = upgrades.scrap;
@@ -675,6 +715,8 @@ function createScene() {
         if (e.code === 'Digit2') player.weaponIdx = 1;
         if (e.code === 'Digit3') player.weaponIdx = 2;
         if (e.code === 'Digit4') player.weaponIdx = 3;
+        if (!e.repeat && e.code === 'KeyQ') commandSquad();
+        if (!e.repeat && e.code === 'KeyE') upgradeCompanion();
     });
     window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
@@ -683,7 +725,7 @@ function createScene() {
         turnCamera(e.movementX, e.movementY, 0.0022);
     });
 
-    function spawnProjectile(origin, dir, weapon, ownerTeam) {
+    function spawnProjectile(origin, dir, weapon, ownerTeam, fromPlayer = false, power = 1) {
         const proj = BABYLON.MeshBuilder.CreateSphere('proj', { diameter: 0.36 }, scene);
         proj.position = origin.clone();
         proj.isPickable = false;
@@ -697,7 +739,7 @@ function createScene() {
         proj.scaling.z = weapon.speed > 100 ? 5 : 2;
         proj.lookAt(origin.add(dir));
         const dmgMult = ownerTeam === 'friendly' ? 1 + upgrades.damage * 0.15 : 1;
-        projectiles.push({ mesh: proj, vel: dir.scale(weapon.speed), weapon, damage: weapon.damage * dmgMult, ownerTeam, life: 2.4 });
+        projectiles.push({ mesh: proj, vel: dir.scale(weapon.speed), weapon, damage: weapon.damage * dmgMult * power, ownerTeam, fromPlayer, life: 2.4 });
     }
 
     const shotgunPellet = { ...WEAPONS[2], damage: WEAPONS[2].damage / 3 };
@@ -706,18 +748,20 @@ function createScene() {
         if (player.fireTimer > 0) return;
         const weapon = WEAPONS[player.weaponIdx];
         player.fireTimer = weapon.cooldown;
+        player.fireCycle = weapon.cooldown;
+        weaponView.fire(player.weaponIdx);
         const forward = camera.getDirection(BABYLON.Axis.Z).normalize();
         const origin = camera.position.add(forward.scale(1.2));
         if (player.weaponIdx === 2) {
             const right = camera.getDirection(BABYLON.Axis.X);
             for (let pellet = -2; pellet <= 2; pellet++) {
                 const direction = forward.add(right.scale(pellet * 0.045)).normalize();
-                spawnProjectile(origin, direction, shotgunPellet, 'friendly');
+                spawnProjectile(origin, direction, shotgunPellet, 'friendly', true);
             }
         } else {
-            spawnProjectile(origin, forward, weapon, 'friendly');
+            spawnProjectile(origin, forward, weapon, 'friendly', true);
         }
-        playSfx(player.weaponIdx === 1 ? 620 : 220, 0.11, 'sawtooth', 0.07);
+        playSfx(weapon.sound[0], weapon.sound[1], weapon.sound[2], .07);
     }
 
     window.addEventListener('mouseup', e => { if (e.button === 0) firing = false; });
@@ -745,7 +789,10 @@ function createScene() {
 
     function handleEnemyDeath(enemy) {
         player.score++;
-        if (mode === 'player') playSfx(1040, 0.12, 'triangle', 0.07);
+        if (mode === 'player') {
+            dropScrap(enemy.mesh.position);
+            playSfx(1040, .12, 'triangle', .07);
+        }
         if (mode === 'autobattler') {
             upgrades.scrap += 1 + upgrades.scrapGain;
             saveUpgrades();
@@ -765,12 +812,217 @@ function createScene() {
         return false;
     }
 
+    function commandSquad() {
+        if (mode !== 'player') return;
+        squadHolding = !squadHolding;
+        squadOrderLabel.setAttribute('aria-pressed', String(squadHolding));
+        if (squadHolding) rallyPoint.copyFrom(player.pos);
+        rallyMarker.position.copyFrom(rallyPoint);
+        rallyMarker.position.y += .15;
+        rallyMarker.isVisible = squadHolding;
+        for (const bot of friendlies) {
+            bot.cover = null;
+            bot.coverTimer = 0;
+        }
+        comms.say(squadHolding ? 'hold' : 'follow', 'friendly');
+        playSfx(squadHolding ? 520 : 690, .12, 'triangle', .05);
+    }
+
+    function aimedCompanion() {
+        const forward = camera.getDirection(BABYLON.Axis.Z);
+        let target = null;
+        let bestAim = .92;
+        for (const bot of friendlies) {
+            const offset = bot.mesh.position.subtract(camera.position);
+            const distance = offset.length();
+            if (distance < .01 || distance > 6 || lineBlocked(camera.position, bot.mesh.position, solidBlocks)) continue;
+            const aim = BABYLON.Vector3.Dot(forward, offset.scale(1 / distance));
+            if (aim > bestAim) {
+                bestAim = aim;
+                target = bot;
+            }
+        }
+        return target;
+    }
+
+    const MAX_COMPANION_RANK = 3;
+    const rankCost = bot => 2 + bot.rank * 2;
+
+    function upgradeCompanion() {
+        if (mode !== 'player') return;
+        const bot = aimedCompanion();
+        if (!bot || bot.rank >= MAX_COMPANION_RANK || scrap < rankCost(bot)) return;
+        scrap -= rankCost(bot);
+        bot.rank++;
+        bot.maxHp += 25;
+        bot.hp = bot.maxHp;
+        comms.say('upgrade', 'friendly');
+        playSfx(960, .22, 'triangle', .07);
+    }
+
+    function setText(element, text) {
+        if (element.textContent !== text) element.textContent = text;
+    }
+
+    function updateSquadHud() {
+        setText(fieldScrap, String(scrap));
+        setText(squadOrder, squadHolding ? 'Hold position' : 'Follow');
+        for (const [i, bot] of friendlies.entries()) {
+            setText(squadStatus[i], `Bot ${i + 1} · Rank ${bot.rank} · ${Math.ceil(bot.hp)} HP · ${bot.action}`);
+        }
+        const target = aimedCompanion();
+        interactPrompt.classList.toggle('hidden', !target);
+        if (target) {
+            const name = `Bot ${friendlies.indexOf(target) + 1}`;
+            setText(interactText, target.rank >= MAX_COMPANION_RANK ? `${name} · Max rank`
+                : `${name} · Upgrade for ${rankCost(target)} scrap`);
+            interactPrompt.disabled = target.rank >= MAX_COMPANION_RANK || scrap < rankCost(target);
+        }
+    }
+
+    function safeFooting(x, y, z) {
+        if (Math.abs(x) > currentMap.halfBound - 1 || Math.abs(z) > currentMap.halfBound - 1 ||
+            isInsideHazard(x, z, y)) return false;
+        return (currentMap.hasFloor && Math.abs(y) < .8) || solidBlocks.some(block =>
+            Math.abs(block.maxY - y) < .8 &&
+            x >= block.minX + .35 && x <= block.maxX - .35 &&
+            z >= block.minZ + .35 && z <= block.maxZ - .35);
+    }
+
+    function canTakeCoverRoute(from, to) {
+        if (lineBlocked(from, to, solidBlocks, BOT_RADIUS)) return false;
+        const distance = Math.hypot(to.x - from.x, to.z - from.z);
+        const steps = Math.max(1, Math.ceil(distance));
+        for (let step = 1; step <= steps; step++) {
+            const t = step / steps;
+            if (!safeFooting(from.x + (to.x - from.x) * t, from.y - 1.1,
+                from.z + (to.z - from.z) * t)) return false;
+        }
+        return true;
+    }
+
+    function steerCompanion(bot, threat, move, dt) {
+        const anchor = squadHolding ? rallyPoint : player.pos;
+        const ally = friendlies.find(other => other !== bot);
+        const side = bot === friendlies[0] ? -1 : 1;
+        const follow = bot.mesh.position.clone().set(anchor.x + side * 3, bot.mesh.position.y, anchor.z + 2);
+        const playerGap = Math.hypot(bot.pos.x - anchor.x, bot.pos.z - anchor.z);
+        const threatGap = BABYLON.Vector3.Distance(bot.mesh.position, threat);
+        const recovering = bot.hp < bot.maxHp * .55 || bot.hurtTimer > 0;
+        bot.hurtTimer = Math.max(0, bot.hurtTimer - dt);
+        bot.coverTimer -= dt;
+        let goal = follow;
+        bot.action = squadHolding ? 'Holding' : 'Following';
+
+        if (playerGap > 22 || threatGap > 39) {
+            bot.cover = null;
+            bot.coverTimer = 0;
+        } else if (bot.grounded && bot.coverTimer <= 0) {
+            bot.coverTimer = .65 + Math.random() * .25;
+            bot.cover = findCover(bot, threat, anchor, solidBlocks, canTakeCoverRoute, ally?.cover?.point);
+        }
+
+        if (bot.cover && threatGap > 4 && lineBlocked(bot.cover.point, threat, solidBlocks)) {
+            const { point, peek } = bot.cover;
+            const readyToPeek = !recovering && peek && bot.fireTimer < .14 &&
+                !lineBlocked(peek, threat, solidBlocks);
+            goal = readyToPeek ? peek : point;
+            bot.action = readyToPeek ? 'Peeking' : recovering ? 'Recovering' : 'In cover';
+        } else if (recovering && threatGap < 24 && playerGap < 18) {
+            const retreat = bot.mesh.position.subtract(threat);
+            retreat.y = 0;
+            goal = bot.mesh.position.add(retreat.normalize().scale(5));
+            bot.action = 'Falling back';
+        }
+
+        if (bot.hurtTimer === 0 && lineBlocked(bot.mesh.position, threat, solidBlocks)) {
+            bot.hp = Math.min(bot.maxHp, bot.hp + (8 + bot.rank * 2) * dt);
+        }
+
+        move.set(goal.x - bot.pos.x, 0, goal.z - bot.pos.z);
+        const distance = move.length();
+        if (distance < (bot.cover ? .45 : 1.5)) {
+            move.setAll(0);
+            return;
+        }
+        move.scaleInPlace(1 / distance);
+        if (!bot.grounded) return;
+        const sample = bot.mesh.position.add(move.scale(Math.min(1.8, distance)));
+        if (canTakeCoverRoute(bot.mesh.position, sample)) return;
+
+        // Use a nearby pad when the direct route crosses a gap or changes decks.
+        const gap = Math.hypot(anchor.x - bot.pos.x, anchor.z - bot.pos.z);
+        let padGoal = null;
+        let padScore = Infinity;
+        if (!bot.cover && (gap > 8 || Math.abs(anchor.y - bot.pos.y) > 3)) {
+            for (const pad of currentMap.jumpPads) {
+                if (Math.abs(pad.y - bot.pos.y) > .8) continue;
+                const padPoint = sample.clone().set(pad.x, sample.y, pad.z);
+                const flight = 2 * pad.vy / GRAVITY;
+                const landingGap = Math.hypot(anchor.x - pad.x - pad.vx * flight, anchor.z - pad.z - pad.vz * flight);
+                const score = BABYLON.Vector3.Distance(bot.mesh.position, padPoint) + landingGap * .5;
+                if (landingGap + 4 < gap && score < padScore && canTakeCoverRoute(bot.mesh.position, padPoint)) {
+                    padGoal = padPoint;
+                    padScore = score;
+                }
+            }
+        }
+        if (padGoal) {
+            move.set(padGoal.x - bot.pos.x, 0, padGoal.z - bot.pos.z).normalize();
+            return;
+        }
+        const heading = Math.atan2(move.x, move.z);
+        for (const turn of [side * .65, -side * .65, side * 1.25, -side * 1.25]) {
+            const angle = heading + turn;
+            move.set(Math.sin(angle), 0, Math.cos(angle));
+            if (canTakeCoverRoute(bot.mesh.position, bot.mesh.position.add(move.scale(1.8)))) return;
+        }
+        move.setAll(0);
+    }
+
+    function damageFriendly(bot, amount, impact) {
+        if (bot.hurtTimer <= 0) {
+            comms.say('hurt', 'friendly');
+        }
+        fractureBot(bot, amount, impact, false);
+        bot.hurtTimer = 1.8;
+        return bot.hp <= 0 && handleFriendlyDeath(bot);
+    }
+
+    function strikeMelee(bot, target, dt) {
+        if (bot.windup > 0) {
+            bot.windup = Math.max(0, bot.windup - dt);
+            if (bot.windup > 0) return false;
+            bot.fireTimer = .85;
+            if (BABYLON.Vector3.Distance(bot.mesh.position, target.position) > 2.4 ||
+                lineBlocked(bot.mesh.position, target.position, solidBlocks)) return false;
+            if (target === camera) {
+                player.hp -= 24;
+                playSfx(92, .18, 'triangle', .08);
+                if (player.hp <= 0) respawnPlayer();
+                return false;
+            }
+            const ally = friendlies.find(friend => friend.mesh === target);
+            return ally ? damageFriendly(ally, 23, bot.mesh.position) : false;
+        }
+        if (bot.fireTimer <= 0 && BABYLON.Vector3.Distance(bot.mesh.position, target.position) < 2.25 &&
+            !lineBlocked(bot.mesh.position, target.position, solidBlocks)) {
+            bot.windup = .38;
+            if (BABYLON.Vector3.Distance(camera.position, bot.mesh.position) < 18) {
+                comms.say('melee', 'enemy');
+                playSfx(330, .16, 'triangle', .05);
+            }
+        }
+        return false;
+    }
+
     // Intelligent Bot AI (strafe, jump/bunny-hop, jump-pad pursuit, void & hazard avoidance)
     function updateBotAI(bot, targets, dt) {
         bot.fireTimer = Math.max(0, bot.fireTimer - dt);
         bot.strafeTimer -= dt;
         bot.jumpTimer -= dt;
         bot.padFlightTimer = Math.max(0, (bot.padFlightTimer || 0) - dt);
+        if (mode !== 'player') bot.hurtTimer = Math.max(0, bot.hurtTimer - dt);
 
         if (bot.strafeTimer <= 0) {
             bot.strafeDir *= -1;
@@ -790,18 +1042,22 @@ function createScene() {
         }
 
         const speedBonus = bot.team === 'friendly' ? 1 + upgrades.speed * 0.1 : 1;
-        const moveSpeed = 12 * speedBonus;
+        const moveSpeed = (bot.melee ? 15 : 12) * speedBonus;
         const moveDir = new BABYLON.Vector3(0, 0, 0);
 
+        const companion = mode === 'player' && bot.team === 'friendly';
         if (nearest) {
             const toTarget = nearest.position.subtract(bot.mesh.position);
             toTarget.y = 0;
             const dist = toTarget.length() || 1;
             toTarget.scaleInPlace(1 / dist);
+            const facing = Math.atan2(toTarget.x, toTarget.z) - bot.mesh.rotation.y;
+            bot.mesh.rotation.y += Math.atan2(Math.sin(facing), Math.cos(facing)) * frameBlend(.23, dt);
             const strafe = new BABYLON.Vector3(-toTarget.z, 0, toTarget.x).scale(bot.strafeDir);
 
-            const idealMin = bot.team === 'friendly' ? 8 + upgrades.tactics * 0.8 : 8;
-            const idealMax = bot.team === 'friendly' ? 16 + upgrades.tactics * 1.0 : 16;
+            const idealMin = bot.melee ? 0 : bot.team === 'friendly' ? 8 + upgrades.tactics * 0.8 : 8;
+            const idealMax = bot.melee ? 1.55 : bot.team === 'friendly' ? 16 + upgrades.tactics * 1.0 : 16;
+            if (bot.melee) strafe.scaleInPlace(.18);
 
             if (mode === 'rts' && bot.team === 'friendly' && Math.hypot(bot.pos.x - rallyPoint.x, bot.pos.z - rallyPoint.z) > 6) {
                 const toRally = rallyPoint.subtract(bot.pos);
@@ -836,15 +1092,23 @@ function createScene() {
                 moveDir.addInPlace(strafe.scale(1.2));
             }
 
-            // Fire at target
-            if (bot.fireTimer <= 0 && dist < 50) {
+            if (companion) steerCompanion(bot, nearest.position, moveDir, dt);
+
+            if (bot.melee && strikeMelee(bot, nearest, dt)) return true;
+            if (bot.melee && bot.windup > 0) moveDir.setAll(0);
+
+            // Fire only with a clear shot for player companions.
+            if (!bot.melee && bot.fireTimer <= 0 && dist < (companion ? 42 : 50) &&
+                (!companion || !lineBlocked(bot.mesh.position, nearest.position, solidBlocks))) {
                 const cdMult = bot.team === 'friendly' ? Math.max(0.4, 1 - upgrades.fireRate * 0.1) : 1.15;
-                bot.fireTimer = (0.55 + Math.random() * 0.35) * cdMult;
+                bot.fireTimer = (0.55 + Math.random() * 0.35) * cdMult / (1 + bot.rank * .08);
+                if (bot.team === 'enemy' && Math.random() < .22 &&
+                    BABYLON.Vector3.Distance(camera.position, bot.mesh.position) < 26) comms.say('ranged', 'enemy');
                 const aimDir = nearest.position.subtract(bot.mesh.position).normalize();
                 const jitter = bot.team === 'friendly' ? Math.max(0.005, 0.09 - upgrades.aim * 0.015) : 0.1;
                 aimDir.x += (Math.random() - 0.5) * jitter;
                 aimDir.z += (Math.random() - 0.5) * jitter;
-                spawnProjectile(bot.mesh.position.add(aimDir.scale(1.1)), aimDir.normalize(), WEAPONS[0], bot.team);
+                spawnProjectile(bot.mesh.position.add(aimDir.scale(1.1)), aimDir.normalize(), WEAPONS[0], bot.team, false, 1 + bot.rank * .18);
             }
         }
 
@@ -877,7 +1141,7 @@ function createScene() {
         }
 
         // Active bunny-hop / jumping
-        if (bot.grounded && bot.jumpTimer <= 0) {
+        if (!companion && bot.windup <= 0 && (!bot.melee || minDist > 5) && bot.grounded && bot.jumpTimer <= 0) {
             const jumpBoost = bot.team === 'friendly' ? 1 + upgrades.jump * 0.08 : 1;
             bot.vel.y = 10.5 * jumpBoost;
             bot.grounded = false;
@@ -895,6 +1159,7 @@ function createScene() {
         const stretch = bot.grounded ? 1 + stride * 0.045 : 1.09;
         const blend = frameBlend(0.22, dt);
         bot.mesh.scaling.y = BABYLON.Scalar.Lerp(bot.mesh.scaling.y, stretch, blend);
+        bot.mesh.rotation.x = BABYLON.Scalar.Lerp(bot.mesh.rotation.x, bot.windup > 0 ? -.27 : 0, blend);
         bot.mesh.rotation.z = BABYLON.Scalar.Lerp(bot.mesh.rotation.z, stride * 0.12, blend);
 
         if (phys.hazardDmg > 0) bot.hp -= phys.hazardDmg;
@@ -912,7 +1177,18 @@ function createScene() {
     const hpEl = document.getElementById('hp-val');
     const livesEl = document.getElementById('lives-val');
     const weaponEl = document.getElementById('weapon-val');
-    document.getElementById('weapon-switch').addEventListener('click', () => {
+    const weaponSwitch = document.getElementById('weapon-switch');
+    const weaponCharge = document.getElementById('weapon-charge');
+    const squadHud = document.getElementById('squad-hud');
+    const fieldScrap = document.getElementById('field-scrap');
+    const squadOrder = document.getElementById('squad-order');
+    const squadOrderLabel = document.getElementById('squad-command');
+    const squadStatus = document.querySelectorAll('.squad-status');
+    const interactPrompt = document.getElementById('interact-prompt');
+    const interactText = document.getElementById('interact-text');
+    squadOrderLabel.addEventListener('click', commandSquad);
+    interactPrompt.addEventListener('click', upgradeCompanion);
+    weaponSwitch.addEventListener('click', () => {
         if (mode !== 'player') return;
         player.weaponIdx = (player.weaponIdx + 1) % WEAPONS.length;
     });
@@ -989,17 +1265,19 @@ function createScene() {
 
             const horiz = Math.hypot(player.vel.x, player.vel.z);
             camera.fov = BABYLON.Scalar.Lerp(camera.fov, 1.05 + Math.min(0.28, horiz * 0.01), frameBlend(0.12, dt));
+            weaponView.update(player.weaponIdx, horiz, player.grounded, dt);
         }
 
         // Update AI
-        const enemyTargets = mode === 'player' ? [{ position: camera.position }] : friendlies.map(f => f.mesh);
+        const enemyTargets = friendlies.map(f => f.mesh);
+        if (mode === 'player') enemyTargets.push(camera);
         const friendlyTargets = enemies.map(e => e.mesh);
 
         for (const f of friendlies) {
             if (updateBotAI(f, friendlyTargets, dt)) return;
         }
         for (const e of enemies) {
-            updateBotAI(e, enemyTargets, dt);
+            if (updateBotAI(e, enemyTargets, dt)) return;
         }
 
         // Spectator camera for Auto-Battler
@@ -1045,7 +1323,10 @@ function createScene() {
                         directHitEnemy = enemies[j];
                         fractureBot(directHitEnemy, p.damage, p.mesh.position, p.weapon.splash > 0);
                         hit = true;
-                        if (mode === 'player') playSfx(880, 0.05, 'sine', 0.05);
+                        if (p.fromPlayer) {
+                            crosshair.animate([{ scale: '1.5', filter: 'brightness(2)' }, { scale: '1' }], 115);
+                            playSfx(880, .05, 'sine', .05);
+                        }
                         if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
                         break;
                     }
@@ -1058,9 +1339,8 @@ function createScene() {
                 } else {
                     for (const f of friendlies) {
                         if (BABYLON.Vector3.Distance(p.mesh.position, f.mesh.position) < 1.35) {
-                            f.hp -= 14;
                             hit = true;
-                            if (f.hp <= 0 && handleFriendlyDeath(f)) {
+                            if (damageFriendly(f, 14, p.mesh.position)) {
                                 p.mesh.dispose();
                                 projectiles.splice(i, 1);
                                 return;
@@ -1073,7 +1353,7 @@ function createScene() {
 
             if (hit) {
                 if (p.weapon.splash > 0) {
-                    if (mode === 'player') {
+                    if (mode === 'player' && (p.fromPlayer || p.ownerTeam === 'enemy')) {
                         const playerCenter = player.pos.add(new BABYLON.Vector3(0, 1.2, 0));
                         const dist = BABYLON.Vector3.Distance(p.mesh.position, playerCenter);
                         if (dist < p.weapon.splash) {
@@ -1105,7 +1385,16 @@ function createScene() {
             : Math.hypot(player.vel.x, player.vel.z);
         speedEl.textContent = `${Math.round(activeSpeed * 20)} u/s`;
         fpsEl.textContent = `${Math.round(engine.getFps())} FPS`;
-        weaponEl.textContent = WEAPONS[player.weaponIdx].name;
+        if (mode === 'player') {
+            const weapon = WEAPONS[player.weaponIdx];
+            if (weaponEl.textContent !== weapon.name) {
+                weaponEl.textContent = weapon.name;
+                weaponSwitch.style.setProperty('--weapon-color', weapon.hudColor);
+            }
+            weaponCharge.value = 1 - player.fireTimer / (player.fireCycle || 1);
+            updateScrap(dt);
+            updateSquadHud();
+        }
         scoreEl.textContent = player.score;
     });
 

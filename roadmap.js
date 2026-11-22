@@ -16,7 +16,6 @@
   document.title = `${game.title} roadmap · GiveGigsGames`;
   title.textContent = `${game.title} roadmap`;
   description.textContent = game.description || `${game.title} is a ${game.genre || "browser"} game. This page collects practical ideas for its next improvements.`;
-  document.getElementById("roadmap-count").textContent = "5 suggestions";
 
   const profileValues = [game.genre, game.runtimeType === "external" ? "Hosted game" : "Local browser build", ...(game.inputs || []), ...(game.modes || []), ...(game.tags || [])];
   for (const value of [...new Set(profileValues.filter(Boolean))]) {
@@ -45,13 +44,23 @@
       ? { title: "Polish controller onboarding", text: "Show the active controller mapping, handle disconnect and reconnect cleanly, and keep keyboard controls available as a fallback." }
       : { title: "Improve first-session onboarding", text: "Add a short interactive introduction that teaches the main action in context and lets returning players skip it." };
 
-  const roadmap = [
+  const graveGain3dcRoadmap = [
+    { title: "Route squads across every arena", text: "Give companions routes around long walls, across jump-pad chains, and between decks. Test separated squads, contested cover, and crossfire on all three arenas." },
+    { title: "Add individual squad orders and upgrade paths", text: "Let players order each companion to defend, flank, or focus a target. Add distinct armor, support, and firepower upgrades with clear scrap costs." },
+    { title: "Support co-op squads", text: "Add a networked Player Control mode where each human commands two companions, with synchronized orders, combat, and scrap collection." },
+    { title: "Expand combat animation and voice options", text: "Add articulated bot locomotion, stronger melee tells, recorded voice barks, optional captions, and separate voice volume controls." },
+    { title: "Tune the combat loop on phones and desktops", text: "Test weapon framing, hit feedback, movement controls, voice playback, and scrap collection on each arena. Tune upgrade costs and mixed enemy encounters from playtest results." }
+  ];
+
+  const roadmap = game.slug.toLowerCase() === "gravegain3dc" ? graveGain3dcRoadmap : [
     core,
     { title: "Give progress a satisfying next step", text: "Add a clear short-term goal and a longer-term unlock or personal record, while keeping the next action visible after a run or session." },
     inputIdea,
     { title: "Make replay and recovery smoother", text: "Provide a quick restart or resume path, preserve useful local progress, and explain what is saved before players leave the game." },
     { title: "Round out accessibility and performance", text: "Review contrast, readable text, reduced-motion options, and frame rate on lower-powered phones; keep the build self-contained and below the 10 MB package limit." }
   ];
+
+  document.getElementById("roadmap-count").textContent = `${roadmap.length} suggestions`;
 
   for (const [index, item] of roadmap.entries()) {
     const card = document.createElement("article");
