@@ -37,6 +37,8 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
 
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
+    const lateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
+    assert.equal(lateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
 
     await page.keyboard.press("ArrowLeft");
     await page.waitForFunction(() => {
