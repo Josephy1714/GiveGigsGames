@@ -724,19 +724,28 @@ function createScene() {
     }
     window.addEventListener('keydown', (e) => {
         keys[e.code] = true;
-        if (e.code === 'Digit1') player.weaponIdx = 0;
-        if (e.code === 'Digit2') player.weaponIdx = 1;
-        if (e.code === 'Digit3') player.weaponIdx = 2;
-        if (e.code === 'Digit4') player.weaponIdx = 3;
+        if (e.code === 'Digit1' || e.key === '1') player.weaponIdx = 0;
+        if (e.code === 'Digit2' || e.key === '2') player.weaponIdx = 1;
+        if (e.code === 'Digit3' || e.key === '3') player.weaponIdx = 2;
+        if (e.code === 'Digit4' || e.key === '4') player.weaponIdx = 3;
         if (!e.repeat && e.code === 'KeyQ') commandSquad();
         if (!e.repeat && e.code === 'KeyE') upgradeCompanion();
     });
+    window.addEventListener('wheel', (e) => {
+        if (mode !== 'player' || e.deltaY === 0) return;
+        player.weaponIdx = (player.weaponIdx + (e.deltaY > 0 ? 1 : WEAPONS.length - 1)) % WEAPONS.length;
+    }, { passive: true });
     window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
     window.addEventListener('mousemove', (e) => {
         if (mode !== 'player' || document.pointerLockElement !== canvas) return;
         firing = Boolean(e.buttons & 1);
         turnCamera(e.movementX, e.movementY, 0.0022);
+    });
+    window.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'touch' && mode === 'player' && (document.pointerLockElement === canvas || firing)) {
+            firing = Boolean(e.buttons & 1);
+        }
     });
 
     function spawnProjectile(origin, dir, weapon, ownerTeam, fromPlayer = false, power = 1) {
@@ -781,9 +790,7 @@ function createScene() {
     const stopMouseFire = (e) => {
         if (e.pointerType !== 'touch' && e.button === 0) firing = false;
     };
-    window.addEventListener('pointerup', stopMouseFire);
-    window.addEventListener('pointercancel', stopMouseFire);
-    window.addEventListener('pointerdown', (e) => {
+    const startMouseFire = (e) => {
         if (e.pointerType === 'touch' || mode !== 'player' || e.button !== 0) return;
         if (document.pointerLockElement !== canvas &&
             e.target?.closest?.('button, a, input, select, #overlay, #upgrade-modal')) return;
@@ -792,7 +799,12 @@ function createScene() {
         }
         firing = true;
         firePlayerWeapon();
-    });
+    };
+    window.addEventListener('pointerup', stopMouseFire);
+    window.addEventListener('pointercancel', stopMouseFire);
+    window.addEventListener('mouseup', stopMouseFire);
+    window.addEventListener('pointerdown', startMouseFire);
+    window.addEventListener('mousedown', startMouseFire);
 
     canvas.addEventListener('pointerdown', e => {
         if (mode !== 'rts' || e.button !== 0) return;
