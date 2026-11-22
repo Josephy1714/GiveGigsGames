@@ -27,7 +27,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     }
     assert.equal(diagnostics.quality, "High");
 
-    await page.locator("#play").click();
+    await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
 
     await page.keyboard.press("ArrowUp");
