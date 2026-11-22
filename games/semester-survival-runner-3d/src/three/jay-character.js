@@ -2,16 +2,16 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
 const CLIP_ALIASES = Object.freeze({
-  idle: ["idle", "breathing", "stand"],
+  idle: ["idle", "breathing", "breathingidle", "stand"],
   run: ["run", "running", "jog", "sprint"],
   jump: ["jump", "running_jump", "jump_running"],
-  slide: ["slide", "sliding", "slide_loop"],
+  slide: ["slide", "sliding", "slide_loop", "runningslide"],
   slideStart: ["slide_start", "slide-start", "slideanticipation"],
-  slideLoop: ["slide_loop", "slide-loop", "sliding"],
+  slideLoop: ["slide_loop", "slide-loop", "sliding", "runningslide"],
   slideRecover: ["slide_recover", "slide-recover", "slideout"],
   dodgeLeft: ["dodge_left", "dodge-left", "sidestep_left"],
   dodgeRight: ["dodge_right", "dodge-right", "sidestep_right"],
-  fall: ["fall", "falling", "accidental_fall"],
+  fall: ["fall", "falling", "accidental_fall", "shoulder_hit_and_fall", "shoulderhitandfall"],
   getUp: ["getup", "get_up", "recovery", "stand_up"]
 });
 
