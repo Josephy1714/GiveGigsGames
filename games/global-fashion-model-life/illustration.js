@@ -440,8 +440,8 @@ function createStudio(canvas) {
     const shade=material(color.clone().multiplyScalar(.60),.65);
     const shoe=material(a.shoes==="nude"?"#b17f70":a.shoes==="silver"?"#b7a7bf":"#2c2231",.31,.30);
     const id=a.garment;
-    const pants=["suit","casual","coat","street","woven"].includes(id);
-    const sleeves=["suit","coat","street","casual"].includes(id);
+    const pants=["suit","casual","coat","street","woven","resort","y2k","barong","tux","vest","blazer","pleat_pant","wrap_suit","hoodie","varsity","crochet","denim_set","track","monochrome","tunic","batik","embroidered","cyber","sculpt","vinyl"].includes(id);
+    const sleeves=["suit","coat","street","casual","barong","bomber","cape","tux","trench","blazer","wrap_suit","hoodie","varsity","denim_set","knit","track","tunic","poplin","kimona","vinyl"].includes(id);
     const hipY=1.33+variants(a.height,.15)-variants(a.torso,.10);
     const waistY=hipY+.22;
     const shoulderY=1.995+variants(a.height,.20)+variants(a.torso,.075);
@@ -457,8 +457,8 @@ function createStudio(canvas) {
 
     rings(group,skin,[[shoulderY-.14,.197,.121,0],[shoulderY-.045,shoulders,.123,0],[shoulderY+.012,.20,.101,0],[shoulderY+.063,.088,.079,0],[neckTop+.038,.085,.081,0]]);
     const bodiceTop=sleeves?shoulderY-.006:id==="terno"?shoulderY-.078:id==="column"?shoulderY-.21:shoulderY-.135;
-    const skirtBottom={slip:.22,column:.68,terno:.10,petal:.14,flare:.23}[id]??hipY-.06;
-    const skirtWidth={slip:.235,column:.215,terno:.46,petal:.39,flare:.49}[id]??hips+.025;
+    const skirtBottom={slip:.22,column:.68,terno:.10,petal:.14,flare:.23,gala:.12,bomber:.76,sequin:.14,mermaid:.10,tulle:.12,cape:.18,halter:.16,corset:.11,cocktail:.56,trench:.52,pencil:.58,sundress:.48,knit:.44,sheath:.46,asym:.36,poplin:.54,tube:.18,piña:.24,inabel:.42,linen_wrap:.46,metallic_mini:.74,mesh:.14,feather:.50,drape_asym:.26}[id]??hipY-.06;
+    const skirtWidth={slip:.235,column:.215,terno:.46,petal:.39,flare:.49,gala:.44,bomber:.23,sequin:.23,mermaid:.38,tulle:.50,cape:.30,halter:.27,corset:.48,cocktail:.25,trench:.26,pencil:.21,sundress:.32,knit:.22,sheath:.215,asym:.26,poplin:.28,tube:.22,piña:.34,inabel:.28,linen_wrap:.30,metallic_mini:.22,mesh:.42,feather:.29,drape_asym:.36}[id]??hips+.025;
     const profile=id==="coat"?[[hipY-.40,hips+.065,.169,0],[hipY-.08,hips+.046,.164,0],[hipY+.035,hips+.025,.158,0]]:
       id==="street"?[[hipY-.09,hips+.065,.178,0],[hipY+.035,hips+.059,.167,0]]:
       pants?[[hipY-.13,hips+.013,.145,0],[hipY+.035,hips+.021,.155,0]]:[
@@ -468,7 +468,7 @@ function createStudio(canvas) {
       [bustY,shoulders*.76,bust,0],[bodiceTop,sleeves?shoulders+.009:shoulders*.69,.119,0]);
     const folds=(p,x,y)=>{
       const skirt=Math.max(0,Math.min(1,(hipY-y)/.7));
-      const gather=id==="flare"?.040:id==="petal"?.058:id==="terno"?.026:.012;
+      const gather=(id==="flare"||id==="tulle"||id==="corset")?0.042:(id==="petal"||id==="feather")?0.058:(id==="terno"||id==="gala"||id==="mermaid"||id==="mesh"||id==="drape_asym")?0.026:0.012;
       return Math.cos(p)*(Math.sin(p*(id==="flare"?24:9)+y*2)*gather*skirt +.010*Math.sin(p*7)*(1-skirt));
     };
     rings(group,fabric,profile,folds);
@@ -483,7 +483,7 @@ function createStudio(canvas) {
         curve(group,trim,lapel?[[s*.087,shoulderY-.017,.103],[s*.152,bustY+.05,.126],[s*.107,bustY-.01,bust*.94],[s*.031,waistY+.06,.125]]:
           [[s*.115,shoulderY-.014,.10],[s*.08,shoulderY-.048,.115],[0,shoulderY-.058,.126]],lapel?.016:.009);
       }
-      if(id==="coat"||id==="suit"){
+      if(id==="coat"||id==="suit"||id==="barong"){
         for(let i=0;i<4;i++) oval(group,trim,0,waistY+.08-i*.082,.15,.017,.017,.007);
       }
     }

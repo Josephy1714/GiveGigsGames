@@ -17,7 +17,7 @@ const makeupKeys=new Set([
 ]);
 const initial = {
   home:null,city:"nyc",name:"Ari Chen",day:1,cash:480,fame:0,contacts:0,energy:100,avatar:avatarDefault,
-  owned:garments.filter(g=>g.cost===0).map(g=>g.id), looks:[],photos:[],record:{},log:[],
+  owned:garments.filter(g=>g.cost===0).map(g=>g.id), looks:[],photos:[],record:{},challengeScores:{},log:[],
   visited:["nyc"],milestones:[]
 };
 const stylesList=["Minimal","Casual","Tailored","Evening","Craft","Editorial"];
@@ -42,6 +42,7 @@ const sceneNames={studio:"Fitting mirror",shoot:"Capture set",runway:"Runway lig
 const pages={
   Studio:["The Studio","Sculpt your model, mix a beauty look and dress for the next call time."],
   Bookings:["The Call Sheet","Build your portfolio and get invited to bigger shows."],
+  Challenges:["Style Challenges","Dress to a theme, get scored on your styling, and earn cash and reputation."],
   Camera:["Photo Studio","Frame a pose, choose the light and build a portfolio of your looks."],
   Passport:["The Passport","Fly to new fashion markets as your reputation grows."],
   Lifestyle:["After the Show","Rest between bookings or meet the people behind the collections."],
@@ -211,12 +212,110 @@ function wrapPanel(){
     (w.unlockedMilestones.length?'<article class="card"><p class="eyebrow">Milestone Unlocked</p>'+w.unlockedMilestones.map(m=>'<strong>✦ '+esc(m)+'</strong>').join("")+'</article>':'')+
     primary("Back to Call Sheet","wrap-done","")+'</div>';
 }
+let lastChallengeResult=null;
+function evaluateChallenge(ch){
+  const a=state.avatar;
+  const g=garments.find(item=>item.id===a.garment);
+  const c=ch.criteria;
+  let score=0;
+  const feedback=[];
+  if(c.garments.includes(a.garment)){
+    score+=40;
+    feedback.push("✓ Perfect garment choice ("+g.name+")");
+  }else if(c.styles.includes(g?.style)){
+    score+=24;
+    feedback.push("✓ Garment style ("+g.style+") fits the theme");
+  }else{
+    score+=6;
+    feedback.push("△ Try a "+c.styles.join(" or ")+" garment in the Studio");
+  }
+  if(c.fabrics.includes(a.fabric)){
+    score+=13;
+    feedback.push("✓ Fabric finish ("+a.fabric+") suits the brief");
+  }else{
+    score+=4;
+    feedback.push("△ Switch fabric finish to "+c.fabrics.join(" or "));
+  }
+  if(c.colors.includes(a.fabricColor)){
+    score+=12;
+    feedback.push("✓ Garment dye matches the mood");
+  }else{
+    score+=4;
+    feedback.push("△ Experiment with a theme-matched garment dye");
+  }
+  if(c.jewelry.includes(a.jewelry)){
+    score+=10;
+    feedback.push("✓ Jewelry complements the look");
+  }else{
+    score+=3;
+    feedback.push("△ Try "+c.jewelry.join(" or ")+" earrings");
+  }
+  if(c.shoes.includes(a.shoes)){
+    score+=8;
+    feedback.push("✓ Footwear matches the theme");
+  }else{
+    score+=2;
+    feedback.push("△ Pair with "+c.shoes.join(" or ")+" footwear");
+  }
+  if(c.belt.includes(a.belt)){
+    score+=7;
+    feedback.push("✓ Waist styling on point");
+  }else{
+    score+=2;
+    feedback.push("△ Consider "+c.belt.join(" or ")+" waist accessory");
+  }
+  if(c.hair.includes(a.hair)){
+    score+=5;
+  }else{
+    score+=2;
+  }
+  const m=c.makeup||{};
+  let makeupOk=false;
+  if((!m.minLip||a.lipIntensity>=m.minLip)&&(!m.maxLip||a.lipIntensity<=m.maxLip)&&(!m.finish||m.finish.includes(a.finish))&&(!m.linerStyle||m.linerStyle.includes(a.linerStyle))&&(!m.blushPlacement||m.blushPlacement.includes(a.blushPlacement))&&(!m.minLiner||a.liner>=m.minLiner)){
+    makeupOk=true;
+  }
+  score+=makeupOk?5:1;
+  if(makeupOk) feedback.push("✓ Beauty & hair styling elevate the theme");
+  else feedback.push("△ Tweak makeup finish or liner in the Studio for a beauty bonus");
+
+  const tier=score>=90?"S — Runway Icon":score>=75?"A — Editorial Standout":score>=55?"B — On Theme":"C — Needs Styling";
+  const prev=state.challengeScores?.[ch.id]||0;
+  let cash=0,fame=0;
+  if(score>=55){
+    if(prev<55){
+      const mult=Math.max(0.6,score/100);
+      cash=Math.round(ch.rewardCash*mult);
+      fame=Math.max(1,Math.round(ch.rewardFame*mult));
+    }else if(score>prev){
+      cash=Math.round((score-prev)*3);
+      fame=Math.max(1,Math.round((score-prev)/5));
+    }else{
+      cash=25;
+      fame=1;
+    }
+  }else{
+    cash=15;
+  }
+  state.challengeScores=state.challengeScores||{};
+  if(score>prev) state.challengeScores[ch.id]=score;
+  state.cash+=cash;
+  state.fame+=fame;
+  return {id:ch.id,name:ch.name,score,tier,feedback,cash,fame,isNewBest:score>prev};
+}
+function challengesPanel(){
+  const resHtml=lastChallengeResult?'<article class="card" style="border-color:var(--accent);margin-bottom:16px"><h3>'+esc(lastChallengeResult.name)+' — '+lastChallengeResult.score+'/100 ('+lastChallengeResult.tier+')</h3><p class="muted">Earned '+money(lastChallengeResult.cash)+(lastChallengeResult.fame?' · +'+lastChallengeResult.fame+' Reputation':'')+(lastChallengeResult.isNewBest?' · New Best!':'')+'</p><ul style="margin:8px 0 0 18px;padding:0;font-size:0.9rem">'+lastChallengeResult.feedback.map(f=>'<li>'+esc(f)+'</li>').join("")+'</ul></article>':"";
+  panel.innerHTML=resHtml+'<p class="muted">Style your model in the Studio, then submit your look to a themed challenge to earn cash and reputation.</p><div class="stack">'+
+    challenges.map(ch=>{
+      const best=state.challengeScores?.[ch.id];
+      return '<article class="card"><div class="card-head"><h3>'+esc(ch.name)+'</h3>'+(best?'<span class="badge">Best: '+best+'/100</span>':'<span class="badge">New</span>')+'</div><p>'+esc(ch.brief)+'</p><p class="muted">'+ch.tags.join(" · ")+' · Up to '+money(ch.rewardCash)+' & +'+ch.rewardFame+' Rep</p><div class="buttons">'+primary("Submit Current Look","challenge-submit",ch.id)+btn("Style in Studio","nav","Studio")+'</div></article>';
+    }).join("")+'</div>';
+}
 function render(){
   renderChrome();
   if(session) sessionPanel();
   else if(wrap) wrapPanel();
   else if(!state.home) homePanel();
-  else ({Studio:studioPanel,Bookings:bookingPanel,Camera:photoPanel,Passport:passportPanel,Lifestyle:lifestylePanel,Career:careerPanel})[page]();
+  else ({Studio:studioPanel,Bookings:bookingPanel,Camera:photoPanel,Passport:passportPanel,Lifestyle:lifestylePanel,Challenges:challengesPanel,Career:careerPanel})[page]();
   draw();
 }
 function addLog(text){
@@ -531,6 +630,7 @@ function handle(action,value){
     }
     return;
   }
+  if(action==="challenge-submit"){const ch=challenges.find(c=>c.id===value);if(ch){lastChallengeResult=evaluateChallenge(ch);save();addLog("Submitted "+ch.name+" ("+lastChallengeResult.score+"/100).");notice("Scored "+lastChallengeResult.score+"/100 on "+ch.name+"!");render();}return;}
   if(action==="nav"){
     page=value;
     scene=page==="Lifestyle"?"hotel":"studio";

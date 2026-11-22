@@ -37,7 +37,52 @@ const garments = [
   {id:"coat",name:"Architectural coat",style:"Tailored",tone:"#90576b",cost:180},
   {id:"flare",name:"Pleated organza",style:"Evening",tone:"#8974a4",cost:230},
   {id:"woven",name:"Woven co-ord",style:"Craft",tone:"#658678",cost:160},
-  {id:"street",name:"Oversized streetwear",style:"Casual",tone:"#7a7ba3",cost:140}
+  {id:"street",name:"Oversized streetwear",style:"Casual",tone:"#7a7ba3",cost:140},
+  {id:"resort",name:"Resort linen set",style:"Casual",tone:"#d49b6a",cost:120},
+  {id:"y2k",name:"Y2K cargo & crop",style:"Editorial",tone:"#a597c5",cost:190},
+  {id:"gala",name:"Velvet gala gown",style:"Evening",tone:"#8e2c4a",cost:290},
+  {id:"barong",name:"Modern Barong ensemble",style:"Craft",tone:"#d9ccb4",cost:210},
+  {id:"bomber",name:"Cropped bomber & mini",style:"Casual",tone:"#4c5c7a",cost:170},
+  {id:"sequin",name:"Sequin column gown",style:"Evening",tone:"#c59b5f",cost:340},
+  {id:"mermaid",name:"Silk mermaid gown",style:"Evening",tone:"#8d3b58",cost:360},
+  {id:"tulle",name:"Tiered tulle gown",style:"Evening",tone:"#b98ea8",cost:380},
+  {id:"cape",name:"Caped evening dress",style:"Evening",tone:"#3f3b54",cost:310},
+  {id:"halter",name:"Satin halter gown",style:"Evening",tone:"#49756d",cost:270},
+  {id:"corset",name:"Corset ballgown",style:"Evening",tone:"#7a2d43",cost:400},
+  {id:"cocktail",name:"Draped cocktail dress",style:"Evening",tone:"#9e5a76",cost:220},
+  {id:"tux",name:"Double-breasted tux",style:"Tailored",tone:"#2d2b38",cost:290},
+  {id:"trench",name:"Belted trench dress",style:"Tailored",tone:"#b49473",cost:240},
+  {id:"vest",name:"Tailored vest & trousers",style:"Tailored",tone:"#5f6270",cost:195},
+  {id:"blazer",name:"Cropped blazer set",style:"Tailored",tone:"#6e4f5f",cost:210},
+  {id:"pleat_pant",name:"Wide-leg pleated suit",style:"Tailored",tone:"#4c5e72",cost:230},
+  {id:"pencil",name:"Structured pencil dress",style:"Tailored",tone:"#554a5a",cost:185},
+  {id:"wrap_suit",name:"Wrap-front tailoring",style:"Tailored",tone:"#8c7666",cost:250},
+  {id:"sundress",name:"Breezy sundress",style:"Casual",tone:"#e09c7c",cost:110},
+  {id:"hoodie",name:"Boxy hoodie & joggers",style:"Casual",tone:"#6d7280",cost:125},
+  {id:"varsity",name:"Varsity jacket & jeans",style:"Casual",tone:"#445c82",cost:165},
+  {id:"crochet",name:"Crochet beach set",style:"Casual",tone:"#d8be98",cost:135},
+  {id:"denim_set",name:"Double denim set",style:"Casual",tone:"#567299",cost:155},
+  {id:"knit",name:"Ribbed knit midi",style:"Casual",tone:"#a9826c",cost:145},
+  {id:"track",name:"Retro track set",style:"Casual",tone:"#538078",cost:150},
+  {id:"sheath",name:"Architectural sheath",style:"Minimal",tone:"#d5cfc7",cost:200},
+  {id:"monochrome",name:"Monochrome jumpsuit",style:"Minimal",tone:"#25232b",cost:215},
+  {id:"tunic",name:"Silk tunic & trousers",style:"Minimal",tone:"#c7b199",cost:190},
+  {id:"asym",name:"Asymmetric slip",style:"Minimal",tone:"#8e8d96",cost:205},
+  {id:"poplin",name:"Crisp poplin shirtdress",style:"Minimal",tone:"#dce0e6",cost:175},
+  {id:"tube",name:"Minimalist tube maxi",style:"Minimal",tone:"#4b4a52",cost:180},
+  {id:"piña",name:"Piña-silk wrap",style:"Craft",tone:"#dfd2b5",cost:280},
+  {id:"inabel",name:"Inabel woven midi",style:"Craft",tone:"#9c5a4c",cost:245},
+  {id:"batik",name:"Hand-dyed batik set",style:"Craft",tone:"#5c6f82",cost:225},
+  {id:"embroidered",name:"Embroidered peasant set",style:"Craft",tone:"#c47d67",cost:200},
+  {id:"linen_wrap",name:"Raw linen wrap dress",style:"Craft",tone:"#a89d85",cost:175},
+  {id:"kimona",name:"Contemporary kimona",style:"Craft",tone:"#7e9682",cost:260},
+  {id:"metallic_mini",name:"Liquid metal mini",style:"Editorial",tone:"#b6bac4",cost:320},
+  {id:"cyber",name:"Y2K cyber mesh",style:"Editorial",tone:"#8b6eb3",cost:255},
+  {id:"sculpt",name:"Origami peplum set",style:"Editorial",tone:"#c9657f",cost:350},
+  {id:"mesh",name:"Sheer layered gown",style:"Editorial",tone:"#564c6b",cost:330},
+  {id:"vinyl",name:"Glossy vinyl trench",style:"Editorial",tone:"#2d2229",cost:295},
+  {id:"feather",name:"Textured fringe dress",style:"Editorial",tone:"#d188a0",cost:370},
+  {id:"drape_asym",name:"Avant-garde drape",style:"Editorial",tone:"#52787d",cost:390}
 ];
 const poses = [["Straight on","front"],["Hand on hip","hip"],["Over the shoulder","turn"],["Mid-stride","stride"],["Soft angle","angle"]];
 const presets = [
@@ -223,3 +268,102 @@ const marketEvents = {
   mil: {name:"Brera showroom reception",style:"Tailored",cost:55,energy:12,prompt:"Showroom staff are comparing the morning’s buyer presentations.",options:[["Describe where a slower turn helped show the cut",14,16],["Meet the booking and fitting team",7,24],["Ask which garments are available for tests",10,8]]},
   par: {name:"Left Bank salon reception",style:"Evening",cost:60,energy:13,prompt:"The atelier is discussing which photos capture the collection’s finish.",options:[["Explain which angle best showed the drape",15,16],["Meet the credited members of the atelier",8,24],["Ask about the next fitting calendar",11,8]]}
 };
+
+
+const challenges = [
+  {
+    id: "red-carpet",
+    name: "Red Carpet Glamour",
+    brief: "Command the flashbulbs with a floor-sweeping silhouette, luminous fabric, and statement evening beauty.",
+    tags: ["Evening", "Satin / Metallic", "Heels & Drops"],
+    rewardCash: 340,
+    rewardFame: 18,
+    criteria: {
+      garments: ["gala", "slip", "flare", "petal", "column"],
+      styles: ["Evening", "Editorial"],
+      fabrics: ["satin", "metallic"],
+      colors: [2, 3, 5, 10, 7],
+      jewelry: ["drop", "pearl"],
+      shoes: ["silver", "ink", "nude"],
+      belt: ["none", "chain"],
+      hair: ["waves", "bun", "bob"],
+      makeup: { minLip: 55, finish: ["satin", "gloss"], minLiner: 40 }
+    }
+  },
+  {
+    id: "summer-vacation",
+    name: "Summer Vacation",
+    brief: "Breezy resort tailoring, sun-kissed cheeks, and effortless warm-weather tones.",
+    tags: ["Casual / Resort", "Matte Weave", "Sun-kissed"],
+    rewardCash: 260,
+    rewardFame: 14,
+    criteria: {
+      garments: ["resort", "casual", "woven", "slip"],
+      styles: ["Casual", "Craft"],
+      fabrics: ["matte", "satin"],
+      colors: [3, 4, 7, 8, 9],
+      jewelry: ["hoops", "pearl", "none"],
+      shoes: ["nude", "silver"],
+      belt: ["none", "leather"],
+      hair: ["waves", "braids", "pony", "coils"],
+      makeup: { maxLip: 60, finish: ["gloss", "satin"], blushPlacement: ["sunkissed", "apples"] }
+    }
+  },
+  {
+    id: "streetwear",
+    name: "Streetwear",
+    brief: "Oversized proportions, downtown attitude, ankle boots, and sharp graphic liner.",
+    tags: ["Street / Casual", "Boots", "Graphic Liner"],
+    rewardCash: 280,
+    rewardFame: 15,
+    criteria: {
+      garments: ["street", "bomber", "casual", "y2k", "coat"],
+      styles: ["Casual", "Editorial"],
+      fabrics: ["matte", "metallic"],
+      colors: [1, 2, 6, 9, 11],
+      jewelry: ["hoops", "none"],
+      shoes: ["boots", "ink"],
+      belt: ["chain", "leather"],
+      hair: ["pony", "braids", "bob", "pixie", "coils"],
+      makeup: { linerStyle: ["graphic", "classic"], minLiner: 35 }
+    }
+  },
+  {
+    id: "y2k",
+    name: "Y2K",
+    brief: "Turn-of-the-millennium pop: metallic sheen, glossy lips, chain belts, and high-energy silhouettes.",
+    tags: ["Editorial", "Metallic / Gloss", "Chain Belt & Hoops"],
+    rewardCash: 310,
+    rewardFame: 16,
+    criteria: {
+      garments: ["y2k", "bomber", "slip", "flare"],
+      styles: ["Editorial", "Casual", "Evening"],
+      fabrics: ["metallic", "satin"],
+      colors: [0, 6, 7, 8, 11],
+      jewelry: ["hoops", "drop"],
+      shoes: ["silver", "boots"],
+      belt: ["chain"],
+      hair: ["pony", "bob", "braids"],
+      makeup: { finish: ["gloss"], minLip: 35 }
+    }
+  },
+  {
+    id: "filipino-heritage",
+    name: "Filipino Heritage",
+    brief: "Celebrate local craft with a sculpted terno, modern barong, or handwoven textiles paired with refined pearls.",
+    tags: ["Craft", "Terno / Barong / Woven", "Pearl Accents"],
+    rewardCash: 360,
+    rewardFame: 20,
+    criteria: {
+      garments: ["terno", "barong", "woven"],
+      styles: ["Craft"],
+      fabrics: ["matte", "satin"],
+      colors: [3, 4, 5, 7, 9, 10],
+      jewelry: ["pearl", "drop"],
+      shoes: ["nude", "ink", "silver"],
+      belt: ["none", "chain"],
+      hair: ["bun", "waves", "bob"],
+      makeup: { finish: ["satin", "matte"], minLip: 30 }
+    }
+  }
+];
