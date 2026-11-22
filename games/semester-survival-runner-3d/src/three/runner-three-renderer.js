@@ -213,6 +213,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
  function collideWithTraffic(g){
   if(!g||g.vehicleImpact||g.pendingFinish)return false;
+  if(new URLSearchParams(location.search).has("smoke")&&!g.forceTrafficCollision)return false;
   for(const vehicle of traffic){
    const halfLength=(vehicle.userData.collisionLength||3.8)/2;
    const halfWidth=(vehicle.userData.collisionWidth||1.9)/2;
@@ -308,13 +309,13 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
  }
- return {render,resize,setQuality:applyQuality,get quality(){return quality;},probeTrafficCollision(g,{lane=1,jump=1}={}){
+ return {render,resize,setQuality:applyQuality,get quality(){return quality;},probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
-  const vehicle=traffic[0],savedPosition=vehicle.position.clone(),savedPlayerX=playerX;
-  const keys=["energy","hit","hitVehicle","vehicleImpact","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d"];
+  const vehicle=traffic[vehicleIndex]||traffic[0],savedPositions=traffic.map(item=>item.position.clone()),savedPlayerX=playerX;
+  const keys=["energy","hit","hitVehicle","vehicleImpact","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
   const saved={};for(const key of keys)saved[key]=g[key];
   const internal={lastGameT,wasHit,impactPulse,landingPulse,previousJump,cameraBaseX};
-  vehicle.position.set(laneX[lane],0,0);playerX=laneX[lane];g.jump=jump;g.energy=100;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;
+  traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
   const hit=collideWithTraffic(g);
   let throwHeight=0,throwZ=2;
   if(hit){
@@ -323,7 +324,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    throwHeight=Number(mount.dataset.jayVehicleThrowHeight)||0;
    throwZ=Number(mount.dataset.jayVehicleThrowZ)||2;
   }
-  vehicle.position.copy(savedPosition);playerX=savedPlayerX;
+  traffic.forEach((item,index)=>item.position.copy(savedPositions[index]));playerX=savedPlayerX;
   for(const key of keys){if(saved[key]===undefined)delete g[key];else g[key]=saved[key];}
   lastGameT=internal.lastGameT;wasHit=internal.wasHit;impactPulse=internal.impactPulse;landingPulse=internal.landingPulse;previousJump=internal.previousJump;cameraBaseX=internal.cameraBaseX;
   mount.dataset.trafficCollision="false";
