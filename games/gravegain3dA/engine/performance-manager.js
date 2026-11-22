@@ -4,7 +4,8 @@
     class PerformanceManager {
         constructor(renderer) {
             this.renderer = renderer;
-            this.samples = [];
+            this.frameTotal = 0;
+            this.frameCount = 0;
             const config = window.GraveGainConfig?.render;
             this.minPixelRatio = config?.minPixelRatio ?? 0.75;
             this.maxPixelRatio = config?.maxPixelRatio ?? 1.5;
@@ -19,17 +20,18 @@
         }
 
         sample(frameMs) {
-            this.samples.push(frameMs);
-            if (this.samples.length < this.sampleFrames) return;
-            const average = this.samples.reduce((sum, value) => sum + value, 0) / this.samples.length;
-            this.samples.length = 0;
+            this.frameTotal += frameMs;
+            this.frameCount++;
+            if (this.frameCount < this.sampleFrames) return;
+            const average = this.frameTotal / this.frameCount;
+            this.frameTotal = 0;
+            this.frameCount = 0;
             if (average > this.slowFrameMs) {
                 // Degrade-only pixel nudge (no step-up: avoids oscillation).
-                const next = Math.max(this.minPixelRatio, this.pixelRatio - 0.25);
+                const next = Math.max(Math.min(this.minPixelRatio, this.maxPixelRatio, window.devicePixelRatio || 1), this.pixelRatio - 0.25);
                 if (next !== this.pixelRatio) {
                     this.pixelRatio = next;
                     this.renderer.setPixelRatio(next);
-                    this.renderer.setSize(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight, false);
                 }
                 // Sustained slowness: step the graphics preset down one rung.
                 this.slowWindows += 1;

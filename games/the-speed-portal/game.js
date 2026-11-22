@@ -450,9 +450,15 @@ function onWindowResize() {
     const canvas = document.getElementById('TEMPLATE-4weird-gameCanvas');
     const w = canvas.clientWidth || 800;
     const h = canvas.clientHeight || 600;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h, false);
+    const ratio = renderer.getPixelRatio();
+    if (canvas.width !== Math.floor(w * ratio) || canvas.height !== Math.floor(h * ratio)) {
+        renderer.setSize(w, h, false);
+    }
+    const aspect = w / h;
+    if (camera.aspect !== aspect) {
+        camera.aspect = aspect;
+        camera.updateProjectionMatrix();
+    }
 }
 
 function animate() {

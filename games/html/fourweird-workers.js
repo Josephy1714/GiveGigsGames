@@ -8,21 +8,21 @@
  * that runs PURE-MATH tasks off the main thread: seeded RNG streams,
  * steering batches, particle integration, timing aggregation. Same
  * run(task, payload) -> Promise API with a synchronous fallback registry,
- * so callers never branch: workers accelerate when available, the game
- * stays correct when they are not (file://, CSP worker-src, no Worker).
+ * so callers can use the same API on hosted and offline pages.
  *
- * Never throws; no DOM/canvas/audio inside the worker; transferables only
- * as an optimization (structured clone otherwise); per-task timeout with
- * fallback. Exposes window.FourWeirdWorkers = { supported(), run(),
+ * Shared workers use structured clone, bounded FIFO scheduling and a
+ * synchronous fallback when a job cannot use a worker. Exposes window.FourWeirdWorkers = { supported(), run(),
  * probe(), version }.
  */
 (function () {
     'use strict';
     if (window.FourWeirdWorkers) return;
 
-    var VERSION = '1.0.0';
+    var VERSION = '2.0.0';
     var MAX_WORKERS = 2;
     var DEFAULT_TIMEOUT_MS = 1500;
+    var MAX_QUEUED = 32;
+    var IDLE_TIMEOUT_MS = 15000;
 
     // Inline worker source: pure math only. No Math.random (seeded
     // mulberry32), no DOM, no importScripts, no eval.
@@ -91,188 +91,174 @@
         }
     };
 
-    var pool = [];
-    var seq = 0;
-    var pending = {};
-    var workerOK = null;
+    const pool = new Set();
+    const queue = [];
+    let nextId = 0;
+    let workerOK;
+    const workerLimit = (navigator.hardwareConcurrency || 1) >= 4 ? MAX_WORKERS : 1;
 
     function detectSupport() {
-        if (workerOK !== null) return workerOK;
-        try {
-            if (typeof Worker === 'undefined') { workerOK = false; return false; }
-            if (typeof Blob === 'undefined' || !URL || typeof URL.createObjectURL !== 'function') {
-                workerOK = false; return false;
-            }
-            // ?workers=0 kill-switch for debugging / restrictive embeds.
-            try {
-                if (new URLSearchParams(window.location.search).get('workers') === '0') {
-                    workerOK = false; return false;
-                }
-            } catch (e) { /* ignore */ }
-            workerOK = true;
-            return true;
-        } catch (e) { workerOK = false; return false; }
-    }
-
-    function makeWorker() {
-        var blob = new Blob([WORKER_SRC], { type: 'text/javascript' });
-        var url = URL.createObjectURL(blob);
-        var w = new Worker(url);
-        w.onmessage = function (ev) {
-            try {
-                var m = ev.data || {};
-                var slot = pending[m.id];
-                if (!slot) return;
-                delete pending[m.id];
-                try { clearTimeout(slot.timer); } catch (e) { /* ignore */ }
-                // Return worker to the idle pool.
-                try { pool.push(slot.worker); } catch (e) { /* ignore */ }
-                pump();
-                if (m.ok) slot.resolve(m.result);
-                else slot.reject(new Error(String(m.error || 'worker-error')));
-            } catch (e) { /* ignore */ }
-        };
-        w.onerror = function () {
-            try {
-                // Fail open: flush this worker's in-flight task to fallback.
-                for (var id in pending) {
-                    if (pending[id] && pending[id].worker === w) {
-                        (function (slotId) {
-                            var slot = pending[slotId];
-                            delete pending[slotId];
-                            try { clearTimeout(slot.timer); } catch (e) { /* ignore */ }
-                            fallbackRun(slot.task, slot.payload).then(slot.resolve, slot.reject);
-                        })(id);
-                        break;
-                    }
-                }
-            } catch (e) { /* ignore */ }
-            try { w.terminate(); } catch (e) { /* ignore */ }
-            workerOK = false;
-        };
-        return w;
-    }
-
-    var queue = [];
-
-    function pump() {
-        try {
-            while (queue.length && pool.length) {
-                var job = queue.shift();
-                var w = pool.pop();
-                job(w);
-            }
-        } catch (e) { /* ignore */ }
+        if (workerOK === undefined) {
+            workerOK = typeof Worker === 'function' && typeof Blob === 'function'
+                && typeof URL.createObjectURL === 'function'
+                && location.protocol !== 'file:'
+                && new URLSearchParams(location.search).get('workers') !== '0';
+        }
+        return workerOK;
     }
 
     function fallbackRun(task, payload) {
-        return new Promise(function (resolve, reject) {
-            try {
-                var fn = FALLBACK[task];
-                if (!fn) { reject(new Error('unknown-task:' + task)); return; }
-                resolve(fn(payload || {}));
-            } catch (e) { reject(e); }
+        return Promise.resolve().then(() => {
+            if (!Object.prototype.hasOwnProperty.call(FALLBACK, task)) {
+                throw new Error('unknown-task:' + task);
+            }
+            return FALLBACK[task](payload);
         });
     }
 
-    function run(task, payload, opts) {
-        var timeout = DEFAULT_TIMEOUT_MS;
+    function fallbackJob(job) {
+        clearTimeout(job.timer);
+        fallbackRun(job.task, job.payload).then(job.resolve, job.reject);
+    }
+
+    function retire(slot) {
+        clearTimeout(slot.idleTimer);
+        slot.worker.terminate();
+        pool.delete(slot);
+        const job = slot.job;
+        slot.job = null;
+        if (job) {
+            job.slot = null;
+            fallbackJob(job);
+        }
+    }
+
+    function disableWorkers() {
+        workerOK = false;
+        for (const slot of pool) retire(slot);
+        for (const job of queue.splice(0)) fallbackJob(job);
+    }
+
+    function makeWorker() {
+        const url = URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' }));
+        let worker;
         try {
-            if (opts && typeof opts.timeout === 'number') {
-                timeout = Math.min(Math.max(opts.timeout, 100), 10000);
+            worker = new Worker(url);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+        const slot = { worker, job: null, idleTimer: null };
+        pool.add(slot);
+        worker.onmessage = ({ data }) => {
+            const job = slot.job;
+            if (!job || job.id !== data.id) return;
+            slot.job = null;
+            job.slot = null;
+            if (data.ok) {
+                clearTimeout(job.timer);
+                job.resolve(data.result);
+            } else {
+                fallbackJob(job);
             }
-        } catch (e) { /* ignore */ }
+            slot.idleTimer = setTimeout(() => retire(slot), IDLE_TIMEOUT_MS);
+            pump();
+        };
+        worker.onerror = (event) => {
+            event.preventDefault();
+            disableWorkers();
+        };
+        worker.onmessageerror = () => disableWorkers();
+        return slot;
+    }
+
+    function pump() {
+        while (queue.length && detectSupport()) {
+            let slot;
+            for (const candidate of pool) {
+                if (!candidate.job) {
+                    slot = candidate;
+                    break;
+                }
+            }
+            if (!slot) {
+                if (pool.size >= workerLimit) return;
+                try {
+                    slot = makeWorker();
+                } catch (_) {
+                    disableWorkers();
+                    return;
+                }
+            }
+
+            clearTimeout(slot.idleTimer);
+            const job = queue.shift();
+            slot.job = job;
+            job.slot = slot;
+            try {
+                slot.worker.postMessage({ id: job.id, task: job.task, payload: job.payload });
+            } catch (_) {
+                slot.job = null;
+                job.slot = null;
+                fallbackJob(job);
+                slot.idleTimer = setTimeout(() => retire(slot), IDLE_TIMEOUT_MS);
+            }
+        }
+    }
+
+    function run(task, payload, opts) {
         task = String(task || '');
         payload = payload || {};
-        if (!detectSupport()) return fallbackRun(task, payload);
-        return new Promise(function (resolve, reject) {
-            var id = 'fw' + (++seq) + '_' + Date.now();
-            var settled = false;
-            function done(fn, v) {
-                if (settled) return;
-                settled = true;
-                try { fn(v); } catch (e) { /* ignore */ }
-            }
-            var timer = setTimeout(function () {
-                try { delete pending[id]; } catch (e) { /* ignore */ }
-                // Timeout: answer from the main-thread fallback, keep going.
-                fallbackRun(task, payload).then(
-                    function (v) { done(resolve, v); },
-                    function (e) { done(reject, e); }
-                );
-            }, timeout);
-            pending[id] = { resolve: function (v) { done(resolve, v); }, reject: function (e) { done(reject, e); }, timer: timer, task: task, payload: payload, worker: null };
-            queue.push(function (w) {
-                try {
-                    pending[id].worker = w;
-                    w.postMessage({ id: id, task: task, payload: payload });
-                } catch (e) {
-                    try { delete pending[id]; } catch (ignored) { /* ignore */ }
-                    try { clearTimeout(timer); } catch (ignored2) { /* ignore */ }
-                    try { pool.push(w); } catch (ignored3) { /* ignore */ }
-                    fallbackRun(task, payload).then(
-                        function (v) { done(resolve, v); },
-                        function (err) { done(reject, err); }
-                    );
+        if (!Object.prototype.hasOwnProperty.call(FALLBACK, task) || !detectSupport() || queue.length >= MAX_QUEUED) {
+            return fallbackRun(task, payload);
+        }
+        const timeout = Number.isFinite(opts?.timeout)
+            ? Math.min(Math.max(opts.timeout, 100), 10000)
+            : DEFAULT_TIMEOUT_MS;
+        return new Promise((resolve, reject) => {
+            const job = { id: ++nextId, task, payload, resolve, reject, slot: null, timer: null };
+            job.timer = setTimeout(() => {
+                if (job.slot) {
+                    retire(job.slot);
+                } else {
+                    const index = queue.indexOf(job);
+                    if (index < 0) return;
+                    queue.splice(index, 1);
+                    fallbackJob(job);
                 }
-            });
-            // Grow the pool lazily (<=MAX_WORKERS), degrade to fallback on error.
-            try {
-                var want = 1;
-                try {
-                    var cores = window.navigator && window.navigator.hardwareConcurrency;
-                    if (typeof cores === 'number' && cores >= 4) want = Math.min(MAX_WORKERS, 2);
-                } catch (e) { /* ignore */ }
-                var live = pool.length + Object.keys(pending).length;
-                if (live < want) pool.push(makeWorker());
-            } catch (e) {
-                // Construction failed (CSP/file://): answer via fallback.
-                queue.pop();
-                try { delete pending[id]; } catch (ignored) { /* ignore */ }
-                try { clearTimeout(timer); } catch (ignored2) { /* ignore */ }
-                workerOK = false;
-                fallbackRun(task, payload).then(
-                    function (v) { done(resolve, v); },
-                    function (err) { done(reject, err); }
-                );
-                return;
-            }
+                pump();
+            }, timeout);
+            queue.push(job);
             pump();
         });
     }
 
-    // probe(): one rAF frame-time sample aggregated off-thread when
-    // possible; used by the play shell / perf manager to compare worker vs
-    // sync paths. Never throws, always resolves.
+    // Measure a short frame window. Summing eleven samples locally avoids
+    // starting a worker just to report the average.
     function probe() {
-        return new Promise(function (resolve) {
-            try {
-                var samples = [];
-                var frames = 0;
-                var first = -1, last = -1;
-                var now = (typeof performance !== 'undefined' && performance.now)
-                    ? function () { return performance.now(); } : function () { return Date.now(); };
-                var raf = (typeof window.requestAnimationFrame === 'function')
-                    ? function (fn) { window.requestAnimationFrame(fn); }
-                    : function (fn) { setTimeout(fn, 16); };
-                (function tick() {
-                    try {
-                        var t = now();
-                        if (first < 0) first = t;
-                        if (last >= 0) samples.push(Math.min(Math.max(t - last, 0), 100));
-                        last = t;
-                        frames += 1;
-                        if (frames >= 12) {
-                            run('timing-aggregate', { samples: samples }, { timeout: 800 }).then(
-                                function (r) { resolve({ supported: detectSupport(), frames: frames, agg: r }); },
-                                function () { resolve({ supported: false, frames: frames, agg: { avg: -1, n: samples.length } }); }
-                            );
-                            return;
-                        }
-                        raf(tick);
-                    } catch (e) { resolve({ supported: false, frames: frames, agg: { avg: -1, n: samples.length } }); }
-                })();
-            } catch (e) { resolve({ supported: false, frames: 0, agg: { avg: -1, n: 0 } }); }
+        return new Promise(resolve => {
+            const samples = [];
+            let frame;
+            let previous;
+            const raf = window.requestAnimationFrame?.bind(window)
+                || (callback => setTimeout(() => callback(performance.now()), 16));
+            const cancel = window.cancelAnimationFrame?.bind(window) || clearTimeout;
+            const finish = () => {
+                clearTimeout(timer);
+                cancel(frame);
+                resolve({
+                    supported: detectSupport(),
+                    frames: previous === undefined ? 0 : samples.length + 1,
+                    agg: FALLBACK['timing-aggregate']({ samples })
+                });
+            };
+            const timer = setTimeout(finish, DEFAULT_TIMEOUT_MS);
+            function tick(now) {
+                if (previous !== undefined) samples.push(Math.min(Math.max(now - previous, 0), 100));
+                previous = now;
+                if (samples.length >= 11) finish();
+                else frame = raf(tick);
+            }
+            frame = raf(tick);
         });
     }
 

@@ -10,6 +10,9 @@
     // ===== SETUP =====
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const background = document.createElement('canvas');
+    const backgroundCtx = background.getContext('2d');
+    const glows = new Map();
     
     // ===== GAME STATE =====
     const state = {
@@ -93,18 +96,31 @@
         const rect = canvas.parentElement.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         
-        canvas.width = Math.floor(rect.width * dpr);
-        canvas.height = Math.floor(rect.height * dpr);
+        const width = Math.floor(rect.width * dpr);
+        const height = Math.floor(rect.height * dpr);
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
         canvas.style.width = rect.width + 'px';
         canvas.style.height = rect.height + 'px';
         
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (background.width !== Math.ceil(800 * dpr) || background.height !== Math.ceil(600 * dpr) || backgroundRatio !== dpr) {
+            prepareBackground(dpr);
+        }
+        if (state.isPlaying && state.isPaused) render();
     }
     
     // ===== GAME LOOP =====
     let lastTime = 0;
+    let frameId = null;
+    let backgroundRatio;
     
+    function scheduleFrame() {
+        if (frameId === null) frameId = requestAnimationFrame(gameLoop);
+    }
+
     function gameLoop(timestamp) {
+        frameId = null;
         if (!state.isPlaying || state.isPaused) return;
         
         const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
@@ -114,7 +130,7 @@
         render();
         
         state.frames++;
-        requestAnimationFrame(gameLoop);
+        scheduleFrame();
     }
     
     function update(dt) {
@@ -159,43 +175,54 @@
         }
     }
     
-    function render() {
-        const w = 800;
-        const h = 600;
-        
-        // Clear
-        ctx.fillStyle = '#1a1a25';
-        ctx.fillRect(0, 0, w, h);
-        
-        // Grid lines
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.1)';
-        ctx.lineWidth = 1;
-        for (let x = 0; x <= w; x += 50) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
-            ctx.stroke();
+    function prepareBackground(dpr) {
+        backgroundRatio = dpr;
+        background.width = Math.ceil(800 * dpr);
+        background.height = Math.ceil(600 * dpr);
+        const layer = backgroundCtx;
+        layer.setTransform(dpr, 0, 0, dpr, 0, 0);
+        layer.fillStyle = '#1a1a25';
+        layer.fillRect(0, 0, 800, 600);
+        layer.strokeStyle = 'rgba(139, 92, 246, 0.1)';
+        layer.lineWidth = 1;
+        for (let x = 0; x <= 800; x += 50) {
+            layer.beginPath();
+            layer.moveTo(x, 0);
+            layer.lineTo(x, 600);
+            layer.stroke();
         }
-        for (let y = 0; y <= h; y += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-            ctx.stroke();
+        for (let y = 0; y <= 600; y += 50) {
+            layer.beginPath();
+            layer.moveTo(0, y);
+            layer.lineTo(800, y);
+            layer.stroke();
         }
-        
-        // Player glow
-        const gradient = ctx.createRadialGradient(
-            player.x, player.y, 0,
-            player.x, player.y, player.radius * 2
-        );
+        glows.clear();
+    }
+
+    function playerGlow() {
+        let glow = glows.get(player.color);
+        if (glow) return glow;
+        const radius = player.radius * 2;
+        const size = radius * 2;
+        glow = document.createElement('canvas');
+        glow.width = glow.height = Math.ceil(size * backgroundRatio);
+        const layer = glow.getContext('2d');
+        layer.scale(backgroundRatio, backgroundRatio);
+        const gradient = layer.createRadialGradient(radius, radius, 0, radius, radius, radius);
         gradient.addColorStop(0, player.color);
         gradient.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius * 2, 0, Math.PI * 2);
-        ctx.fill();
-        
+        layer.fillStyle = gradient;
+        layer.fillRect(0, 0, size, size);
+        glows.set(player.color, glow);
+        return glow;
+    }
+
+    function render() {
+        const radius = player.radius * 2;
+        ctx.drawImage(background, 0, 0, 800, 600);
+        ctx.drawImage(playerGlow(), player.x - radius, player.y - radius, radius * 2, radius * 2);
+
         // Player
         ctx.fillStyle = player.color;
         ctx.beginPath();
@@ -226,10 +253,12 @@
         
         if (state.isPaused) {
             overlay.classList.remove('hidden');
+            if (frameId !== null) cancelAnimationFrame(frameId);
+            frameId = null;
         } else {
             overlay.classList.add('hidden');
             lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+            scheduleFrame();
         }
     }
     
@@ -249,11 +278,13 @@
         
         resizeCanvas();
         lastTime = performance.now();
-        requestAnimationFrame(gameLoop);
+        scheduleFrame();
     }
     
     function endGame() {
         state.isPlaying = false;
+        if (frameId !== null) cancelAnimationFrame(frameId);
+        frameId = null;
         // e.g. requestAutosave('level-complete') here — on-request save after cutscene/level-complete (see AUTOSAVE section below; comment-only, no logic change).
         
         if (state.score > state.highScore) {
@@ -278,7 +309,6 @@
     });
     
     document.getElementById('restart-btn').addEventListener('click', () => {
-        togglePause();
         startGame();
     });
     

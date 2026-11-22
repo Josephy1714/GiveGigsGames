@@ -568,6 +568,7 @@ function gameLoop(timestamp = 0) {
 // Start screen animation
 let startAnim = 0;
 function drawStartScreen() {
+    if (gameState !== 'start') return;
     ctx.fillStyle = '#0a0a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -611,9 +612,7 @@ function drawStartScreen() {
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
     
-    if (gameState === 'start') {
-        requestAnimationFrame(drawStartScreen);
-    }
+    requestAnimationFrame(drawStartScreen);
 }
 
 drawStartScreen();

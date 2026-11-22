@@ -499,13 +499,19 @@ function update() {
 }
 
 
+const trackGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+trackGradient.addColorStop(0, '#0a0020');
+trackGradient.addColorStop(0.5, '#1a0a30');
+trackGradient.addColorStop(1, '#0a0020');
+const leftGlow = ctx.createLinearGradient(0, 0, 60, 0);
+leftGlow.addColorStop(0, 'rgba(255, 0, 102, 0.3)');
+leftGlow.addColorStop(1, 'transparent');
+const rightGlow = ctx.createLinearGradient(canvas.width, 0, canvas.width - 60, 0);
+rightGlow.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
+rightGlow.addColorStop(1, 'transparent');
+
 function draw() {
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#0a0020');
-    gradient.addColorStop(0.5, '#1a0a30');
-    gradient.addColorStop(1, '#0a0020');
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = trackGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Grid lines (perspective effect)
@@ -527,24 +533,18 @@ function draw() {
     ctx.setLineDash([20, 20]);
     ctx.lineDashOffset = -gridOffset * 0.5;
     
+    ctx.beginPath();
     for (let i = 1; i < laneCount; i++) {
-        ctx.beginPath();
         ctx.moveTo(i * laneWidth, 0);
         ctx.lineTo(i * laneWidth, canvas.height);
-        ctx.stroke();
     }
+    ctx.stroke();
     ctx.setLineDash([]);
     
     // Side glow
-    const leftGlow = ctx.createLinearGradient(0, 0, 60, 0);
-    leftGlow.addColorStop(0, 'rgba(255, 0, 102, 0.3)');
-    leftGlow.addColorStop(1, 'transparent');
     ctx.fillStyle = leftGlow;
     ctx.fillRect(0, 0, 60, canvas.height);
     
-    const rightGlow = ctx.createLinearGradient(canvas.width, 0, canvas.width - 60, 0);
-    rightGlow.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
-    rightGlow.addColorStop(1, 'transparent');
     ctx.fillStyle = rightGlow;
     ctx.fillRect(canvas.width - 60, 0, 60, canvas.height);
     
@@ -693,6 +693,7 @@ function gameLoop(timestamp = performance.now()) {
 
 // Start screen animation
 function drawStartScreen() {
+    if (gameState !== 'start') return;
     ctx.fillStyle = '#0a0020';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -710,9 +711,7 @@ function drawStartScreen() {
         ctx.stroke();
     }
     
-    if (gameState === 'start') {
-        requestAnimationFrame(drawStartScreen);
-    }
+    requestAnimationFrame(drawStartScreen);
 }
 
 drawStartScreen();

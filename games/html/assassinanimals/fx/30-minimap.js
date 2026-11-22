@@ -6,7 +6,16 @@
     var FX = window.AssassinFX;
     if (!FX) return;
 
-    var cv = null, cx2d = null, SIZE = 148;
+    var cv = null, cx2d = null, rings = null, SIZE = 148;
+
+    function drawRings(ctx) {
+        ctx.fillStyle = 'rgba(5,8,16,0.82)';
+        ctx.beginPath(); ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,229,255,0.5)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 1, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(0,229,255,0.12)';
+        ctx.beginPath(); ctx.arc(SIZE / 2, SIZE / 2, SIZE / 4, 0, Math.PI * 2); ctx.stroke();
+    }
 
     function ensure() {
         try {
@@ -26,25 +35,29 @@
     }
 
     function draw() {
+        if (document.hidden) return;
         try {
             ensure();
             var g = FX.game();
             if (!cv || !cx2d || !g || !g.state) return;
             var s = g.state;
-            if (s.mode !== 'PLAY' || !s.map || !s.player) { cv.style.display = 'none'; return; }
-            cv.style.display = 'block';
+            var visible = s.mode === 'PLAY' && s.map && s.player;
+            var display = visible ? 'block' : 'none';
+            if (cv.style.display !== display) cv.style.display = display;
+            if (!visible) return;
 
             var mapW = s.map.cols * 50, mapH = s.map.rows * 50;
             function px(x) { return (x / mapW) * SIZE; }
             function py(y) { return (y / mapH) * SIZE; }
 
             cx2d.clearRect(0, 0, SIZE, SIZE);
-            cx2d.fillStyle = 'rgba(5,8,16,0.82)';
-            cx2d.beginPath(); cx2d.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2); cx2d.fill();
-            cx2d.strokeStyle = 'rgba(0,229,255,0.5)'; cx2d.lineWidth = 1.5;
-            cx2d.beginPath(); cx2d.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 1, 0, Math.PI * 2); cx2d.stroke();
-            cx2d.strokeStyle = 'rgba(0,229,255,0.12)';
-            cx2d.beginPath(); cx2d.arc(SIZE / 2, SIZE / 2, SIZE / 4, 0, Math.PI * 2); cx2d.stroke();
+            if (!rings) {
+                rings = document.createElement('canvas');
+                rings.width = rings.height = SIZE;
+                drawRings(rings.getContext('2d'));
+            }
+            cx2d.drawImage(rings, 0, 0);
+            cx2d.lineWidth = 1.5;
 
             var recon = !!(s.player.reconActiveTimer && s.player.reconActiveTimer > 0);
             var alert = !!(s.alerts && s.alerts.active);
@@ -60,9 +73,7 @@
                 try {
                     if (gd.state === 'PACIFIED') return;
                     var dx = gd.x - s.player.x, dy = gd.y - s.player.y;
-                    var dist = Math.hypot(dx, dy);
-                    var visible = recon || dist < 420;
-                    if (!visible) return;
+                    if (!recon && dx * dx + dy * dy >= 420 * 420) return;
                     var x = px(gd.x), y = py(gd.y);
                     if (gd.isVIP) {
                         cx2d.fillStyle = '#ff0055';

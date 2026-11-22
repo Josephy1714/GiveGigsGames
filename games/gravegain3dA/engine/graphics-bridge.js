@@ -1,57 +1,118 @@
 (function () {
     'use strict';
 
-    /**
-     * Owns optional worker-rendered visual effects. The game can continue to
-     * use its normal renderer when a browser does not support OffscreenCanvas.
-     */
+    const workerURL = new URL('graphics-worker.js', document.currentScript.src);
+    const batchLimit = 64;
+
     class GraphicsBridge {
         constructor(canvas, container) {
             this.canvas = canvas;
             this.container = container;
             this.worker = null;
-            this.enabled = false;
+            this.resizeObserver = null;
+            this.ready = false;
+            this.active = false;
+            this.failed = false;
+            this.frame = null;
+            this.inFlight = false;
+            this.queue = [];
+            this.width = 0;
+            this.height = 0;
+            this.pixelRatio = 0;
+        }
 
-            if (!canvas || !window.Worker || !canvas.transferControlToOffscreen) return;
+        start() {
+            const canvas = this.canvas;
+            if (this.failed || location.protocol === 'file:' || !window.Worker || !canvas?.transferControlToOffscreen) return;
 
             try {
+                this.worker = new Worker(workerURL);
+                this.worker.onmessage = ({ data }) => {
+                    if (data.type === 'ready') this.ready = true;
+                    if (data.type === 'unavailable') this.destroy();
+                    if (data.type === 'received') {
+                        this.inFlight = false;
+                        this.schedule();
+                    }
+                };
+                this.worker.onerror = (event) => {
+                    event.preventDefault();
+                    this.destroy();
+                };
+                this.worker.onmessageerror = () => this.destroy();
                 const offscreen = canvas.transferControlToOffscreen();
-                this.worker = new Worker('engine/graphics-worker.js');
                 this.worker.postMessage({ type: 'init', canvas: offscreen }, [offscreen]);
-                this.enabled = true;
                 this.resize();
-            } catch (_) {
-                // Graceful fallback: the base Three.js scene remains playable.
-                this.enabled = false;
-                this.worker?.terminate();
-                this.worker = null;
+                if (typeof ResizeObserver === 'function') {
+                    this.resizeObserver = new ResizeObserver(() => this.resize());
+                    this.resizeObserver.observe(this.container);
+                }
+            } catch {
+                this.destroy();
             }
         }
 
+        get enabled() {
+            return this.ready && this.active;
+        }
+
         resize() {
-            if (!this.enabled) return;
+            if (!this.worker) return;
             const rect = this.container.getBoundingClientRect();
-            this.worker.postMessage({
-                type: 'resize',
-                width: Math.max(1, Math.floor(rect.width)),
-                height: Math.max(1, Math.floor(rect.height)),
-                pixelRatio: Math.min(self.devicePixelRatio || 1, 1.5)
-            });
+            const width = Math.max(1, rect.width);
+            const height = Math.max(1, rect.height);
+            const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt(4_194_304 / (width * height)));
+            if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) return;
+            this.width = width;
+            this.height = height;
+            this.pixelRatio = pixelRatio;
+            this.worker.postMessage({ type: 'resize', width, height, pixelRatio });
         }
 
         burst(x, y, color = '#ffcc4c', strength = 1) {
-            if (!this.enabled) return;
-            this.worker.postMessage({ type: 'burst', x, y, color, strength });
+            if (!this.enabled || this.queue.length >= batchLimit ||
+                !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(strength)) return;
+            this.queue.push([x, y, color, strength]);
+            this.schedule();
+        }
+
+        schedule() {
+            if (!this.enabled || this.inFlight || this.frame !== null || !this.queue.length) return;
+            this.frame = requestAnimationFrame(() => {
+                this.frame = null;
+                const bursts = this.queue;
+                this.queue = [];
+                this.inFlight = true;
+                this.worker.postMessage({ type: 'bursts', bursts });
+            });
+        }
+
+        cancelBatch() {
+            if (this.frame !== null) cancelAnimationFrame(this.frame);
+            this.frame = null;
+            this.queue.length = 0;
         }
 
         setActive(active) {
-            if (this.enabled) this.worker.postMessage({ type: 'active', active });
+            if (this.active === active) return;
+            this.active = active;
+            if (active && !this.worker) {
+                this.start();
+                return;
+            }
+            if (!active) this.cancelBatch();
+            this.worker?.postMessage({ type: 'active', active });
         }
 
         destroy() {
+            this.failed = true;
+            this.cancelBatch();
+            this.resizeObserver?.disconnect();
+            this.resizeObserver = null;
             this.worker?.terminate();
             this.worker = null;
-            this.enabled = false;
+            this.ready = false;
+            this.inFlight = false;
         }
     }
 

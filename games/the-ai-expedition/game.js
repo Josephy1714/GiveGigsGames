@@ -476,10 +476,18 @@ function onWindowResize() {
     const canvas = document.getElementById('TEMPLATE-4weird-gameCanvas');
     const w = canvas.clientWidth || 800;
     const h = canvas.clientHeight || 600;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h, false);
+    const ratio = renderer.getPixelRatio();
+    if (canvas.width !== Math.floor(w * ratio) || canvas.height !== Math.floor(h * ratio)) {
+        renderer.setSize(w, h, false);
+    }
+    const aspect = w / h;
+    if (camera.aspect !== aspect) {
+        camera.aspect = aspect;
+        camera.updateProjectionMatrix();
+    }
 }
+
+let pipeUp, pipeDirection;
 
 function animate() {
     requestAnimationFrame(animate);
@@ -500,7 +508,8 @@ function animate() {
             }
         } else {
             timeLeft -= dt;
-            timeSpan.textContent = Math.max(0, Math.ceil(timeLeft)) + 's';
+            const displayTime = Math.max(0, Math.ceil(timeLeft)) + 's';
+            if (timeSpan.textContent !== displayTime) timeSpan.textContent = displayTime;
             if (timeLeft <= 0) { endGame(); return; }
         }
 
@@ -536,12 +545,14 @@ function animate() {
         if (stateChanged) refreshNodeColors();
 
         // Update conduit pipes & energy packets to follow orbiting nodes
+        pipeUp ??= new THREE.Vector3(0, 1, 0);
+        pipeDirection ??= new THREE.Vector3();
         pipes.forEach(function (pipe, idx) {
             const pk = packets[idx];
             if (!pk) return;
             const endVec = pk.node.mesh.position;
             pipe.position.copy(endVec).multiplyScalar(0.5);
-            pipe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), endVec.clone().normalize());
+            pipe.quaternion.setFromUnitVectors(pipeUp, pipeDirection.copy(endVec).normalize());
             pk.t = (pk.t + dt * 1.35) % 1;
             pk.mesh.position.copy(endVec).multiplyScalar(1 - pk.t);
         });

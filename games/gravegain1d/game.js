@@ -668,10 +668,6 @@
         try { if (window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain1dA', G, null, true); } catch (e) { /* optional companion */ }
         try { G.ctx = G.canvas.getContext('2d'); } catch (e) { G.ctx = null; }
         try {
-            var fw = window.FourWeirdWorkers;
-            G.workers = !!(fw && typeof fw.supported === 'function' && fw.supported());
-        } catch (e) { G.workers = false; }
-        try {
             el('gg1dMenu').style.display = 'none';
             el('gg1dHud').hidden = false;
             el('gg1dTouch').hidden = false;
@@ -939,39 +935,20 @@
     }
 
     function integrateParts(dt) {
-        try {
-            if (!G || !G.parts.length) return;
-            var useWorker = false;
-            try {
-                useWorker = G.workers && G.preset && G.preset.particleMult >= 1 &&
-                    window.FourWeirdWorkers && G.parts.length > 40;
-            } catch (e) { useWorker = false; }
-            if (useWorker) {
-                var snap = G.parts;
-                window.FourWeirdWorkers.run('particle-integrate', {
-                    parts: snap.map(function (p) { return { x: p.x, y: p.y, vx: p.vx, vy: p.vy, life: p.life }; }),
-                    dt: dt
-                }, { timeout: 400 }).then(function (res) {
-                    try {
-                        if (!G || !res || !res.length) return;
-                        for (var i = 0; i < Math.min(res.length, G.parts.length); i++) {
-                            G.parts[i].x = res[i].x; G.parts[i].y = res[i].y;
-                            G.parts[i].vx = res[i].vx; G.parts[i].vy = res[i].vy;
-                            G.parts[i].life = res[i].life;
-                        }
-                        G.parts = G.parts.filter(function (p) { return p.life > 0; });
-                    } catch (e) { /* ignore */ }
-                });
-                return;
-            }
-            for (var i = G.parts.length - 1; i >= 0; i--) {
-                var p = G.parts[i];
-                p.x += p.vx * dt; p.y += p.vy * dt;
-                p.vx *= 0.94; p.vy *= 0.94;
-                p.life -= dt;
-                if (p.life <= 0) G.parts.splice(i, 1);
-            }
-        } catch (e) { /* ignore */ }
+        if (!G || !G.parts.length) return;
+        var particles = G.parts;
+        var alive = 0;
+        for (var i = 0; i < particles.length; i++) {
+            var particle = particles[i];
+            particle.life -= dt;
+            if (particle.life <= 0) continue;
+            particle.x += particle.vx * dt;
+            particle.y += particle.vy * dt;
+            particle.vx *= 0.94;
+            particle.vy *= 0.94;
+            particles[alive++] = particle;
+        }
+        particles.length = alive;
     }
 
     // ---------------- Render ----------------

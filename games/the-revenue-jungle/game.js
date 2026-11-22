@@ -355,9 +355,15 @@
         const frame = canvas.parentElement;
         const w = frame.clientWidth || 960;
         const h = frame.clientHeight || 540;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h, false);
+        const ratio = renderer.getPixelRatio();
+        if (canvas.width !== Math.floor(w * ratio) || canvas.height !== Math.floor(h * ratio)) {
+            renderer.setSize(w, h, false);
+        }
+        const aspect = w / h;
+        if (camera.aspect !== aspect) {
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+        }
     }
 
     const particleMats = {};
@@ -457,12 +463,20 @@
         if (elStatus) elStatus.textContent = text;
     }
 
+    let previousScore, previousRevenue, previousCombo, previousShields, previousBest;
     function updateHud() {
-        if (elScore) elScore.textContent = String(Math.floor(score));
-        if (elRev) elRev.textContent = '$' + revenue.toLocaleString();
-        if (elCombo) elCombo.textContent = 'x' + combo;
-        if (elShield) elShield.textContent = String(shields);
-        if (elBest) elBest.textContent = String(Math.max(bestData.score, Math.floor(score)));
+        const displayScore = Math.floor(score);
+        const displayBest = Math.max(bestData.score, displayScore);
+        if (elScore && previousScore !== displayScore) elScore.textContent = String(displayScore);
+        if (elRev && previousRevenue !== revenue) elRev.textContent = '$' + revenue.toLocaleString();
+        if (elCombo && previousCombo !== combo) elCombo.textContent = 'x' + combo;
+        if (elShield && previousShields !== shields) elShield.textContent = String(shields);
+        if (elBest && previousBest !== displayBest) elBest.textContent = String(displayBest);
+        previousScore = displayScore;
+        previousRevenue = revenue;
+        previousCombo = combo;
+        previousShields = shields;
+        previousBest = displayBest;
     }
 
     function jump() {

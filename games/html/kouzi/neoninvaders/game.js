@@ -710,6 +710,7 @@ function gameLoop(timestamp = performance.now()) {
 
 // Draw start screen background
 function drawStartScreen() {
+    if (gameState !== 'start') return;
     ctx.fillStyle = '#0a0a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -726,9 +727,7 @@ function drawStartScreen() {
         ctx.fill();
     });
     
-    if (gameState === 'start') {
-        requestAnimationFrame(drawStartScreen);
-    }
+    requestAnimationFrame(drawStartScreen);
 }
 
 // Initialize

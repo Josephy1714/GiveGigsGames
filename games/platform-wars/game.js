@@ -533,11 +533,22 @@
     pickups.push({ x: plat.x + plat.w / 2, y: plat.y - 22, kind: k.kind, icon: k.icon, color: k.color, bob: Math.random() * 6 });
   }
 
+  const arenaGridColumns = new Path2D();
+  const arenaGridRows = new Path2D();
+  for (let x = 0; x < W; x += 60) {
+    arenaGridColumns.moveTo(x, 0);
+    arenaGridColumns.lineTo(x, H);
+  }
+  for (let y = 0; y < H; y += 60) {
+    arenaGridRows.moveTo(0, y);
+    arenaGridRows.lineTo(W, y);
+  }
+  const arenaGradient = ctx.createLinearGradient(0, 0, 0, H);
+  arenaGradient.addColorStop(0, '#090d24');
+  arenaGradient.addColorStop(1, '#182147');
+
   function drawBackground(t) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#090d24');
-    g.addColorStop(1, '#182147');
-    ctx.fillStyle = g;
+    ctx.fillStyle = arenaGradient;
     ctx.fillRect(0, 0, W, H);
 
     // Subtle skyline silhouette
@@ -551,8 +562,8 @@
     // Subtle grid
     ctx.strokeStyle = 'rgba(148, 163, 184, 0.07)';
     ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    ctx.stroke(arenaGridColumns);
+    ctx.stroke(arenaGridRows);
   }
 
   function drawFighter(f) {

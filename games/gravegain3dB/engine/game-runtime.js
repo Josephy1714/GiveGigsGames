@@ -133,6 +133,7 @@
                     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap || this.renderer.shadowMap.type;
                 }
             } catch (_) {}
+            this.graphicsPoint = new THREE.Vector3();
             this.graphics = new window.GraveGainGraphicsBridge(
                 document.getElementById('effectsCanvas'), this.container
             );
@@ -326,10 +327,12 @@
                     this.performance.maxPixelRatio = preset.pixelRatioMax;
                     const pr = Math.min(window.devicePixelRatio || 1, preset.pixelRatioMax);
                     this.performance.pixelRatio = pr;
-                    this.renderer.setPixelRatio(pr);
                     const w = this.container.clientWidth || 1000;
                     const h = this.container.clientHeight || 600;
-                    this.renderer.setSize(w, h);
+                    if (this.canvas.style.width !== w + 'px' || this.canvas.style.height !== h + 'px') {
+                        this.renderer.setSize(w, h);
+                    }
+                    if (this.renderer.getPixelRatio() !== pr) this.renderer.setPixelRatio(pr);
                 }
             } catch (_) {}
             try {
@@ -371,7 +374,7 @@
             window.addEventListener('resize', onResize);
             document.addEventListener('fullscreenchange', onResize);
             document.addEventListener('visibilitychange', () => {
-                this.graphics.setActive(!document.hidden);
+                this.graphics.setActive(this.gfxPreset.postFX && !document.hidden);
             });
         }
 
@@ -3191,12 +3194,11 @@
 
         emitGraphicsBurst(worldX, worldZ, color = '#ffcc4c', strength = 1) {
             if (!this.graphics.enabled) return;
-            const point = new THREE.Vector3(worldX, 16, worldZ).project(this.camera3d);
+            const point = this.graphicsPoint.set(worldX, 16, worldZ).project(this.camera3d);
             if (point.z < -1 || point.z > 1) return;
-            const rect = this.container.getBoundingClientRect();
             this.graphics.burst(
-                (point.x * 0.5 + 0.5) * rect.width,
-                (-point.y * 0.5 + 0.5) * rect.height,
+                (point.x * 0.5 + 0.5) * this.graphics.width,
+                (-point.y * 0.5 + 0.5) * this.graphics.height,
                 color,
                 strength
             );
