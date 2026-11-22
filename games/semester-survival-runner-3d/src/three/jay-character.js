@@ -59,6 +59,22 @@ function reverseAnimationClip(clip, name) {
   return new THREE.AnimationClip(name, duration, tracks);
 }
 
+function neutralizeOpenMouthMorphs(root) {
+  const neutralized = [];
+  root.traverse(node => {
+    if (!node.isMesh || !node.morphTargetDictionary || !node.morphTargetInfluences) return;
+    for (const [name, index] of Object.entries(node.morphTargetDictionary)) {
+      // Mixamo and common DCC exports use these names for speech/open-jaw poses.
+      // Keep smiles and other expression shapes intact.
+      if (!/(?:mouth.?open|open.?mouth|jaw.?open|viseme|phoneme|talk|speak)/i.test(name)) continue;
+      if (index < 0 || index >= node.morphTargetInfluences.length) continue;
+      node.morphTargetInfluences[index] = 0;
+      neutralized.push(name);
+    }
+  });
+  return [...new Set(neutralized)];
+}
+
 function resolveClips(clips) {
   const byName = new Map(clips.map(clip => [normaliseClipName(clip.name), clip]));
   const resolved = {};
@@ -120,7 +136,7 @@ export async function loadJayCharacter({
     throw new Error("Jay GLB is not rigged: no skinned mesh was found.");
   }
 
-  const { resolved, missing } = resolveClips(gltf.animations || []);
+  const { resolved, missing } = resolveClips(gltf.animations || []);\n  const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
   if (resolved.fall && !resolved.getUp) {
@@ -206,7 +222,7 @@ export async function loadJayCharacter({
     mixer,
     fit,
     availableClips: Object.freeze(Object.keys(actions)),
-    missingClips: Object.freeze(missing),
+    missingClips: Object.freeze(missing),\n    neutralizedMouthMorphs: Object.freeze(neutralizedMouthMorphs),
     play,
     update,
     dispose,
