@@ -92,7 +92,8 @@ function makeRunInPlace(clip) {
     const bindingPath = String(track.name).replace(/\.position$/i, "");
     const nodePath = bindingPath.replace(/[^a-z0-9]/gi, "").toLowerCase();
     const isHips = /(hips|pelvis|waist)/i.test(nodePath);
-    const isRoot = /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
+    // An Armature/Hips path is a pelvis channel, not an armature-root channel.
+    const isRoot = !isHips && /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
     if (!isHips && !isRoot) return track;
 
     const size = track.getValueSize();
