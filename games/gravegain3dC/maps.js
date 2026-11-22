@@ -262,7 +262,96 @@ export const MAPS = {
             [32, 0, 0]
         ],
         rtsCamera: { pos: [0, 44, -42], target: [0, 2, 0] }
+    },
+
+    cargo_shipment: {
+        id: 'cargo_shipment',
+        name: 'CARGO SHIPMENT',
+        tagline: 'Tight close-quarters container yard built for frantic, nonstop firefights.',
+        accent: '#00b4d8',
+        clearColor: [0.05, 0.06, 0.08, 1],
+        fogColor: [0.08, 0.07, 0.06],
+        fogDensity: 0.007,
+        hemiColor: [0.95, 0.9, 0.85],
+        hemiIntensity: 0.9,
+        dirColor: [1.0, 0.9, 0.78],
+        dirIntensity: 0.85,
+        hasFloor: true,
+        floorSize: 58,
+        floorColor: [0.22, 0.16, 0.12],
+        floorEmissive: [0.03, 0.02, 0.01],
+        halfBound: 27,
+        voidY: null,
+        palette: {
+            primary: [0.12, 0.48, 0.62],      // Teal-blue containers
+            primaryEmissive: [0.01, 0.05, 0.08],
+            platform: [0.56, 0.34, 0.2],      // Rust-brown containers
+            platformEmissive: [0.06, 0.03, 0.01],
+            trim: [0.76, 0.62, 0.28],         // Tan/yellow containers & crates
+            trimEmissive: [0.08, 0.06, 0.02],
+            pad: [0.0, 0.85, 1.0],
+            padEmissive: [0.0, 0.65, 0.85]
+        },
+        blocks: [
+            // Perimeter yard walls
+            { x: 0, y: 2.5, z: -28.5, w: 59, h: 5, d: 2, style: 'platform' },
+            { x: 0, y: 2.5, z: 28.5, w: 59, h: 5, d: 2, style: 'platform' },
+            { x: -28.5, y: 2.5, z: 0, w: 2, h: 5, d: 55, style: 'platform' },
+            { x: 28.5, y: 2.5, z: 0, w: 2, h: 5, d: 55, style: 'platform' },
+
+            // 4 Central paired container blocks (forming the + cross-lanes)
+            // Top-left pair (horizontal)
+            { x: -7, y: 2.1, z: 10, w: 9, h: 4.2, d: 4.2, style: 'platform' },
+            { x: -7, y: 2.1, z: 5.5, w: 9, h: 4.2, d: 4.2, style: 'primary' },
+            // Top-right pair (horizontal) + upper stacked container
+            { x: 8, y: 2.1, z: 10, w: 9, h: 4.2, d: 4.2, style: 'trim' },
+            { x: 8, y: 2.1, z: 5.5, w: 9, h: 4.2, d: 4.2, style: 'primary' },
+            { x: 8, y: 6.3, z: 7.75, w: 9, h: 4.2, d: 4.2, style: 'platform' },
+            // Bottom-left pair (vertical)
+            { x: -9.2, y: 2.1, z: -7, w: 4.2, h: 4.2, d: 9, style: 'trim' },
+            { x: -4.7, y: 2.1, z: -7, w: 4.2, h: 4.2, d: 9, style: 'primary' },
+            // Bottom-right pair (horizontal) + upper stacked container
+            { x: 8, y: 2.1, z: -5.5, w: 9, h: 4.2, d: 4.2, style: 'platform' },
+            { x: 8, y: 2.1, z: -10, w: 9, h: 4.2, d: 4.2, style: 'primary' },
+            { x: 8, y: 6.3, z: -7.75, w: 9, h: 4.2, d: 4.2, style: 'trim' },
+
+            // 4 Outer edge container pairs (N, S, E, W)
+            { x: 0, y: 2.1, z: 22.5, w: 9, h: 4.2, d: 4.2, style: 'platform' },
+            { x: 0, y: 2.1, z: -22.5, w: 9, h: 4.2, d: 4.2, style: 'trim' },
+            { x: -22.5, y: 2.1, z: -2, w: 4.2, h: 4.2, d: 9, style: 'primary' },
+            { x: 22.5, y: 2.1, z: 0, w: 4.2, h: 4.2, d: 9, style: 'trim' },
+
+            // Corner & flank cover (barrel clusters & crates)
+            { x: -16, y: 1.3, z: 16, w: 3.2, h: 2.6, d: 3.2, style: 'platform' },
+            { x: 16, y: 1.3, z: 17, w: 3.2, h: 2.6, d: 3.2, style: 'platform' },
+            { x: -16, y: 1.1, z: -16, w: 4.2, h: 2.2, d: 3.2, style: 'trim' },
+            { x: 15, y: 1.0, z: -15, w: 2.6, h: 2.0, d: 2.6, style: 'trim' },
+            { x: -3, y: 1.1, z: 2, w: 2.4, h: 2.2, d: 2.4, style: 'platform' }
+        ],
+        jumpPads: [
+            { x: -20, y: 0, z: 9, vx: 6, vy: 19, vz: 0, radius: 2.2 },
+            { x: 20, y: 0, z: -9, vx: -6, vy: 19, vz: 0, radius: 2.2 }
+        ],
+        hazards: [],
+        playerSpawn: [0, 0, -17],
+        friendlySpawns: [
+            [-12, 0, -21],
+            [12, 0, -21],
+            [-21, 0, -12],
+            [21, 0, -12],
+            [-6, 0, -17],
+            [6, 0, -17]
+        ],
+        enemySpawns: [
+            [0, 0, 17],
+            [-12, 0, 21],
+            [12, 0, 21],
+            [-21, 0, 12],
+            [21, 0, 12],
+            [0, 0, 0]
+        ],
+        rtsCamera: { pos: [0, 38, -30], target: [0, 0, 0] }
     }
 };
 
-export const MAP_LIST = [MAPS.cyber_courtyard, MAPS.void_spires, MAPS.magma_foundry];
+export const MAP_LIST = [MAPS.cyber_courtyard, MAPS.void_spires, MAPS.magma_foundry, MAPS.cargo_shipment];
