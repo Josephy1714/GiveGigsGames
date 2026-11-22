@@ -2,7 +2,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 import { loadJayCharacter } from "./jay-character.js";
 import { resolveRunnerAnimationState } from "../animation/three-character-animation.js";
 import { resolveQualityProfile } from "./quality-profile.js";
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-3.05,0,3.05];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-4.68,0,4.68];
 const mat=(c,r=.82,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(p,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
 function asphaltTexture(renderer){
@@ -168,7 +168,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  for(let i=0;i<6;i++){building(world,-1,-14-i*38,i,m);building(world,1,-30-i*38,(i+1)%4,m);}
  for(let i=0;i<10;i++){lamp(world,-7.8,-8-i*27,m);lamp(world,7.8,-20-i*27,m);}
  for(let i=0;i<16;i++){tree(world,-10.8,-12-i*17,m);tree(world,10.8,-20-i*17,m);}
- const traffic=[car(scene,-5.25,-38,0x315b7a,m,"car"),car(scene,5.25,-91,0x9a4c39,m,"matatu"),car(scene,-5.25,-146,0x777d78,m,"shuttle"),car(scene,5.25,-198,0xc1a65e,m,"car")];
+ const traffic=[car(world,laneX[0],-38,0x315b7a,m,"car"),car(world,laneX[2],-91,0x9a4c39,m,"matatu"),car(world,laneX[0],-146,0x777d78,m,"shuttle"),car(world,laneX[2],-198,0xc1a65e,m,"car")];
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  // A second 300-unit scenery segment follows the first so the road never runs out as the world scrolls.
@@ -176,7 +176,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
- let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0;
+ let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0;
  jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
  console.info("Jay production 3D rig loaded",jayRig.availableClips);
@@ -193,9 +193,13 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  function resize(){const w=mount.clientWidth||innerWidth,h=mount.clientHeight||innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);}
  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;if(ro)ro.observe(mount);else addEventListener("resize",resize);
  function render(g){
-  if(!g)return;world.position.z=(g.d*.14)%300;repeatWorld.position.z=world.position.z-300;
-  traffic.forEach((v,i)=>{v.position.z=-112+((g.d*.22+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x=(Number(g.d)||0)*.22;});
+  if(!g)return;
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
+  // Obstacles advance 0.55 normalized units per second across a 46-unit depth span.
+  // Scroll every piece of campus scenery at that exact same world-space speed.
+  worldTravel+=dt*(46*.55);
+  world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
+  traffic.forEach(v=>{for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;});
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
@@ -220,9 +224,9 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;
-   jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
+   const runTempo=clamp((Number(g.speed)||345)/345,1,1.45);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
   }
-  let n=0,busN=0;for(const o of g.obs||[]){if(/late bus/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=(Number(g.d)||0)*.22;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
+  let n=0,busN=0;for(const o of g.obs||[]){if(/late bus/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
