@@ -186,9 +186,9 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
  let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0;
- jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
+ jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay-unified.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
- console.info("Jay production 3D rig loaded",jayRig.availableClips);
+ console.info("Jay unified gameplay rig loaded",jayRig.availableClips);
  mount.dataset.rendererReady="true";
  mount.dataset.jayClipCount=String(jayRig.availableClips.length);
  mount.dataset.jayClips=jayRig.availableClips.join(",");
