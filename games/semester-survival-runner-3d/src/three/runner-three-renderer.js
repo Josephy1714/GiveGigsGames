@@ -168,7 +168,16 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  for(let i=0;i<6;i++){building(world,-1,-14-i*38,i,m);building(world,1,-30-i*38,(i+1)%4,m);}
  for(let i=0;i<10;i++){lamp(world,-7.8,-8-i*27,m);lamp(world,7.8,-20-i*27,m);}
  for(let i=0;i<16;i++){tree(world,-10.8,-12-i*17,m);tree(world,10.8,-20-i*17,m);}
- const traffic=[car(scene,laneX[0],-38,0x315b7a,m,"car"),car(scene,laneX[2],-91,0x9a4c39,m,"matatu"),car(scene,laneX[0],-146,0x777d78,m,"shuttle"),car(scene,laneX[2],-198,0xc1a65e,m,"car")];
+ // Balanced traffic pool: all three lanes are used, with lane changes only when a vehicle recycles far up the road.
+ const trafficSpecs=[
+  [0,0x315b7a,"car"],[1,0x9a4c39,"matatu"],[2,0x777d78,"shuttle"],
+  [0,0xc1a65e,"car"],[2,0x496f5e,"matatu"],[1,0x9a9d98,"car"]
+ ];
+ const traffic=trafficSpecs.map(([lane,color,kind],i)=>{
+  const vehicle=car(scene,laneX[lane],-36-i*43,color,m,kind);
+  vehicle.userData.baseLane=lane;vehicle.userData.trafficIndex=i;
+  return vehicle;
+ });
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  // A second 300-unit scenery segment follows the first so the road never runs out as the world scrolls.
@@ -199,7 +208,15 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   // Scroll every piece of campus scenery at that exact same world-space speed.
   worldTravel+=dt*(46*.55)*(Number(g.speed)||367)/(Number(g.baseSpeed)||367);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
-  traffic.forEach((v,i)=>{v.position.z=-112+((worldTravel+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;});
+  traffic.forEach((v,i)=>{
+   const phase=worldTravel-i*43,cycle=258;
+   const lap=Math.floor(phase/cycle);
+   const lane=((v.userData.baseLane+lap)%3+3)%3;
+   const distance=36+(((i*43-worldTravel)%cycle)+cycle)%cycle;
+   v.position.x=laneX[lane];
+   v.position.z=-distance;
+   for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;
+  });
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
@@ -207,9 +224,11 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   if(g.hit&&!wasHit)impactPulse=1;wasHit=!!g.hit;impactPulse=Math.max(0,impactPulse-dt*3.8);
   const airborne=Number(g.jump)>0;if(previousJump>0&&!airborne)landingPulse=1;previousJump=airborne?g.jump:0;landingPulse=Math.max(0,landingPulse-dt*5.5);
   const impact=clamp((Number(g.hitTimer)||0)/.62,0,1);
-  camera.position.x=THREE.MathUtils.damp(camera.position.x,playerX*.075,2.8,dt)+Math.sin(g.t*48)*impact*.035;
+  // Track Jay laterally on narrow mobile viewports so every lane remains fully visible.
+  const cameraTrackX=playerX*.92;
+  camera.position.x=THREE.MathUtils.damp(camera.position.x,cameraTrackX,7.5,dt)+Math.sin(g.t*48)*impact*.035;
   camera.position.y=5.2+Math.sin(g.t*36)*impact*.025;
-  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(playerX*.035,1.1+jumpY*.055,-13);
+  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(cameraTrackX,1.1+jumpY*.055,-13);
   impactRing.visible=impact>.015;impactRing.position.x=playerX;impactRing.scale.setScalar(.75+(1-impact)*1.8);impactRing.material.opacity=impact*.58;
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
@@ -224,7 +243,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;
-   const runTempo=clamp((Number(g.speed)||345)/(Number(g.baseSpeed)||345),1,1.45);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
+   const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
   }
   let n=0,busN=0;for(const o of g.obs||[]){if(/late bus/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
