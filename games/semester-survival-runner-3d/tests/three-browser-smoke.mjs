@@ -18,6 +18,9 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       clipCount: Number(node.dataset.jayClipCount),
       clips: node.dataset.jayClips.split(","),
       mouthPose: node.dataset.jayMouthPose,
+      runMotionFound: node.dataset.jayRunMotionFound === "true",
+      runMotionTracks: Number(node.dataset.jayRunMotionTracks),
+      runApproachEndpoint: Number(node.dataset.jayRunApproachEndpoint),
       neutralizedMouthMorphs: Number(node.dataset.jayMouthMorphsNeutralized),
       quality: node.dataset.graphicsQuality,
       canvas: Boolean(node.querySelector("canvas")),
@@ -33,6 +36,9 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     }
     assert.equal(diagnostics.quality, "High");
     assert.equal(diagnostics.mouthPose, "neutral", "Jay must start with a neutral closed-mouth facial pose");
+    assert.equal(diagnostics.runMotionFound, true, "Jay run clip must expose a detectable root-motion channel");
+    assert.ok(diagnostics.runMotionTracks >= 1, "the root-motion channel must be neutralized for the endless loop");
+    assert.ok(diagnostics.runApproachEndpoint > 0, "the first run must stop at its forward-most pose");
     assert.ok(Number.isFinite(diagnostics.neutralizedMouthMorphs), "facial pose diagnostics must be present");
 
     await page.locator('[data-page="settings"]').first().click();
@@ -41,6 +47,9 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
 
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.jayRunPhase === "loop", null, { timeout: 12000 });
+    await page.waitForTimeout(6000);
+    assert.equal(await world.getAttribute("data-jay-run-phase"), "loop", "Jay must remain in the endless run loop after the forward approach finishes");
     const lateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
     assert.equal(lateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
 
