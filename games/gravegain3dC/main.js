@@ -7,7 +7,7 @@ import { findCover, lineBlocked } from './squad-tactics.js';
 import * as BABYLON from './vendor/babylon-arena.js';
 
 const canvas = document.getElementById('renderCanvas');
-const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true });
+const engine = new BABYLON.Engine(canvas, false, { preserveDrawingBuffer: false, stencil: false, powerPreference: 'high-performance' });
 
 const GRAVITY = 28;
 const PLAYER_RADIUS = 0.55;
@@ -77,7 +77,8 @@ const toColor3 = ([r, g, b]) => new BABYLON.Color3(r, g, b);
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
-    const glow = new BABYLON.GlowLayer('arena-glow', scene, { mainTextureRatio: 0.5 });
+    scene.skipPointerMovePicking = true;
+    const glow = new BABYLON.GlowLayer('arena-glow', scene, { mainTextureRatio: 0.25, blurKernelSize: 16 });
     glow.intensity = 0.28;
     const projectileMaterials = new Map();
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
@@ -1252,13 +1253,27 @@ function createScene() {
     // Load initial map & start menu showcase
     loadMap(selectedMapId);
 
+    const MENU_TARGET = new BABYLON.Vector3(0, 2, 0);
+    const _enemyTargets = [];
+    const _friendlyTargets = [];
+    const _prevPos = new BABYLON.Vector3();
+    const _stepVec = new BABYLON.Vector3();
+    const _spectateOffset = new BABYLON.Vector3(0, 7, -13);
+    const _targetCam = new BABYLON.Vector3();
+    const _playerCenter = new BABYLON.Vector3();
+    const _pushDir = new BABYLON.Vector3();
+    let lastSpeedText = '';
+    let lastFpsText = '';
+    let lastHpText = '';
+    let lastScoreText = '';
+
     scene.onBeforeRenderObservable.add(() => {
         const dt = Math.min(0.05, engine.getDeltaTime() / 1000);
         updateVoxelDebris(dt);
         if (mode === 'menu') {
             menuAngle += dt * 0.22;
             camera.position.set(Math.cos(menuAngle) * 44, 24, Math.sin(menuAngle) * 44);
-            camera.setTarget(new BABYLON.Vector3(0, 2, 0));
+            camera.setTarget(MENU_TARGET);
             return;
         }
 
@@ -1324,38 +1339,47 @@ function createScene() {
         }
 
         // Update AI
-        const enemyTargets = friendlies.map(f => f.mesh);
-        if (mode === 'player') enemyTargets.push(camera);
-        const friendlyTargets = enemies.map(e => e.mesh);
+        _enemyTargets.length = 0;
+        for (let i = 0; i < friendlies.length; i++) _enemyTargets.push(friendlies[i].mesh);
+        if (mode === 'player') _enemyTargets.push(camera);
+        _friendlyTargets.length = 0;
+        for (let i = 0; i < enemies.length; i++) _friendlyTargets.push(enemies[i].mesh);
 
         for (const f of friendlies) {
-            if (updateBotAI(f, friendlyTargets, dt)) return;
+            if (updateBotAI(f, _friendlyTargets, dt)) return;
         }
         for (const e of enemies) {
-            if (updateBotAI(e, enemyTargets, dt)) return;
+            if (updateBotAI(e, _enemyTargets, dt)) return;
         }
 
         // Spectator camera for Auto-Battler
         if (mode === 'autobattler' && friendlies[0]) {
             const hero = friendlies[0];
-            const targetCam = hero.mesh.position.add(new BABYLON.Vector3(0, 7, -13));
-            camera.position = BABYLON.Vector3.Lerp(camera.position, targetCam, frameBlend(0.08, dt));
+            hero.mesh.position.addToRef(_spectateOffset, _targetCam);
+            BABYLON.Vector3.LerpToRef(camera.position, _targetCam, frameBlend(0.08, dt), camera.position);
             camera.setTarget(hero.mesh.position);
-            hpEl.textContent = Math.max(0, Math.round(hero.hp));
+            const hpText = String(Math.max(0, Math.round(hero.hp)));
+            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
             livesEl.textContent = hero.lives;
         } else if (mode === 'rts') {
-            const avgHp = friendlies.length ? friendlies.reduce((sum, f) => sum + f.hp, 0) / friendlies.length : 0;
-            hpEl.textContent = Math.max(0, Math.round(avgHp));
+            let sumHp = 0;
+            for (let i = 0; i < friendlies.length; i++) sumHp += friendlies[i].hp;
+            const avgHp = friendlies.length ? sumHp / friendlies.length : 0;
+            const hpText = String(Math.max(0, Math.round(avgHp)));
+            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
         } else {
-            hpEl.textContent = Math.max(0, Math.round(player.hp));
+            const hpText = String(Math.max(0, Math.round(player.hp)));
+            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
         }
 
         // Projectiles
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const p = projectiles[i];
             p.life -= dt;
-            const prevPos = p.mesh.position.clone();
-            p.mesh.position.addInPlace(p.vel.scale(dt));
+            _prevPos.copyFrom(p.mesh.position);
+            p.vel.scaleToRef(dt, _stepVec);
+            p.mesh.position.addInPlace(_stepVec);
+            const prevPos = _prevPos;
 
             let hit = p.life <= 0 ||
                 (currentMap.hasFloor && p.mesh.position.y <= 0.1) ||
@@ -1481,8 +1505,10 @@ function createScene() {
             : mode === 'rts'
                 ? (friendlies.length ? friendlies.reduce((sum, f) => sum + Math.hypot(f.vel.x, f.vel.z), 0) / friendlies.length : 0)
                 : Math.hypot(player.vel.x, player.vel.z);
-        speedEl.textContent = `${Math.round(activeSpeed * 20)} u/s`;
-        fpsEl.textContent = `${Math.round(engine.getFps())} FPS`;
+        const speedText = `${Math.round(activeSpeed * 20)} u/s`;
+        if (speedText !== lastSpeedText) { speedEl.textContent = speedText; lastSpeedText = speedText; }
+        const fpsText = `${Math.round(engine.getFps())} FPS`;
+        if (fpsText !== lastFpsText) { fpsEl.textContent = fpsText; lastFpsText = fpsText; }
         if (mode === 'player') {
             const weapon = WEAPONS[player.weaponIdx];
             if (weaponEl.textContent !== weapon.name) {
@@ -1493,7 +1519,8 @@ function createScene() {
             updateScrap(dt);
             updateSquadHud();
         }
-        scoreEl.textContent = player.score;
+        const scoreText = String(player.score);
+        if (scoreText !== lastScoreText) { scoreEl.textContent = scoreText; lastScoreText = scoreText; }
     });
 
     return scene;
