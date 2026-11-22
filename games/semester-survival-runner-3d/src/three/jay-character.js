@@ -84,15 +84,11 @@ function makeRunInPlace(clip) {
   const trackNames = [];
 
   copy.tracks = copy.tracks.map(track => {
-    if (!/\.position$/i.test(track.name || "")) return track;
+    if (!/\\.position$/i.test(track.name || "")) return track;
 
-    // GLTFLoader track names can be "Hips.position", "Armature/Hips.position",
-    // or a namespaced Mixamo path. Inspect the whole binding path, not just
-    // its first segment, so the actual pelvis/root channel is never missed.
-    const bindingPath = String(track.name).replace(/\.position$/i, "");
+    const bindingPath = String(track.name).replace(/\\.position$/i, "");
     const nodePath = bindingPath.replace(/[^a-z0-9]/gi, "").toLowerCase();
     const isHips = /(hips|pelvis|waist)/i.test(nodePath);
-    // An Armature/Hips path is a pelvis channel, not an armature-root channel.
     const isRoot = !isHips && /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
     if (!isHips && !isRoot) return track;
 
@@ -101,16 +97,35 @@ function makeRunInPlace(clip) {
 
     const values = Array.from(track.values);
     const keyCount = Math.floor(values.length / size);
-    const lastOffset = (keyCount - 1) * size;
-    const frontX = values[lastOffset];
-    const frontY = values[lastOffset + 1];
-    const frontZ = values[lastOffset + 2];
+    if (keyCount < 2) return track;
 
-    // This clip is the SECOND phase: once the authored first run reaches its
-    // forward endpoint, hold that exact endpoint for every later loop.
-    // Keep the pelvis' vertical bounce, but remove its horizontal root travel.
-    for (let i = 0; i < keyCount; i += 1) {
-      const offset = i * size;
+    // Do not assume the last key is the forward endpoint. Some authored run
+    // cycles travel forward and then return before the clip ends. Find the
+    // keyframe furthest from the starting horizontal position instead.
+    const firstX = values[0];
+    const firstZ = values[2];
+    let endpoint = 0;
+    let greatestTravelSquared = -1;
+    for (let key = 0; key < keyCount; key += 1) {
+      const offset = key * size;
+      const dx = values[offset] - firstX;
+      const dz = values[offset + 2] - firstZ;
+      const travelSquared = dx * dx + dz * dz;
+      if (travelSquared > greatestTravelSquared) {
+        greatestTravelSquared = travelSquared;
+        endpoint = key;
+      }
+    }
+
+    const endpointOffset = endpoint * size;
+    const frontX = values[endpointOffset];
+    const frontY = values[endpointOffset + 1];
+    const frontZ = values[endpointOffset + 2];
+
+    // Freeze horizontal travel at the actual frontmost sampled pose. Preserve
+    // pelvis bounce; freeze the armature/root vertically to avoid drift.
+    for (let key = 0; key < keyCount; key += 1) {
+      const offset = key * size;
       values[offset] = frontX;
       values[offset + 2] = frontZ;
       if (isRoot) values[offset + 1] = frontY;
