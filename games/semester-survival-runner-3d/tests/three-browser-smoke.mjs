@@ -59,6 +59,8 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.jayRunPhase === "loop", null, { timeout: 12000 });
+    const earlyLateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
+    assert.equal(earlyLateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
     const coinProbe = await page.evaluate(() => window.__runnerSmoke.probeCoin());
     assert.equal(coinProbe.coins, 1, "same-lane coin pickup must award a coin");
     assert.equal(coinProbe.remaining, 0, "collected coins must leave the active world");
@@ -106,8 +108,6 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.ok(Math.abs(bossClearProbe.energy - 52) < 0.01, "boss victory must restore energy, allowing the frame energy drain");
     await page.waitForTimeout(6000);
     assert.equal(await world.getAttribute("data-jay-run-phase"), "loop", "Jay must remain in the endless run loop after the forward approach finishes");
-    const lateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
-    assert.equal(lateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
 
     await page.keyboard.press("ArrowLeft");
     await page.waitForFunction(() => window.__runnerSmoke.state().lane === 0, null, { timeout: 2500 });
