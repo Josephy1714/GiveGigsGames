@@ -226,9 +226,12 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const overlapsLateral=Math.abs(vehicle.position.x-playerX)<=halfWidth+.42;
    if((!overlapsLongitudinal&&!sweptLongitudinal)||!overlapsLateral)continue;
    const energyBefore=Number(g.energy)||0;
-   g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.inv=999;
+   const airborne=Number(g.jump)>0.02;
+   g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.vehicleImpactType=airborne?"airborne":"front";
+   g.vehicleImpactStartHeight=airborne?Math.sin((1-Number(g.jump))*Math.PI)*1.12:0;
+   g.impactTrafficIndex=vehicle.userData.trafficIndex;g.impactShakeScale=airborne?.78:.34;g.speed=0;g.inv=999;
    g.pendingFinish="TRAFFIC COLLISION";g.hitTimer=1.18;g.recoveryTimer=0;
-   g.lastCollision={label:"TRAFFIC CAR",action:Number(g.jump)>0?"jump":"lane",distance:g.d,energyBefore,energyAfter:0,vehicle:true};
+   g.lastCollision={label:"TRAFFIC CAR",action:airborne?"jump":"front",distance:g.d,energyBefore,energyAfter:0,vehicle:true};
    mount.dataset.trafficCollision="true";
    mount.dataset.trafficCollisionKind=vehicle.userData.trafficIndex===undefined?"car":String(vehicle.userData.trafficIndex);
    return true;
@@ -242,7 +245,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   // Obstacles advance 0.55 normalized units per second across a 46-unit depth span.
   // Scroll every piece of campus scenery at that exact same world-space speed.
-  worldTravel+=dt*(46*.55)*(Number(g.speed)||367)/(Number(g.baseSpeed)||367);
+  const renderSpeed=Number.isFinite(Number(g.speed))?Math.max(0,Number(g.speed)):367;
+  worldTravel+=dt*(46*.55)*renderSpeed/(Number(g.baseSpeed)||367);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
    // Advance traffic toward Jay; recycle each vehicle far up the road after it passes.
@@ -250,6 +254,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const distance=((phase%cycle)+cycle)%cycle;
    const lap=Math.floor((worldTravel-i*43-36)/cycle);
    const lane=((v.userData.baseLane+Math.max(0,lap))%3+3)%3;
+   if(g.vehicleImpact&&g.impactTrafficIndex===i){for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;return;}
    const previousZ=v.position.z;
    v.position.x=laneX[lane];
    v.position.z=-distance;
@@ -263,7 +268,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const laneLean=clamp(-lateralSpeed*.035,-.14,.14);
   if(g.hit&&!wasHit)impactPulse=1;wasHit=!!g.hit;impactPulse=Math.max(0,impactPulse-dt*3.8);
   const airborne=Number(g.jump)>0;if(previousJump>0&&!airborne)landingPulse=1;previousJump=airborne?g.jump:0;landingPulse=Math.max(0,landingPulse-dt*5.5);
-  const impact=clamp((Number(g.hitTimer)||0)/.62,0,1);
+  const impact=clamp((Number(g.hitTimer)||0)/.62,0,1)*(Number.isFinite(Number(g.impactShakeScale))?Number(g.impactShakeScale):1);
   // Track Jay laterally on narrow mobile viewports so every lane remains fully visible.
   const cameraTrackX=playerX*.92;
   // Keep the damped tracking position independent from the temporary impact offset.
@@ -284,25 +289,26 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const animationState=resolveRunnerAnimationState(g);
   {
    const vehicleElapsed=clamp(1.18-(Number(g.hitTimer)||0),0,1.18);
-   const vehicleThrowHeight=g.vehicleImpact?Math.max(0,6.8*vehicleElapsed-5.75*vehicleElapsed*vehicleElapsed):0;
-   const vehicleThrowZ=g.vehicleImpact?2+vehicleElapsed*3.6:2+(impactPulse*.18);
-   jayRig.root.position.x=playerX+(g.vehicleImpact?Math.sin(vehicleElapsed*7)*.48:0);
-   jayRig.root.position.y=rigBaseY+(g.vehicleImpact?vehicleThrowHeight:jumpY-landingPulse*.045);
+   const airborneImpact=g.vehicleImpactType==="airborne";
+   const vehicleThrowHeight=airborneImpact?Math.max(0,7.8*vehicleElapsed-6.6*vehicleElapsed*vehicleElapsed):0;
+   const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:2+(impactPulse*.18);
+   jayRig.root.position.x=playerX+(airborneImpact?Math.sin(vehicleElapsed*7)*.48:0);
+   jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:jumpY-landingPulse*.045);
    jayRig.root.position.z=vehicleThrowZ;
-   jayRig.root.rotation.y=Math.PI+(g.vehicleImpact?Math.sin(vehicleElapsed*5)*.42:0); // Face down the track, away from the follow camera.
-   jayRig.root.rotation.z=laneLean+impactPulse*(playerX<-.1?.075:playerX>.1?-.075:0)+(g.vehicleImpact?Math.sin(vehicleElapsed*8)*.72:0);
-   jayRig.root.rotation.x=impactPulse*.065+(g.vehicleImpact?vehicleElapsed*5.4:0);
-   mount.dataset.jayVehicleThrow=String(!!g.vehicleImpact);
+   jayRig.root.rotation.y=Math.PI+(airborneImpact?Math.sin(vehicleElapsed*5)*.42:0); // Face down the track, away from the follow camera.
+   jayRig.root.rotation.z=airborneImpact?Math.sin(vehicleElapsed*8)*1.15:laneLean;
+   jayRig.root.rotation.x=airborneImpact?vehicleElapsed*7.8:0;
+   mount.dataset.jayVehicleThrow=String(airborneImpact);
    mount.dataset.jayVehicleThrowHeight=vehicleThrowHeight.toFixed(4);
    mount.dataset.jayVehicleThrowZ=vehicleThrowZ.toFixed(4);
    const slideScale=animationState.startsWith("slide-")?.94:1;
    jayRig.root.scale.set(rigBaseScaleX*(1+landingPulse*.035),rigBaseScaleY*slideScale*(1-landingPulse*.075),rigBaseScaleZ*(1+landingPulse*.035));
    mount.dataset.jayLean=laneLean.toFixed(3);mount.dataset.jayImpact=impactPulse.toFixed(2);mount.dataset.jayLanding=landingPulse.toFixed(2);
-   const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
+   const rigState=g.vehicleImpactType==="front"?"fall":g.vehicleImpactType==="airborne"?"jump":animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;
    mount.dataset.jayRunPhase=jayRig.runApproachCompleted?"loop":"approach";
-   const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);jayRig.root.position.z=2+(impactPulse*.18);
+   const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);const clipTempo=g.vehicleImpactType==="front"?1:g.vehicleImpactType==="airborne"?1.12:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1;jayRig.play(chosen,{timeScale:clipTempo});jayRig.update(dt);
   }
   let n=0,busN=0;for(const o of g.obs||[]){if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+3.1);const scale=o.boss?1.25:1;v.scale.setScalar(scale);v.userData.slide.visible=o.action==="slide";v.userData.jump.visible=o.action!=="slide";}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
@@ -312,10 +318,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  return {render,resize,setQuality:applyQuality,get quality(){return quality;},probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
   const vehicle=traffic[vehicleIndex]||traffic[0],savedPositions=traffic.map(item=>item.position.clone()),savedPlayerX=playerX;
-  const keys=["energy","hit","hitVehicle","vehicleImpact","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
+  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactShakeScale","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
   const saved={};for(const key of keys)saved[key]=g[key];
   const internal={lastGameT,wasHit,impactPulse,landingPulse,previousJump,cameraBaseX};
-  traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
+  traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.speed=367;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactTrafficIndex=null;g.impactShakeScale=1;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
   const hit=collideWithTraffic(g);
   let throwHeight=0,throwZ=2;
   if(hit){
@@ -324,11 +330,12 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    throwHeight=Number(mount.dataset.jayVehicleThrowHeight)||0;
    throwZ=Number(mount.dataset.jayVehicleThrowZ)||2;
   }
+  const impactType=g.vehicleImpactType,impactAnimation=mount.dataset.activeAnimation,vehicleStayedVisible=vehicle.visible,impactSpeed=g.speed;
   traffic.forEach((item,index)=>item.position.copy(savedPositions[index]));playerX=savedPlayerX;
   for(const key of keys){if(saved[key]===undefined)delete g[key];else g[key]=saved[key];}
   lastGameT=internal.lastGameT;wasHit=internal.wasHit;impactPulse=internal.impactPulse;landingPulse=internal.landingPulse;previousJump=internal.previousJump;cameraBaseX=internal.cameraBaseX;
   mount.dataset.trafficCollision="false";
   render(g);
-  return {hit,vehicle:!!(g.lastCollision?.vehicle||saved.lastCollision?.vehicle||hit),energy:hit?0:saved.energy,thrown:hit&&throwHeight>0,throwHeight,throwZ};
+  return {hit,vehicle:!!(g.lastCollision?.vehicle||saved.lastCollision?.vehicle||hit),energy:hit?0:saved.energy,impactType,impactAnimation,speed:impactSpeed,vehicleVisible:vehicleStayedVisible,thrown:impactType==="airborne"&&throwHeight>0,throwHeight,throwZ};
  },dispose(){ro?.disconnect();removeEventListener("resize",resize);jayRig.dispose();impactRing.geometry.dispose();impactRing.material.dispose();renderer.dispose();mount.replaceChildren();}};
 }
