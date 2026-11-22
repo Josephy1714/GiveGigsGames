@@ -18,14 +18,22 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       clipCount: Number(node.dataset.jayClipCount),
       clips: node.dataset.jayClips.split(","),
       quality: node.dataset.graphicsQuality,
-      canvas: Boolean(node.querySelector("canvas"))
+      canvas: Boolean(node.querySelector("canvas")),
+      canvasWidth: node.querySelector("canvas")?.width || 0,
+      webgl2: Boolean(node.querySelector("canvas")?.getContext("webgl2"))
     }));
     assert.ok(diagnostics.canvas, "Three.js canvas must be mounted");
+    assert.ok(diagnostics.canvasWidth > 0, "WebGL canvas must have a real drawing buffer");
+    assert.ok(diagnostics.webgl2, "Three.js must acquire a WebGL2 context");
     assert.ok(diagnostics.clipCount >= 5, "Jay must load at least five authored clips");
     for (const clip of ["idle", "run", "jump", "slide", "fall"]) {
       assert.ok(diagnostics.clips.includes(clip), "missing Jay clip: " + clip);
     }
     assert.equal(diagnostics.quality, "High");
+
+    await page.locator('[data-page="settings"]').first().click();
+    await page.locator("#quality").selectOption({ label: "Performance" });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.graphicsQuality === "Performance", null, { timeout: 3000 });
 
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
@@ -37,10 +45,6 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.keyboard.press("ArrowDown");
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "slide", null, { timeout: 2500 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 4000 });
-
-    await page.locator('[data-page="settings"]').first().click();
-    await page.locator("#quality").selectOption({ label: "Performance" });
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.graphicsQuality === "Performance", null, { timeout: 3000 });
 
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
   } finally {
