@@ -154,6 +154,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   sun.castShadow=profile.shadows;
   sun.shadow.mapSize.set(profile.shadowMapSize,profile.shadowMapSize);
   sun.shadow.needsUpdate=true;
+  mount.dataset.graphicsQuality=value;
   return profile;
  }
  applyQuality(quality);
@@ -177,6 +178,9 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleY=jayRig.root.scale.y;
  console.info("Jay production 3D rig loaded",jayRig.availableClips);
+ mount.dataset.rendererReady="true";
+ mount.dataset.jayClipCount=String(jayRig.availableClips.length);
+ mount.dataset.jayClips=jayRig.availableClips.join(",");
  const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
  const coins=Array.from({length:36},()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.34,.105,10,20),m.gold);o.rotation.x=Math.PI/2;scene.add(o);o.visible=false;return o;});
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
@@ -200,6 +204,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    jayRig.root.scale.y=rigBaseScaleY*(animationState.startsWith("slide-")?.94:1);
+   mount.dataset.activeAnimation=chosen;
    jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);
   }
   let n=0;for(const o of g.obs||[]){if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;
