@@ -34,12 +34,20 @@ try {
 
   let hips = null;
   let leftFoot = null;
+  const boneNames = [];
+  const normalizeBoneName = name => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   gltf.scene.traverse(node => {
     if (!node.isBone) return;
-    if (node.name === "mixamorig:Hips") hips = node;
-    if (node.name === "mixamorig:LeftFoot") leftFoot = node;
+    boneNames.push(node.name);
+    const normalized = normalizeBoneName(node.name);
+    if (!hips && normalized.includes("hips")) hips = node;
+    if (!leftFoot && normalized.includes("leftfoot")) leftFoot = node;
   });
-  if (!hips || !leftFoot) throw new Error("Required Mixamo Hips/LeftFoot bones were not found.");
+  result.checks.boneCount = boneNames.length;
+  result.checks.boneNames = boneNames;
+  if (!hips || !leftFoot) {
+    throw new Error("Required Hips/LeftFoot bones were not found. Imported bones: " + boneNames.join(", "));
+  }
 
   const mixer = new THREE.AnimationMixer(gltf.scene);
   const action = mixer.clipAction(run);
