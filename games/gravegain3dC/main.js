@@ -61,7 +61,9 @@ try {
     const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (saved) upgrades = { ...upgrades, ...saved };
 } catch { /* ignore */ }
-const saveUpgrades = () => localStorage.setItem(SAVE_KEY, JSON.stringify(upgrades));
+const saveUpgrades = () => {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(upgrades)); } catch { /* ignore */ }
+};
 
 let selectedMapId = MAP_LIST[0].id;
 try {
@@ -202,6 +204,7 @@ function createScene() {
     let mode = 'menu'; // 'menu' | 'player' | 'autobattler' | 'rts'
     let menuAngle = 0;
     const rallyPoint = new BABYLON.Vector3(0, 0, 0);
+    const autoUpgrade = (team, key) => (mode === 'autobattler' && team === 'friendly') ? upgrades[key] : 0;
 
     const player = {
         pos: new BABYLON.Vector3(0, 0, -34),
@@ -234,6 +237,7 @@ function createScene() {
                 surface = Math.max(surface, block.maxY);
             }
         }
+        if (!currentMap.hasFloor && !Number.isFinite(surface)) return;
         const mesh = BABYLON.MeshBuilder.CreateTorus('scrap pickup', {
             diameter: .68, thickness: .17, tessellation: 6
         }, scene);
@@ -241,7 +245,7 @@ function createScene() {
         if (Number.isFinite(surface)) mesh.position.y = surface + .85;
         mesh.material = salvageMat;
         mesh.isPickable = false;
-        salvage.push({ mesh, y: position.y, age: 0 });
+        salvage.push({ mesh, y: mesh.position.y, age: 0 });
         if (salvage.length > 32) salvage.shift().mesh.dispose();
     }
 
@@ -315,7 +319,7 @@ function createScene() {
         const [sx, sy, sz] = spawnCoord;
         const mesh = new BABYLON.TransformNode(team + (melee ? ' melee bot' : ' ranged bot'), scene);
         mesh.position.set(sx, sy + 1.1, sz);
-        const maxHp = team === 'friendly' ? 100 + upgrades.maxHp * 25 : 90;
+        const maxHp = 100 + autoUpgrade(team, 'maxHp') * 25 - (team === 'friendly' ? 0 : 10);
         return {
             team,
             mesh,
@@ -591,7 +595,13 @@ function createScene() {
         comms.reset();
         weaponView.setVisible(false);
         squadHud.classList.add('hidden');
+        rtsBar.classList.add('hidden');
+        livesBox.classList.add('hidden');
+        weaponSwitch.classList.add('hidden');
+        crosshair.classList.add('hidden');
+        mobileControls.classList.remove('active');
         rallyMarker.isVisible = false;
+        clearEntities();
         if (document.pointerLockElement === canvas) document.exitPointerLock?.();
         overlay.classList.remove('hidden');
         upgradeModal.classList.add('hidden');
@@ -618,9 +628,12 @@ function createScene() {
     ];
 
     function openUpgradeShop() {
+        clearHeldInput();
         mode = 'menu';
         comms.reset();
+        livesBox.classList.add('hidden');
         rallyMarker.isVisible = false;
+        clearEntities();
         upgradeModal.classList.remove('hidden');
         document.getElementById('scrap-val').textContent = upgrades.scrap;
         const list = document.getElementById('upgrade-list');
@@ -738,7 +751,7 @@ function createScene() {
         proj.material = projectileMaterials.get(weapon);
         proj.scaling.z = weapon.speed > 100 ? 5 : 2;
         proj.lookAt(origin.add(dir));
-        const dmgMult = ownerTeam === 'friendly' ? 1 + upgrades.damage * 0.15 : 1;
+        const dmgMult = 1 + autoUpgrade(ownerTeam, 'damage') * 0.15;
         projectiles.push({ mesh: proj, vel: dir.scale(weapon.speed), weapon, damage: weapon.damage * dmgMult * power, ownerTeam, fromPlayer, life: 2.4 });
     }
 
@@ -999,7 +1012,10 @@ function createScene() {
             if (target === camera) {
                 player.hp -= 24;
                 playSfx(92, .18, 'triangle', .08);
-                if (player.hp <= 0) respawnPlayer();
+                if (player.hp <= 0) {
+                    playSfx(140, 0.2, 'sawtooth', 0.07);
+                    respawnPlayer();
+                }
                 return false;
             }
             const ally = friendlies.find(friend => friend.mesh === target);
@@ -1016,6 +1032,23 @@ function createScene() {
         return false;
     }
 
+    function findBestJumpPad(botPos, targetPos, currentDist) {
+        let bestPad = null;
+        let bestScore = currentDist - 2;
+        for (const pad of currentMap.jumpPads) {
+            if (Math.abs(pad.y - botPos.y) < 1.5) {
+                const landX = pad.x + pad.vx * 1.3;
+                const landZ = pad.z + pad.vz * 1.3;
+                const landDist = Math.hypot(targetPos.x - landX, targetPos.z - landZ);
+                if (landDist < bestScore) {
+                    bestScore = landDist;
+                    bestPad = pad;
+                }
+            }
+        }
+        return bestPad;
+    }
+
     // Intelligent Bot AI (strafe, jump/bunny-hop, jump-pad pursuit, void & hazard avoidance)
     function updateBotAI(bot, targets, dt) {
         bot.fireTimer = Math.max(0, bot.fireTimer - dt);
@@ -1026,12 +1059,13 @@ function createScene() {
 
         if (bot.strafeTimer <= 0) {
             bot.strafeDir *= -1;
-            const reflexFactor = bot.team === 'friendly' ? Math.max(0.25, 1 - upgrades.reflexes * 0.08) : 1;
+            const reflexFactor = Math.max(0.25, 1 - autoUpgrade(bot.team, 'reflexes') * 0.08);
             bot.strafeTimer = (0.5 + Math.random() * 0.9) * reflexFactor;
         }
 
-        if (bot.team === 'friendly' && upgrades.regen > 0) {
-            bot.hp = Math.min(bot.maxHp, bot.hp + upgrades.regen * 1.5 * dt);
+        const regenLvl = autoUpgrade(bot.team, 'regen');
+        if (regenLvl > 0) {
+            bot.hp = Math.min(bot.maxHp, bot.hp + regenLvl * 1.5 * dt);
         }
 
         let nearest = null;
@@ -1041,7 +1075,7 @@ function createScene() {
             if (d < minDist) { minDist = d; nearest = t; }
         }
 
-        const speedBonus = bot.team === 'friendly' ? 1 + upgrades.speed * 0.1 : 1;
+        const speedBonus = 1 + autoUpgrade(bot.team, 'speed') * 0.1;
         const moveSpeed = (bot.melee ? 15 : 12) * speedBonus;
         const moveDir = new BABYLON.Vector3(0, 0, 0);
 
@@ -1055,29 +1089,26 @@ function createScene() {
             bot.mesh.rotation.y += Math.atan2(Math.sin(facing), Math.cos(facing)) * frameBlend(.23, dt);
             const strafe = new BABYLON.Vector3(-toTarget.z, 0, toTarget.x).scale(bot.strafeDir);
 
-            const idealMin = bot.melee ? 0 : bot.team === 'friendly' ? 8 + upgrades.tactics * 0.8 : 8;
-            const idealMax = bot.melee ? 1.55 : bot.team === 'friendly' ? 16 + upgrades.tactics * 1.0 : 16;
+            const tacticsLvl = autoUpgrade(bot.team, 'tactics');
+            const idealMin = bot.melee ? 0 : 8 + tacticsLvl * 0.8;
+            const idealMax = bot.melee ? 1.55 : 16 + tacticsLvl * 1.0;
             if (bot.melee) strafe.scaleInPlace(.18);
 
-            if (mode === 'rts' && bot.team === 'friendly' && Math.hypot(bot.pos.x - rallyPoint.x, bot.pos.z - rallyPoint.z) > 6) {
-                const toRally = rallyPoint.subtract(bot.pos);
-                toRally.y = 0;
-                if (toRally.lengthSquared() > 0.01) moveDir.addInPlace(toRally.normalize());
-            } else if (!currentMap.hasFloor && bot.grounded && (dist > 18 || Math.abs(nearest.position.y - 1.1 - bot.pos.y) > 2.5)) {
-                // Seek a jump pad on current deck that lands closer to target
-                let bestPad = null;
-                let bestScore = dist - 2;
-                for (const pad of currentMap.jumpPads) {
-                    if (Math.abs(pad.y - bot.pos.y) < 1.5) {
-                        const landX = pad.x + pad.vx * 1.3;
-                        const landZ = pad.z + pad.vz * 1.3;
-                        const landDist = Math.hypot(nearest.position.x - landX, nearest.position.z - landZ);
-                        if (landDist < bestScore) {
-                            bestScore = landDist;
-                            bestPad = pad;
-                        }
-                    }
+            const rallyDist = Math.hypot(bot.pos.x - rallyPoint.x, bot.pos.z - rallyPoint.z);
+            if (mode === 'rts' && bot.team === 'friendly' && rallyDist > 6) {
+                const rallyPad = (!currentMap.hasFloor && bot.grounded && (rallyDist > 14 || Math.abs(rallyPoint.y - bot.pos.y) > 2.5))
+                    ? findBestJumpPad(bot.pos, rallyPoint, rallyDist)
+                    : null;
+                if (rallyPad) {
+                    moveDir.set(rallyPad.x - bot.pos.x, 0, rallyPad.z - bot.pos.z);
+                    if (moveDir.lengthSquared() > 0.01) moveDir.normalize();
+                } else {
+                    const toRally = rallyPoint.subtract(bot.pos);
+                    toRally.y = 0;
+                    if (toRally.lengthSquared() > 0.01) moveDir.addInPlace(toRally.normalize());
                 }
+            } else if (!currentMap.hasFloor && bot.grounded && (dist > 18 || Math.abs(nearest.position.y - 1.1 - bot.pos.y) > 2.5)) {
+                const bestPad = findBestJumpPad(bot.pos, nearest.position, dist);
                 if (bestPad) {
                     moveDir.set(bestPad.x - bot.pos.x, 0, bestPad.z - bot.pos.z);
                     if (moveDir.lengthSquared() > 0.01) moveDir.normalize();
@@ -1100,12 +1131,12 @@ function createScene() {
             // Fire only with a clear shot for player companions.
             if (!bot.melee && bot.fireTimer <= 0 && dist < (companion ? 42 : 50) &&
                 (!companion || !lineBlocked(bot.mesh.position, nearest.position, solidBlocks))) {
-                const cdMult = bot.team === 'friendly' ? Math.max(0.4, 1 - upgrades.fireRate * 0.1) : 1.15;
+                const cdMult = bot.team === 'friendly' ? Math.max(0.4, 1 - autoUpgrade(bot.team, 'fireRate') * 0.1) : 1.15;
                 bot.fireTimer = (0.55 + Math.random() * 0.35) * cdMult / (1 + bot.rank * .08);
                 if (bot.team === 'enemy' && Math.random() < .22 &&
                     BABYLON.Vector3.Distance(camera.position, bot.mesh.position) < 26) comms.say('ranged', 'enemy');
                 const aimDir = nearest.position.subtract(bot.mesh.position).normalize();
-                const jitter = bot.team === 'friendly' ? Math.max(0.005, 0.09 - upgrades.aim * 0.015) : 0.1;
+                const jitter = bot.team === 'friendly' ? Math.max(0.005, 0.09 - autoUpgrade(bot.team, 'aim') * 0.015) : 0.1;
                 aimDir.x += (Math.random() - 0.5) * jitter;
                 aimDir.z += (Math.random() - 0.5) * jitter;
                 spawnProjectile(bot.mesh.position.add(aimDir.scale(1.1)), aimDir.normalize(), WEAPONS[0], bot.team, false, 1 + bot.rank * .18);
@@ -1128,7 +1159,7 @@ function createScene() {
                     if (moveDir.lengthSquared() > 0.01) moveDir.normalize();
                 }
             } else if (isInsideHazard(nextX, nextZ, bot.pos.y)) {
-                const jumpBoost = bot.team === 'friendly' ? 1 + upgrades.jump * 0.08 : 1;
+                const jumpBoost = 1 + autoUpgrade(bot.team, 'jump') * 0.08;
                 bot.vel.y = 11.5 * jumpBoost;
                 bot.grounded = false;
             }
@@ -1142,7 +1173,7 @@ function createScene() {
 
         // Active bunny-hop / jumping
         if (!companion && bot.windup <= 0 && (!bot.melee || minDist > 5) && bot.grounded && bot.jumpTimer <= 0) {
-            const jumpBoost = bot.team === 'friendly' ? 1 + upgrades.jump * 0.08 : 1;
+            const jumpBoost = 1 + autoUpgrade(bot.team, 'jump') * 0.08;
             bot.vel.y = 10.5 * jumpBoost;
             bot.grounded = false;
             bot.jumpTimer = 0.6 + Math.random() * 1.1;
@@ -1167,7 +1198,7 @@ function createScene() {
             if (bot.team === 'friendly') {
                 return handleFriendlyDeath(bot);
             }
-            respawnBot(bot);
+            handleEnemyDeath(bot);
         }
         return false;
     }
@@ -1193,6 +1224,14 @@ function createScene() {
         player.weaponIdx = (player.weaponIdx + 1) % WEAPONS.length;
     });
     const scoreEl = document.getElementById('score-val');
+
+    function closestPointOnSegment(point, a, b) {
+        const ab = b.subtract(a);
+        const lenSq = ab.lengthSquared();
+        const t = lenSq > 0 ? Math.max(0, Math.min(1, BABYLON.Vector3.Dot(point.subtract(a), ab) / lenSq)) : 0;
+        const closest = a.add(ab.scale(t));
+        return { point: closest, dist: BABYLON.Vector3.Distance(point, closest) };
+    }
 
     // Load initial map & start menu showcase
     loadMap(selectedMapId);
@@ -1288,6 +1327,9 @@ function createScene() {
             camera.setTarget(hero.mesh.position);
             hpEl.textContent = Math.max(0, Math.round(hero.hp));
             livesEl.textContent = hero.lives;
+        } else if (mode === 'rts') {
+            const avgHp = friendlies.length ? friendlies.reduce((sum, f) => sum + f.hp, 0) / friendlies.length : 0;
+            hpEl.textContent = Math.max(0, Math.round(avgHp));
         } else {
             hpEl.textContent = Math.max(0, Math.round(player.hp));
         }
@@ -1296,6 +1338,7 @@ function createScene() {
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const p = projectiles[i];
             p.life -= dt;
+            const prevPos = p.mesh.position.clone();
             p.mesh.position.addInPlace(p.vel.scale(dt));
 
             let hit = p.life <= 0 ||
@@ -1306,20 +1349,28 @@ function createScene() {
 
             if (!hit) {
                 const pr = 0.18;
-                for (const b of solidBlocks) {
-                    if (p.mesh.position.x + pr > b.minX && p.mesh.position.x - pr < b.maxX &&
-                        p.mesh.position.y + pr > b.minY && p.mesh.position.y - pr < b.maxY &&
-                        p.mesh.position.z + pr > b.minZ && p.mesh.position.z - pr < b.maxZ) {
-                        hit = true;
-                        break;
+                if (lineBlocked(prevPos, p.mesh.position, solidBlocks, pr)) {
+                    hit = true;
+                } else {
+                    for (const b of solidBlocks) {
+                        if (p.mesh.position.x + pr > b.minX && p.mesh.position.x - pr < b.maxX &&
+                            p.mesh.position.y + pr > b.minY && p.mesh.position.y - pr < b.maxY &&
+                            p.mesh.position.z + pr > b.minZ && p.mesh.position.z - pr < b.maxZ) {
+                            hit = true;
+                            break;
+                        }
                     }
                 }
             }
 
             let directHitEnemy = null;
+            let directHitPlayer = false;
+            let directHitFriendly = null;
             if (!hit && p.ownerTeam === 'friendly') {
                 for (let j = enemies.length - 1; j >= 0; j--) {
-                    if (BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position) < 1.35) {
+                    const hitCheck = closestPointOnSegment(enemies[j].mesh.position, prevPos, p.mesh.position);
+                    if (hitCheck.dist < 1.35) {
+                        p.mesh.position.copyFrom(hitCheck.point);
                         directHitEnemy = enemies[j];
                         fractureBot(directHitEnemy, p.damage, p.mesh.position, p.weapon.splash > 0);
                         hit = true;
@@ -1332,13 +1383,22 @@ function createScene() {
                     }
                 }
             } else if (!hit) {
-                if (mode === 'player' && BABYLON.Vector3.Distance(p.mesh.position, camera.position) < 1.4) {
+                const playerHit = mode === 'player' ? closestPointOnSegment(camera.position, prevPos, p.mesh.position) : null;
+                if (playerHit && playerHit.dist < 1.4) {
+                    p.mesh.position.copyFrom(playerHit.point);
                     player.hp -= 12;
+                    directHitPlayer = true;
                     hit = true;
-                    if (player.hp <= 0) respawnPlayer();
+                    if (player.hp <= 0) {
+                        playSfx(140, 0.2, 'sawtooth', 0.07);
+                        respawnPlayer();
+                    }
                 } else {
                     for (const f of friendlies) {
-                        if (BABYLON.Vector3.Distance(p.mesh.position, f.mesh.position) < 1.35) {
+                        const botHit = closestPointOnSegment(f.mesh.position, prevPos, p.mesh.position);
+                        if (botHit.dist < 1.35) {
+                            p.mesh.position.copyFrom(botHit.point);
+                            directHitFriendly = f;
                             hit = true;
                             if (damageFriendly(f, 14, p.mesh.position)) {
                                 p.mesh.dispose();
@@ -1362,6 +1422,13 @@ function createScene() {
                             pushDir.normalize();
                             player.vel.addInPlace(pushDir.scale((1 - dist / p.weapon.splash) * 20));
                             player.grounded = false;
+                            if (p.ownerTeam === 'enemy' && !directHitPlayer) {
+                                player.hp -= 12 * 0.65 * (1 - dist / p.weapon.splash);
+                                if (player.hp <= 0) {
+                                    playSfx(140, 0.2, 'sawtooth', 0.07);
+                                    respawnPlayer();
+                                }
+                            }
                         }
                     }
                     if (p.ownerTeam === 'friendly') {
@@ -1373,6 +1440,19 @@ function createScene() {
                                 if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
                             }
                         }
+                    } else if (p.ownerTeam === 'enemy') {
+                        for (const f of friendlies) {
+                            if (f === directHitFriendly) continue;
+                            const dist = BABYLON.Vector3.Distance(p.mesh.position, f.mesh.position);
+                            if (dist < p.weapon.splash) {
+                                const splashDmg = 14 * 0.65 * (1 - dist / p.weapon.splash);
+                                if (damageFriendly(f, splashDmg, p.mesh.position)) {
+                                    p.mesh.dispose();
+                                    projectiles.splice(i, 1);
+                                    return;
+                                }
+                            }
+                        }
                     }
                 }
                 p.mesh.dispose();
@@ -1382,7 +1462,9 @@ function createScene() {
 
         const activeSpeed = mode === 'autobattler' && friendlies[0]
             ? Math.hypot(friendlies[0].vel.x, friendlies[0].vel.z)
-            : Math.hypot(player.vel.x, player.vel.z);
+            : mode === 'rts'
+                ? (friendlies.length ? friendlies.reduce((sum, f) => sum + Math.hypot(f.vel.x, f.vel.z), 0) / friendlies.length : 0)
+                : Math.hypot(player.vel.x, player.vel.z);
         speedEl.textContent = `${Math.round(activeSpeed * 20)} u/s`;
         fpsEl.textContent = `${Math.round(engine.getFps())} FPS`;
         if (mode === 'player') {
