@@ -209,6 +209,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const animationState=resolveRunnerAnimationState(g);
   {
    jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2;
+   jayRig.root.rotation.y=Math.PI; // Face down the track, away from the follow camera.
    jayRig.root.rotation.z=laneLean+impactPulse*(playerX<-.1?.075:playerX>.1?-.075:0);
    jayRig.root.rotation.x=impactPulse*.065;
    const slideScale=animationState.startsWith("slide-")?.94:1;
