@@ -138,14 +138,6 @@ function car(scene,x,z,color,m,kind="car"){
  }
  return g;
 }
-async function jayFrames(){
- const [manifest,img]=await Promise.all([
-  fetch(new URL("../../assets/processed/jay-runtime/jay-atlas.json",import.meta.url)).then(r=>{if(!r.ok)throw Error("Jay atlas manifest missing");return r.json();}),
-  new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(Error("Jay atlas image missing"));i.src=new URL("../../assets/processed/jay-runtime/jay-atlas.png",import.meta.url).href;})
- ]);
- if(!manifest.clips?.jog?.frames?.length)throw Error("Jay runtime atlas has no jog cycle");
- return {manifest,image:img};
-}
 export async function createRunnerRenderer({mount}={}){
  if(!mount)throw new TypeError("Three.js mount missing");
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x9db8c0);scene.fog=new THREE.FogExp2(0x9db8c0,.0085);
@@ -165,35 +157,11 @@ export async function createRunnerRenderer({mount}={}){
  const traffic=[car(scene,-5.25,-38,0x315b7a,m,"car"),car(scene,5.25,-91,0x9a4c39,m,"matatu"),car(scene,-5.25,-146,0x777d78,m,"shuttle"),car(scene,5.25,-198,0xc1a65e,m,"car")];
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
- const makeJaySprite=(order)=>{const material=new THREE.SpriteMaterial({transparent:true,depthWrite:false,opacity:0});const sprite=new THREE.Sprite(material);sprite.renderOrder=order;sprite.position.set(0,.04,2);scene.add(sprite);return sprite;};
- const jay=makeJaySprite(7),jayPrevious=makeJaySprite(6);
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
- let atlas=null,atlasTexture=null,atlasPlayer=null,jayRig=null,rigBaseY=0,rigBaseScaleY=1,lastGameT=0,playerX=0;
- const targetJayHeight=2.08;
- function applyAtlasFrame(sprite,frame,opacity){
-  if(!frame||!atlasTexture){sprite.visible=false;return;}
-  const map=sprite.material.map;
-  map.offset.set(frame.x/atlas.image.width,1-(frame.y+frame.height)/atlas.image.height);
-  map.repeat.set(frame.width/atlas.image.width,frame.height/atlas.image.height);
-  sprite.center.set((frame.pivotX??frame.width/2)/frame.width,1-(frame.pivotY??frame.height)/frame.height);
-  sprite.scale.set(targetJayHeight*frame.width/frame.height,targetJayHeight,1);
-  sprite.material.opacity=opacity;sprite.visible=opacity>.015;
- }
- try{
-  jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});
-  rigBaseY=jayRig.root.position.y;rigBaseScaleY=jayRig.root.scale.y;jay.visible=false;jayPrevious.visible=false;
-  console.info("Jay production 3D rig loaded",jayRig.availableClips);
- }catch(e){
-  console.info("Jay GLB not installed yet; using the complete authored Jay animation atlas in the 3D scene.",e);
-  try{
-   atlas=await jayFrames();atlasTexture=new THREE.Texture(atlas.image);atlasTexture.colorSpace=THREE.SRGBColorSpace;atlasTexture.needsUpdate=true;
-   atlasPlayer=createAtlasAnimationPlayer(atlas.manifest,{transitionSeconds:.12});atlasPlayer.play("jog");
-   jay.material.map=atlasTexture.clone();jayPrevious.material.map=atlasTexture.clone();
-   jay.material.map.colorSpace=THREE.SRGBColorSpace;jayPrevious.material.map.colorSpace=THREE.SRGBColorSpace;
-   jay.material.needsUpdate=true;jayPrevious.material.needsUpdate=true;
-   jay.visible=true;
-  }catch(atlasError){console.warn("Jay runtime atlas unavailable; character remains hidden until a valid asset is added.",atlasError);jay.visible=false;}
- }
+ let jayRig=null,rigBaseY=0,rigBaseScaleY=1,lastGameT=0,playerX=0;
+ jayRig=await loadJayCharacter({url:"./assets/3d/jay/jay.glb",scene,targetHeight:1.78,strictClips:false});
+ rigBaseY=jayRig.root.position.y;rigBaseScaleY=jayRig.root.scale.y;
+ console.info("Jay production 3D rig loaded",jayRig.availableClips);
  const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
  const coins=Array.from({length:36},()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.34,.105,10,20),m.gold);o.rotation.x=Math.PI/2;scene.add(o);o.visible=false;return o;});
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
@@ -207,20 +175,12 @@ export async function createRunnerRenderer({mount}={}){
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
-  if(jayRig){
+  {
    jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY;jayRig.root.position.z=2;
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    jayRig.root.scale.y=rigBaseScaleY*(animationState.startsWith("slide-")?.94:1);
    jayRig.play(chosen,{timeScale:animationState==="sprint"?1.12:1});jayRig.update(dt);
-  }else if(atlasPlayer&&atlasTexture){
-   atlasPlayer.play(animationState);const pose=atlasPlayer.update(dt);
-   jay.position.set(playerX,.04+jumpY,2);
-   if(pose.from){applyAtlasFrame(jayPrevious,pose.from.frame,pose.from.alpha);jayPrevious.position.x=playerX;jayPrevious.position.y=.04+jumpY;jayPrevious.position.z=2;}
-   else jayPrevious.visible=false;
-   applyAtlasFrame(jay,pose.frame,pose.alpha);
-   const flicker=g.inv>0&&Math.floor(g.t*16)%2;
-   jay.material.opacity*=flicker?.42:1;
   }
   let n=0;for(const o of g.obs||[]){if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46);const s=o.boss?1.65:1;v.scale.set(s,o.action==="slide" ? .8 : o.action==="jump" ? .7 : 1,s);}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;
   n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
