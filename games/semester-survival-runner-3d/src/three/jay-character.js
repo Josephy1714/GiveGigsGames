@@ -76,20 +76,58 @@ function neutralizeOpenMouthMorphs(root) {
 }
 
 function makeRunInPlace(clip) {
-  if (!clip) return clip;
+  if (!clip) return { clip, removedTracks: 0, lockedAxes: 0, trackNames: [] };
+
   const copy = clip.clone();
+  let removedTracks = 0;
+  let lockedAxes = 0;
+  const trackNames = [];
+
   copy.tracks = copy.tracks.map(track => {
-    const path = String(track.name || "").split(".")[0].replace(/[^a-z0-9]/gi, "").toLowerCase();
-    if (!/(hips|root|armature|master|motion)/i.test(path) || !/\.position$/i.test(track.name)) return track;
+    if (!/\\.position$/i.test(track.name || "")) return track;
+
+    // GLTFLoader track names can be "Hips.position", "Armature/Hips.position",
+    // or a namespaced Mixamo path. Inspect the whole binding path, not just
+    // its first segment, so the actual pelvis/root channel is never missed.
+    const bindingPath = String(track.name).replace(/\\.position$/i, "");
+    const nodePath = bindingPath.replace(/[^a-z0-9]/gi, "").toLowerCase();
+    const isHips = /(hips|pelvis|waist)/i.test(nodePath);
+    const isRoot = /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
+    if (!isHips && !isRoot) return track;
+
     const size = track.getValueSize();
     if (size < 3 || !track.values || track.values.length < size) return track;
+
     const values = Array.from(track.values);
-    const firstX = values[0], firstZ = values[2];
-    for (let i = 0; i < values.length; i += size) { values[i] = firstX; values[i + 2] = firstZ; }
+    const firstX = values[0];
+    const firstY = values[1];
+    const firstZ = values[2];
+    const keyCount = Math.floor(values.length / size);
+
+    for (let i = 0; i < keyCount; i += 1) {
+      const offset = i * size;
+      // The armature/root must remain fixed in world space. The pelvis keeps
+      // its authored vertical bounce, but cannot translate forward/backward.
+      values[offset] = firstX;
+      values[offset + 2] = firstZ;
+      if (isRoot) values[offset + 1] = firstY;
+    }
+
+    // A looping clip must meet itself at the seam. Preserve the pelvis bob
+    // throughout the cycle, but make its final vertical sample meet the first.
+    if (isHips && keyCount > 1) {
+      values[(keyCount - 1) * size + 1] = firstY;
+    }
+
+    removedTracks += 1;
+    lockedAxes += isRoot ? 3 : 2;
+    trackNames.push(track.name);
     return new track.constructor(track.name, track.times, values, track.getInterpolation());
   });
+
   copy.name = "Run_In_Place";
-  return copy;
+  copy.resetDuration();
+  return { clip: copy, removedTracks, lockedAxes, trackNames };
 }
 
 function resolveClips(clips) {
@@ -154,7 +192,8 @@ export async function loadJayCharacter({
   }
 
   const { resolved, missing } = resolveClips(gltf.animations || []);
-  if (resolved.run) resolved.run = makeRunInPlace(resolved.run);
+  const runMotion = makeRunInPlace(resolved.run);
+  if (resolved.run) resolved.run = runMotion.clip;
   const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
@@ -220,7 +259,11 @@ export async function loadJayCharacter({
 
   function update(deltaSeconds) {
     if (disposed) return;
+    // Keep gameplay-owned placement (lane, jump height and hit response)
+    // independent from any residual FBX/GLTF root translation channel.
+    const gameplayPosition = root.position.clone();
     mixer.update(Math.min(Math.max(deltaSeconds || 0, 0), 0.05));
+    root.position.copy(gameplayPosition);
   }
 
   function dispose() {
@@ -243,6 +286,9 @@ export async function loadJayCharacter({
     availableClips: Object.freeze(Object.keys(actions)),
     missingClips: Object.freeze(missing),
     neutralizedMouthMorphs: Object.freeze(neutralizedMouthMorphs),
+    runMotionTracksRemoved: runMotion.removedTracks,
+    runMotionAxesLocked: runMotion.lockedAxes,
+    runMotionTrackNames: Object.freeze(runMotion.trackNames),
     play,
     update,
     dispose,
