@@ -195,7 +195,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  mount.dataset.jayMouthMorphsNeutralized=String(jayRig.neutralizedMouthMorphs.length);
  mount.dataset.jayMouthPose="neutral";
  const obstacles=Array.from({length:18},()=>{const g=new THREE.Group();box(g,1.75,.9,.95,m.obstacle,0,.55,0);box(g,1.78,.12,1,m.warning,0,1.02,0);box(g,1.4,.12,.08,m.white,0,.73,.51);scene.add(g);g.visible=false;return g;});
- const lateBuses=Array.from({length:3},(_,i)=>{const v=car(scene,0,-500,[0x315d78,0x9a4c39,0xc1a65e][i],m,["shuttle","matatu","car"][i]);v.visible=false;return v;});
+ const lateBuses=Array.from({length:8},(_,i)=>{const v=car(scene,0,-500,[0x315d78,0x9a4c39,0xc1a65e][i],m,["shuttle","matatu","car"][i]);v.visible=false;return v;});
  mount.dataset.vehicleObstacleModels=String(lateBuses.length);
  const coins=Array.from({length:36},()=>{const o=new THREE.Mesh(new THREE.TorusGeometry(.34,.105,10,20),m.gold);o.rotation.x=Math.PI/2;scene.add(o);o.visible=false;return o;});
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
@@ -209,13 +209,14 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   worldTravel+=dt*(46*.55)*(Number(g.speed)||367)/(Number(g.baseSpeed)||367);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
-   const phase=worldTravel-i*43,cycle=258;
-   const lap=Math.floor(phase/cycle);
-   const lane=((v.userData.baseLane+lap)%3+3)%3;
-   const distance=36+(((i*43-worldTravel)%cycle)+cycle)%cycle;
+   // Advance traffic toward Jay; recycle each vehicle far up the road after it passes.
+   const cycle=258,phase=i*43+36-worldTravel;
+   const distance=((phase%cycle)+cycle)%cycle;
+   const lap=Math.floor((worldTravel-i*43-36)/cycle);
+   const lane=((v.userData.baseLane+Math.max(0,lap))%3+3)%3;
    v.position.x=laneX[lane];
    v.position.z=-distance;
-   for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;
+   for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
   });
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
@@ -233,7 +234,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
   {
-   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2;
+   jayRig.root.position.x=playerX;jayRig.root.position.y=rigBaseY+jumpY-landingPulse*.045;jayRig.root.position.z=2+(impactPulse*.9);
    jayRig.root.rotation.y=Math.PI; // Face down the track, away from the follow camera.
    jayRig.root.rotation.z=laneLean+impactPulse*(playerX<-.1?.075:playerX>.1?-.075:0);
    jayRig.root.rotation.x=impactPulse*.065;
