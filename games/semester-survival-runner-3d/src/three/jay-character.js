@@ -35,6 +35,30 @@ function fitCharacterToHeight(root, targetHeight) {
   return { sourceHeight: size.y, scale, bounds: fitted };
 }
 
+function reverseAnimationClip(clip, name) {
+  const duration = clip.duration;
+  const tracks = clip.tracks.map(track => {
+    const valueSize = track.getValueSize();
+    const sourceTimes = Array.from(track.times);
+    const sourceValues = Array.from(track.values);
+    const reversedTimes = sourceTimes.map(time => duration - time).reverse();
+    const reversedValues = [];
+    for (let key = sourceTimes.length - 1; key >= 0; key -= 1) {
+      const start = key * valueSize;
+      for (let component = 0; component < valueSize; component += 1) {
+        reversedValues.push(sourceValues[start + component]);
+      }
+    }
+    return new track.constructor(
+      track.name,
+      reversedTimes,
+      reversedValues,
+      track.getInterpolation()
+    );
+  });
+  return new THREE.AnimationClip(name, duration, tracks);
+}
+
 function resolveClips(clips) {
   const byName = new Map(clips.map(clip => [normaliseClipName(clip.name), clip]));
   const resolved = {};
@@ -97,6 +121,13 @@ export async function loadJayCharacter({
   }
 
   const { resolved, missing } = resolveClips(gltf.animations || []);
+  // A reverse of the authored fall clip provides a grounded get-up transition
+  // when no dedicated recovery FBX was supplied.
+  if (resolved.fall && !resolved.getUp) {
+    resolved.getUp = reverseAnimationClip(resolved.fall, "GetUp");
+    const missingIndex = missing.indexOf("getUp");
+    if (missingIndex >= 0) missing.splice(missingIndex, 1);
+  }
   if (!resolved.idle || !resolved.run) {
     throw new Error("Jay GLB must include authored Idle and Run animation clips.");
   }
