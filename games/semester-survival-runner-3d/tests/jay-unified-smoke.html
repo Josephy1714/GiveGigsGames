@@ -34,17 +34,22 @@ try {
 
   let hips = null;
   let leftFoot = null;
-  const boneNames = [];
-  const normalizeBoneName = name => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const boneObjects = new Map();
   gltf.scene.traverse(node => {
-    if (!node.isBone) return;
-    boneNames.push(node.name);
-    const normalized = normalizeBoneName(node.name);
-    if (!hips && normalized.includes("hips")) hips = node;
-    if (!leftFoot && normalized.includes("leftfoot")) leftFoot = node;
+    if (node.isBone) boneObjects.set(node.name, node);
+    if (node.isSkinnedMesh && node.skeleton) {
+      for (const bone of node.skeleton.bones) boneObjects.set(bone.name, bone);
+    }
   });
+  const boneNames = [...boneObjects.keys()].sort();
   result.checks.boneCount = boneNames.length;
   result.checks.boneNames = boneNames;
+  const normalizeBoneName = name => String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const [name, bone] of boneObjects) {
+    const normalized = normalizeBoneName(name);
+    if (!hips && normalized.includes("hips")) hips = bone;
+    if (!leftFoot && normalized.includes("leftfoot")) leftFoot = bone;
+  }
   if (!hips || !leftFoot) {
     throw new Error("Required Hips/LeftFoot bones were not found. Imported bones: " + boneNames.join(", "));
   }
