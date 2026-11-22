@@ -39,6 +39,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y blender
+          # Ubuntu's Blender 3.0 ships a reduced OCIO config without the
+          # newer Non-Color label used by Mixamo FBX materials.
+          sudo grep -RIl 'Non-Color' /usr/share/blender/scripts | xargs -r sudo sed -i 's/Non-Color/Linear/g'
       - name: Merge Ajay rig and all supplied Mixamo clips
         run: |
           blender --background --python games/semester-survival-runner-3d/tools/build-jay-glb.py
