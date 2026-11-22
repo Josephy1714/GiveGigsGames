@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const workerURL = new URL('graphics-worker.js', document.currentScript.src);
+    const workerURL = new URL('../../graphics-particle-worker.js', document.currentScript.src);
     const batchLimit = 64;
 
     class GraphicsBridge {

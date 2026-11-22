@@ -1,0 +1,9 @@
+{
+  "name": "BattleSharks",
+  "objective": "Survive in the 3D underwater arena, devour prey to grow, unlock cybernetic mutations, and defeat enemy hunters and the Leviathan Boss.",
+  "controls": "WASD or Arrow Keys to swim and turn. Q/E or Mouse to pitch up/down. Space to Jet Dash. Left Click or F to fire lasers. Tab or U to open Upgrade Lab.",
+  "known_states": ["menu", "playing", "paused", "game_over"],
+  "win_condition": "Achieve the highest score and defeat the Leviathan Mecha-Boss.",
+  "avoid": "Naval mines, toxic waste barrels, enemy harpoons/lasers, and boss torpedoes.",
+  "tips": "Click Play to dive in. Eat smaller fish early to level up and gather Biomass, then open the Upgrade Lab (Tab/U) to unlock Twin Lasers and Jet Thrusters."
+}

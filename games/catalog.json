@@ -176,8 +176,26 @@
       "runtimeType": "static"
     },
     {
+      "slug": "battlesharks",
+      "title": "BattleSharks",
+      "description": "Control your cybernetic shark in a 3D third-person deep sea arena! Devour prey, mutate with lasers, jet thrusters, plasma shields, and defeat the Leviathan Mecha-Boss.",
+      "genre": "Action",
+      "tags": [
+        "3D",
+        "WebGL",
+        "Action",
+        "Arcade",
+        "Upgrade"
+      ],
+      "emoji": "🦈",
+      "featured": true,
+      "recommended": true,
+      "entrypoint": "battlesharks/index.html",
+      "runtimeType": "static"
+    },
+    {
       "slug": "battlesharks2",
-      "title": "Battlesharks 2",
+      "title": "BattleSharks 2D",
       "description": "Mutate your shark with cybernetic weapons in a deep sea eating simulator.",
       "genre": "Action",
       "tags": [

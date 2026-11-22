@@ -201,6 +201,7 @@
             this._view = view;
             this._onSwipeDown = function (ev) {
                 try {
+                    if (ev.pointerType === 'mouse') return;
                     if (ev.button !== 0 || ev.target.closest?.('.gg4d-thumb-pad, .gg4d-stick-zone, button, a, input, select, textarea')) return;
                     var id = ev.pointerId;
                     try { view.setPointerCapture(id); } catch (e) { /* Synthetic input may not support capture. */ }
@@ -216,6 +217,7 @@
             };
             this._onSwipeMove = function (ev) {
                 try {
+                    if (ev.pointerType === 'mouse') return;
                     var s = self._swipe[ev.pointerId];
                     if (!s) return;
                     var dx = ev.clientX - s.x, dy = ev.clientY - s.y;
@@ -233,20 +235,20 @@
             };
             this._onSwipeUp = function (ev) {
                 try {
+                    if (ev.pointerType === 'mouse') return;
                     var s = self._swipe[ev.pointerId];
-                    if (s) {
-                        var dt = Date.now() - s.t;
-                        if (ev.type === 'pointerup' && !s.multi && dt <= TAP_MAX_MS && s.moved <= TAP_MAX_PX) {
-                            // Tap (not on stick/buttons): attack the tapped foe.
-                            var onPad = false, onStick = false;
-                            try {
-                                if (ev.target && ev.target.closest) {
-                                    onPad = !!ev.target.closest('.gg4d-thumb-pad');
-                                    onStick = !!ev.target.closest('.gg4d-stick-zone');
-                                }
-                            } catch (e) { /* ignore */ }
-                            if (!onPad && !onStick) self._emitTap(ev.clientX, ev.clientY);
-                        }
+                    if (!s) return;
+                    var dt = Date.now() - s.t;
+                    if (ev.type === 'pointerup' && !s.multi && dt <= TAP_MAX_MS && s.moved <= TAP_MAX_PX) {
+                        // Tap (not on stick/buttons): attack the tapped foe.
+                        var onPad = false, onStick = false;
+                        try {
+                            if (ev.target && ev.target.closest) {
+                                onPad = !!ev.target.closest('.gg4d-thumb-pad');
+                                onStick = !!ev.target.closest('.gg4d-stick-zone');
+                            }
+                        } catch (e) { /* ignore */ }
+                        if (!onPad && !onStick) self._emitTap(ev.clientX, ev.clientY);
                     }
                     delete self._swipe[ev.pointerId];
                     if (Object.keys(self._swipe).length < 2) self._pinch = null;

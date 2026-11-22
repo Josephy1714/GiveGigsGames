@@ -16,9 +16,11 @@
         }
 
         moveEntityWithCollision(entity, dx, dy, tilemap, obstacles = [], bodyHeight = 0) {
+            if (!entity || !Number.isFinite(dx) || !Number.isFinite(dy)) return;
+            if (!Number.isFinite(entity.x) || !Number.isFinite(entity.y)) return;
             const hasArena = bodyHeight > 0 && Boolean(tilemap?.arena);
             const stepSize = hasArena ? 6 : 12;
-            const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / stepSize));
+            const steps = Math.min(32, Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / stepSize)));
             const stepX = dx / steps;
             const stepY = dy / steps;
 

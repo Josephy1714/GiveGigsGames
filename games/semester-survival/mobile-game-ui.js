@@ -27,7 +27,7 @@
    const b=make('button','ss-game-touch-btn'+(extra?' ss-game-touch-btn--action':''),parent);
    b.type='button';b.dataset.ssAction=action;b.setAttribute('aria-label',label);
    b.innerHTML=glyph+(extra?'<small>'+label+'</small>':'');
-   const down=e=>{e.preventDefault();b.classList.add('is-pressed');try{b.setPointerCapture(e.pointerId);}catch(_){}runtime.setVirtualInput(action,true);};
+   const down=e=>{e.preventDefault();b.classList.add('is-pressed');if(e.pointerType==='touch'){try{b.setPointerCapture(e.pointerId);}catch(_){}}runtime.setVirtualInput(action,true);};
    const up=e=>{e.preventDefault();b.classList.remove('is-pressed');runtime.setVirtualInput(action,false);};
    b.addEventListener('pointerdown',down,{passive:false});
    b.addEventListener('pointerup',up,{passive:false});

@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
-    <title>GraveGain3D - 4weird Games</title>
-    <meta name="description" content="A premium 3D dark fantasy RPG action rogue-like featuring procedural levels, dynamic 3D lighting, combat systems, starship management hub, and botany station.">
+    <title>GraveGain 3d B: Dungeon Gunner - 4weird Games</title>
+    <meta name="description" content="A fast dark-fantasy looter-shooter with procedural guns, vertical dungeons, fierce enemies, and a customizable flying companion.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link data-optional-fonts="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -28,6 +28,11 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
         }
     </script>
+    <script src="../../models/gravegain-kit.js"></script>
+    <script src="../../models/gravegain-props.js"></script>
+    <script src="../../models/gravegain-enemies.js"></script>
+    <script src="../../models/gravegain-races.js"></script>
+    <script src="../../models/gravegain-weapons.js"></script>
     <script src="../html/gravegain_shared_missions.js"></script>
     <script src="engine/config.js"></script>
     <script src="engine/persistence.js"></script>
@@ -358,8 +363,8 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
         <!-- 1. MAIN MENU SCREEN -->
         <div class="screen-overlay" id="mainMenuScreen">
             <div class="menu-content glass-panel">
-                <h1 class="menu-title">GRAVEGAIN3D</h1>
-                <p class="menu-subtitle">Dark Fantasy Action RPG in 3D</p>
+                <h1 class="menu-title">GRAVEGAIN 3D B: DUNGEON GUNNER</h1>
+                <p class="menu-subtitle">Fast Dark Fantasy Looter-Shooter</p>
 
                 <!-- Daily Challenges Panel -->
                 <div class="daily-challenges-container">
@@ -487,6 +492,9 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                         <option value="ember">Ember</option>
                         <option value="orchid">Orchid</option>
                         <option value="moss">Moss</option>
+                        <option value="void">Void</option>
+                        <option value="sunflare">Sunflare</option>
+                        <option value="deepsea">Deepsea</option>
                     </select></label>
                 </fieldset>
                 <fieldset class="companion-designer">
@@ -659,6 +667,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                         <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Aesthetics & Effects</label>
                         <div style="display:flex; flex-wrap:wrap; gap:15px; font-size:0.85rem;">
                             <label style="display:flex; align-items:center; gap:8px;">Camera Shake <input type="range" id="settingsShakeIntensity" min="0" max="100" value="50" aria-label="Camera shake intensity"></label>
+                            <label style="display:flex; align-items:center; gap:8px;">Hit Flash <input type="range" id="settingsHitFlash" min="0" max="100" value="100" aria-label="Hit flash intensity"></label>
                             <label style="display:flex; align-items:center; gap:8px;">Sprint FOV <input type="range" id="settingsSprintFov" min="0" max="100" value="100" aria-label="Sprint field-of-view strength"></label>
                             <label><input type="checkbox" id="settingsDamageNumbers" checked> Damage Numbers</label>
                             <label><input type="checkbox" id="settingsDynamicLights" checked> Dynamic Torches</label>
@@ -724,7 +733,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <div class="stat-row"><span>XP Gained:</span> <strong id="goXp">0</strong></div>
                     <div class="stat-row"><span>Time at full sprint</span> <strong id="goSprintTime">0s</strong></div>
                     <div class="stat-row"><span>Weapon kills from above</span> <strong id="goElevatedKills">0</strong></div>
-                    <ul id="goWeaponReport" aria-label="Weapon accuracy" hidden></ul>
+                    <ul id="goWeaponReport" aria-label="Weapon performance" hidden></ul>
                 </div>
 
                 <button class="btn-game btn-primary" id="btnGoToMenu">Return to Main Menu</button>

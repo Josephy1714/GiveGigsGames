@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const browser = await chromium.launch();
+const require = createRequire(import.meta.url);
+const { chromium, firefox, webkit } = require(process.env.ARCADE_PLAYWRIGHT_PATH || "playwright");
+const engines = { chromium, firefox, webkit };
+const engine = process.env.ARCADE_BROWSER || "chromium";
+const channel = process.env.ARCADE_CHROMIUM_CHANNEL;
+assert.ok(engines[engine], "ARCADE_BROWSER must be chromium, firefox, or webkit");
+const rootDir = fileURLToPath(new URL("../", import.meta.url));
+const browser = await engines[engine].launch(engine === "chromium" && channel ? { channel } : {});
 try {
   const page = await browser.newPage();
   const baseUrl = process.env.ARCADE_SMOKE_URL || "http://127.0.0.1:4173";
@@ -9,7 +18,11 @@ try {
   await page.route("**/ggg/**", async route => {
     const requested = new URL(route.request().url());
     const parts = requested.pathname.split("/").filter(Boolean);
-    let destination = "/index.html";
+    if (parts.length === 1 || parts[1] === "index.html") {
+      await route.fulfill({ path: path.join(rootDir, "index.html"), contentType: "text/html; charset=utf-8" });
+      return;
+    }
+    let destination = "/" + parts.slice(1).join("/");
     if (parts[1] === "play" && parts[2]) destination = `/play.html?game=${encodeURIComponent(parts[2])}`;
     else if (parts[1] === "info" && parts[2]) destination = `/game.html?game=${encodeURIComponent(parts[2])}`;
     else if (parts[1] === "test" && parts[2]) destination = `/tester/index.html?game=${encodeURIComponent(parts[2])}`;

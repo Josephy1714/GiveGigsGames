@@ -92,7 +92,30 @@
         pBubble.position.y = 0.95;
         pBubble.visible = false;
 
-        playerGroup.add(pTorso, pLeftPauldron, pRightPauldron, pHead, pVisor, pPack, pLeftLeg, pRightLeg, pRightArm, pWeapon, pBubble);
+        // Dwarf beard & Mage hat/staff accessories
+        var beardMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85, metalness: 0.05 });
+        var pBeard = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.2), beardMat);
+        pBeard.position.set(0, 1.24, 0.16);
+        pBeard.visible = false;
+
+        var hatMat = new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.65, metalness: 0.15 });
+        var pHatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.38, 0.05, 12), hatMat);
+        pHatBrim.position.set(0, 1.66, 0);
+        pHatBrim.visible = false;
+        var pHatCone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.52, 12), hatMat);
+        pHatCone.position.set(0, 1.92, 0);
+        pHatCone.visible = false;
+
+        var staffMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8, metalness: 0.1 });
+        var pStaff = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 1.55, 8), staffMat);
+        pStaff.position.set(0.38, 0.92, 0.36);
+        pStaff.rotation.x = 0.18;
+        pStaff.visible = false;
+        var pStaffOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        pStaffOrb.position.set(0.38, 1.72, 0.5);
+        pStaffOrb.visible = false;
+
+        playerGroup.add(pTorso, pLeftPauldron, pRightPauldron, pHead, pVisor, pPack, pLeftLeg, pRightLeg, pRightArm, pWeapon, pBubble, pBeard, pHatBrim, pHatCone, pStaff, pStaffOrb);
         entityRoot.add(playerGroup);
 
         // Click-to-move marker
@@ -206,6 +229,20 @@
             if (p && !p.isDead) {
                 playerGroup.visible = true;
                 playerGroup.position.set(p.x, p.y, p.z);
+                var isDwarf = p.race === 'dwarf';
+                var isMage = p.classType === 'mage';
+                playerGroup.scale.set(isDwarf ? 1.18 : 1.0, isDwarf ? 0.78 : 1.0, isDwarf ? 1.18 : 1.0);
+                pBeard.visible = isDwarf;
+                pHatBrim.visible = isMage;
+                pHatCone.visible = isMage;
+                pStaff.visible = isMage;
+                pStaffOrb.visible = isMage;
+                pWeapon.visible = !isMage;
+                pPack.visible = !isMage;
+                pVisor.visible = !isMage;
+                if (isMage) {
+                    playerPrimaryMat.color.setHex(0x4c1d95);
+                }
                 // Angle in engine: 0 along +X; Three.js model faces +Z, so yaw = Math.PI/2 - angle
                 playerGroup.rotation.y = Math.PI * 0.5 - (p.angle || 0);
 

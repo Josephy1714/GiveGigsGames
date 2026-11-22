@@ -60,7 +60,7 @@
             hazards: [7, 2],
             graveHazards: [7, 7, 2],
             corridorWidth: [1, 2],
-            atmosphere: { fogColor: 0x101018, fogDensity: 0.0035, ambientColor: 0x8b8fa3 }
+            atmosphere: { fogColor: 0x0d1519, fogDensity: 0.0036, ambientColor: 0x5c7a89 }
         },
         citadel_darkness: {
             roomBonus: 3,
@@ -107,7 +107,7 @@
 
 class DungeonGenerator {
     constructor() {
-        this.gridSize = 70;
+        this.gridSize = 48;
         this.tileSize = 48;
     }
 
@@ -126,7 +126,7 @@ class DungeonGenerator {
 
             let overlaps = false;
             for (const r of rooms) {
-                if (x < r.x + r.w + 2 && x + w > r.x - 2 && y < r.y + r.h + 2 && y + h > r.y - 2) {
+                if (x < r.x + r.w + 1 && x + w > r.x - 1 && y < r.y + r.h + 1 && y + h > r.y - 1) {
                     overlaps = true;
                     break;
                 }
@@ -202,6 +202,35 @@ class DungeonGenerator {
             }
         }
         this.ensureRoomRoutes(grid, spawnRoom, rooms);
+        // Add a small number of short cross-links after the safe route is
+        // guaranteed. These create readable loops and alternate approaches
+        // for flanking or retreating without turning the whole floor into a
+        // featureless maze of wide corridors.
+        const routeCandidates = [];
+        for (let from = 1; from < rooms.length - 1; from++) {
+            const source = rooms[from];
+            if (source.type === 'safespace' || source.type === 'boss') continue;
+            for (let to = from + 2; to < rooms.length - 1; to++) {
+                const target = rooms[to];
+                if (target.type === 'safespace' || target.type === 'boss') continue;
+                const distance = Math.abs(source.cx - target.cx) + Math.abs(source.cy - target.cy);
+                if (distance >= 6 && distance <= 30) routeCandidates.push({ from, to, distance });
+            }
+        }
+        routeCandidates.sort((a, b) => a.distance - b.distance);
+        const routeLinks = [];
+        const linkedRooms = new Set();
+        const linkLimit = Math.min(3, Math.max(1, Math.floor(rooms.length / 6)));
+        for (const link of routeCandidates) {
+            if (routeLinks.length >= linkLimit) break;
+            if (linkedRooms.has(link.from) || linkedRooms.has(link.to)) continue;
+            const source = rooms[link.from];
+            const target = rooms[link.to];
+            this.digCorridor(grid, source.cx, source.cy, target.cx, target.cy, 1);
+            routeLinks.push(link);
+            linkedRooms.add(link.from);
+            linkedRooms.add(link.to);
+        }
         const combatRooms = rooms.filter(room => room.type !== 'spawn' && room.type !== 'safespace')
             .sort((a, b) => b.w * b.h - a.w * a.h);
         const [arenaRoom, ...otherCombatRooms] = combatRooms;
@@ -226,9 +255,9 @@ class DungeonGenerator {
                 [-88, -118, 0], [-88, 0, 42], [78, 0, 84], [78, 54, 84]
             ].map(([dx, dz, elevation]) => ({ x: x + dx, z: z + dz, elevation }));
             const launchPad = { x: x + 78, z: z + 112, radius: 12, landingX: x + 78, landingZ: z + 56, landingHeight: 84 };
-            // Carry the vertical combat language beyond the main arena: four
-            // rooms per floor gain traversable balconies and jump-up perches.
-            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss').slice(0, 4);
+            // Carry the vertical combat language beyond the main arena: all
+            // combat rooms gain traversable balconies, stairs, and jump-up perches.
+            const overlookRooms = otherCombatRooms.filter(room => room.type !== 'boss');
             for (const [roomIndex, room] of overlookRooms.entries()) {
                 const roomX = (room.x + room.w / 2) * 48;
                 const roomZ = (room.y + room.h / 2) * 48;
@@ -244,7 +273,7 @@ class DungeonGenerator {
                 }
                 // Tall rooms get an exposed third tier. The offset makes the
                 // top perch a jump destination rather than a vertical stack.
-                if (roomIndex % 2 === 0) {
+                if (roomIndex % 4 !== 2) {
                     addOverlook(-20, 34, -112, -64, 126, 3);
                     addOverlook(-64, -20, -64, -20, 108, 3);
                     addOverlook(34, 82, -112, -64, 108, 3);
@@ -253,10 +282,11 @@ class DungeonGenerator {
                     addOverlook(-72, -24, 20, 62, 108, 3);
                 }
             }
+            this.connectAdjacentRooms(grid, rooms, surfaces);
             arena = { room: arenaRoom, ceiling: 224, overlookRooms, surfaces, pursuitRoute, launchPad };
         }
         return {
-            grid, rooms, spawnRoom, arena, ceiling: 216, gridSize: this.gridSize,
+            grid, rooms, spawnRoom, arena, routeLinks, ceiling: 216, gridSize: this.gridSize,
             theme: theme,
             atmosphere: {
                 fogColor: cfg.atmosphere.fogColor,
@@ -265,6 +295,71 @@ class DungeonGenerator {
             },
             hazardLegend: HAZARD_LEGEND
         };
+    }
+
+    connectAdjacentRooms(grid, rooms, surfaces) {
+        const ts = this.tileSize || 48;
+        const addWindowSill = (gx, gy) => {
+            const cx = (gx + 0.5) * ts;
+            const cz = (gy + 0.5) * ts;
+            surfaces.push({
+                minX: cx - ts * 0.5,
+                maxX: cx + ts * 0.5,
+                minZ: cz - ts * 0.5,
+                maxZ: cz + ts * 0.5,
+                top: 22,
+                bottom: 0,
+                level: 1
+            });
+        };
+
+        for (let i = 0; i < rooms.length; i++) {
+            const a = rooms[i];
+            for (let j = i + 1; j < rooms.length; j++) {
+                const b = rooms[j];
+                // Check horizontal adjacency (1-tile or 2-tile wall between them)
+                const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w));
+                const overlapYStart = Math.max(a.y, b.y) + 1;
+                const overlapYEnd = Math.min(a.y + a.h, b.y + b.h) - 1;
+                if (gapX >= 1 && gapX <= 2 && overlapYEnd - overlapYStart >= 2) {
+                    const wallStart = a.x + a.w <= b.x ? a.x + a.w : b.x + b.w;
+                    const midY = Math.floor((overlapYStart + overlapYEnd) / 2);
+                    for (let wx = wallStart; wx < wallStart + gapX; wx++) {
+                        grid[wx][midY] = TILE.FLOOR;
+                        if (midY + 1 < this.gridSize - 1) grid[wx][midY + 1] = TILE.FLOOR;
+                    }
+                    // Add a window on the other side of the shared wall if wide enough
+                    if (overlapYEnd - overlapYStart >= 4) {
+                        const winY = overlapYStart;
+                        for (let wx = wallStart; wx < wallStart + gapX; wx++) {
+                            grid[wx][winY] = TILE.FLOOR;
+                            addWindowSill(wx, winY);
+                        }
+                    }
+                    continue;
+                }
+
+                // Check vertical adjacency (1-tile or 2-tile wall between them)
+                const gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+                const overlapXStart = Math.max(a.x, b.x) + 1;
+                const overlapXEnd = Math.min(a.x + a.w, b.x + b.w) - 1;
+                if (gapY >= 1 && gapY <= 2 && overlapXEnd - overlapXStart >= 2) {
+                    const wallStart = a.y + a.h <= b.y ? a.y + a.h : b.y + b.h;
+                    const midX = Math.floor((overlapXStart + overlapXEnd) / 2);
+                    for (let wy = wallStart; wy < wallStart + gapY; wy++) {
+                        grid[midX][wy] = TILE.FLOOR;
+                        if (midX + 1 < this.gridSize - 1) grid[midX + 1][wy] = TILE.FLOOR;
+                    }
+                    if (overlapXEnd - overlapXStart >= 4) {
+                        const winX = overlapXStart;
+                        for (let wy = wallStart; wy < wallStart + gapY; wy++) {
+                            grid[winX][wy] = TILE.FLOOR;
+                            addWindowSill(winX, wy);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     ensureRoomRoutes(grid, spawnRoom, rooms) {

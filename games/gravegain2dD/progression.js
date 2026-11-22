@@ -84,9 +84,13 @@
 
       choices.push({
         name: `${def.title} · ${tierName}`,
+        title: def.title,
+        tier: tierName,
         stat: def.stat,
         amount,
         detail,
+        isCapstone: isMaster,
+        capstoneText: isMaster ? def.capstone : '',
         apply() {
           build[def.stat] = (build[def.stat] || 0) + amount;
           build.draftRanks[def.stat] = Math.min(3, (build.draftRanks[def.stat] || 0) + 1);
@@ -99,14 +103,38 @@
     return choices;
   }
 
-  function award(distance, contracts, build, bonusSigils = 0) {
-    const reward = Math.floor(distance / 210) + contracts * (3 + (build.payout || 0)) + bonusSigils;
+  function getCost(baseCost, rank) {
+    return Math.round(baseCost + rank * Math.round(baseCost * 0.85));
+  }
+
+  function getBreakdown(distance, contracts, build, bonusSigils = 0, gems = 0) {
+    const distSigils = Math.floor((distance || 0) / 120);
+    const shardSigils = Math.floor((gems || 0) / 6);
+    const contractSigils = (contracts || 0) * (4 + (build?.payout || 0));
+    const bonus = bonusSigils || 0;
+    const total = distSigils + shardSigils + contractSigils + bonus;
+    return { distSigils, shardSigils, contractSigils, bonusSigils: bonus, total };
+  }
+
+  function award(distance, contracts, build, bonusSigils = 0, gems = 0) {
+    const { total: reward } = getBreakdown(distance, contracts, build, bonusSigils, gems);
     profile.sigils += reward;
     save();
     return reward;
   }
 
-  function renderShop(container) {
+  function getShopStatus() {
+    let affordableCount = 0;
+    for (const [, stat, , baseCost, , maxRank] of shop) {
+      const rank = profile.ranks[stat] || 0;
+      if (rank < maxRank && profile.sigils >= getCost(baseCost, rank)) {
+        affordableCount++;
+      }
+    }
+    return { sigils: profile.sigils, affordableCount };
+  }
+
+  function renderShop(container, onChange) {
     container.replaceChildren();
     const heading = document.createElement('h2');
     heading.textContent = `Permanent upgrades · ${profile.sigils} sigils`;
@@ -115,9 +143,12 @@
     for (const [name, stat, , baseCost, detail, maxRank] of shop) {
       const rank = profile.ranks[stat] || 0;
       const maxed = rank >= maxRank;
-      const cost = 4 * (baseCost + rank * Math.round(baseCost * 0.65));
+      const cost = getCost(baseCost, rank);
+      const affordable = !maxed && profile.sigils >= cost;
       const button = document.createElement('button');
-      button.disabled = maxed || profile.sigils < cost;
+      button.type = 'button';
+      button.disabled = !affordable;
+      if (affordable) button.classList.add('affordable');
       const rankLabel = maxRank > 1 ? ` (${rank}/${maxRank})` : '';
       button.textContent = `${name}${rankLabel} · ${maxed ? 'Maxed' : cost + ' sigils'}`;
       button.title = detail;
@@ -127,15 +158,24 @@
         profile.sigils -= cost;
         profile.ranks[stat] = rank + 1;
         save();
-        renderShop(container);
+        window.GraveGainAudio?.sfx?.buy?.();
+        renderShop(container, onChange);
+        onChange?.(getShopStatus());
       });
       const row = document.createElement('div');
+      const info = document.createElement('div');
+      info.className = 'shop-info';
       const description = document.createElement('span');
       description.textContent = detail;
-      row.append(button, description);
+      const pips = document.createElement('span');
+      pips.className = 'shop-pips';
+      pips.setAttribute('aria-hidden', 'true');
+      pips.textContent = '●'.repeat(rank) + '○'.repeat(Math.max(0, maxRank - rank));
+      info.append(description, pips);
+      row.append(button, info);
       container.append(row);
     }
   }
 
-  window.GraveGainProgression = { createBuild, draft, award, renderShop };
+  window.GraveGainProgression = { createBuild, draft, award, getBreakdown, getShopStatus, renderShop };
 })();

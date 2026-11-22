@@ -109,7 +109,9 @@
     };
     // Historical runtime names use the same expanded deck as their catalog game.
     decks.gravegain2dB_RPG = decks.gravegain2dA;
+    decks.gravegain3d = decks.gravegain3dB || decks.gravegain3dA;
     decks.gravegain3dB = decks.gravegain3dA;
+    decks.gravegain4d = decks.gravegain4dA;
     decks.gravegain4dB = decks.gravegain4dA;
     decks.gravegain5dB = decks.gravegain5dA;
     function pauseForDraft(game) {

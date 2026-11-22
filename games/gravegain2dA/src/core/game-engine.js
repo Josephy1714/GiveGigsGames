@@ -23,11 +23,18 @@
         { name: 'Goblin Zed', emoji: '🧟', hp: 48, dmg: 10, speed: 2.5, type: 'standard', blood: 'red' },
         { name: 'Small Orc Zed', emoji: '🧟‍♂️', hp: 68, dmg: 13, speed: 2.3, type: 'standard', blood: 'red' },
         { name: 'Flying Elf Skull', emoji: '👻', hp: 16, dmg: 26, speed: 4.0, type: 'exploding', blood: 'purple' },
+        { name: 'Warp Hound', emoji: '🐺', hp: 34, dmg: 11, speed: 4.4, type: 'standard', blood: 'purple' },
+        { name: 'Cultist Acolyte', emoji: '🕯️', hp: 42, dmg: 14, speed: 2.4, type: 'standard', blood: 'red', ranged: true },
+        { name: 'Plague Bearer', emoji: '☣️', hp: 85, dmg: 15, speed: 2.0, type: 'exploding', blood: 'green' },
+        { name: 'Shadow Wraith', emoji: '👤', hp: 58, dmg: 18, speed: 3.5, type: 'standard', blood: 'purple' },
         { name: 'Medium Orc Zed', emoji: '👺', hp: 140, dmg: 20, speed: 2.0, type: 'elite', blood: 'red' },
         { name: 'Dwarven Zed', emoji: '🛡️', hp: 190, dmg: 16, speed: 1.8, type: 'elite', blood: 'red', armored: true },
+        { name: 'Bone Golem', emoji: '🗿', hp: 240, dmg: 22, speed: 1.5, type: 'elite', blood: 'red', armored: true },
+        { name: 'Siege Automaton', emoji: '⚙️', hp: 280, dmg: 25, speed: 1.7, type: 'elite', blood: 'purple', armored: true, ranged: true },
         { name: 'Human Zed', emoji: '🤖', hp: 480, dmg: 24, speed: 2.2, type: 'boss', blood: 'red', ranged: true },
         { name: 'Huge Orc Zed', emoji: '🟢👹', hp: 760, dmg: 36, speed: 1.5, type: 'boss', blood: 'red' },
-        { name: 'Elven Necromancer', emoji: '🧙', hp: 390, dmg: 16, speed: 1.8, type: 'boss', blood: 'purple', summoner: true }
+        { name: 'Elven Necromancer', emoji: '🧙', hp: 390, dmg: 16, speed: 1.8, type: 'boss', blood: 'purple', summoner: true },
+        { name: 'Dread Knight', emoji: '⚔️', hp: 620, dmg: 30, speed: 2.1, type: 'boss', blood: 'red', armored: true }
     ];
 
     function themeToBiome(theme, floorIndex) {
@@ -54,6 +61,7 @@
         var worldRenderer = null;
         var cameraRig = null;
         var entityRenderer = null;
+        var combatVfx = null;
 
         var enemySeq = 1;
         var lootSeq = 1;
@@ -201,6 +209,15 @@
             if (renderNs.EntityRenderer && threeBundle && threeBundle.scene) {
                 entityRenderer = renderNs.EntityRenderer.create({
                     scene: threeBundle.scene
+                });
+            }
+            if (renderNs.CombatVfx && threeBundle && threeBundle.scene) {
+                combatVfx = renderNs.CombatVfx.create({
+                    scene: threeBundle.scene,
+                    camera: threeBundle.camera,
+                    bus: bus,
+                    cameraRig: cameraRig,
+                    getPlayer: function () { return state.player; }
                 });
             }
         }
@@ -596,6 +613,11 @@
             if (worldRenderer) {
                 worldRenderer.spawnFlashLight({ x: ox, y: oy, z: oz }, opts2.explosive ? 0xf97316 : 0xfef08a, 2.8, 9, 0.09);
             }
+            if (combatVfx) {
+                var muzzleColor = opts2.explosive ? 0xf97316 : (opts2.damageType === 'warp' ? 0xc084fc : 0xfef08a);
+                combatVfx.spawnBurst(ox, oy, oz, muzzleColor, 5, 3.8);
+                combatVfx.spawnRing(ox, oy, oz, muzzleColor, 0.85);
+            }
             if (cameraRig) {
                 cameraRig.applyPunch({ x: -dx, z: -dz }, 0.14);
             }
@@ -720,15 +742,33 @@
             return hitCount;
         }
 
+        function collidesWithProps(wx, wz, entRadius) {
+            if (!terrain || !terrain.props) return false;
+            var r = entRadius || 0.42;
+            for (var i = 0; i < terrain.props.length; i++) {
+                var pr = terrain.props[i];
+                if (!pr || pr.destroyed || pr.hp <= 0) continue;
+                var prR = pr.radius || 0.52;
+                var dx = wx - pr.x;
+                var dz = wz - pr.z;
+                if (dx * dx + dz * dz < (r + prR) * (r + prR)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         function moveEntityXZ(ent, dx, dz) {
             if (!dx && !dz) return false;
             var curG = terrain.worldToGrid(ent.x, ent.z);
+            var stepOpts = { allowDrop: ent === state.player };
+            var entR = ent.radius || 0.42;
             var moved = false;
 
             var nx = ent.x + dx;
             var gx = terrain.worldToGrid(nx, ent.z);
-            if (gx.gx === curG.gx || terrain.canStepBetween(curG.gx, curG.gz, gx.gx, curG.gz)) {
-                if (terrain.isPassable(gx.gx, curG.gz)) {
+            if (gx.gx === curG.gx || terrain.canStepBetween(curG.gx, curG.gz, gx.gx, curG.gz, stepOpts)) {
+                if (terrain.isPassable(gx.gx, curG.gz) && !collidesWithProps(nx, ent.z, entR)) {
                     ent.x = nx;
                     curG = gx;
                     moved = true;
@@ -737,15 +777,71 @@
 
             var nz = ent.z + dz;
             var gz = terrain.worldToGrid(ent.x, nz);
-            if (gz.gz === curG.gz || terrain.canStepBetween(curG.gx, curG.gz, curG.gx, gz.gz)) {
-                if (terrain.isPassable(curG.gx, gz.gz)) {
+            if (gz.gz === curG.gz || terrain.canStepBetween(curG.gx, curG.gz, curG.gx, gz.gz, stepOpts)) {
+                if (terrain.isPassable(curG.gx, gz.gz) && !collidesWithProps(ent.x, nz, entR)) {
                     ent.z = nz;
                     moved = true;
                 }
             }
 
-            ent.y = terrain.getWorldHeightAt(ent.x, ent.z);
+            var groundY = terrain.getWorldHeightAt(ent.x, ent.z);
+            if (ent !== state.player || ent.grounded !== false) {
+                ent.y = groundY;
+            }
             return moved;
+        }
+
+        function climbOrDropPlatform() {
+            var p = state.player;
+            if (!p) return false;
+            var curG = terrain.worldToGrid(p.x, p.z);
+            var curCell = terrain.getCell(curG.gx, curG.gz);
+            if (!curCell) return false;
+
+            var fx = Math.round(Math.cos(p.angle));
+            var fz = Math.round(Math.sin(p.angle));
+            var candidates = [];
+            if (fx !== 0 || fz !== 0) candidates.push({ gx: curG.gx + fx, gz: curG.gz + fz });
+            var dirs = [{ dx: 1, dz: 0 }, { dx: -1, dz: 0 }, { dx: 0, dz: 1 }, { dx: 0, dz: -1 }];
+            for (var i = 0; i < dirs.length; i++) {
+                candidates.push({ gx: curG.gx + dirs[i].dx, gz: curG.gz + dirs[i].dz });
+            }
+
+            // Prefer climbing up onto an adjacent platform (1..2 tiers higher)
+            for (var c = 0; c < candidates.length; c++) {
+                var cand = candidates[c];
+                if (!terrain.isPassable(cand.gx, cand.gz)) continue;
+                var cell = terrain.getCell(cand.gx, cand.gz);
+                if (!cell || cell.type === 'chasm') continue;
+                var diff = cell.elevation - curCell.elevation;
+                if (diff >= 1 && diff <= 2) {
+                    var wp = terrain.gridToWorld(cand.gx, cand.gz);
+                    p.x = wp.x;
+                    p.z = wp.z;
+                    p.y = terrain.getWorldHeightAt(p.x, p.z);
+                    if (combatVfx) combatVfx.spawnBurst(p.x, p.y + 0.2, p.z, 0xd6cfc2, 6, 3.0);
+                    bus.emit('player:climb', { player: p, fromElev: curCell.elevation, toElev: cell.elevation });
+                    return true;
+                }
+            }
+
+            // Otherwise drop down onto a lower adjacent passable cell
+            for (var d = 0; d < candidates.length; d++) {
+                var dcand = candidates[d];
+                if (!terrain.isPassable(dcand.gx, dcand.gz)) continue;
+                var dcell = terrain.getCell(dcand.gx, dcand.gz);
+                if (!dcell || dcell.type === 'chasm') continue;
+                if (dcell.elevation < curCell.elevation) {
+                    var dwp = terrain.gridToWorld(dcand.gx, dcand.gz);
+                    p.x = dwp.x;
+                    p.z = dwp.z;
+                    p.y = terrain.getWorldHeightAt(p.x, p.z);
+                    if (combatVfx) combatVfx.spawnBurst(p.x, p.y + 0.2, p.z, 0xd6cfc2, 6, 3.0);
+                    bus.emit('player:drop', { player: p, fromElev: curCell.elevation, toElev: dcell.elevation });
+                    return true;
+                }
+            }
+            return false;
         }
 
         function stepProjectiles(dt) {
@@ -900,6 +996,22 @@
             if (keys['KeyA']) mx -= 1;
             if (keys['KeyD']) mx += 1;
 
+            // Align WASD movement with camera forward/right on XZ plane
+            if (threeBundle && threeBundle.camera && typeof THREE !== 'undefined' && (mx !== 0 || mz !== 0)) {
+                var camFwd = new THREE.Vector3();
+                threeBundle.camera.getWorldDirection(camFwd);
+                camFwd.y = 0;
+                if (camFwd.lengthSq() > 0.0001) {
+                    camFwd.normalize();
+                    var camRightX = -camFwd.z;
+                    var camRightZ = camFwd.x;
+                    var alignedX = mx * camRightX + (-mz) * camFwd.x;
+                    var alignedZ = mx * camRightZ + (-mz) * camFwd.z;
+                    mx = alignedX;
+                    mz = alignedZ;
+                }
+            }
+
             // Directional Dodge via Arrow Keys (or Space bar for current facing/moving dodge)
             var arrowDodgeX = 0;
             var arrowDodgeZ = 0;
@@ -980,11 +1092,101 @@
                 applyDamage({ attacker: null, target: p, rawDamage: pHaz.damage, damageType: pHaz.hazard });
             }
 
-            // Action hotkeys: E interact, G explosive lob, K shove knockback, LMB fire
+            // Action hotkeys: E interact, F climb/drop platform, G explosive lob, K shove knockback, LMB fire
             if (inputState.interactPressed || keys['KeyE']) {
                 inputState.interactPressed = false;
                 keys['KeyE'] = false;
                 interactNearest();
+            }
+            if (inputState.climbPressed || keys['KeyF'] || keys['KeyC']) {
+                inputState.climbPressed = false;
+                keys['KeyF'] = false;
+                keys['KeyC'] = false;
+                climbOrDropPlatform();
+            }
+            var RACE_JUMP = {
+                human: { vy: 9.6,  gravity: 24.0 },
+                elf:   { vy: 11.4, gravity: 19.5 },
+                dwarf: { vy: 8.6,  gravity: 27.0 },
+                orc:   { vy: 12.2, gravity: 25.0 }
+            };
+            var rJump = RACE_JUMP[p.race] || RACE_JUMP.human;
+            var jumpHeld = !!(keys['Space'] || keys['KeyJ']);
+            var jumpTrigger = !!(inputState.jumpPressed || (jumpHeld && !p._jumpWasHeld));
+            p._jumpWasHeld = jumpHeld;
+
+            if (jumpTrigger) {
+                inputState.jumpPressed = false;
+                if (p.grounded !== false) {
+                    p.vy = rJump.vy;
+                    p.grounded = false;
+                    p.airJumpsLeft = (p.race === 'dwarf') ? 1 : 0;
+                    p.groundPounding = false;
+                    if (combatVfx) combatVfx.spawnBurst(p.x, p.y + 0.1, p.z, 0xd6cfc2, 5, 2.8);
+                } else if (p.race === 'dwarf' && p.airJumpsLeft > 0) {
+                    // Dwarf double jump
+                    p.airJumpsLeft--;
+                    p.vy = rJump.vy * 0.95;
+                    if (combatVfx) {
+                        combatVfx.spawnBurst(p.x, p.y + 0.1, p.z, 0xf59e0b, 7, 3.6);
+                        combatVfx.spawnRing(p.x, p.y + 0.05, p.z, 0xf59e0b, 1.1);
+                    }
+                }
+            }
+
+            // Orc Ground Pound: press F or C while airborne to slam down
+            if (!p.grounded && p.race === 'orc' && !p.groundPounding && (keys['KeyF'] || keys['KeyC'])) {
+                keys['KeyF'] = false;
+                keys['KeyC'] = false;
+                p.groundPounding = true;
+                p.vy = -26.0;
+            }
+
+            // Human Jetpack: hold Space/J in mid-air
+            if (!p.grounded && p.race === 'human' && jumpHeld && p.stamina > 2) {
+                p.vy = Math.min(8.5, p.vy + 42.0 * dt);
+                p.stamina = Math.max(0, p.stamina - 28 * dt);
+                if (combatVfx && Math.random() < 0.45) {
+                    combatVfx.spawnBurst(p.x, p.y + 0.2, p.z, 0xf97316, 2, 2.5);
+                }
+            }
+
+            // Vertical jump & gravity physics for player (race-specific)
+            var pGroundY = terrain.getWorldHeightAt(p.x, p.z);
+            if (p.y > pGroundY || p.vy > 0) {
+                var effGrav = rJump.gravity;
+                // Elf Hover: hold Space/J while descending
+                if (p.race === 'elf' && jumpHeld && p.vy < 0) {
+                    effGrav = 4.0;
+                    p.vy = Math.max(-1.2, p.vy);
+                    if (combatVfx && Math.random() < 0.25) {
+                        combatVfx.spawnBurst(p.x, p.y + 0.15, p.z, 0x34d399, 2, 2.0);
+                    }
+                }
+                p.vy -= effGrav * dt;
+                p.y += p.vy * dt;
+                p.grounded = false;
+                if (p.y <= pGroundY) {
+                    p.y = pGroundY;
+                    p.vy = 0;
+                    p.grounded = true;
+                    p.airJumpsLeft = (p.race === 'dwarf') ? 1 : 0;
+                    if (p.groundPounding) {
+                        p.groundPounding = false;
+                        dealAoEDamage3D(p.x, p.y, p.z, 3.8, 38, 'melee');
+                        if (combatVfx) {
+                            combatVfx.spawnRing(p.x, p.y + 0.08, p.z, 0xef4444, 3.6);
+                            combatVfx.spawnBurst(p.x, p.y + 0.2, p.z, 0xf97316, 14, 6.0);
+                        }
+                        if (cameraRig) cameraRig.applyShake(5.5);
+                    }
+                }
+            } else {
+                p.y = pGroundY;
+                p.vy = 0;
+                p.grounded = true;
+                p.airJumpsLeft = (p.race === 'dwarf') ? 1 : 0;
+                p.groundPounding = false;
             }
             if ((inputState.grenadePressed || keys['KeyG']) && state.grenadeCooldown <= 0) {
                 inputState.grenadePressed = false;
@@ -1003,12 +1205,25 @@
                 shoveKnockback(p, { x: Math.cos(p.angle), z: Math.sin(p.angle) }, 3.4, 5.0);
             }
             if (inputState.mouseDown && state.fireCooldown <= 0) {
-                state.fireCooldown = 0.22;
-                fireProjectile(
-                    { x: p.x, y: p.y + 1.15, z: p.z },
-                    { x: Math.cos(p.angle), y: 0, z: Math.sin(p.angle) },
-                    { damage: 22, speed: 34 }
-                );
+                var cType = p.classType || 'warrior';
+                var fx = Math.cos(p.angle);
+                var fz = Math.sin(p.angle);
+                if (cType === 'mage') {
+                    state.fireCooldown = 0.28;
+                    fireProjectile({ x: p.x, y: p.y + 1.25, z: p.z }, { x: fx, y: 0, z: fz }, { damage: 34, speed: 26, damageType: 'warp' });
+                } else if (cType === 'ranger') {
+                    state.fireCooldown = 0.32;
+                    fireProjectile({ x: p.x, y: p.y + 1.2, z: p.z }, { x: fx, y: 0, z: fz }, { damage: 38, speed: 46, damageType: 'kinetic' });
+                } else if (cType === 'rogue') {
+                    state.fireCooldown = 0.16;
+                    var spread = 0.08;
+                    fireProjectile({ x: p.x, y: p.y + 1.1, z: p.z }, { x: Math.cos(p.angle - spread), y: 0, z: Math.sin(p.angle - spread) }, { damage: 15, speed: 36, damageType: 'kinetic' });
+                    fireProjectile({ x: p.x, y: p.y + 1.1, z: p.z }, { x: Math.cos(p.angle + spread), y: 0, z: Math.sin(p.angle + spread) }, { damage: 15, speed: 36, damageType: 'kinetic' });
+                } else {
+                    // Warrior: Heavy Repeating Cannon
+                    state.fireCooldown = 0.24;
+                    fireProjectile({ x: p.x, y: p.y + 1.15, z: p.z }, { x: fx, y: 0, z: fz }, { damage: 28, speed: 32, damageType: 'kinetic' });
+                }
             }
 
             // Update Fog of War & Interior zone if player moved
@@ -1043,25 +1258,74 @@
                 }
 
                 var dToP = Math.hypot(p.x - e.x, p.z - e.z);
-                if (dToP < 14 && e.state === 'idle') e.state = 'chase';
-                if (e.state === 'chase' && dToP > 1.1) {
-                    var dirX = (p.x - e.x) / dToP;
-                    var dirZ = (p.z - e.z) / dToP;
+                if (dToP < 15 && e.state === 'idle') e.state = 'chase';
+                e.attackCooldown = Math.max(0, (e.attackCooldown || 0) - dt);
+                e.summonCooldown = Math.max(0, (e.summonCooldown || 0) - dt);
+
+                if (e.state === 'chase') {
+                    var dirX = (p.x - e.x) / (dToP || 1);
+                    var dirZ = (p.z - e.z) / (dToP || 1);
                     e.angle = Math.atan2(dirZ, dirX);
                     var eSpd = e.speed * terrain.getMovementMultiplier(e.x, e.z) * (eHaz ? eHaz.slowFactor : 1.0);
-                    moveEntityXZ(e, dirX * eSpd * dt, dirZ * eSpd * dt);
+
+                    if (e.ranged) {
+                        // Ranged: maintain 6..10m firing distance, strafe/retreat if too close
+                        if (dToP > 10.0) {
+                            moveEntityXZ(e, dirX * eSpd * dt, dirZ * eSpd * dt);
+                        } else if (dToP < 5.5) {
+                            moveEntityXZ(e, -dirX * eSpd * 0.75 * dt, -dirZ * eSpd * 0.75 * dt);
+                        } else {
+                            var strafeSign = (e.id && e.id.charCodeAt(e.id.length - 1) % 2 === 0) ? 1 : -1;
+                            moveEntityXZ(e, -dirZ * strafeSign * eSpd * 0.65 * dt, dirX * strafeSign * eSpd * 0.65 * dt);
+                        }
+                        if (dToP <= 13.5 && e.attackCooldown <= 0) {
+                            e.attackCooldown = 1.65;
+                            fireProjectile(
+                                { x: e.x, y: e.y + 1.0, z: e.z },
+                                { x: dirX, y: 0, z: dirZ },
+                                { owner: 'enemy', damage: e.dmg, damageType: 'warp', speed: 16, life: 1.4 }
+                            );
+                        }
+                    } else if (e.summoner) {
+                        // Summoner: keep mid-range and summon minions periodically
+                        if (dToP > 11.0) {
+                            moveEntityXZ(e, dirX * eSpd * dt, dirZ * eSpd * dt);
+                        } else if (dToP < 6.5) {
+                            moveEntityXZ(e, -dirX * eSpd * 0.8 * dt, -dirZ * eSpd * 0.8 * dt);
+                        }
+                        if (e.summonCooldown <= 0 && state.enemies.length < 35) {
+                            e.summonCooldown = 5.0;
+                            var sx = e.x + (Math.random() - 0.5) * 3.0;
+                            var sz = e.z + (Math.random() - 0.5) * 3.0;
+                            spawnEnemy(sx, sz, ENEMY_TEMPLATES[0]);
+                            if (combatVfx) combatVfx.spawnRing(sx, e.y + 0.1, sz, 0xc084fc, 1.8);
+                        }
+                    } else {
+                        // Flankers (Warp Hound / Shadow Wraith) weave at an angle until close
+                        var moveX = dirX;
+                        var moveZ = dirZ;
+                        if ((e.name === 'Warp Hound' || e.name === 'Shadow Wraith') && dToP > 3.2) {
+                            var flankSide = (e.id && e.id.charCodeAt(e.id.length - 1) % 2 === 0) ? 0.55 : -0.55;
+                            var cosA = Math.cos(flankSide);
+                            var sinA = Math.sin(flankSide);
+                            moveX = dirX * cosA - dirZ * sinA;
+                            moveZ = dirX * sinA + dirZ * cosA;
+                        }
+                        if (dToP > 1.1) {
+                            var rushMult = (e.type === 'exploding' && dToP < 10) ? 1.18 : 1.0;
+                            moveEntityXZ(e, moveX * eSpd * rushMult * dt, moveZ * eSpd * rushMult * dt);
+                        }
+                    }
                 }
                 if (dToP <= e.radius + p.radius + 0.15) {
                     if (e.type === 'exploding') {
                         dealAoEDamage3D(e.x, e.y, e.z, 3.0, e.dmg, 'explosive');
                         e.hp = 0;
                         e.isDead = true;
-                    } else {
-                        e.attackCooldown = Math.max(0, e.attackCooldown - dt);
-                        if (e.attackCooldown <= 0) {
-                            e.attackCooldown = 0.85;
-                            applyDamage({ attacker: e, target: p, rawDamage: e.dmg, damageType: 'melee' });
-                        }
+                    } else if (!e.ranged && e.attackCooldown <= 0) {
+                        e.attackCooldown = 0.85;
+                        var kbVec = e.armored ? { x: ((p.x - e.x) / (dToP || 1)) * 2.5, y: 0, z: ((p.z - e.z) / (dToP || 1)) * 2.5 } : null;
+                        applyDamage({ attacker: e, target: p, rawDamage: e.dmg, damageType: 'melee', knockbackVec3: kbVec });
                     }
                 }
             }
@@ -1117,9 +1381,11 @@
                 effectiveDt = dt * state.chronoScale;
             } else if (state.temporalMode === 'turnbased' && !stepOpts.force) {
                 // Turn-based only steps simulation inside executeTurnAction unless forced by test harness
+                stepProjectiles(dt);
                 if (cameraRig) cameraRig.update(dt, state.player, state.player, inputState.keys);
                 if (worldRenderer && state.player) worldRenderer.update(dt, state.player);
                 if (entityRenderer) entityRenderer.sync(state, terrain, dt);
+                if (combatVfx) combatVfx.update(dt);
                 return;
             }
 

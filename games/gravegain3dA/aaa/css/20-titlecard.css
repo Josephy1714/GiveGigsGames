@@ -16,7 +16,7 @@
     background: radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.78) 100%);
     opacity: 0; transition: opacity 0.45s ease;
 }
-.aaa-titlecard.on { opacity: 1; }
+.aaa-titlecard.on { opacity: 1; pointer-events: auto; cursor: pointer; }
 .aaa-titlecard .aaa-kicker {
     font-family: 'Orbitron', sans-serif; font-size: 0.8rem; letter-spacing: 0.5em;
     color: var(--grave-gold); text-transform: uppercase; margin-bottom: 10px;

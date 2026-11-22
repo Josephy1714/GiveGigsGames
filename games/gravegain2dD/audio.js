@@ -3,6 +3,7 @@
   let ctx = null;
   let muted = false;
   let musicTimer = null;
+  let musicPaused = false;
   let stepIndex = 0;
 
   try {
@@ -74,6 +75,13 @@
     wallJump() {
       tone(290, 0.16, 'triangle', 0.08, 620);
     },
+    slide() {
+      noise(0.11, 0.035, 620);
+    },
+    launch() {
+      tone(260, 0.16, 'triangle', 0.08, 660);
+      tone(520, 0.18, 'sine', 0.05, 920, 0.04);
+    },
     vault() {
       tone(340, 0.12, 'sine', 0.08, 680);
       tone(510, 0.16, 'triangle', 0.06, 880, 0.05);
@@ -86,6 +94,11 @@
       const base = 523.25 * Math.pow(1.06, Math.min(combo - 1, 10));
       tone(base, 0.11, 'sine', 0.07);
       tone(base * 1.5, 0.15, 'triangle', 0.05, null, 0.04);
+    },
+    contract() {
+      tone(440, 0.12, 'triangle', 0.065);
+      tone(554.37, 0.14, 'triangle', 0.065, null, 0.06);
+      tone(659.25, 0.2, 'sine', 0.07, null, 0.12);
     },
     ward() {
       tone(660, 0.18, 'sawtooth', 0.06, 220);
@@ -103,6 +116,15 @@
     warden() {
       tone(110, 0.45, 'sawtooth', 0.07, 78);
       tone(164.8, 0.45, 'triangle', 0.05, 110, 0.06);
+    },
+    wardenEnd() {
+      tone(293.66, 0.16, 'triangle', 0.065);
+      tone(440, 0.2, 'triangle', 0.065, null, 0.07);
+      tone(587.33, 0.28, 'sine', 0.07, null, 0.14);
+    },
+    buy() {
+      tone(587.33, 0.1, 'triangle', 0.07);
+      tone(880, 0.18, 'sine', 0.07, null, 0.05);
     }
   };
 
@@ -111,7 +133,7 @@
   function startMusic() {
     if (musicTimer || muted) return;
     musicTimer = setInterval(() => {
-      if (muted || !ctx || ctx.state !== 'running') return;
+      if (muted || musicPaused || !ctx || ctx.state !== 'running') return;
       const note = scale[stepIndex % scale.length];
       stepIndex++;
       tone(note, 0.28, 'sine', 0.022);
@@ -123,6 +145,18 @@
     if (musicTimer) {
       clearInterval(musicTimer);
       musicTimer = null;
+    }
+  }
+
+  function pauseMusic() {
+    musicPaused = true;
+  }
+
+  function resumeMusic() {
+    musicPaused = false;
+    if (!muted) {
+      ensureContext();
+      startMusic();
     }
   }
 
@@ -143,9 +177,12 @@
     sfx,
     startMusic,
     stopMusic,
+    pauseMusic,
+    resumeMusic,
     isMuted: () => muted,
     toggleMute: () => setMuted(!muted),
     unlock: () => {
+      musicPaused = false;
       ensureContext();
       startMusic();
     }

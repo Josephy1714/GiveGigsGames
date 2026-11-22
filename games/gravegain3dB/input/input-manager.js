@@ -4,7 +4,7 @@
     // Input owns its pointer-lock request so it has no dependency on the
     // runtime's private helpers after code splitting.
     function requestPointerLockSafely(element) {
-        if (!element?.requestPointerLock) return;
+        if (!element?.requestPointerLock || document.body.classList.contains('touch-enabled')) return;
         try {
             const request = element.requestPointerLock();
             if (request && typeof request.catch === 'function') request.catch(() => {});
@@ -206,23 +206,24 @@ class InputManager {
     }
 
     setupMobileControls() {
-        const isTouchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        const isNarrowViewport = window.innerWidth <= 900;
-        const isPointerCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-        if (isTouchSupported || isNarrowViewport || isPointerCoarse) {
-            document.body.classList.add('touch-enabled');
-        }
-        // Also watch for resize to toggle mobile layout
-        window.addEventListener('resize', () => {
-            const nowNarrow = window.innerWidth <= 900;
-            const nowTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            const nowCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-            if (nowNarrow || nowTouch || nowCoarse) {
+        const syncTouchMode = () => {
+            const touchMode = document.getElementById('settingsTouchMode')?.value || 'auto';
+            if (touchMode === 'always') {
                 document.body.classList.add('touch-enabled');
-            } else {
-                document.body.classList.remove('touch-enabled');
+                return;
             }
-        });
+            if (touchMode === 'never') {
+                document.body.classList.remove('touch-enabled');
+                return;
+            }
+            const isTouchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isNarrowViewport = window.innerWidth <= 900;
+            const isPointerCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            document.body.classList.toggle('touch-enabled', Boolean(isTouchSupported || isNarrowViewport || isPointerCoarse));
+        };
+        syncTouchMode();
+        // Also watch for resize to toggle mobile layout
+        window.addEventListener('resize', syncTouchMode);
 
         // Virtual analog joystick. Track the initiating pointer so a second
         // finger used for looking or attacking cannot hijack movement.
@@ -291,7 +292,7 @@ class InputManager {
         if (lookZone) {
             let lookPointerId = null;
             lookZone.addEventListener('pointerdown', (e) => {
-                if (lookPointerId !== null) return;
+                if (e.pointerType === 'mouse' || lookPointerId !== null) return;
                 e.preventDefault();
                 lookPointerId = e.pointerId;
                 lookZone.setPointerCapture?.(e.pointerId);
@@ -611,7 +612,7 @@ class InputManager {
         if (tapZone && !tapZone.dataset.ggTap) {
             tapZone.dataset.ggTap = '1';
             tapZone.addEventListener('pointerdown', (e) => {
-                if (this.tap.pointerId !== null) return;
+                if (e.pointerType === 'mouse' || this.tap.pointerId !== null) return;
                 this.tap.pointerId = e.pointerId;
                 this.tap.downX = e.clientX;
                 this.tap.downY = e.clientY;

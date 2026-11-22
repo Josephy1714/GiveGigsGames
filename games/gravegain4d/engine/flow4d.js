@@ -79,11 +79,15 @@
                         var b = document.createElement('button');
                         b.type = 'button'; b.className = 'char-card'; b.textContent = (r.emoji || '') + ' ' + (r.name || r.key);
                         b.title = r.desc || '';
-                        b.setAttribute('data-race', r.key);
+                        if (r.desc) { var desc = document.createElement('small'); desc.textContent = r.desc; b.appendChild(desc); }
+                        if (r.perk4d) { var perk = document.createElement('small'); perk.textContent = r.perk4d.name + ': ' + r.perk4d.desc; b.appendChild(perk); }
+                        b.setAttribute('data-race', r.key); b.setAttribute('aria-pressed', String(r.key === state.race));
+                        if (r.key === state.race) b.classList.add('selected');
                         on(b, 'click', function () {
                             state.race = r.key;
                             try { rg.querySelectorAll('.char-card').forEach(function (x) { x.classList.remove('selected'); }); } catch (e) {}
                             b.classList.add('selected');
+                            try { rg.querySelectorAll('.char-card').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); } catch (e) {}
                         });
                         rg.appendChild(b);
                     });
@@ -94,11 +98,15 @@
                         var b = document.createElement('button');
                         b.type = 'button'; b.className = 'char-card'; b.textContent = (c.title || c.key) + ' — ' + (c.weaponName || '');
                         b.title = c.desc || '';
+                        if (c.desc) { var detail = document.createElement('small'); detail.textContent = c.desc; b.appendChild(detail); }
                         b.setAttribute('data-class', c.key);
+                        if (c.key === state.cls) b.classList.add('selected');
+                        b.setAttribute('aria-pressed', String(c.key === state.cls));
                         on(b, 'click', function () {
                             state.cls = c.key;
                             try { cg.querySelectorAll('.char-card').forEach(function (x) { x.classList.remove('selected'); }); } catch (e) {}
                             b.classList.add('selected');
+                            try { cg.querySelectorAll('.char-card').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); } catch (e) {}
                         });
                         cg.appendChild(b);
                     });
@@ -108,12 +116,17 @@
 
         function startRun() {
             try {
+                gigglesOffers = 0;
                 state.started = true;
                 show('game');
                 var M = window.GG4D_Main;
-                if (M && M.boot) { try { M.boot({ race: state.race, cls: state.cls, mode: state.mode, mission: state.mission }); } catch (e) {} }
-                var game = window.GG4D_Game;
-                if (game) { game.gigglesHelpUses = 3; try { if (window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain4dA', game, null, true); } catch (e) {} }
+                if (M && M.boot) {
+                    try {
+                        var game = M.boot({ race: state.race, cls: state.cls, mode: state.mode, mission: state.mission });
+                        if (game) game.gigglesHelpUses = 3;
+                        if (game && window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain4dA', game, null, true);
+                    } catch (e) {}
+                }
                 var C = window.GG4D_Campaign;
                 if (state.mode === 'campaign' && C) {
                     try {
@@ -130,8 +143,15 @@
             } catch (e) {}
         }
 
+        var gigglesOffers = 0;
         function openGigglesCase() {
-            try { var game = window.GG4D_Game; if (game && state.started && window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain4dA', game); } catch (e) {}
+            try {
+                var g = window.GG4D_Game;
+                if (!g || !state.started || !window.GigglesHelpDraft) return;
+                if (!Number.isFinite(g.gigglesHelpUses)) g.gigglesHelpUses = 3;
+                if (g.gigglesHelpUses <= 0) return;
+                window.GigglesHelpDraft.present('gravegain4dA', g);
+            } catch (e) {}
         }
 
         function returnToHub() {
@@ -183,7 +203,14 @@
         function tick() {
             try {
                 var g = window.GG4D_Game || {};
-                var p = g.player || {};
+                var sim = g.state || {};
+                var ball = g.putt && g.putt.ball || {};
+                var p = g.player || {
+                    hp: sim.hp, maxHp: sim.maxHp, gold: sim.gold,
+                    uusd: sim.uusd, sand: sim.chronoSand, maxSand: sim.maxChronoSand,
+                    w: ball.w !== undefined ? ball.w : sim.w,
+                    brane: sim.brane, dead: sim.hp <= 0
+                };
                 function set(id, v) { try { var el = $(id); if (el) el.textContent = v; } catch (e) {} }
                 function bar(id, frac) { try { var el = $(id); if (el) el.style.width = Math.max(0, Math.min(100, frac * 100)) + '%'; } catch (e) {} }
                 if (p.maxHp) { bar('hudHpBar', p.hp / p.maxHp); set('hudHpText', Math.ceil(p.hp) + '/' + p.maxHp); }
@@ -194,6 +221,13 @@
                 if (p.brane) set('hudBraneText', p.brane);
                 try { if (window.GG4D_Radar) window.GG4D_Radar.update({ player: p, enemies: g.enemies || [], portals: g.portals || [], cup: g.cup || null }); } catch (e) {}
                 try { if (window.GG4D_Stone) window.GG4D_Stone.update(0.5); } catch (e) {}
+                if (state.started && gigglesOffers < 1 && p.maxHp && p.hp / p.maxHp <= 0.5 && !document.getElementById('gigglesHelpDraft')) {
+                    gigglesOffers += 1;
+                    openGigglesCase();
+                } else if (state.started && gigglesOffers < 1 && p.maxSand > 0 && p.sand / p.maxSand <= 0.15 && !document.getElementById('gigglesHelpDraft')) {
+                    gigglesOffers += 1;
+                    openGigglesCase();
+                }
                 if (p.dead) {
                     var t = $('gameOverTitle'); if (t) t.textContent = 'RUN COMPLETED';
                     show('gameOverScreen');
@@ -210,15 +244,16 @@
             on($('btnOpenSettings'), 'click', function () { show('settingsScreen'); });
             on($('btnCharSelectBack'), 'click', function () { show('mainMenuScreen'); });
             on($('btnCharSelectStart'), 'click', function () { startRun(); });
-            var ggButton = document.createElement('button'); ggButton.type = 'button'; ggButton.textContent = '▰ GG · HELP'; ggButton.style.cssText = 'position:fixed;right:12px;top:12px;z-index:9000;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer'; ggButton.addEventListener('click', openGigglesCase); document.body.appendChild(ggButton);
+            on($('btnPause'), 'click', function () { var g = window.GG4D_Game; if (g) g.pause(); show('pauseScreen'); });
+            on($('btnGigglesHelp'), 'click', openGigglesCase);
             document.addEventListener('keydown', function (e) { if (e.key === 'g' || e.key === 'G') openGigglesCase(); });
-            on($('btnPause'), 'click', function () { show('pauseScreen'); });
-            on($('btnResume'), 'click', function () { show('game'); });
-            on($('btnAbandon'), 'click', function () { state.started = false; show('mainMenuScreen'); });
+            var ggCase = document.createElement('button'); ggCase.type = 'button'; ggCase.textContent = '▰ GG · HELP'; ggCase.style.cssText = 'position:fixed;right:12px;top:12px;z-index:9000;padding:8px 12px;border:2px solid #cba55c;border-radius:9px;background:#241d14;color:#f3d487;font-weight:bold;cursor:pointer'; ggCase.addEventListener('click', openGigglesCase); document.body.appendChild(ggCase);
+            on($('btnResume'), 'click', function () { var g = window.GG4D_Game; if (g) g.resume(); show('game'); });
+            on($('btnAbandon'), 'click', function () { state.started = false; var g = window.GG4D_Game; if (g) g.stop(); show('mainMenuScreen'); });
             on($('btnReturnToHub'), 'click', function () { returnToHub(); });
             on($('btnLeaveHub'), 'click', function () { show(state.started ? 'game' : 'mainMenuScreen'); });
             on($('btnSaveSettings'), 'click', function () { show(state.started ? 'game' : 'mainMenuScreen'); });
-            on($('btnGoToMenu'), 'click', function () { state.started = false; show('mainMenuScreen'); });
+            on($('btnGoToMenu'), 'click', function () { state.started = false; var g = window.GG4D_Game; if (g) g.stop(); show('mainMenuScreen'); });
             on($('btnSpeakLore'), 'click', function () { speakLore(); });
             on($('btnBuyUusd'), 'click', function () { try { var H = window.GG4D_Hub; if (H && H.bankGoldToUusd) H.bankGoldToUusd(); } catch (e) {} });
             on($('btnBuyGold'), 'click', function () { try { var H = window.GG4D_Hub; if (H && H.bankUusdToGold) H.bankUusdToGold(); else if (H && H.bankKillCreditsToUusd) H.bankKillCreditsToUusd(); } catch (e) {} });

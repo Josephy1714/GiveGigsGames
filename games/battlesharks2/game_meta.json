@@ -1,5 +1,5 @@
 {
-  "name": "Battle Sharks 2",
+  "name": "BattleSharks 2D",
   "objective": "Survive as long as possible while shooting enemy sharks to maximize your score.",
   "controls": "WASD or Arrow Keys to move. Space to shoot. Avoid enemy sharks and bullets.",
   "known_states": ["menu", "playing", "game_over"],

@@ -41,15 +41,24 @@
   let coyote = 0;
   let cameraLift = 0;
   let jumpHeld = false;
+  let jumpCutApplied = false;
+  let launchBoost = false;
+  let wasSliding = false;
+  let hitstop = 0;
+  let toastTimer = 0;
   let frame = 0;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let fireballs = [];
   let callouts = [];
+  let trail = [];
+  let trailTimer = 0;
 
   let running = false, paused = false, last = 0, time = 0, distance = 0, gems = 0, hearts = 3;
   let world = 0, spawn = 0, shake = 0, particles = [];
   let combo = 1, comboTimer = 0;
   let nextWardenAt = 1000, wardenTimer = 0, wardenWaveTimer = 0, bonusSigils = 0;
+  let lastWardenSec = 0, nextWardenBoltY = ground - 43, wardenFade = 0;
+  let lastBiomeId = 0, currentBiome = null;
 
   let player = { x: 238, y: ground, vy: 0, speed: 220, jump: false, pose: 0, invuln: 0, vault: 0 };
   let obstacles = [], loot = [], input = { x: 0, y: 0 }, pointer = null;
@@ -99,6 +108,7 @@
   updateMuteIcon();
 
   muteBtn.addEventListener('click', () => {
+    muteBtn.blur();
     if (!window.GraveGainAudio) return;
     GraveGainAudio.toggleMute();
     updateMuteIcon();
@@ -110,14 +120,20 @@
     paused = Boolean(next);
     cancelAnimationFrame(frame);
     pausePanel.hidden = !paused;
-    if (paused) clearInput();
-    if (!paused) {
+    if (paused) {
+      clearInput();
+      GraveGainAudio?.pauseMusic?.();
+    } else {
+      GraveGainAudio?.resumeMusic?.();
       last = performance.now();
       frame = requestAnimationFrame(loop);
     }
   }
 
-  pauseBtn.addEventListener('click', () => setPaused(!paused));
+  pauseBtn.addEventListener('click', () => {
+    pauseBtn.blur();
+    setPaused(!paused);
+  });
   $('#resume-btn').addEventListener('click', () => setPaused(false));
   $('#restart-btn').addEventListener('click', () => {
     pausePanel.hidden = true;
@@ -147,14 +163,33 @@
     const options = GraveGainProgression.draft(build);
     options.forEach((card, index) => {
       const button = document.createElement('button');
-      const detail = document.createElement('small');
       button.type = 'button';
-      button.textContent = `${index + 1}. ${card.name}`;
+      button.className = 'relic-card';
+      if (card.isCapstone) button.classList.add('capstone');
+
+      const head = document.createElement('span');
+      head.className = 'relic-head';
+      const keyBadge = document.createElement('span');
+      keyBadge.className = 'relic-key';
+      keyBadge.textContent = String(index + 1);
+      const tierBadge = document.createElement('span');
+      tierBadge.className = 'relic-tier';
+      tierBadge.textContent = card.tier || 'Relic';
+      head.append(keyBadge, tierBadge);
+
+      const title = document.createElement('strong');
+      title.className = 'relic-title';
+      title.textContent = card.title || card.name;
+
+      const detail = document.createElement('small');
+      detail.className = 'relic-detail';
       detail.textContent = card.detail;
-      button.append(detail);
+
+      button.append(head, title, detail);
       button.addEventListener('click', () => {
         if (draftPanel.hidden || !running) return;
         card.apply();
+        renderHearts();
         updateObjectiveHud();
         draftPanel.hidden = true;
         last = performance.now();
@@ -166,10 +201,16 @@
 
   function record(event) {
     const complete = run.record(event);
-    if (complete && hearts < 3 + (build.health || 0)) {
-      hearts++;
-      renderHearts();
-      addCallout('CONTRACT +1 ♥', player.x + 20, player.y - 80, '#a6f4c5');
+    if (complete) {
+      GraveGainAudio?.sfx.contract?.();
+      boostCombo(0.35);
+      if (hearts < 3 + (build.health || 0)) {
+        hearts++;
+        renderHearts();
+        addCallout('CONTRACT +1 ♥', player.x + 20, player.y - 80, '#a6f4c5');
+      } else {
+        addCallout('CONTRACT COMPLETE!', player.x + 20, player.y - 80, '#ffe7a1');
+      }
     }
     if (gems >= nextDraft) {
       nextDraft += 30 + 5 * Math.min(drafts, 6) - (build.experience || 0);
@@ -182,7 +223,17 @@
     const wardenText = wardenTimer > 0 ? ` · WARDEN ${Math.ceil(wardenTimer)}s` : '';
     objectiveHud.textContent = `${run.objective} · Draft at ${nextDraft} shards · Wards ${build.armor || 0}${wardenText}`;
   }
-  GraveGainProgression.renderShop(shop);
+
+  function updateShopSummary() {
+    const status = GraveGainProgression.getShopStatus?.();
+    const summary = $('#upgrade-shop summary');
+    if (!status || !summary) return;
+    const avail = status.affordableCount > 0 ? ` · ${status.affordableCount} affordable` : '';
+    summary.textContent = `Permanent upgrades · ${status.sigils} sigils${avail}`;
+  }
+
+  GraveGainProgression.renderShop(shop, updateShopSummary);
+  updateShopSummary();
 
   function start() {
     cancelAnimationFrame(frame);
@@ -199,9 +250,15 @@
     dropTimer = 0;
     jumpBuffer = coyote = cameraLift = 0;
     jumpHeld = false;
+    jumpCutApplied = false;
+    launchBoost = false;
     sliding = false;
+    wasSliding = false;
+    hitstop = 0;
     fireballs = [];
     callouts = [];
+    trail = [];
+    trailTimer = 0;
     combo = 1;
     comboTimer = 0;
     $combo.hidden = true;
@@ -209,11 +266,16 @@
     wardenTimer = 0;
     wardenWaveTimer = 0;
     bonusSigils = 0;
+    lastWardenSec = 0;
+    nextWardenBoltY = ground - 43;
+    wardenFade = 0;
     run = GraveGainRun.createRun();
     stride = landing = lastStepStride = 0;
     running = true;
     last = performance.now();
     time = distance = gems = world = spawn = shake = 0;
+    lastBiomeId = 0;
+    currentBiome = cloneBiome(getBiomeTarget(0));
     hearts = 3 + (build.health || 0);
     obstacles = [];
     loot = [];
@@ -332,6 +394,10 @@
     }
     if (!controls.has(event.code)) return;
     event.preventDefault();
+    const action = controls.get(event.code);
+    if (action === 'up' && !event.repeat && running && !paused && draftPanel.hidden) {
+      jumpBuffer = 0.16;
+    }
     heldKeys.add(event.code);
     if (pointer === null && tapPointer === null) applyKeyboard();
   });
@@ -370,12 +436,56 @@
     return groundTiles[material * 5 + variant];
   }
 
-  function getBiome() {
-    if (distance >= 2000) return { skyTop: '#240b16', skyMid: '#481a2b', skyBot: '#623a3f', moon: '#ffd1d1', halo: '#ff6d7a55', hills: ['#452530', '#381e28', '#2a161e'] };
-    if (distance >= 1200) return { skyTop: '#100c26', skyMid: '#241f46', skyBot: '#463f5b', moon: '#e2dcff', halo: '#b8a8ff55', hills: ['#322d4a', '#29253e', '#201c30'] };
-    if (distance >= 500) return { skyTop: '#071713', skyMid: '#15322b', skyBot: '#315242', moon: '#c7f4d2', halo: '#7ff0a755', hills: ['#244439', '#1e3930', '#172d26'] };
-    return { skyTop: '#090f23', skyMid: '#1b3041', skyBot: '#465952', moon: '#dce9c8', halo: '#d5f9cd61', hills: ['#304652', '#293e47', '#20353c'] };
+  function getBiomeTarget(dist = distance) {
+    if (dist >= 2000) return { id: 3, name: 'BLOOD MOON', skyTop: '#240b16', skyMid: '#481a2b', skyBot: '#623a3f', moon: '#ffd1d1', halo: '#ff6d7a55', hills: ['#452530', '#381e28', '#2a161e'] };
+    if (dist >= 1200) return { id: 2, name: 'VIOLET CRYPT', skyTop: '#100c26', skyMid: '#241f46', skyBot: '#463f5b', moon: '#e2dcff', halo: '#b8a8ff55', hills: ['#322d4a', '#29253e', '#201c30'] };
+    if (dist >= 500) return { id: 1, name: 'EMERALD MIRE', skyTop: '#071713', skyMid: '#15322b', skyBot: '#315242', moon: '#c7f4d2', halo: '#7ff0a755', hills: ['#244439', '#1e3930', '#172d26'] };
+    return { id: 0, name: 'MOONLIT ROAD', skyTop: '#090f23', skyMid: '#1b3041', skyBot: '#465952', moon: '#dce9c8', halo: '#d5f9cd61', hills: ['#304652', '#293e47', '#20353c'] };
   }
+
+  function cloneBiome(b) {
+    return { ...b, hills: [...b.hills] };
+  }
+
+  function parseColor(color) {
+    if (color.startsWith('rgba(') || color.startsWith('rgb(')) {
+      const parts = color.slice(color.indexOf('(') + 1, -1).split(',').map(Number);
+      return [parts[0] || 0, parts[1] || 0, parts[2] || 0, parts[3] ?? 1];
+    }
+    const h = color.replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16) || 0;
+    const g = parseInt(h.slice(2, 4), 16) || 0;
+    const b = parseInt(h.slice(4, 6), 16) || 0;
+    const a = h.length >= 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+    return [r, g, b, a];
+  }
+
+  function lerpColor(from, to, t) {
+    const [r1, g1, b1, a1] = parseColor(from);
+    const [r2, g2, b2, a2] = parseColor(to);
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+    const a = a1 + (a2 - a1) * t;
+    return `rgba(${r},${g},${b},${a.toFixed(3)})`;
+  }
+
+  function updateBiome(dt) {
+    const target = getBiomeTarget();
+    if (target.id > lastBiomeId) {
+      lastBiomeId = target.id;
+      addCallout(target.name, W / 2 - 58, 96, target.moon);
+    }
+    if (!currentBiome) currentBiome = cloneBiome(target);
+    const blend = 1 - Math.exp(-dt * 2.4);
+    currentBiome.skyTop = lerpColor(currentBiome.skyTop, target.skyTop, blend);
+    currentBiome.skyMid = lerpColor(currentBiome.skyMid, target.skyMid, blend);
+    currentBiome.skyBot = lerpColor(currentBiome.skyBot, target.skyBot, blend);
+    currentBiome.moon = lerpColor(currentBiome.moon, target.moon, blend);
+    currentBiome.halo = lerpColor(currentBiome.halo, target.halo, blend);
+    currentBiome.hills = currentBiome.hills.map((hill, idx) => lerpColor(hill, target.hills[idx], blend));
+  }
+  currentBiome = cloneBiome(getBiomeTarget(0));
 
   function drawGravePlots() {
     const spacing = 295;
@@ -456,7 +566,7 @@
   }
 
   function drawBg(lift = 0) {
-    const biome = getBiome();
+    const biome = currentBiome || getBiomeTarget(0);
     const sky = ctx.createLinearGradient(0, -lift, 0, ground);
     sky.addColorStop(0, biome.skyTop);
     sky.addColorStop(0.52, biome.skyMid);
@@ -516,6 +626,20 @@
     mist.addColorStop(1, '#a3d3be00');
     ctx.fillStyle = mist;
     ctx.fillRect(0, ground - 160, W, 160);
+    if (!reducedMotion.matches) {
+      ctx.save();
+      for (let i = 0; i < 18; i++) {
+        const seed = terrainHash(i + 1500);
+        const fx = ((seed % W) - (world * 0.22 + time * (12 + (seed % 14))) % W + W) % W;
+        const fy = ground - 26 - ((seed >>> 8) % 190) + Math.sin(time * (1.4 + (seed % 5) * 0.3) + i) * 10;
+        const alpha = 0.16 + 0.22 * (0.5 + 0.5 * Math.sin(time * 2.5 + i * 1.7));
+        ctx.fillStyle = i % 3 === 0 ? `rgba(241, 216, 139, ${alpha.toFixed(2)})` : `rgba(158, 247, 215, ${alpha.toFixed(2)})`;
+        ctx.beginPath();
+        ctx.arc(fx, fy, i % 4 === 0 ? 2 : 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
     drawGravePlots();
 
     ctx.fillStyle = '#17201b';
@@ -629,6 +753,18 @@
     const x = turret.x + 12;
     const y = ground - 43;
     const charging = turret.chargeAt !== undefined && !turret.fired;
+    if (charging) {
+      ctx.save();
+      const pulse = 0.28 + 0.22 * Math.sin(time * 24);
+      ctx.strokeStyle = `rgba(255, 120, 188, ${pulse.toFixed(2)})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 7]);
+      ctx.beginPath();
+      ctx.moveTo(x - 10, y);
+      ctx.lineTo(Math.max(40, x - 360), y);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.fillStyle = '#37354b';
     ctx.fillRect(x - 9, y + 8, 18, 35);
     ctx.fillStyle = '#9383a9';
@@ -700,6 +836,12 @@
       o = { type, x, w: enemyTypes[type].width, h: enemyTypes[type].height };
     }
 
+    if ((o.type === 'arch' || o.type === 'climbwall') && run.hasLowPlatformAt?.(o.x, o.w, ground)) {
+      o = distance > 140 && Math.random() < 0.5
+        ? { type: 'slime', x, w: enemyTypes.slime.width, h: enemyTypes.slime.height }
+        : { type: 'stump', x, w: 54, h: 43 };
+    }
+
     if (!canSpawnAt(o.x, o.w)) return;
     obstacles.push(o);
     if (Math.random() < 0.78) {
@@ -711,13 +853,33 @@
     if (o.type === 'arch') {
       const topY = ground - o.h;
       const bottomY = ground - o.clearance;
-      ctx.fillStyle = '#2d3745';
+      ctx.fillStyle = '#26303d';
       ctx.fillRect(o.x, topY, o.w, bottomY - topY);
+      ctx.fillStyle = '#3c4b5c';
+      ctx.fillRect(o.x, topY, o.w, 4);
       ctx.fillStyle = '#8b997d';
       ctx.fillRect(o.x - 3, bottomY - 5, o.w + 6, 5);
       ctx.fillStyle = '#f6d48c';
+      for (let sx = o.x + 4; sx < o.x + o.w - 6; sx += 14) {
+        ctx.fillRect(sx, bottomY - 4, 7, 3);
+      }
+      ctx.save();
       ctx.font = 'bold 11px system-ui';
-      ctx.fillText('SLIDE ↓', o.x + 12, topY - 8);
+      const label = 'SLIDE ↓';
+      const bw = ctx.measureText(label).width + 14;
+      const bx = o.x + (o.w - bw) / 2;
+      const by = topY - 26;
+      ctx.fillStyle = '#0c1722eb';
+      ctx.strokeStyle = '#f6d48c88';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, bw, 20, 6);
+      else ctx.rect(bx, by, bw, 20);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f6d48c';
+      ctx.fillText(label, bx + 7, by + 14);
+      ctx.restore();
       return;
     }
     if (o.type === 'climbwall') {
@@ -758,6 +920,16 @@
       ctx.fillStyle = o.type === 'bramble' ? '#59613c' : '#6d6554';
       ctx.fillRect(o.x, ground - o.h, o.w, o.h);
     }
+    if (o.type === 'stump' && !o.vaulted && o.x - player.x < 260 && o.x > player.x - 10) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(158, 247, 215, 0.55)';
+      ctx.fillRect(o.x + 6, ground - o.h + 2, o.w - 12, 3);
+      ctx.fillStyle = '#9ef7d7';
+      ctx.font = 'bold 13px system-ui';
+      const bob = reducedMotion.matches ? 0 : Math.sin(time * 8) * 3;
+      ctx.fillText('↑', o.x + o.w / 2 - 4, ground - o.h - 9 + bob);
+      ctx.restore();
+    }
   }
 
   function emit(x, y, color, n = 8, sparkle = false) {
@@ -766,12 +938,38 @@
     }
   }
 
+  function performVault(o) {
+    o.vaulted = true;
+    player.vy = -440 - (build.vault || 0);
+    player.jump = true;
+    player.vault = VAULT_SECONDS;
+    launchBoost = true;
+    jumpCutApplied = false;
+    jumpBuffer = coyote = 0;
+    player.speed = Math.min(player.speed + 65, 420 + (build.sprint || 0));
+    if (build.capstones?.vault && fireballs.length > 0) {
+      for (const ball of fireballs) emit(ball.x, ball.y, '#9ef7d7', 10, true);
+      fireballs = [];
+      if (!reducedMotion.matches) hitstop = 0.045;
+      addCallout('SHATTERED!', player.x + 28, player.y - 84, '#9ef7d7');
+    }
+    record('vault');
+    boostCombo(0.25, 'VAULT', player.x + 24, ground - 60);
+    emit(player.x + 24, ground, '#d9c780', 9, true);
+    GraveGainAudio?.sfx.vault();
+    $('#toast').classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('#toast').classList.remove('on'), 420);
+  }
+
   function crash() {
     if (!running || player.invuln > 0) return;
     if (build.armor > 0) {
       build.armor--;
-      player.invuln = 0.55;
+      player.invuln = 0.65;
+      if (!reducedMotion.matches) hitstop = 0.05;
       emit(player.x + 18, player.y - 30, '#8ff5ed', 14);
+      addCallout('WARD SAVED!', player.x + 18, player.y - 68, '#8ff5ed');
       GraveGainAudio?.sfx.ward();
       record('ward');
       return;
@@ -783,6 +981,7 @@
     player.invuln = 1.3 + (build.grace || 0);
     player.speed *= 0.72;
     shake = 0.25;
+    if (!reducedMotion.matches) hitstop = 0.065;
     emit(player.x + 18, player.y - 30, '#e6b47d', 14);
     GraveGainAudio?.sfx.hit();
     renderHearts();
@@ -794,19 +993,36 @@
     paused = false;
     draftPanel.hidden = true;
     pausePanel.hidden = true;
-    const reward = GraveGainProgression.award(distance, run.completed, build, bonusSigils);
-    GraveGainProgression.renderShop(shop);
-    best = Math.max(best, Math.floor(distance));
+    objectiveHud.textContent = '';
+    GraveGainAudio?.pauseMusic?.();
+    const dist = Math.floor(distance);
+    const isNewBest = dist > best;
+    const breakdown = GraveGainProgression.getBreakdown?.(distance, run.completed, build, bonusSigils, gems);
+    const reward = GraveGainProgression.award(distance, run.completed, build, bonusSigils, gems);
+    const status = GraveGainProgression.getShopStatus?.();
+    GraveGainProgression.renderShop(shop, updateShopSummary);
+    updateShopSummary();
+    best = Math.max(best, dist);
     bestNode.textContent = best;
     try { localStorage.setItem('gravegain2dD-best', String(best)); } catch {}
     $('#title').innerHTML = 'THE ROAD<br>CLAIMS YOU';
-    $('#copy').innerHTML = `You ran ${Math.floor(distance)}m and gathered ${gems} moonshards.<br>Your best run is ${best}m. Objectives completed: ${run.completed}.<br>Earned ${reward} sigils for permanent upgrades.`;
+    const bestNote = isNewBest && dist > 0 ? ' · NEW BEST!' : '';
+    const shardPart = breakdown?.shardSigils ? ` · ${breakdown.shardSigils} from shards` : '';
+    const contractPart = breakdown?.contractSigils ? ` · ${breakdown.contractSigils} contracts` : '';
+    const bonusPart = bonusSigils > 0 ? ` · ${bonusSigils} warden` : '';
+    $('#copy').innerHTML =
+      `Ran <strong>${dist}m</strong>${bestNote} · Best <strong>${best}m</strong><br>` +
+      `Moonshards <strong>${gems}</strong> · Contracts completed <strong>${run.completed}</strong><br>` +
+      `Earned <strong>+${reward} sigils</strong>` +
+      (breakdown ? ` (${breakdown.distSigils} distance${shardPart}${contractPart}${bonusPart})` : '') +
+      (status ? ` · Bank: <strong>${status.sigils} sigils</strong>` : '');
     $('#start').textContent = 'RUN AGAIN';
     $overlay.classList.remove('hidden');
   }
 
   function renderIntro() {
     if (running) return;
+    currentBiome = cloneBiome(getBiomeTarget(0));
     applyTransform();
     drawBg();
     atlasDraw(0, player.x - 18, ground - 77, 76, 77);
@@ -834,6 +1050,99 @@
     if (document.hidden) pauseOnFocusLoss();
   });
 
+  function drawWarden() {
+    if (wardenFade <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = wardenFade;
+    const wx = W - 66;
+    const wy = ground - 118 + Math.sin(time * 2.6) * 8;
+
+    const aura = ctx.createRadialGradient(wx, wy + 12, 8, wx, wy + 12, 76);
+    aura.addColorStop(0, 'rgba(255, 86, 152, 0.36)');
+    aura.addColorStop(1, 'rgba(255, 86, 152, 0)');
+    ctx.fillStyle = aura;
+    ctx.fillRect(wx - 76, wy - 64, 152, 152);
+
+    // Tattered hooded silhouette
+    ctx.fillStyle = '#181020';
+    ctx.strokeStyle = '#6c3156';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(wx, wy - 36);
+    ctx.quadraticCurveTo(wx + 24, wy - 12, wx + 22, wy + 44);
+    for (let i = 3; i >= -3; i--) {
+      const stripX = wx + i * 7;
+      const wave = Math.sin(time * 6 + i * 1.4) * 5;
+      ctx.lineTo(stripX, wy + 48 + (i % 2 === 0 ? 12 : 4) + wave);
+    }
+    ctx.lineTo(wx - 22, wy + 44);
+    ctx.quadraticCurveTo(wx - 24, wy - 12, wx, wy - 36);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Glowing eyes
+    ctx.shadowColor = '#ff5eaa';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ffa2c4';
+    ctx.beginPath();
+    ctx.arc(wx - 7, wy - 13, 3, 0, Math.PI * 2);
+    ctx.arc(wx + 4, wy - 13, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Lantern orb & incoming bolt telegraph
+    const lanternX = wx - 26;
+    const lanternY = nextWardenBoltY;
+    const telegraphing = wardenTimer > 0 && wardenWaveTimer <= 0.65;
+    if (telegraphing) {
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255, 118, 180, 0.38)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(lanternX, lanternY);
+      ctx.lineTo(player.x + 80, lanternY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffb8d2';
+      ctx.font = 'bold 11px system-ui';
+      ctx.fillText(lanternY < ground - 30 ? 'SLIDE ↓' : 'JUMP ↑', lanternX - 58, lanternY - 10);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = telegraphing ? '#fff2b6' : '#ff79b0';
+    ctx.beginPath();
+    ctx.arc(lanternX, lanternY, telegraphing ? 7 + Math.sin(time * 28) * 2 : 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWardenHud() {
+    if (wardenTimer <= 0) return;
+    ctx.save();
+    const bw = 220;
+    const bh = 24;
+    const bx = W - bw - 14;
+    const by = 62;
+    ctx.fillStyle = '#180c19e0';
+    ctx.strokeStyle = '#ff79b077';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 8);
+    else ctx.rect(bx, by, bw, bh);
+    ctx.fill();
+    ctx.stroke();
+
+    const pct = Math.max(0, Math.min(1, wardenTimer / 20));
+    ctx.fillStyle = 'rgba(255, 102, 166, 0.34)';
+    ctx.fillRect(bx + 3, by + 3, (bw - 6) * pct, bh - 6);
+    ctx.fillStyle = '#ffd9e8';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(`CRYPT WARDEN · ${Math.ceil(wardenTimer)}s`, bx + 12, by + 16);
+    ctx.restore();
+  }
+
   function loop(now) {
     if (!running || paused) return;
     if (!draftPanel.hidden) {
@@ -842,13 +1151,21 @@
       return;
     }
 
+    const rawDt = Math.min((now - last) / 1000, 0.04);
+    last = now;
+    if (hitstop > 0 && !reducedMotion.matches) {
+      hitstop = Math.max(0, hitstop - rawDt);
+      frame = requestAnimationFrame(loop);
+      return;
+    }
+
     pollGamepad();
     applyTransform();
     ctx.clearRect(-200, -200, W + 400, H + 400);
 
-    const dt = Math.min((now - last) / 1000, 0.04);
-    last = now;
+    const dt = rawDt;
     time += dt;
+    updateBiome(dt);
 
     if (comboTimer > 0) {
       comboTimer -= dt;
@@ -863,29 +1180,47 @@
       nextWardenAt += 1000;
       wardenTimer = 20;
       wardenWaveTimer = 1.6;
+      nextWardenBoltY = Math.random() < 0.5 ? ground - 43 : ground - 22;
+      lastWardenSec = 20;
       GraveGainAudio?.sfx.warden();
       addCallout('CRYPT WARDEN PURSUIT!', W / 2 - 90, 120, '#ff9fb8');
       updateObjectiveHud();
     }
     if (wardenTimer > 0) {
       wardenTimer -= dt;
+      wardenFade = Math.min(1, wardenFade + dt * 2.5);
+      const sec = Math.max(0, Math.ceil(wardenTimer));
+      if (sec !== lastWardenSec) {
+        lastWardenSec = sec;
+        updateObjectiveHud();
+      }
       wardenWaveTimer -= dt;
       if (wardenWaveTimer <= 0) {
         wardenWaveTimer = 2.4;
-        fireballs.push({ x: W + 20, y: ground - (Math.random() < 0.5 ? 43 : 22), nearMissed: false });
+        fireballs.push({ x: W - 92, y: nextWardenBoltY, nearMissed: false });
+        nextWardenBoltY = Math.random() < 0.5 ? ground - 43 : ground - 22;
       }
       if (wardenTimer <= 0) {
+        wardenTimer = 0;
+        lastWardenSec = 0;
         bonusSigils += 3;
-        boostCombo(0.5, 'WARDEN SURVIVED');
+        for (let i = 0; i < 16; i++) {
+          emit(W - 64, ground - 110 + (Math.random() - 0.5) * 60, '#ff9fb8', 2);
+        }
+        GraveGainAudio?.sfx.wardenEnd?.();
+        boostCombo(0.5, 'WARDEN BANISHED +3 SIGILS', W / 2 - 115, 130);
         updateObjectiveHud();
       }
+    } else if (wardenFade > 0) {
+      wardenFade = Math.max(0, wardenFade - dt * 2.5);
     }
 
     const targetSpeed = input.x > 0 ? 220 + (135 + (build.sprint || 0)) * input.x : 220 + 95 * input.x;
     player.speed += (targetSpeed - player.speed) * (1 - Math.exp(-dt * (13 + (build.brake || 0))));
+    if (wallGrip && !obstacles.includes(wallGrip)) wallGrip = null;
     const velocity = wallGrip ? 0 : player.speed;
     wallJumpLock = Math.max(0, wallJumpLock - dt);
-    distance += dt * velocity * 0.7 * combo;
+    distance += dt * velocity * 0.38 * combo;
     stride += dt * (5 + velocity * 0.048);
     if (!player.jump && !wallGrip && Math.floor(stride / 3) !== lastStepStride) {
       lastStepStride = Math.floor(stride / 3);
@@ -902,27 +1237,63 @@
     jumpHeld = wantsJump;
     if (!player.jump && player.y <= ground) coyote = 0.105;
 
-    if (wallGrip && jumpBuffer > 0) {
+    if (wallGrip && vertical > 0.45) {
+      wallGrip.dropped = true;
+      wallGrip = null;
+      wallJumpLock = 0.35;
+      player.vy = 180;
+    }
+
+    const vaultTarget = (!wallGrip && player.vault <= 0 && player.y >= ground - 28 && (jumpBuffer > 0 || vertical < -0.25))
+      ? obstacles.find(o =>
+          o.type === 'stump' && !o.vaulted &&
+          o.x - (player.x + 36) <= 44 &&
+          o.x + o.w - (player.x + 12) >= -6
+        )
+      : null;
+
+    if (vaultTarget) {
+      performVault(vaultTarget);
+    } else if (wallGrip && jumpBuffer > 0) {
       wallGrip = null;
       wallJumpLock = 0.62;
       player.vy = -755 - (build.wall || 0);
       run.leavePlatform();
       player.jump = true;
       doubleJumpReady = Boolean(build.capstones?.wall);
+      launchBoost = true;
+      jumpCutApplied = false;
       jumpBuffer = coyote = 0;
+      boostCombo(0.2, 'WALL JUMP', player.x + 20, player.y - 72);
+      emit(player.x + 28, player.y - 24, '#9ef7d7', 9);
       GraveGainAudio?.sfx.wallJump();
     } else if (jumpBuffer > 0 && coyote > 0 && !wallGrip) {
-      player.vy = -(run.onLaunchLedge ? 830 : 575) - (build.jump || 0);
+      const isLaunch = run.onLaunchLedge;
+      player.vy = -(isLaunch ? 830 : 575) - (build.jump || 0);
       run.leavePlatform();
       player.jump = true;
+      launchBoost = isLaunch;
+      jumpCutApplied = false;
       jumpBuffer = coyote = 0;
-      GraveGainAudio?.sfx.jump();
+      if (isLaunch) {
+        emit(player.x + 18, player.y, '#9ef7d7', 10, true);
+        addCallout('LAUNCH!', player.x + 18, player.y - 68, '#9ef7d7');
+        GraveGainAudio?.sfx.launch?.();
+      } else {
+        GraveGainAudio?.sfx.jump();
+      }
     } else if (jumpBuffer > 0 && player.jump && doubleJumpReady && !wallGrip) {
       doubleJumpReady = false;
       player.vy = -540 - (build.jump || 0);
+      jumpCutApplied = false;
       jumpBuffer = 0;
       emit(player.x + 18, player.y - 10, '#a7e8d4', 8);
       GraveGainAudio?.sfx.wallJump();
+    }
+
+    if (player.jump && !wantsJump && !jumpCutApplied && !launchBoost && player.vault <= 0 && player.vy < -420) {
+      player.vy = -420;
+      jumpCutApplied = true;
     }
 
     // Platform drop-through when pressing down on an upper platform
@@ -942,6 +1313,20 @@
     player.vy += (player.vy < 0 ? 1130 : 1350) * dt;
     if (wallGrip) player.vy = Math.min(105, Math.max(0, player.vy));
     player.y += player.vy * dt;
+
+    if (wallGrip) {
+      if (player.y >= ground - 2) {
+        wallGrip.dropped = true;
+        wallGrip = null;
+        wallJumpLock = 0.35;
+      } else if (player.y <= ground - wallGrip.h + 4) {
+        player.y = ground - wallGrip.h;
+        player.vy = 0;
+        player.jump = false;
+        wallGrip = null;
+        wallJumpLock = 0.35;
+      }
+    }
 
     world += velocity * dt;
     run.advance(world, velocity * dt, W, ground, loot);
@@ -971,6 +1356,8 @@
       player.vy = 0;
       player.jump = false;
       doubleJumpReady = false;
+      jumpCutApplied = false;
+      launchBoost = false;
       if (floor.visited) {
         record('platform');
         boostCombo(0.15);
@@ -987,6 +1374,14 @@
     }
 
     sliding = vertical > 0.36 && !player.jump;
+    if (sliding && !wasSliding) {
+      GraveGainAudio?.sfx.slide?.();
+      player.speed = Math.min(player.speed + 22, 390 + (build.sprint || 0));
+    }
+    if (sliding && Math.random() < 0.4) {
+      emit(player.x + 6, player.y - 2, '#9aa37c', 1);
+    }
+    wasSliding = sliding;
 
     for (const o of obstacles) {
       if (o.type === 'turret') updateTurret(o);
@@ -1024,12 +1419,13 @@
     }
 
     if (!wallGrip && wallJumpLock === 0) {
-      wallGrip = obstacles.find(o => o.type === 'climbwall' && player.y > ground - o.h + 3 &&
+      wallGrip = obstacles.find(o => o.type === 'climbwall' && !o.dropped && player.y > ground - o.h + 3 &&
         player.x + 38 >= o.x && player.x + 12 < o.x + o.w) || null;
     }
     if (wallGrip) {
       player.x = wallGrip.x - 37;
       player.jump = true;
+      if (Math.random() < 0.45) emit(wallGrip.x, player.y - 22, '#9da684', 1);
     }
 
     updateFireballs(dt, velocity);
@@ -1037,6 +1433,12 @@
     const px = player.x + 12;
     const headY = player.y - (sliding ? 24 : 56);
     for (const o of obstacles) {
+      if (o.type === 'arch' && !o.cleared && o.x + o.w <= px) {
+        o.cleared = true;
+        if (sliding && Math.abs(player.y - ground) < 4) {
+          boostCombo(0.15, 'CLEAN SLIDE', player.x + 20, player.y - 44);
+        }
+      }
       if (o.type === 'turret' || o.type === 'climbwall' || o.vaulted || px + 26 <= o.x || px >= o.x + o.w) continue;
       if (o.type === 'arch') {
         if (headY < ground - o.clearance && player.y > ground - o.h) crash();
@@ -1050,6 +1452,7 @@
             o.hitAt = time;
             player.vy = -440;
             player.jump = true;
+            if (!reducedMotion.matches) hitstop = 0.045;
             emit(o.x + o.w / 2, ground - o.h, enemy.color, 10);
             GraveGainAudio?.sfx.stomp();
             boostCombo(0.3, 'STOMP', o.x, ground - o.h - 20);
@@ -1066,18 +1469,8 @@
       }
       if (o.type === 'gap') continue;
       if (player.y > ground - o.h + 16) {
-        if (o.type === 'stump' && vertical < -0.15 && player.vault <= 0) {
-          player.vy = -350 - (build.vault || 0);
-          player.jump = true;
-          player.vault = VAULT_SECONDS;
-          o.vaulted = true;
-          if (build.capstones?.vault) fireballs = [];
-          record('vault');
-          boostCombo(0.25, 'VAULT', player.x + 24, ground - 60);
-          emit(player.x + 24, ground, '#d9c780', 7);
-          GraveGainAudio?.sfx.vault();
-          $('#toast').classList.add('on');
-          setTimeout(() => $('#toast').classList.remove('on'), 350);
+        if (o.type === 'stump' && (vertical < -0.15 || jumpBuffer > 0) && player.vault <= 0) {
+          performVault(o);
         } else {
           crash();
         }
@@ -1092,7 +1485,8 @@
     ctx.save();
     shake = Math.max(0, shake - dt);
     if (!reducedMotion.matches && shake > 0) ctx.translate(Math.sin(time * 96) * shake * 9, 0);
-    run.draw(ctx);
+    run.draw(ctx, time);
+    drawWarden();
     drawFireballs();
     for (const o of obstacles) {
       ctx.save();
@@ -1121,13 +1515,60 @@
     }
 
     const charCell = wallGrip ? 13 : heroFrame();
+    if (!reducedMotion.matches && (player.vault > 0 || launchBoost || combo >= 1.8)) {
+      trailTimer -= dt;
+      if (trailTimer <= 0) {
+        trailTimer = 0.035;
+        trail.push({ x: player.x, y: player.y, cell: sliding ? 16 : charCell, sliding, life: 0.16 });
+        if (trail.length > 5) trail.shift();
+      }
+    }
+    for (let i = trail.length - 1; i >= 0; i--) {
+      const t = trail[i];
+      t.x -= velocity * dt * 0.25;
+      t.life -= dt;
+      if (t.life <= 0) {
+        trail.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.globalAlpha = (t.life / 0.16) * 0.34;
+      ctx.shadowColor = player.vault > 0 ? '#ffe7a1' : '#8ff5ed';
+      ctx.shadowBlur = 8;
+      atlasDraw(t.cell, t.x - 18, t.y - (t.sliding ? 38 : 77), 76, t.sliding ? 38 : 77);
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.shadowColor = '#a7e8d492';
     ctx.shadowBlur = 12;
-    if (!(player.invuln > 0 && Math.floor(time * 14) % 2)) {
-      atlasDraw(sliding ? 16 : charCell, player.x - 18, player.y - (sliding ? 38 : 77), 76, sliding ? 38 : 77);
-    }
+    ctx.globalAlpha = player.invuln > 0 ? (Math.floor(time * 16) % 2 ? 0.45 : 0.95) : 1;
+    atlasDraw(sliding ? 16 : charCell, player.x - 18, player.y - (sliding ? 38 : 77), 76, sliding ? 38 : 77);
     ctx.restore();
+
+    if (build.armor > 0) {
+      ctx.save();
+      const cx = player.x + 20;
+      const cy = player.y - (sliding ? 19 : 38);
+      const rx = 28;
+      const ry = sliding ? 18 : 34;
+      ctx.strokeStyle = 'rgba(143, 245, 237, 0.38)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      const pips = Math.min(build.armor, 6);
+      ctx.fillStyle = '#9ef7d7';
+      ctx.shadowColor = '#8ff5ed';
+      ctx.shadowBlur = 8;
+      for (let i = 0; i < pips; i++) {
+        const ang = time * 3.2 + (i * Math.PI * 2) / pips;
+        ctx.beginPath();
+        ctx.arc(cx + Math.cos(ang) * rx, cy + Math.sin(ang) * ry, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
@@ -1158,6 +1599,7 @@
     $score.textContent = Math.floor(distance);
     ctx.restore();
     ctx.restore();
+    drawWardenHud();
     frame = requestAnimationFrame(loop);
   }
 

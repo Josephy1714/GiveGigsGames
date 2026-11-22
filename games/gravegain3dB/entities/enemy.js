@@ -70,6 +70,39 @@
         }
 
         buildModel(typeData) {
+            const catalog = Array.isArray(window.GGG_MODEL_CATALOG) ? window.GGG_MODEL_CATALOG : [];
+            if (catalog.length) {
+                const nameLower = String(this.name || '').toLowerCase();
+                let modelId = 'gg-enemy-goblin-skeleton';
+                if (this.isBoss) {
+                    if (nameLower.includes('lucifer') || nameLower.includes('hades')) modelId = 'gg-enemy-lucifer-hades';
+                    else if (nameLower.includes('titan')) modelId = 'gg-enemy-necro-titan';
+                    else modelId = 'gg-enemy-bone-goliath';
+                } else if (this.type === 'skull' || nameLower.includes('skull')) {
+                    modelId = 'gg-enemy-flaming-skull';
+                } else if (this.type === 'mage' || nameLower.includes('necro') || nameLower.includes('elven')) {
+                    modelId = 'gg-enemy-elven-necromancer';
+                } else if (nameLower.includes('dwarf') || nameLower.includes('thane') || nameLower.includes('armored')) {
+                    modelId = 'gg-enemy-dwarven-thane';
+                } else if (nameLower.includes('orc') || nameLower.includes('berserk')) {
+                    modelId = 'gg-enemy-orc-berserker';
+                } else if (nameLower.includes('golem') || nameLower.includes('chem')) {
+                    modelId = 'gg-enemy-chem-golem';
+                } else if (nameLower.includes('spider')) {
+                    modelId = 'gg-enemy-tomb-spider';
+                }
+                const entry = catalog.find(m => m && m.id === modelId && typeof m.build === 'function');
+                if (entry) {
+                    try {
+                        const sharedMesh = entry.build(THREE);
+                        if (sharedMesh) {
+                            sharedMesh.scale.setScalar(14);
+                            this.group3d.add(sharedMesh);
+                            return;
+                        }
+                    } catch (_) {}
+                }
+            }
             const ProceduralTextures = window.GraveGainProceduralTextures;
             const style = EnemyEntity.STYLES[this.variantKey] || {};
             const bodyColor = (style.body !== undefined) ? style.body : this.bloodColor;
@@ -615,12 +648,45 @@
             }
             this.sprite.position.y = 8;
             this.group3d.add(this.sprite);
+            this.rarityBeam = null;
+            this.rarityRing = null;
+            this.rarityLevel = 0;
+            if (type === 'weapon' && this.weaponData?.rarityColor && this.weaponData.rarity !== 'common') {
+                const level = { uncommon: 1, rare: 2, epic: 3, legendary: 4 }[this.weaponData.rarity] || 1;
+                this.rarityLevel = level;
+                const color = this.weaponData.rarityColor;
+                const beamMaterial = new THREE.MeshBasicMaterial({ color, transparent: true,
+                    opacity: 0.12 + level * 0.045, blending: THREE.AdditiveBlending,
+                    depthWrite: false, side: THREE.DoubleSide });
+                this.rarityBeam = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 7 + level, 34 + level * 4, 8, 1, true), beamMaterial);
+                this.rarityBeam.position.y = 21;
+                this.rarityBeam.name = 'weapon rarity beam';
+                this.group3d.add(this.rarityBeam);
+                if (level >= 2) {
+                    const ringRadius = level === 2 ? 8.5 : level === 3 ? 12 : 15;
+                    const ringThickness = level === 2 ? 0.5 : level === 3 ? 0.8 : 1.2;
+                    const ringMaterial = new THREE.MeshBasicMaterial({ color, transparent: true,
+                        opacity: level === 2 ? 0.42 : level === 3 ? 0.65 : 0.9,
+                        blending: THREE.AdditiveBlending, depthWrite: false });
+                    this.rarityRing = new THREE.Mesh(new THREE.TorusGeometry(ringRadius, ringThickness, 6, 20), ringMaterial);
+                    this.rarityRing.position.y = 1.5;
+                    this.rarityRing.rotation.x = Math.PI / 2;
+                    this.rarityRing.name = 'weapon rarity ring';
+                    this.group3d.add(this.rarityRing);
+                }
+            }
             this.group3d.position.set(x, 0, y);
         }
 
         update(dt, player, range) {
             this.pulse += 5 * dt;
             this.sprite.position.y = 8 + Math.sin(this.pulse) * 3;
+            if (this.rarityBeam) {
+                const pulse = (Math.sin(this.pulse * (1.05 + this.rarityLevel * 0.2) + this.rarityLevel * 0.45) + 1) * 0.5;
+                this.rarityBeam.material.opacity = 0.05 + pulse * (0.12 + this.rarityLevel * 0.045);
+                this.rarityBeam.scale.x = this.rarityBeam.scale.z = 0.9 + pulse * (0.12 + this.rarityLevel * 0.02);
+            }
+            if (this.rarityRing) this.rarityRing.rotation.y = this.pulse * (0.2 + this.rarityLevel * 0.08);
             this.pickupDelay = Math.max(0, this.pickupDelay - dt);
             if (this.pickupDelay > 0 || this.elevation > 0 || Math.abs(player.yElevation - this.elevation) > 14) return;
 
@@ -636,6 +702,17 @@
 
         destroy() {
             if (window.GraveGainGame) window.GraveGainGame.scene.remove(this.group3d);
+            const geometries = new Set();
+            const materials = new Set();
+            this.group3d.traverse(object => {
+                if (object.geometry) geometries.add(object.geometry);
+                if (object.material) materials.add(object.material);
+            });
+            geometries.forEach(geometry => geometry.dispose());
+            materials.forEach(material => {
+                if (material.map) material.map.dispose();
+                material.dispose();
+            });
         }
     }
 

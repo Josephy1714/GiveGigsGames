@@ -49,8 +49,6 @@
         let barTimer = 0;
 
         // Click/tap skips any card (mission intros especially) - endless-safe.
-        card.style.pointerEvents = 'auto';
-        card.style.cursor = 'pointer';
         card.addEventListener('click', () => {
             clearTimeout(hideTimer);
             clearTimeout(barTimer);

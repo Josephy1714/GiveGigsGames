@@ -1,30 +1,62 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.ARCADE_PLAYWRIGHT_PATH || "playwright");
+const { chromium, firefox, webkit } = require(process.env.ARCADE_PLAYWRIGHT_PATH || "playwright");
+const engines = { chromium, firefox, webkit };
+const engine = process.env.ARCADE_BROWSER || "chromium";
 const channel = process.env.ARCADE_CHROMIUM_CHANNEL;
-const root = new URL("../", import.meta.url);
-const origin = "http://graphics.test";
-const browser = await chromium.launch(channel ? { channel } : {});
+assert.ok(engines[engine], "ARCADE_BROWSER must be chromium, firefox, or webkit");
+const root = fileURLToPath(new URL("../", import.meta.url));
+const contentTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp"
+};
+const stageHtml = '<div style="width:320px;height:240px;background:black"><canvas style="width:100%;height:100%;display:block"></canvas></div>';
+const server = http.createServer(async (req, res) => {
+  try {
+    const pathname = new URL(req.url || "/", "http://127.0.0.1").pathname;
+    if (pathname === "/" || pathname === "/__smoke__/gravegain-worker.html" || pathname === "/__smoke__/sky-worker.html") {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      res.end(stageHtml);
+      return;
+    }
+    if (pathname === "/favicon.ico") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    const file = path.resolve(root, `.${decodeURIComponent(pathname)}`);
+    if (path.relative(root, file).startsWith("..")) {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    const body = await readFile(file);
+    res.writeHead(200, { "content-type": contentTypes[path.extname(file)] || "application/octet-stream" });
+    res.end(body);
+  } catch (error) {
+    res.writeHead(error?.code === "ENOENT" || error?.code === "EISDIR" ? 404 : 500);
+    res.end();
+  }
+});
+await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+const { port } = server.address();
+const origin = `http://127.0.0.1:${port}`;
+const browser = await engines[engine].launch(engine === "chromium" && channel ? { channel } : {});
 
 try {
   const context = await browser.newContext({ viewport: { width: 480, height: 360 } });
-  await context.route(origin + "/**", async route => {
-    const path = new URL(route.request().url()).pathname;
-    if (path === "/") {
-      await route.fulfill({
-        contentType: "text/html",
-        body: '<div style="width:320px;height:240px;background:black"><canvas style="width:100%;height:100%;display:block"></canvas></div>'
-      });
-    } else {
-      await route.fulfill({
-        contentType: "text/javascript",
-        body: await readFile(new URL("." + path, root))
-      });
-    }
-  });
 
   for (const slug of ["gravegain3dA", "gravegain3dB", "html/gravegain3d"]) {
     const page = await context.newPage();
@@ -118,4 +150,5 @@ try {
   console.log("PASS worker pool recovers capacity after a job times out");
 } finally {
   await browser.close();
+  server.close();
 }

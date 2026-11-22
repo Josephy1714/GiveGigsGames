@@ -308,7 +308,7 @@ html, body {
 }
 
 @media (pointer: coarse) {
-    #touch-move, #touch-actions { bottom: calc(76px + env(safe-area-inset-bottom)); }
+    #touch-move, #touch-actions { bottom: calc(112px + env(safe-area-inset-bottom)); }
     #touch-move { left: max(12px, env(safe-area-inset-left)); }
     #touch-actions { right: max(12px, env(safe-area-inset-right)); }
     #touch-actions button { width: 54px; height: 54px; }
