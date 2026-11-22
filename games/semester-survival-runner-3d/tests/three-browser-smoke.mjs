@@ -70,7 +70,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.equal(collisionProbe.hit, true, "a mistimed jump must register an obstacle collision");
     assert.ok(Math.abs(collisionProbe.energy - 68) < 0.02, "a standard obstacle collision must apply the expected energy penalty, allowing the frame energy drain");
     for (const vehicleIndex of [0, 1, 2]) {
-      const frontProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex }), vehicleIndex);
+      const frontProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex: index }), vehicleIndex);
       assert.equal(frontProbe.hit, true, "a direct front impact must register for every traffic vehicle type");
       assert.equal(frontProbe.impactType, "front", "a grounded collision must use the direct-front reaction");
       assert.equal(frontProbe.impactAnimation, "fall", "a direct front collision must play Shoulder Hit And Fall");
@@ -78,7 +78,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       assert.equal(frontProbe.thrown, false, "a direct front collision must not use the airborne throw");
       assert.equal(frontProbe.vehicleVisible, true, "the vehicle must remain visible after a direct collision");
 
-      const airborneProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1, vehicleIndex }), vehicleIndex);
+      const airborneProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1, vehicleIndex: index }), vehicleIndex);
       assert.equal(airborneProbe.hit, true, "a jumping collision must register for every traffic vehicle type");
       assert.equal(airborneProbe.impactType, "airborne", "a jumping collision must use a separate airborne reaction");
       assert.equal(airborneProbe.impactAnimation, "jump", "an airborne collision must not reuse the direct shoulder-hit clip");
