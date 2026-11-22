@@ -38,7 +38,8 @@
       "legacy-2d-reference.html",
       "src/three/runner-three-renderer.js",
       "src/three/jay-character.js",
-      "assets/processed/jay-runtime/jay-atlas.png"
+      "assets/3d/jay/jay.glb",
+      "assets/3d/jay/jay-portrait.webp"
     ]
   },
   "meta": {
