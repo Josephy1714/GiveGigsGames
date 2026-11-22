@@ -185,7 +185,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
- let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0;
+ let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,cameraBaseX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0;
  jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay-unified.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
  console.info("Jay unified gameplay rig loaded",jayRig.availableClips);
@@ -238,8 +238,18 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const impact=clamp((Number(g.hitTimer)||0)/.62,0,1);
   // Track Jay laterally on narrow mobile viewports so every lane remains fully visible.
   const cameraTrackX=playerX*.92;
-  camera.position.x=THREE.MathUtils.damp(camera.position.x,cameraTrackX,7.5,dt)+Math.sin(g.t*48)*impact*.035;
-  camera.position.y=4.9+Math.sin(g.t*36)*impact*.025;
+  // Keep the damped tracking position independent from the temporary impact offset.
+  // The original shake frequency and amplitude are preserved; only its accumulation is removed.
+  cameraBaseX=THREE.MathUtils.damp(cameraBaseX,cameraTrackX,7.5,dt);
+  const cameraShakeX=Math.sin(g.t*48)*impact*.035;
+  const cameraShakeY=Math.sin(g.t*36)*impact*.025;
+  camera.position.x=cameraBaseX+cameraShakeX;
+  camera.position.y=4.9+cameraShakeY;
+  mount.dataset.cameraTrackX=cameraTrackX.toFixed(5);
+  mount.dataset.cameraBaseX=cameraBaseX.toFixed(5);
+  mount.dataset.cameraShakeX=cameraShakeX.toFixed(5);
+  mount.dataset.cameraShakeY=cameraShakeY.toFixed(5);
+  mount.dataset.cameraWorldX=camera.position.x.toFixed(5);
   camera.fov=57+impact*.8;camera.updateProjectionMatrix();camera.lookAt(cameraTrackX,1.8+jumpY*.055,-9.5);
   impactRing.visible=impact>.015;impactRing.position.x=playerX;impactRing.scale.setScalar(.75+(1-impact)*1.8);impactRing.material.opacity=impact*.58;
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
