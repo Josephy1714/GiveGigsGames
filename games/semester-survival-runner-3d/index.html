@@ -233,7 +233,7 @@ finish = function(quit,why){
 };
 const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout"&&g&&save.up.revive>0&&!g.revived){g.revived=true;g.energy=35;g.inv=2;g.hit=true;return}finishWithRevive(quit,why)};
 if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
- endRun:()=>finish(true),
+ endRun:(distance=0)=>{if(g)g.d=distance;finish(true)},
  state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0,slidePhase:g?g.slidePhase:null,animationClip:animator?animator.snapshot().clip:null,playerX:g?L[g.lane]:null,projectedLaneX:(lane,z)=>270+(lane-1)*((48+z*270)*2/3)}),
  probeCoin:({lane=1,coinLane=1}={})=>{
   if(!g||!g.on)return null;
