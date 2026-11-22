@@ -16,7 +16,9 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.rendererReady === "true", null, { timeout: 60000 });
     const diagnostics = await world.evaluate(node => ({
       clipCount: Number(node.dataset.jayClipCount),
-      clips: node.dataset.jayClips.split(","),\n      mouthPose: node.dataset.jayMouthPose,\n      neutralizedMouthMorphs: Number(node.dataset.jayMouthMorphsNeutralized),
+      clips: node.dataset.jayClips.split(","),
+      mouthPose: node.dataset.jayMouthPose,
+      neutralizedMouthMorphs: Number(node.dataset.jayMouthMorphsNeutralized),
       quality: node.dataset.graphicsQuality,
       canvas: Boolean(node.querySelector("canvas")),
       canvasWidth: node.querySelector("canvas")?.width || 0,
@@ -29,7 +31,9 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     for (const clip of ["idle", "run", "jump", "slide", "fall"]) {
       assert.ok(diagnostics.clips.includes(clip), "missing Jay clip: " + clip);
     }
-    assert.equal(diagnostics.quality, "High");\n    assert.equal(diagnostics.mouthPose, "neutral", "Jay must start with a neutral closed-mouth facial pose");\n    assert.ok(Number.isFinite(diagnostics.neutralizedMouthMorphs), "facial pose diagnostics must be present");
+    assert.equal(diagnostics.quality, "High");
+    assert.equal(diagnostics.mouthPose, "neutral", "Jay must start with a neutral closed-mouth facial pose");
+    assert.ok(Number.isFinite(diagnostics.neutralizedMouthMorphs), "facial pose diagnostics must be present");
 
     await page.locator('[data-page="settings"]').first().click();
     await page.locator("#quality").selectOption({ label: "Performance" });
