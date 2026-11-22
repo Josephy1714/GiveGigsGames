@@ -194,6 +194,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  mount.dataset.jayClips=jayRig.availableClips.join(",");
  mount.dataset.jayMouthMorphsNeutralized=String(jayRig.neutralizedMouthMorphs.length);
  mount.dataset.jayMouthPose="neutral";
+ mount.dataset.jayRunMotionFound=String(jayRig.runMotionFound);
+ mount.dataset.jayRunMotionTracks=String(jayRig.runMotionTrackNames.length);
+ mount.dataset.jayRunApproachEndpoint=String(jayRig.runApproachEndpointSeconds);
+ mount.dataset.jayRunMotionFallback=String(jayRig.runMotionUsedFallback);
  const obstacles=Array.from({length:18},()=>{
   const g=new THREE.Group(),jump=new THREE.Group(),slide=new THREE.Group();
   box(jump,2.55,.66,.72,m.obstacle,0,.36,0);box(jump,2.62,.1,.78,m.warning,0,.72,0);box(jump,.9,.12,.08,m.white,0,.42,.38);
@@ -251,6 +255,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const rigState=animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;
+   mount.dataset.jayRunPhase=jayRig.runApproachCompleted?"loop":"approach";
    const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);jayRig.play(chosen,{timeScale:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1});jayRig.update(dt);jayRig.root.position.z=2+(impactPulse*.18);
   }
   let n=0,busN=0;for(const o of g.obs||[]){if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+3.1);const scale=o.boss?1.25:1;v.scale.setScalar(scale);v.userData.slide.visible=o.action==="slide";v.userData.jump.visible=o.action!=="slide";}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);
