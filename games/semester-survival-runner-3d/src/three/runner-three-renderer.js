@@ -168,7 +168,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  for(let i=0;i<6;i++){building(world,-1,-14-i*38,i,m);building(world,1,-30-i*38,(i+1)%4,m);}
  for(let i=0;i<10;i++){lamp(world,-7.8,-8-i*27,m);lamp(world,7.8,-20-i*27,m);}
  for(let i=0;i<16;i++){tree(world,-10.8,-12-i*17,m);tree(world,10.8,-20-i*17,m);}
- const traffic=[car(world,laneX[0],-38,0x315b7a,m,"car"),car(world,laneX[2],-91,0x9a4c39,m,"matatu"),car(world,laneX[0],-146,0x777d78,m,"shuttle"),car(world,laneX[2],-198,0xc1a65e,m,"car")];
+ const traffic=[car(scene,laneX[0],-38,0x315b7a,m,"car"),car(scene,laneX[2],-91,0x9a4c39,m,"matatu"),car(scene,laneX[0],-146,0x777d78,m,"shuttle"),car(scene,laneX[2],-198,0xc1a65e,m,"car")];
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  // A second 300-unit scenery segment follows the first so the road never runs out as the world scrolls.
@@ -199,7 +199,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   // Scroll every piece of campus scenery at that exact same world-space speed.
   worldTravel+=dt*(46*.55);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
-  traffic.forEach(v=>{for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;});
+  traffic.forEach((v,i)=>{v.position.z=-112+((worldTravel+i*47)%112);for(const wheel of v.userData.wheels||[])wheel.rotation.x=-worldTravel/.35;});
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
