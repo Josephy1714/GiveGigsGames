@@ -88,6 +88,12 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       return world && Number.isFinite(Number(world.dataset.jayLean));
     }, null, { timeout: 2500 });
     assert.ok(Number.isFinite(Number((await world.evaluate(node => node.dataset.jayImpact)))), "impact response telemetry should be available");
+    const cameraImpact = await page.evaluate(() => window.__runnerSmoke.probeImpactCamera());
+    assert.ok(Math.abs(cameraImpact.impact.shakeX) > 0.01, "a hit must retain a visible horizontal camera shake");
+    assert.ok(Math.abs(cameraImpact.impact.shakeY) > 0.005, "a hit must retain a visible vertical camera shake");
+    assert.ok(Math.abs((cameraImpact.impact.world - cameraImpact.impact.base) - cameraImpact.impact.shakeX) < 0.00002, "camera shake must remain a temporary offset from its stable tracking position");
+    assert.ok(Math.abs(cameraImpact.recovered.world - cameraImpact.recovered.base) < 0.00002, "camera must return exactly to its stable tracking position after impact");
+    assert.ok(Math.abs(cameraImpact.recovered.base - cameraImpact.impact.base) < 0.02, "camera tracking base must not inherit the impact shake");
     await page.keyboard.press("ArrowLeft");
     await page.waitForTimeout(100);
     assert.equal((await page.evaluate(() => window.__runnerSmoke.state().lane)), 0, "left movement must clamp at the left lane");
