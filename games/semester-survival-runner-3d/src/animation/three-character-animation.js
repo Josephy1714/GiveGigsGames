@@ -3,6 +3,7 @@ const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 export function resolveRunnerAnimationState(game){
   if(!game)return "idle";
   if((Number(game.hitTimer)||0)>0)return "fall-accidental";
+  if((Number(game.recoveryTimer)||0)>0)return "get-up";
   if(game.slidePhase==="start")return "slide-start";
   if(game.slidePhase==="loop")return "slide-loop";
   if(game.slidePhase==="recover")return "slide-recover";
