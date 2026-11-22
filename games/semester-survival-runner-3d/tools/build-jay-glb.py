@@ -1,4 +1,6 @@
 import bpy
+import json
+import struct
 import sys
 from pathlib import Path
 
@@ -105,7 +107,8 @@ def main():
         export_apply=True,
         export_yup=True,
         export_materials="EXPORT",
-        export_image_format="AUTO",
+        export_image_format="JPEG",
+        export_image_quality=80,
         export_cameras=False,
         export_lights=False,
     )
@@ -114,6 +117,31 @@ def main():
     print("CLIPS", installed)
     if size <= 0:
         raise RuntimeError("GLB export produced an empty file.")
+
+    # Validate the actual GLB JSON payload, not merely the existence of a file.
+    with OUTPUT.open("rb") as stream:
+        magic, version, total_length = struct.unpack("<4sII", stream.read(12))
+        if magic != b"glTF" or version != 2 or total_length != size:
+            raise RuntimeError("Exported file is not a valid GLB 2.0 container.")
+        chunk_length, chunk_type = struct.unpack("<I4s", stream.read(8))
+        if chunk_type != b"JSON":
+            raise RuntimeError("GLB JSON chunk is missing.")
+        document = json.loads(stream.read(chunk_length).decode("utf-8").rstrip(" \\t\\r\\n\\0"))
+    if not document.get("skins") or not document.get("meshes"):
+        raise RuntimeError("GLB must contain a skinned character mesh.")
+    exported_names = {item.get("name") for item in document.get("animations", [])}
+    required_names = {"Idle", "Run", "Jump", "Slide", "Fall"}
+    if not required_names.issubset(exported_names):
+        raise RuntimeError(
+            "GLB animation export is incomplete; missing: "
+            + ", ".join(sorted(required_names - exported_names))
+        )
+    print("GLB VERIFIED", {
+        "meshes": len(document["meshes"]),
+        "skins": len(document["skins"]),
+        "animations": sorted(exported_names),
+        "animationCount": len(exported_names),
+    })
 
 if __name__ == "__main__":
     main()
