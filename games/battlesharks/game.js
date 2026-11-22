@@ -163,6 +163,12 @@
         turretHeat: 0,
         turretOverheated: false,
         humanCamFirstPerson: false,
+        photoMode: false,
+        humanWeapon: 'harpoon',
+        shotsFired: 0,
+        shotsHit: 0,
+        humanStage: 1,
+        thermalVision: false,
         lastTime: 0
     };
 
@@ -1149,6 +1155,20 @@
             fireLasers();
         } else if (e.code === 'KeyB' && state.running && !state.paused && state.mode === 'shark') {
             triggerBiteLunge();
+        } else if (e.code === 'KeyP' && state.running) {
+            state.photoMode = !state.photoMode;
+            state.paused = state.photoMode;
+            spawnFloatingText(player.pos, state.photoMode ? 'PHOTO MODE ON' : 'PHOTO MODE OFF', '#38bdf8');
+        } else if (e.code === 'KeyT' && state.running && state.mode === 'human') {
+            state.thermalVision = !state.thermalVision;
+            canvas.style.filter = state.thermalVision ? 'hue-rotate(150deg) contrast(1.45) saturate(1.8)' : '';
+            spawnFloatingText(player.pos, state.thermalVision ? 'THERMAL VISOR ON' : 'THERMAL VISOR OFF', '#f97316');
+        } else if (e.code === 'Digit1' && state.running && state.mode === 'human') {
+            state.humanWeapon = 'harpoon';
+            spawnFloatingText(player.pos, 'HARPOON BOLTS', '#38bdf8');
+        } else if (e.code === 'Digit2' && state.running && state.mode === 'human') {
+            state.humanWeapon = 'sonic';
+            spawnFloatingText(player.pos, 'SONIC DISRUPTOR', '#a855f7');
         }
     });
 
@@ -1245,20 +1265,23 @@
     function fireLasers() {
         if (state.mode === 'human') {
             if (state.turretOverheated || player.laserCooldown > 0) return;
-            player.laserCooldown = 0.14;
-            state.turretHeat = Math.min(100, state.turretHeat + 8);
+            const isSonic = state.humanWeapon === 'sonic';
+            player.laserCooldown = isSonic ? 0.28 : 0.14;
+            state.shotsFired++;
+            state.turretHeat = Math.min(100, state.turretHeat + (isSonic ? 14 : 8));
             if (state.turretHeat >= 100) {
                 state.turretOverheated = true;
                 spawnFloatingText(player.pos, 'OVERHEAT! [R]', '#f97316');
             }
             sfx.laser();
-            state.cameraShake = Math.max(state.cameraShake, 0.08);
+            state.cameraShake = Math.max(state.cameraShake, isSonic ? 0.14 : 0.08);
             const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
             const origin = player.pos.clone().add(forward.clone().multiplyScalar(2.6));
-            spawnParticles(origin, 0x38bdf8, 4, 10);
+            spawnParticles(origin, isSonic ? 0xa855f7 : 0x38bdf8, 4, 10);
             const isCrit = Math.random() < 0.28;
-            const dmg = isCrit ? Math.round(38 * 2.5) : 38;
-            spawnProjectile(origin, forward, 85, isCrit ? 0xfacc15 : 0x38bdf8, true, false, dmg);
+            const baseDmg = isSonic ? 65 : 38;
+            const dmg = isCrit ? Math.round(baseDmg * 2.5) : baseDmg;
+            spawnProjectile(origin, forward, isSonic ? 105 : 85, isCrit ? 0xfacc15 : (isSonic ? 0xa855f7 : 0x38bdf8), true, false, dmg);
             return;
         }
         if (!state.upgrades.lasers || player.laserCooldown > 0) return;
@@ -1266,7 +1289,15 @@
         sfx.laser();
         const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
         const origin = player.pos.clone().add(forward.clone().multiplyScalar(2.4 * player.scale));
-        spawnProjectile(origin, forward, 68, 0xff0055, true, false, 30 + player.level * 4);
+        const dmg = 30 + player.level * 4;
+        if (player.level >= 10) {
+            // #50 Apex Evolution Finale: Dual-beam lasers
+            const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ')).multiplyScalar(0.9 * player.scale);
+            spawnProjectile(origin.clone().add(right), forward, 72, 0x00f5a0, true, false, dmg);
+            spawnProjectile(origin.clone().sub(right), forward, 72, 0x00f5a0, true, false, dmg);
+        } else {
+            spawnProjectile(origin, forward, 68, 0xff0055, true, false, dmg);
+        }
     }
 
     function damagePlayer(amount) {
@@ -1421,6 +1452,24 @@
         // #18 Jet Pack Flame Trails
         if (state.upgrades.thruster && player.isDashing && Math.random() < 0.7) {
             spawnParticles(player.pos, Math.random() < 0.5 ? 0xf97316 : 0x38bdf8, 2, 8);
+        }
+        // #35 3D Bubble Trail
+        if (Math.abs(player.speed) > 15 && Math.random() < 0.45) {
+            spawnParticles(player.pos, 0xbfefff, 1, 4);
+        }
+        // #46 Depth-based Fog Density
+        if (scene.fog) {
+            const depthRatio = Math.max(0, Math.min(1, (SURFACE_Y - player.pos.y) / (SURFACE_Y - FLOOR_Y)));
+            scene.fog.density = 0.008 + depthRatio * 0.014;
+        }
+        // #56 7-Stage Rail Progression & #98 Story Captions (Human Mode)
+        if (state.mode === 'human' && window.BSOceanHunter && window.BSOceanHunter.STAGES) {
+            const targetStage = Math.min(7, 1 + Math.floor(state.score / 450));
+            if (targetStage > state.humanStage) {
+                state.humanStage = targetStage;
+                const st = window.BSOceanHunter.STAGES[targetStage - 1];
+                if (st) spawnFloatingText(player.pos, `STAGE ${st.stage}: ${st.name}`, '#38bdf8');
+            }
         }
         if (state.frenzyTimer > 0) state.frenzyTimer = Math.max(0, state.frenzyTimer - dt);
         if (state.comboTimer > 0) {
