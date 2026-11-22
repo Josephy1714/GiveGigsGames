@@ -81,6 +81,31 @@
             }
         }
 
+        spawnMaterialImpact(point, normal, material, count) {
+            const n = this._budget(count);
+            if (!n) return;
+            const style = {
+                steel: { color: 0xffbf74, speed: 165, scatter: 85, life: 0.26 },
+                ward: { color: 0x91eaff, speed: 105, scatter: 95, life: 0.31 },
+                shock: { color: 0xb5a6ff, speed: 155, scatter: 112, life: 0.24 },
+                bone: { color: 0xe9dcc4, speed: 76, scatter: 65, life: 0.42 },
+                stone: { color: 0xa39d90, speed: 48, scatter: 48, life: 0.38 },
+                wood: { color: 0xc08a52, speed: 65, scatter: 70, life: 0.35 }
+            }[material];
+            const shiny = material === 'steel' || material === 'ward' || material === 'shock';
+            const mat = shiny ? this._additiveMat(style.color) : new THREE.MeshBasicMaterial({ color: style.color });
+            for (let i = 0; i < n; i++) {
+                const mesh = new THREE.Mesh(this._boxGeo, mat);
+                mesh.position.copy(point).addScaledVector(normal, 0.5);
+                this.scene.add(mesh);
+                const speed = style.speed * (0.6 + Math.random() * 0.8);
+                const velocity = component => component * speed + (Math.random() - 0.5) * style.scatter;
+                const life = style.life * (0.8 + Math.random() * 0.4);
+                this.chunks.push({ mesh, mat, vx: velocity(normal.x), vy: velocity(normal.y),
+                    vz: velocity(normal.z), life, maxLife: life, additive: shiny });
+            }
+        }
+
         spawnBlood(x, z, hexColor = 0xef4444, count = 12, y = 16, direction = null) {
             const n = this._budget(count);
             if (!n) return;

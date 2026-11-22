@@ -3,8 +3,10 @@
 
     class CombatTextManager {
         constructor(container, camera) { this.container = container; this.camera = camera; }
-        spawnText(worldX, worldY, worldZ, text, type = 'damage') {
+        spawnText(worldX, worldY, worldZ, text, type = 'damage', isDamageNumber = false) {
             if (!this.container) return;
+            if ((isDamageNumber || type === 'damage' || type === 'player-dmg') &&
+                document.getElementById('settingsDamageNumbers')?.checked === false) return;
             const position = new THREE.Vector3(worldX, worldY + 14, worldZ).project(this.camera);
             if (position.z > 1) return;
             const rect = this.container.getBoundingClientRect();

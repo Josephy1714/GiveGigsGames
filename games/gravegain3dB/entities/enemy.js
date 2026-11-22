@@ -13,9 +13,19 @@
 
             this.maxHp = typeData.hp * difficultyScale * (typeData.hpMultiplier || 1);
             this.hp = this.maxHp;
+            this.armorMax = typeData.armored ? this.maxHp * 0.24 : 0;
+            this.armorHp = this.armorMax;
+            this.wardMax = this.type === 'mage' && (typeData.elite || this.isBoss) ? this.maxHp * 0.32 : 0;
+            this.wardHp = this.wardMax;
+            this.wardBreakTimer = 0;
             this.dmg = typeData.dmg * difficultyScale * (typeData.damageMultiplier || 1);
             this.speed = typeData.speed;
             this.elite = !!typeData.elite;
+            this.yElevation = typeData.elevation || 0;
+            this.isLookout = !!typeData.isLookout;
+            this.grounded = true;
+            this.arenaPursuer = !!typeData.arenaPursuer;
+            this.arenaWaypoint = 0;
             this.enraged = false;
             this.variantKey = EnemyEntity.matchVariant(typeData.variant || typeData.name || '');
             var styleScale = (EnemyEntity.STYLES[this.variantKey] || {}).scale || 1.0;
@@ -25,6 +35,11 @@
 
             this.kx = 0;
             this.ky = 0;
+            this.hitReactTimer = 0;
+            this.hitReactDuration = 0.16;
+            this.hitReactSide = 0;
+            this.hitReactStrength = 0;
+            this.hitReactHeadshot = false;
             this.state = 'idle';
             this.spawnX = x;
             this.spawnY = y;
@@ -40,8 +55,18 @@
 
             this.group3d = new THREE.Group();
             this.group3d.scale.set(this.scale, this.scale, this.scale);
+            this.group3d.position.set(x, this.yElevation, y);
 
             this.buildModel(typeData);
+            if (this.wardMax > 0) {
+                this.wardMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(16, 10, 8),
+                    new THREE.MeshBasicMaterial({ color: 0x8cecff, wireframe: true, transparent: true, opacity: 0.28, depthWrite: false })
+                );
+                this.wardMesh.position.y = 16;
+                this.wardMesh.raycast = () => {};
+                this.group3d.add(this.wardMesh);
+            }
         }
 
         buildModel(typeData) {
@@ -153,6 +178,12 @@
 
                 // Variant headgear / accessories (THREE r128 primitives only)
                 this.applyVariantHeadgear(typeData, style, trimMat, eyeMat);
+                if (this.armorMax > 0) {
+                    this.armorPlate = new THREE.Mesh(new THREE.BoxGeometry(8.5, 5.2, 1.15),
+                        new THREE.MeshStandardMaterial({ color: 0x8195ad, metalness: 0.8, roughness: 0.34 }));
+                    this.armorPlate.position.set(0, 5.7, 2.85);
+                    this.torso.add(this.armorPlate);
+                }
 
                 // Extra accessories
                 if (this.isBoss && !style.crown) {
@@ -308,7 +339,29 @@
             if (this.chillTimer > 0) this.chillTimer = Math.max(0, this.chillTimer - dt);
         }
 
+        arenaPursuitTarget(player, arena) {
+            if (!this.arenaPursuer || !arena) return player;
+            const route = arena.pursuitRoute;
+            const destination = player.yElevation >= 76 ? 3 : player.yElevation >= 36 ? 1 : 0;
+            const point = route[this.arenaWaypoint];
+            if (Math.hypot(point.x - this.x, point.z - this.y) < 7 &&
+                Math.abs(point.elevation - this.yElevation) <= 7 && this.arenaWaypoint !== destination) {
+                this.arenaWaypoint += Math.sign(destination - this.arenaWaypoint);
+            }
+            if (destination === this.arenaWaypoint && this.yElevation === route[destination].elevation) return player;
+            const waypoint = route[this.arenaWaypoint];
+            return { x: waypoint.x, y: waypoint.z };
+        }
+
         update(dt, player, physics, tilemap, game) {
+            this.hitReactTimer = Math.max(0, (this.hitReactTimer || 0) - dt);
+            if (this.wardBreakTimer > 0) {
+                this.wardBreakTimer = Math.max(0, this.wardBreakTimer - dt);
+                const progress = this.wardBreakTimer / 0.2;
+                this.wardMesh.scale.setScalar(progress);
+                this.wardMesh.material.opacity = progress * 0.48;
+                this.wardMesh.visible = progress > 0;
+            }
             this.tickStatusEffects(dt, game);
             if (this.hp <= 0) return;
             if (this.isBoss && !this.enraged && this.hp / this.maxHp <= 0.5) {
@@ -327,9 +380,20 @@
                 }
             }
             const dist = Math.hypot(player.x - this.x, player.y - this.y);
+            const sameLevel = () => Math.abs(player.yElevation - this.yElevation) < 26;
+            const canFireFromPerch = () => dist < 420 && game.hasBlastLineOfSight(
+                this.x, this.y, player.x, player.y, this.yElevation + 22, player.yElevation + 18);
+            const move = (dx, dz) => {
+                physics.moveEntityWithCollision(this, dx, dz, tilemap, sameLevel() ? [player] : [], this.arenaPursuer ? 26 : 0);
+                if (this.arenaPursuer) {
+                    const surfaces = physics.arenaSurfacesAt(tilemap, this.x, this.y);
+                    this.yElevation = surfaces.reduce((floor, surface) =>
+                        surface.top <= this.yElevation ? Math.max(floor, surface.top) : floor, 0);
+                }
+            };
 
             // Decay knockback
-            physics.moveEntityWithCollision(this, this.kx * dt, this.ky * dt, tilemap, [player]);
+            if (!this.isLookout) move(this.kx * dt, this.ky * dt);
             this.kx -= this.kx * 8 * dt;
             this.ky -= this.ky * 8 * dt;
 
@@ -381,7 +445,16 @@
                     }
                     const impactDist = Math.hypot(player.x - this.x, player.y - this.y);
                     if (attack === 'ranged') {
-                        if (this.isBoss && this.variantKey === 'drone' && impactDist < 540 && impactDist > 150) {
+                        if (this.isLookout) {
+                            if (!canFireFromPerch()) return;
+                            const dx = player.x - this.x;
+                            const dy = player.yElevation + 18 - (this.yElevation + 22);
+                            const dz = player.y - this.y;
+                            const speed = 280 / Math.max(1, Math.hypot(dx, dy, dz));
+                            game.spawnProjectile(this.x, this.yElevation + 22, this.y,
+                                dx * speed, dy * speed, dz * speed, this.dmg, false, 0xff9f60, 'magic');
+                            game.audio.playSfx('spell', 0.86);
+                        } else if (this.isBoss && this.variantKey === 'drone' && impactDist < 540 && impactDist > 150) {
                             const baseAngle = this.angle;
                             [-0.14, 0, 0.14].forEach(offset => {
                                 const shotAngle = baseAngle + offset;
@@ -400,11 +473,12 @@
                         const slamRadius = this.enraged ? 112 : 86;
                         game.vfx.spawnSparks(this.x, this.y, 0xfbbf24, 30);
                         game.audio.playSfx('explode', 0.9);
-                        if (impactDist <= slamRadius) {
+                        if (impactDist <= slamRadius && sameLevel()) {
                             player.takeDamage(this.dmg, 'normal', { x: this.x, y: this.y });
                             game.combatText.spawnText(player.x, 24, player.y, 'THANE SLAM', 'damage');
                         }
-                    } else if ((attack === 'melee' || attack === 'charge') && impactDist < this.radius + player.radius + 12) {
+                    } else if ((attack === 'melee' || attack === 'charge') && sameLevel() &&
+                        impactDist < this.radius + player.radius + 12) {
                         player.takeDamage(this.dmg, 'normal', { x: this.x, y: this.y });
                         if (this.type === 'skull') {
                             // Kamikaze skulls only detonate if their warned
@@ -416,34 +490,38 @@
                     }
                 }
             } else if (this.state === 'chase') {
-                this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                const target = this.arenaPursuitTarget(player, tilemap?.arena);
+                const targetDist = Math.hypot(target.x - this.x, target.y - this.y);
+                this.angle = Math.atan2(target.y - this.y, target.x - this.x);
 
                 const droneBoss = this.isBoss && this.variantKey === 'drone';
                 const rangedAttacker = this.type === 'mage' || droneBoss;
                 const rangedMax = droneBoss ? 520 : 320;
                 const rangedMin = droneBoss ? 160 : 140;
-                if (rangedAttacker && dist < rangedMax && dist > rangedMin) {
+                if (this.isLookout || (rangedAttacker && dist < rangedMax && dist > rangedMin)) {
                     // The eye flash and short cast give the player time to
                     // dodge or break line of fire before the shadow skull.
-                    if (this.attackTimer <= 0) {
+                    if (this.attackTimer <= 0 && (!this.isLookout || canFireFromPerch())) {
                         const rangedCooldown = this.isBoss ? this.attackInterval : 2.4;
                         this.attackTimer = this.chillTimer > 0 ? rangedCooldown / 0.65 : rangedCooldown;
                         this.attackWindupTimer = 0.45;
                         this.pendingAttack = 'ranged';
-                        game.vfx.spawnSparks(this.x, this.y, droneBoss ? 0x22d3ee : 0x9333ea, this.isBoss ? 18 : 9);
+                        const color = this.isLookout ? 0xff9f60 : droneBoss ? 0x22d3ee : 0x9333ea;
+                        game.vfx.spawnSparks(this.x, this.y, color, this.isBoss ? 18 : 9, this.yElevation + 22);
                     }
                 } else {
                     // Melee pursuit
                     const moveSpeed = this.speed * (this.chillTimer > 0 ? 0.65 : 1);
-                    const vx = Math.cos(this.angle) * moveSpeed * dt;
-                    const vy = Math.sin(this.angle) * moveSpeed * dt;
+                    const stride = Math.min(targetDist, moveSpeed * dt);
+                    const vx = Math.cos(this.angle) * stride;
+                    const vy = Math.sin(this.angle) * stride;
                     const startX = this.x;
                     const startY = this.y;
-                    physics.moveEntityWithCollision(this, vx, vy, tilemap, [player]);
+                    move(vx, vy);
                     walkDistance = Math.hypot(this.x - startX, this.y - startY);
 
                     // Melee attack range check
-                    if (dist < this.radius + player.radius + 12) {
+                    if (sameLevel() && dist < this.radius + player.radius + 12) {
                         if (this.attackTimer <= 0) {
                             this.attackTimer = this.chillTimer > 0 ? this.attackInterval / 0.65 : this.attackInterval;
                             this.attackWindupTimer = 0.38;
@@ -452,7 +530,7 @@
                                 : (this.isBoss && this.variantKey === 'thane' ? 'slam' : 'melee');
                             const warningColor = this.type === 'skull' ? 0xff4422
                                 : (this.pendingAttack === 'charge' ? 0xef4444 : (this.pendingAttack === 'slam' ? 0xfbbf24 : 0xffb020));
-                            game.vfx.spawnSparks(this.x, this.y, warningColor, this.isBoss ? 18 : 8);
+                            game.vfx.spawnSparks(this.x, this.y, warningColor, this.isBoss ? 18 : 8, this.yElevation + 14);
                             if (this.pendingAttack === 'slam') {
                                 game.combatText.spawnText(this.x, 34, this.y, 'SLAM WINDUP', 'crit');
                             }
@@ -477,7 +555,25 @@
                 if (this.rotor) this.rotor.rotation.y += dt * 14;
             }
 
-            this.group3d.position.set(this.x, 0, this.y);
+            // A brief body turn makes impacts read directionally while the
+            // existing knockback handles the larger movement response.
+            if (this.torso) {
+                const react = this.hitReactTimer > 0
+                    ? Math.sin((this.hitReactTimer / this.hitReactDuration) * Math.PI) * this.hitReactStrength
+                    : 0;
+                const blend = 1 - Math.exp(-30 * dt);
+                const pitch = -react * (this.hitReactHeadshot ? 0.52 : 0.3);
+                const roll = this.hitReactSide * react * 0.24;
+                this.torso.rotation.x += (pitch - this.torso.rotation.x) * blend;
+                this.torso.rotation.z += (roll - this.torso.rotation.z) * blend;
+                if (this.skull) {
+                    const headPitch = this.hitReactHeadshot ? -react * 0.42 : 0;
+                    this.skull.rotation.x += (headPitch - this.skull.rotation.x) * blend;
+                    this.skull.rotation.z += (this.hitReactSide * react * 0.2 - this.skull.rotation.z) * blend;
+                }
+            }
+
+            this.group3d.position.set(this.x, this.yElevation, this.y);
             this.group3d.rotation.y = -this.angle + Math.PI / 2;
         }
 
@@ -506,6 +602,7 @@
             this.type = type;
             this.value = value;
             this.weaponData = weaponData ? { ...weaponData } : null;
+            this.elevation = 0;
             this.pickupDelay = 0;
             this.radius = 12;
             this.pulse = Math.random() * Math.PI;
@@ -513,6 +610,9 @@
             this.group3d = new THREE.Group();
             const emoji = type === 'gold' ? '🪙' : (type === 'potion' ? '🧪' : (type === 'ammo' ? '📦' : (type === 'grenade' ? '💣' : (type === 'weapon' ? '🔫' : '📜'))));
             this.sprite = ProceduralTextures.createEmojiSprite(emoji, 64);
+            if (type === 'weapon' && this.weaponData?.rarityColor) {
+                this.sprite.material.color.setHex(this.weaponData.rarityColor);
+            }
             this.sprite.position.y = 8;
             this.group3d.add(this.sprite);
             this.group3d.position.set(x, 0, y);
@@ -522,7 +622,7 @@
             this.pulse += 5 * dt;
             this.sprite.position.y = 8 + Math.sin(this.pulse) * 3;
             this.pickupDelay = Math.max(0, this.pickupDelay - dt);
-            if (this.pickupDelay > 0) return;
+            if (this.pickupDelay > 0 || this.elevation > 0 || Math.abs(player.yElevation - this.elevation) > 14) return;
 
             const dist = Math.hypot(player.x - this.x, player.y - this.y);
             if (dist < range) {

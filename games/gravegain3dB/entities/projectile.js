@@ -3,6 +3,26 @@
 
 const ProceduralTextures = window.GraveGainProceduralTextures;
 
+function surfaceContactTime(start, delta, surface, padding) {
+    let enter = 0;
+    let exit = 1;
+    const bounds = [[surface.minX, surface.maxX], [surface.bottom, surface.top], [surface.minZ, surface.maxZ]];
+    for (let axis = 0; axis < 3; axis++) {
+        const min = bounds[axis][0] - padding;
+        const max = bounds[axis][1] + padding;
+        if (Math.abs(delta[axis]) < 1e-8) {
+            if (start[axis] < min || start[axis] > max) return null;
+            continue;
+        }
+        const a = (min - start[axis]) / delta[axis];
+        const b = (max - start[axis]) / delta[axis];
+        enter = Math.max(enter, Math.min(a, b));
+        exit = Math.min(exit, Math.max(a, b));
+        if (enter > exit) return null;
+    }
+    return enter;
+}
+
 class Projectile {
     constructor(x, y, z, vx, vy, vz, dmg, isPlayer, color = 0xa855f7, type = 'magic') {
         this.x = x;
@@ -83,7 +103,7 @@ class Projectile {
                 const tz = Math.floor(sampleZ / 48);
                 const outOfBounds = tx < 0 || tx >= tilemap.gridSize || tz < 0 || tz >= tilemap.gridSize;
                 const cell = outOfBounds ? 1 : grid[tx]?.[tz];
-                if ((cell === 1 || cell === 6) && (!isExplosive || sampleY <= 72)) {
+                if (outOfBounds || ((cell === 1 || cell === 6) && (!isExplosive || sampleY <= (tilemap.arena?.ceiling || tilemap.ceiling || 124)))) {
                     this.x = sampleX;
                     this.y = sampleY;
                     this.z = sampleZ;
@@ -91,6 +111,23 @@ class Projectile {
                     this.collisionImpact = true;
                     break;
                 }
+            }
+        }
+        if (tilemap?.arena) {
+            const start = [startX, startY, startZ];
+            const delta = [this.x - startX, this.y - startY, this.z - startZ];
+            const padding = this.type === 'grenade' ? 5 : this.type === 'launcher' ? 4 : 2.5;
+            let contact = Infinity;
+            for (const surface of tilemap.arena.surfaces) {
+                const time = surfaceContactTime(start, delta, surface, padding);
+                if (time !== null) contact = Math.min(contact, time);
+            }
+            if (Number.isFinite(contact)) {
+                this.x = startX + delta[0] * contact;
+                this.y = startY + delta[1] * contact;
+                this.z = startZ + delta[2] * contact;
+                this.dead = true;
+                this.collisionImpact = true;
             }
         }
         this.mesh.position.set(this.x, this.y, this.z);

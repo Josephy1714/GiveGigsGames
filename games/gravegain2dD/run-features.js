@@ -1,15 +1,47 @@
 (() => {
+  // Each ledge is [offset, span, height, kind, sign]. Overlaps let
+  // players climb on a jump or drop to a parallel route at different speeds.
   const routes = [
-    { name: 'Crypt balconies', steps: [[0, 104, 55], [123, 94, 116], [234, 114, 180], [375, 105, 250], [502, 124, 314], [653, 115, 222], [791, 112, 124]] },
-    { name: 'Lantern bridge', steps: [[0, 112, 62], [129, 112, 124], [259, 168, 195], [452, 180, 252], [655, 108, 165], [787, 107, 88]] },
-    { name: 'Broken cloister', steps: [[0, 104, 73], [123, 94, 138], [234, 104, 208], [354, 94, 276], [469, 134, 329], [621, 103, 217], [743, 119, 133]] },
-    { name: 'Watchtower stairs', steps: [[0, 110, 54], [128, 90, 117], [236, 87, 190], [343, 88, 260], [448, 142, 323], [609, 104, 251], [734, 142, 156]] }
+    {
+      theme: 'castle',
+      ledges: [
+        [0, 170, 54, 'shelf', 'Watchtower stairs'],
+        [130, 178, 110, 'main'], [273, 170, 173, 'launch'],
+        [402, 215, 224, 'main'], [592, 202, 248, 'main'],
+        [746, 230, 175, 'main'], [938, 230, 110, 'shelf', '↓ Road'],
+        [403, 319, 354, 'summit'], [658, 232, 414, 'summit'],
+        [875, 192, 476, 'summit', 'Watchtower cache'],
+        [1032, 205, 349, 'summit'], [1204, 184, 194, 'main'],
+        [427, 202, 105, 'shelf'], [610, 215, 68, 'shelf']
+      ]
+    },
+    {
+      theme: 'cave',
+      ledges: [
+        [0, 172, 58, 'shelf', 'Hollowroot cavern'],
+        [134, 181, 120, 'main'], [274, 181, 182, 'main'],
+        [414, 200, 247, 'launch'], [577, 195, 293, 'main'],
+        [737, 239, 249, 'main'], [935, 236, 162, 'main'],
+        [560, 339, 429, 'summit'], [874, 215, 480, 'summit', 'Hollowroot cache'],
+        [1056, 176, 343, 'summit'], [1194, 179, 230, 'main'],
+        [306, 241, 66, 'shelf'], [522, 196, 110, 'shelf', '↓ Lower tunnel'],
+        [694, 248, 139, 'shelf'], [901, 224, 62, 'shelf']
+      ]
+    },
+    {
+      theme: 'castle',
+      ledges: [
+        [0, 164, 66, 'shelf', 'Broken cloister'],
+        [133, 178, 130, 'launch'], [273, 215, 185, 'main'],
+        [444, 168, 127, 'shelf'], [591, 188, 69, 'shelf', '↓ Road'],
+        [250, 260, 312, 'summit'], [474, 241, 374, 'summit'],
+        [684, 215, 435, 'summit'], [868, 216, 494, 'summit', 'Cloister cache'],
+        [1048, 172, 370, 'summit'], [1185, 180, 224, 'main'],
+        [529, 193, 247, 'main'], [678, 202, 303, 'main'],
+        [841, 191, 238, 'main'], [998, 206, 126, 'shelf']
+      ]
+    }
   ];
-
-  routes.push(
-    { name: 'Hollowroot cave', theme: 'cave', steps: [[0,110,52],[138,128,112],[302,107,167],[442,140,228],[618,115,154],[762,130,86]] },
-    { name: 'Castle of the waning moon', theme: 'castle', steps: [[0,104,59],[133,110,119],[275,113,196],[417,110,267],[556,126,337],[709,160,275],[893,117,181]] }
-  );
 
   const objectiveTypes = [
     { label: 'Gather moonshards', event: 'collect', target: 6 },
@@ -22,26 +54,17 @@
     ...objective,
     target: objective.target + tier
   }))).flat();
-  const routeVariants = routes.flatMap(route => [0, 1, 2, 3].map(variant => ({
-    ...route,
-    name: route.name + ['', ' · broken stair', ' · long bridge', ' · summit'][variant],
-    steps: route.steps.map(([x, span, height], index) => [
-      x + index * [0, 10, 5, 9][variant],
-      span + [0, -12, 10, -7][variant],
-      height + (index === 0 ? 0 : [0, (index % 2) * 14, -12, 18][variant])
-    ])
-  })));
-
   function createRun() {
-    let routeIndex = 16 + Math.floor(Math.random() * 8);
+    let routeIndex = Math.floor(Math.random() * routes.length);
     let contractIndex = Math.floor(Math.random() * objectiveTypes.length);
     let progress = 0;
     let completed = 0;
-    let nextFork = 65;
+    let nextFork = 85;
     let platforms = [];
     let supported = null;
 
     return {
+      get onLaunchLedge() { return supported?.tier === 'launch'; },
       get completed() { return completed; },
       get objective() {
         const { label, target } = objectives[contractIndex];
@@ -56,38 +79,21 @@
         contractIndex = (contractIndex + 1) % objectives.length;
         return true;
       },
-      advance(distance, movement, width, ground, loot, obstacles) {
-        if (distance >= nextFork) {
-          const route = routeVariants[routeIndex];
-          routeIndex = (routeIndex + 7) % routeVariants.length;
-          nextFork = distance + 1430;
-          const addLedge = (offset, span, height, label = '', tier = 'main') => {
-            const x = width + offset;
+      advance(world, movement, width, ground, loot) {
+        if (world >= nextFork) {
+          const route = routes[routeIndex];
+          routeIndex = (routeIndex + 1) % routes.length;
+          const origin = width + nextFork - world + movement;
+          nextFork += 1510;
+          for (const [offset, span, height, tier, sign = ''] of route.ledges) {
+            const x = origin + offset;
             const y = ground - height;
+            const label = tier === 'launch' ? '↑ Launch ledge' : sign;
             platforms.push({ x, y, span, theme: route.theme, label, tier, visited: false });
-            loot.push({ x: x + span / 2, y: y - 34, cell: tier === 'summit' ? 4 : 3 });
-          };
-          const summitIndex = route.steps.reduce((best, step, i) => step[2] > route.steps[best][2] ? i : best, 0);
-          route.steps.forEach(([offset, span, height], i) => {
-            addLedge(offset, span, height, i === 0 ? route.name : '');
-            if (i >= 1 && i <= summitIndex + 1) {
-              addLedge(offset + 35, Math.max(85, span - 6), Math.max(42, height - 112), '', 'shelf');
+            const shards = sign.endsWith('cache') ? 5 : 2;
+            for (let i = 0; i < shards; i++) {
+              loot.push({ x: x + span / 2 + (i - (shards - 1) / 2) * 26, y: y - 34, cell: tier === 'summit' ? 4 : 3 });
             }
-          });
-          const [forkX, forkSpan, forkHeight] = route.steps[summitIndex];
-          addLedge(forkX + forkSpan - 20, 127, forkHeight + 76, 'High route', 'summit');
-          addLedge(forkX + forkSpan + 112, 119, forkHeight + 158, '', 'summit');
-          addLedge(forkX + forkSpan + 238, 106, forkHeight + 239, '', 'summit');
-          addLedge(forkX + forkSpan + 355, 138, forkHeight + 324, 'Summit cache', 'summit');
-          addLedge(forkX + forkSpan + 506, 125, forkHeight + 249, '', 'summit');
-          addLedge(forkX + forkSpan + 642, 122, forkHeight + 157, '', 'summit');
-          addLedge(forkX + forkSpan + 772, 140, forkHeight + 79, '', 'summit');
-          addLedge(forkX + forkSpan + 910, 170, Math.max(85, forkHeight - 45), 'Return to road', 'shelf');
-          for (let i = 0; i < 3; i++) {
-            loot.push({ x: width + forkX + forkSpan + 380 + i * 28, y: ground - forkHeight - 360, cell: 3 });
-          }
-          if (route.theme) {
-            obstacles.push({ type: 'climbwall', x: width + 340, w: 36, h: route.theme === 'castle' ? 166 : 130 });
           }
         }
         for (const platform of platforms) platform.x -= movement;
@@ -134,13 +140,23 @@
               ctx.fill();
             }
           }
-          ctx.fillStyle = '#85946a';
-          ctx.fillRect(x, y, span, 3);
+          if (tier === 'launch') {
+            ctx.fillStyle = '#82d8bb';
+            ctx.fillRect(x, y, span, 4);
+            for (let mark = x + 12; mark < x + span - 10; mark += 22) {
+              ctx.beginPath();
+              ctx.moveTo(mark, y + 12);
+              ctx.lineTo(mark + 5, y + 7);
+              ctx.lineTo(mark + 10, y + 12);
+              ctx.strokeStyle = '#82d8bb';
+              ctx.stroke();
+            }
+          }
           ctx.fillStyle = '#202b26';
           for (let joint = x + 18; joint < x + span; joint += 21) ctx.fillRect(joint, y + 4, 2, 9);
           if (label) {
             ctx.font = 'bold 12px system-ui';
-            const text = `↑ ${label}`;
+            const text = label;
             const width = ctx.measureText(text).width + 18;
             ctx.fillStyle = '#101c28';
             ctx.fillRect(x, y - 70, width, 22);

@@ -115,7 +115,7 @@
     for (const [name, stat, , baseCost, detail, maxRank] of shop) {
       const rank = profile.ranks[stat] || 0;
       const maxed = rank >= maxRank;
-      const cost = baseCost + rank * Math.round(baseCost * 0.65);
+      const cost = 4 * (baseCost + rank * Math.round(baseCost * 0.65));
       const button = document.createElement('button');
       button.disabled = maxed || profile.sigils < cost;
       const rankLabel = maxRank > 1 ? ` (${rank}/${maxRank})` : '';

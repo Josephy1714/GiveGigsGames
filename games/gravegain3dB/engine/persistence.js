@@ -65,7 +65,8 @@
                     quartersLevel: game.quartersLevel,
                     armoryRanks: game.armoryRanks,
                     botanyCrops: game.botanyCrops,
-                    difficulty: game.difficulty
+                    difficulty: game.difficulty,
+                    favoriteWeapons: game.favoriteWeapons
                 };
                 // Persist audio/difficulty settings alongside the run state so
                 // a reload restores the player's mix. Kept inside our own key.
@@ -91,8 +92,8 @@
                     }
                 } catch (_) { /* snapshot is best-effort */ }
                 var json = safeStringify(payload);
-                if (json !== null) safeSet(SAVE_KEY, json);
-            } catch (_) { /* blocked storage (private mode) must not crash game over/save paths */ }
+                return json !== null && safeSet(SAVE_KEY, json);
+            } catch (_) { return false; }
         }
 
         static load() {

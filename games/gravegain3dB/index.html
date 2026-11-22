@@ -44,6 +44,7 @@
     <script src="entities/player.js"></script>
     <script src="../html/gravegain-enemy-voxels.js"></script>
     <script src="entities/enemy.js"></script>
+    <script src="entities/companion.js"></script>
     <script src="engine/graphics-bridge.js"></script>
     <script src="engine/performance-manager.js"></script>
     <script src="ui/hub-quarters.js"></script>
@@ -199,6 +200,18 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <i class="hit-arm hit-arm-top"></i><i class="hit-arm hit-arm-right"></i>
                     <i class="hit-arm hit-arm-bottom"></i><i class="hit-arm hit-arm-left"></i>
                 </div>
+                <button type="button" id="petCompanion" class="companion-hud hidden"></button>
+                <section id="starterWeaponCache" class="starter-weapon-cache" aria-label="Field cache" hidden>
+                    <strong>Field Cache · Choose One Weapon</strong>
+                    <button type="button"></button>
+                    <button type="button"></button>
+                    <button type="button"></button>
+                </section>
+                <button type="button" id="weaponComparison" class="weapon-comparison" hidden>
+                    <span></span>
+                    <span></span>
+                    <strong>U / Tap to swap equipped weapon</strong>
+                </button>
                 <div id="hudTargetReadout" class="hud-target-readout hidden" aria-live="polite">
                     <div class="target-readout-heading"><span id="hudTargetName">SKELETON</span><span id="hudTargetDistance" class="target-readout-distance">0u · OPTIMAL</span><span id="hudTargetHealth">100%</span></div>
                     <div class="target-health-track"><div id="hudTargetHpBar" class="target-health-fill"></div></div>
@@ -207,6 +220,8 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <span id="hudWeaponName">M4 CARBINE · 1/3</span>
                     <strong id="hudWeaponAmmo">30 / 120</strong>
                     <span id="hudWeaponStatus">READY</span>
+                    <button id="hudDodge" class="hud-fire-mode" type="button">Dodge · M</button>
+                    <button id="hudFavoriteWeapon" class="hud-fire-mode hidden" type="button" aria-pressed="false">☆ Save · J</button>
                     <span id="hudGrenades">GRENADES 3</span>
                     <span id="hudLauncherAmmo" class="hud-launcher-ammo hidden">40MM 2/4</span>
                     <button id="hudFireModeToggle" class="hud-fire-mode hidden" type="button" title="Switch M4 between full-auto and semi-auto" aria-label="Toggle M4 fire mode">AUTO</button>
@@ -334,7 +349,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
             <div class="desktop-bottom-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px; max-width: 100%;">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; max-width: 100%;">
                     <button class="btn-game" id="btnPause">⏸️ Pause</button>
-                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | Z/X Lean | V Class Attack | N / MMB Weapon Bash | G Grenade | B Block / Defend turn | R Reload | 1–4 / Wheel Swap | H Drop Weapon | Hold Shift + Forward to Sprint / press Shift + Strafe or Back to Dodge | tap C Slide / Ctrl Crouch | Space Jump | F Ability | Q Potion</span>
+                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | LMB Fire | RMB Aim | Z/X Lean | V Class Attack | N / MMB Weapon Bash | G Grenade | B Block / Defend turn | R Reload | 1–4 / Wheel Swap | H Drop Weapon | Hold Shift + Forward to Sprint / press Shift + Strafe or Back to Dodge | tap C Slide / Ctrl Crouch | Space Jump / tap again near a ledge to Mantle / S + Space Drop Through | F Ability | Q Potion</span>
                 </div>
                 <button class="btn-game btn-primary" id="btnReturnToHub">🚀 Return to Starship</button>
             </div>
@@ -432,6 +447,54 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     </div>
                 </div>
 
+                <fieldset class="companion-designer companion-workshop">
+                    <legend>Companion workshop</legend>
+                    <div class="companion-preview" id="companionPreview" data-chassis="cat" data-skin="glacier">
+                        <div class="companion-preview-stage" aria-hidden="true">
+                            <svg viewBox="0 0 220 120" role="presentation">
+                                <path class="bot-tail bot-cat-only" d="M149 61 C177 56 177 27 155 27 C140 27 143 39 153 39" />
+                                <path class="bot-tail bot-dog-only" d="M150 62 C168 62 177 54 178 44" />
+                                <rect class="bot-body" x="73" y="51" width="82" height="34" rx="14" />
+                                <rect class="bot-shoulder" x="87" y="45" width="51" height="12" rx="6" />
+                                <rect class="bot-thruster" x="92" y="84" width="11" height="15" rx="4" />
+                                <rect class="bot-thruster" x="128" y="84" width="11" height="15" rx="4" />
+                                <path class="bot-ear bot-cat-only" d="M39 53 L43 28 L60 43 Z M62 43 L80 28 L83 55 Z" />
+                                <path class="bot-ear bot-dog-only" d="M40 44 Q37 66 51 69 L62 48 Z M67 48 L82 42 Q85 66 72 70 Z" />
+                                <rect class="bot-head" x="43" y="41" width="38" height="34" rx="12" />
+                                <rect class="bot-visor" x="48" y="53" width="28" height="9" rx="4.5" />
+                                <circle class="bot-sensor" cx="54" cy="57.5" r="2" />
+                                <circle class="bot-sensor" cx="70" cy="57.5" r="2" />
+                                <path class="bot-cannon bot-dog-only" d="M154 58 L182 52 L187 61 L181 70 L154 67 Z" />
+                                <path class="bot-paw bot-cat-only" d="M150 55 L171 48 L176 53 L169 62 L153 66 Z" />
+                                <path class="bot-foot" d="M82 96 h22 q5 0 5 5 v4 H78 v-4 q0-5 4-5 M126 96 h22 q5 0 5 5 v4 h-31 v-4 q0-5 4-5" />
+                                <path class="bot-glow" d="M104 103 l6 10 6-10 M138 103 l6 10 6-10" />
+                            </svg>
+                        </div>
+                        <div class="companion-preview-info">
+                            <span class="companion-preview-kicker">FIELD COMPANION · READY</span>
+                            <strong id="companionPreviewName">Pounce</strong>
+                            <span id="companionPreviewRole">Agile pulse cat · fast target swaps</span>
+                            <div class="companion-preview-stats" id="companionPreviewStats">72 integrity · 7 pulse damage · 1 revive</div>
+                        </div>
+                    </div>
+                    <label>Chassis <select id="companionChassis">
+                        <option value="cat">Pounce · agile pulse cat</option>
+                        <option value="dog">Bulwark · heavy cannon dog</option>
+                        <option value="none">Deploy solo</option>
+                    </select></label>
+                    <label>Skin <select id="companionSkin">
+                        <option value="glacier">Glacier</option>
+                        <option value="ember">Ember</option>
+                        <option value="orchid">Orchid</option>
+                        <option value="moss">Moss</option>
+                    </select></label>
+                </fieldset>
+                <fieldset class="companion-designer">
+                    <legend>Deployment armory</legend>
+                    <label>Bonus weapon <select id="bossArmoryWeapon" disabled>
+                        <option value="">Standard loadout</option>
+                    </select></label>
+                </fieldset>
                 <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
                     <button class="btn-game" id="btnCharSelectBack">← Main Menu</button>
                     <button class="btn-game btn-primary" id="btnCharSelectStart">🚀 Deploy to Dungeon</button>
@@ -496,9 +559,22 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                 <div class="hub-pane" id="tab-armory">
                     <h3 style="margin-top: 0; color: var(--grave-gold);">Starship Engineering Armory</h3>
                     <p style="font-size: 0.9rem;">Invest synthesized $UUSD into permanent genetic and technological suit augmentations.</p>
+                    <fieldset class="companion-designer">
+                        <legend>Warden contract</legend>
+                        <label>Reward target <select id="weaponContract">
+                            <option value="">No contract</option>
+                        </select></label>
+                        <span>Defeat a Balcony Warden to earn a roll from your chosen maker or weapon class. One reward per deployment.</span>
+                    </fieldset>
                     <div class="armory-grid" id="armoryGrid">
                         <!-- Filled by JS -->
                     </div>
+                    <fieldset class="companion-designer">
+                        <legend>Barrel workshop</legend>
+                        <label>Saved gun <select id="rerollWeapon"></select></label>
+                        <button type="button" class="btn-game" id="btnRerollWeapon">Reroll barrel · 75 gold</button>
+                        <span id="rerollWeaponResult" role="status"></span>
+                    </fieldset>
                 </div>
 
                 <!-- Exchange Tab -->
@@ -582,7 +658,9 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <div>
                         <label style="display:block; font-size:0.85rem; margin-bottom:5px;">Aesthetics & Effects</label>
                         <div style="display:flex; flex-wrap:wrap; gap:15px; font-size:0.85rem;">
-                            <label><input type="checkbox" id="settingsCameraShake" checked> Camera Shake</label>
+                            <label style="display:flex; align-items:center; gap:8px;">Camera Shake <input type="range" id="settingsShakeIntensity" min="0" max="100" value="50" aria-label="Camera shake intensity"></label>
+                            <label style="display:flex; align-items:center; gap:8px;">Sprint FOV <input type="range" id="settingsSprintFov" min="0" max="100" value="100" aria-label="Sprint field-of-view strength"></label>
+                            <label><input type="checkbox" id="settingsDamageNumbers" checked> Damage Numbers</label>
                             <label><input type="checkbox" id="settingsDynamicLights" checked> Dynamic Torches</label>
                             <label><input type="checkbox" id="settingsInvertY"> Invert Y-Axis</label>
                         </div>
@@ -644,6 +722,9 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <div class="stat-row"><span>Enemies Slain:</span> <strong id="goKills">0</strong></div>
                     <div class="stat-row"><span>Gold Harvested:</span> <strong class="highlight-gold" id="goGold">0</strong></div>
                     <div class="stat-row"><span>XP Gained:</span> <strong id="goXp">0</strong></div>
+                    <div class="stat-row"><span>Time at full sprint</span> <strong id="goSprintTime">0s</strong></div>
+                    <div class="stat-row"><span>Weapon kills from above</span> <strong id="goElevatedKills">0</strong></div>
+                    <ul id="goWeaponReport" aria-label="Weapon accuracy" hidden></ul>
                 </div>
 
                 <button class="btn-game btn-primary" id="btnGoToMenu">Return to Main Menu</button>

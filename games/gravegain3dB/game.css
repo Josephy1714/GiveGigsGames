@@ -887,6 +887,11 @@
 .combat-text.damage { color: #f87171; text-shadow: 0 0 6px #ef4444; }
 .combat-text.player-dmg { color: #ff2222; font-size: 1.4rem; text-shadow: 0 0 10px #ff0000; }
 .combat-text.crit { color: #fbbf24; font-size: 1.5rem; text-shadow: 0 0 10px #f59e0b; }
+.combat-text.loot-common { color: #cbd5e1; text-shadow: 0 0 9px #94a3b8; }
+.combat-text.loot-uncommon { color: #4ade80; text-shadow: 0 0 10px #22c55e; }
+.combat-text.loot-rare { color: #38bdf8; font-size: 1.35rem; text-shadow: 0 0 12px #0284c7; }
+.combat-text.loot-epic { color: #c084fc; font-size: 1.45rem; text-shadow: 0 0 14px #9333ea; }
+.combat-text.loot-legendary { color: #fbbf24; font-size: 1.6rem; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 18px #d97706; }
 .combat-text.heal { color: #4ade80; text-shadow: 0 0 8px #22c55e; }
 .combat-text.block { color: #38bdf8; text-shadow: 0 0 8px #0ea5e9; }
 .combat-text.xp { color: #c084fc; font-size: 1.0rem; text-shadow: 0 0 8px #a855f7; }
@@ -1333,6 +1338,12 @@ body.touch-enabled .mobile-action-buttons {
 
 .hud-crosshair.target { border-color: #4ade80; box-shadow: 0 0 10px rgba(74, 222, 128, 0.8); }
 .hud-crosshair.target .hit-arm { color: #4ade80; background: #4ade80; }
+.hud-crosshair.armor-hit .hit-arm {
+    color: #ffd5a1;
+    background: #ffd5a1;
+    border-radius: 0;
+    box-shadow: 0 0 6px #f59e0b;
+}
 .hud-crosshair.crit .hit-arm { color: #facc15; background: #facc15; }
 .hud-crosshair.headshot .hit-arm { color: #67e8f9; background: #67e8f9; box-shadow: 0 0 8px #06b6d4; }
 .hud-crosshair.headshot { border-color: #67e8f9; box-shadow: 0 0 14px #06b6d4; }
@@ -2491,3 +2502,140 @@ body.touch-enabled .mobile-joystick-container:active {
     .spell-wheel.open { animation: none; }
 }
 
+.companion-designer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin: 1rem auto 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid #46657a;
+    background: #101a26;
+    color: #d7effa;
+}
+.companion-workshop {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.3fr) repeat(2, minmax(150px, 0.8fr));
+    align-items: stretch;
+}
+.companion-preview {
+    --bot-shell: #244363;
+    --bot-glow: #6ff5ff;
+    display: grid;
+    grid-template-columns: minmax(130px, 0.9fr) minmax(150px, 1.1fr);
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 112px;
+    padding: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--bot-glow) 48%, #29445a);
+    border-radius: 8px;
+    background: radial-gradient(ellipse at 35% 55%, color-mix(in srgb, var(--bot-glow) 15%, transparent), transparent 65%), #0a131d;
+    box-shadow: inset 0 0 24px #050a10;
+}
+.companion-preview-stage { display: grid; place-items: center; min-width: 0; }
+.companion-preview svg { width: min(100%, 220px); overflow: visible; animation: bot-hover 2.5s ease-in-out infinite; }
+.companion-preview .bot-body, .companion-preview .bot-head, .companion-preview .bot-ear,
+.companion-preview .bot-shoulder, .companion-preview .bot-foot, .companion-preview .bot-tail,
+.companion-preview .bot-paw { fill: var(--bot-shell); stroke: color-mix(in srgb, var(--bot-glow) 42%, white); stroke-width: 2; }
+.companion-preview .bot-visor, .companion-preview .bot-glow, .companion-preview .bot-sensor { fill: var(--bot-glow); filter: drop-shadow(0 0 4px var(--bot-glow)); }
+.companion-preview .bot-cannon { fill: #314153; stroke: var(--bot-glow); stroke-width: 2; }
+.companion-preview .bot-thruster { fill: #314153; stroke: var(--bot-glow); stroke-width: 2; }
+.companion-preview .bot-tail { fill: none; stroke-width: 5; stroke-linecap: round; }
+.companion-preview-info { display: grid; gap: 0.2rem; min-width: 0; }
+.companion-preview-info strong { color: var(--bot-glow); font: 800 1.1rem 'Orbitron', sans-serif; letter-spacing: 0.06em; text-shadow: 0 0 12px color-mix(in srgb, var(--bot-glow) 55%, transparent); }
+.companion-preview-kicker { color: #8ca6b9; font: 700 0.58rem 'Orbitron', sans-serif; letter-spacing: 0.1em; }
+.companion-preview-info > span:nth-of-type(2) { color: #cfdae3; font-size: 0.77rem; }
+.companion-preview-stats { color: #f4d596; font-size: 0.72rem; line-height: 1.35; }
+.companion-preview[data-chassis="dog"] .bot-cat-only,
+.companion-preview[data-chassis="cat"] .bot-dog-only,
+.companion-preview[data-chassis="none"] svg { display: none; }
+.companion-preview.solo .companion-preview-stage::after { content: 'SOLO'; color: #7e8b98; font: 800 1rem 'Orbitron', sans-serif; }
+@keyframes bot-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (max-width: 720px) {
+    .companion-workshop { grid-template-columns: 1fr 1fr; }
+    .companion-preview { grid-column: 1 / -1; }
+}
+@media (max-width: 430px) {
+    .companion-workshop { grid-template-columns: 1fr; }
+    .companion-preview { grid-template-columns: 120px minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .companion-preview svg { animation: none; }
+}
+.companion-designer select {
+    padding: 0.35rem;
+    color: #f0f8ff;
+    background: #223548;
+    border: 1px solid #56748e;
+}
+.companion-hud {
+    position: absolute;
+    top: 36%;
+    left: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    pointer-events: auto;
+    color: #c9f7fe;
+    background: #102535e8;
+    border: 1px solid #4b9ca9;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+.companion-hud.happy {
+    color: #ffe4f1;
+    border-color: #ff9ed3;
+    box-shadow: 0 0 14px #ff9ed355, inset 0 0 10px #ff9ed322;
+}
+.combat-text.pet-happy { color: #ff9ed3; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 14px #ec4899; }
+.weapon-comparison:not([hidden]) {
+    display: grid;
+    gap: 0.3rem;
+    position: absolute;
+    bottom: 24%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(32rem, 66%);
+    padding: 0.6rem 0.8rem;
+    pointer-events: auto;
+    text-align: left;
+    color: #f3e3bb;
+    background: #141926f5;
+    border: 1px solid #a5804a;
+    border-radius: 5px;
+    font-size: clamp(0.66rem, 1.6vw, 0.85rem);
+    z-index: 3;
+}
+.weapon-comparison span:nth-child(2) { color: #b8c8d9; }
+.starter-weapon-cache:not([hidden]) {
+    display: grid;
+    gap: 0.3rem;
+    position: absolute;
+    bottom: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(30rem, 72%);
+    padding: 0.55rem;
+    pointer-events: auto;
+    background: #111b28f2;
+    border: 1px solid #b88a54;
+    color: #f0d5a0;
+    border-radius: 5px;
+    z-index: 4;
+}
+.starter-weapon-cache button {
+    padding: 0.4rem 0.55rem;
+    color: #e3edf7;
+    text-align: left;
+    background: #26374c;
+    border: 1px solid #516a83;
+    border-radius: 3px;
+    font-size: clamp(0.65rem, 1.5vw, 0.82rem);
+}
+.starter-weapon-cache button:hover,
+.starter-weapon-cache button:focus-visible { border-color: #f0d5a0; }
+#goWeaponReport {
+    max-height: 8rem;
+    overflow-y: auto;
+    padding-inline-start: 1.2rem;
+    color: #c6d5e3;
+    font-size: 0.85rem;
+}
+#goWeaponReport li + li { margin-top: 0.35rem; }
