@@ -142,7 +142,7 @@ function car(scene,x,z,color,m,kind="car"){
 export async function createRunnerRenderer({mount,quality="High"}={}){
  if(!mount)throw new TypeError("Three.js mount missing");
  const scene=new THREE.Scene();scene.background=new THREE.Color(0x9db8c0);scene.fog=new THREE.FogExp2(0x9db8c0,.0085);
- const camera=new THREE.PerspectiveCamera(61,1,.1,320);camera.position.set(0,5.2,10.8);camera.lookAt(0,1.1,-13);
+ const camera=new THREE.PerspectiveCamera(57,1,.1,320);camera.position.set(0,4.9,11.8);camera.lookAt(0,1.8,-9.5);
  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});renderer.setSize(mount.clientWidth||innerWidth,mount.clientHeight||innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xe5f1ff,0x56634c,2));const sun=new THREE.DirectionalLight(0xffe2be,2.7);sun.position.set(-18,28,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-25;sun.shadow.camera.right=25;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.camera.near=.1;sun.shadow.camera.far=100;sun.shadow.bias=-.00025;sun.shadow.normalBias=.02;scene.add(sun);
  function applyQuality(value=quality){
@@ -239,8 +239,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   // Track Jay laterally on narrow mobile viewports so every lane remains fully visible.
   const cameraTrackX=playerX*.92;
   camera.position.x=THREE.MathUtils.damp(camera.position.x,cameraTrackX,7.5,dt)+Math.sin(g.t*48)*impact*.035;
-  camera.position.y=5.2+Math.sin(g.t*36)*impact*.025;
-  camera.fov=61+impact*.8;camera.updateProjectionMatrix();camera.lookAt(cameraTrackX,1.1+jumpY*.055,-13);
+  camera.position.y=4.9+Math.sin(g.t*36)*impact*.025;
+  camera.fov=57+impact*.8;camera.updateProjectionMatrix();camera.lookAt(cameraTrackX,1.8+jumpY*.055,-9.5);
   impactRing.visible=impact>.015;impactRing.position.x=playerX;impactRing.scale.setScalar(.75+(1-impact)*1.8);impactRing.material.opacity=impact*.58;
   const jumpHeight=clamp(jumpY/1.12,0,1);jayShadow.position.x=playerX;jayShadow.scale.setScalar(1+jumpHeight*.42);jayShadow.material.opacity=.23*(1-jumpHeight*.58);
   const animationState=resolveRunnerAnimationState(g);
