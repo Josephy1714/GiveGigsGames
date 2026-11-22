@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 
 test("production 3D runner loads Jay and plays real jump and slide states", async () => {
   const browser = await chromium.launch({
