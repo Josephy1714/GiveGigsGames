@@ -105,9 +105,11 @@ class GameApp {
     const materials = new Set();
     for (const mesh of this.levelMeshes) {
       this.scene.remove(mesh);
-      if (mesh.isInstancedMesh) mesh.dispose();
-      if (mesh.geometry) geometries.add(mesh.geometry);
-      for (const material of [].concat(mesh.material || [])) materials.add(material);
+      mesh.traverse(object => {
+        if (object.isInstancedMesh) object.dispose();
+        if (object.geometry) geometries.add(object.geometry);
+        for (const material of [].concat(object.material || [])) materials.add(material);
+      });
     }
     geometries.forEach(geometry => geometry.dispose());
     materials.forEach(material => {
@@ -123,7 +125,7 @@ class GameApp {
     this.scene.background.setHex(fantasy ? 0x162a55 : 0x08091c);
     this.scene.fog.color.setHex(fantasy ? 0x3b5c8c : 0x19132f);
     this.scene.fog.density = fantasy ? 0.032 : 0.023;
-    this.renderer.toneMappingExposure = fantasy ? 1.0 : 0.83;
+    this.renderer.toneMappingExposure = fantasy ? 0.85 : 0.72;
     this.container.closest('.TEMPLATE-4weird-game-frame').dataset.map = this.state.selectedLevel;
     this.applyKeyboardFinish(fantasy);
 
@@ -258,19 +260,20 @@ class GameApp {
 
   createCeilingLight(z, height) {
     const bulbGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8);
-    const bulbMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+    const color = this.lights.length % 2 ? 0xd554ff : 0x27e5fe;
+    const bulbMat = new THREE.MeshBasicMaterial({ color });
     
     const bulb = new THREE.Mesh(bulbGeo, bulbMat);
     bulb.rotation.z = Math.PI / 2;
     bulb.position.set(0, height - 1.25, z);
     
-    const light = new THREE.PointLight(0x00ff88, 10.0, 12.0);
+    const light = new THREE.PointLight(color, 2.6, 10.0);
     light.position.set(0, height - 1.4, z);
     
     this.addLevelMesh(bulb);
     this.addLevelMesh(light);
     
-    this.lights.push({ bulb, light, baseIntensity: 10.0, zOffset: z });
+    this.lights.push({ bulb, light, baseIntensity: 2.6, zOffset: z });
   }
 
   createDetailedServerRack(x, y, z, width, height, depth, color) {
@@ -399,7 +402,10 @@ class GameApp {
     
     // 1. KEYBOARD GROUP (Held in center, tilted towards player)
     this.keyboardGroup = new THREE.Group();
-    this.keyboardGroup.position.set(0, -0.22, -0.45);
+    this.keyboardGroup.position.set(0, -0.19, -0.45);
+    const keyboardLight = new THREE.DirectionalLight(0xffdfbb, 0.26);
+    keyboardLight.position.set(0, 0.4, 0.2);
+    this.handsGroup.add(keyboardLight, keyboardLight.target);
     this.keyboardGroup.rotation.set(Math.PI / 4.2, 0, 0);
     
     // Keyboard Base
@@ -527,7 +533,7 @@ class GameApp {
     rightGlove.position.set(0, 0.015, -0.03);
     this.rightArmGroup.add(rightGlove);
     
-    this.rightArmIdlePos = new THREE.Vector3(0.14, -0.22, -0.42);
+    this.rightArmIdlePos = new THREE.Vector3(0.14, -0.19, -0.42);
     this.rightArmGroup.position.copy(this.rightArmIdlePos);
     this.rightArmGroup.rotation.set(-Math.PI / 8, -Math.PI / 10, -Math.PI / 18);
     this.handsGroup.add(this.rightArmGroup);
@@ -569,6 +575,8 @@ class GameApp {
     volumetricMat.color.setHex(accent);
     volumetricMat.opacity = fantasy ? 0.035 : 0.07;
     this.flashlight.color.setHex(fantasy ? 0xffca81 : 0x8eefff);
+    this.flashlightBase = fantasy ? 1.25 : 4;
+    this.flashlightPulse = fantasy ? 5 : 9;
     this.keyboardSigil.visible = fantasy;
     for (const key of this.keyboardKeys) {
       key.material.color.setHex(fantasy ? 0x64434d : 0x18233b);
@@ -681,7 +689,7 @@ class GameApp {
   }
 
   waveTagline(wave) {
-    if (wave <= 1) return 'Decrypt the words. Hold the grid.';
+    if (wave <= 1) return this.state.selectedLevel === 'fantasy' ? 'Type to cast.' : 'Decrypt the words. Hold the grid.';
     if (wave === 2) return 'Runners inbound - type fast.';
     if (wave === 3) return 'Phantoms phase through the dark.';
     if (wave === 4) return 'Brutes incoming. Big scores.';
@@ -2178,7 +2186,7 @@ class GameApp {
     
     // Bobbing / breathing animation for keyboard
     if (this.keyboardGroup) {
-      this.keyboardGroup.position.y = -0.22 + Math.sin(time) * 0.008;
+      this.keyboardGroup.position.y = -0.19 + Math.sin(time) * 0.008;
       this.keyboardGroup.position.x = Math.cos(time * 0.5) * 0.005;
       
       // Keyboard press scale decay
@@ -2223,9 +2231,9 @@ class GameApp {
     // Muzzle flash: flashlight flares on every kill/keystroke, decays fast
     if (this.muzzleFlash > 0) {
       this.muzzleFlash = Math.max(0, this.muzzleFlash - rdt * 6);
-      if (this.flashlight) this.flashlight.intensity = 18.0 + this.muzzleFlash * 22;
+      if (this.flashlight) this.flashlight.intensity = this.flashlightBase + this.muzzleFlash * this.flashlightPulse;
     } else if (this.flashlight) {
-      this.flashlight.intensity = 18.0;
+      this.flashlight.intensity = this.flashlightBase;
     }
 
     try { this.syncMobileDeck(); } catch (e) { /* deck cosmetic */ }

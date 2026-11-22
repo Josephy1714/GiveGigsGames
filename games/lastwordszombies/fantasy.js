@@ -6,7 +6,9 @@ function buildFantasyMap(game) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     return seed / 4294967296;
   };
-  const stone = color => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95 });
+  const stone = color => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color).convertSRGBToLinear(), flatShading: true, roughness: 0.95
+  });
   const glow = color => new THREE.MeshBasicMaterial({ color, fog: false });
   const box = new THREE.BoxGeometry(1, 1, 1);
   const rock = new THREE.DodecahedronGeometry(1, 0);
@@ -90,20 +92,40 @@ function buildFantasyMap(game) {
   }
   cross(0, ground + 4.65, -20, 0.95, masonry[2]);
 
+  const glowCanvas = document.createElement('canvas');
+  glowCanvas.width = glowCanvas.height = 64;
+  const glowContext = glowCanvas.getContext('2d');
+  const fireGradient = glowContext.createRadialGradient(32, 32, 0, 32, 32, 32);
+  fireGradient.addColorStop(0, '#ffcf80dc');
+  fireGradient.addColorStop(0.3, '#ff782968');
+  fireGradient.addColorStop(1, '#ff730000');
+  glowContext.fillStyle = fireGradient;
+  glowContext.fillRect(0, 0, 64, 64);
+  const fireGlow = new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(glowCanvas), depthWrite: false,
+    blending: THREE.AdditiveBlending, toneMapped: false
+  });
+
   function brazier(x, z) {
     mesh(box, iron, x, ground + 0.58, z, 0.13, 1.16, 0.13);
     mesh(rock, iron, x, ground + 1.17, z, 0.35, 0.18, 0.35);
     const tip = mesh(cone, flame, x, ground + 1.46, z, 0.23, 0.60, 0.23);
     tip.rotation.z = 0.2;
     mesh(rock, flameCore, x, ground + 1.35, z + 0.07, 0.14, 0.21, 0.14);
-    const light = game.addLevelMesh(new THREE.PointLight(0xff9c45, 10, 10, 2));
+    const aura = game.addLevelMesh(new THREE.Sprite(fireGlow));
+    aura.position.set(x, ground + 1.43, z + 0.16);
+    aura.scale.set(1.8, 1.8, 1);
+    const light = game.addLevelMesh(new THREE.PointLight(0xff9c45, 2.2, 5, 2));
     light.position.set(x, ground + 1.55, z);
-    game.lights.push({ bulb: tip, light, baseIntensity: 10, zOffset: z, torch: true });
+    game.lights.push({ bulb: tip, light, baseIntensity: 2.2, zOffset: z, torch: true });
   }
   brazier(-2.75, -18.9);
   brazier(2.75, -18.9);
   brazier(-2.85, -2.2);
-  brazier(2.95, 0.35);
+  brazier(2.5, -0.7);
+  const foregroundGrave = mesh(rock, masonry[2], -2.6, ground + 0.43, 0.6, 0.42, 0.73, 0.22);
+  foregroundGrave.rotation.set(0.1, -0.3, -0.16);
+  mesh(box, masonry[0], -2.6, ground + 0.1, 0.6, 1.02, 0.2, 0.66);
 
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -183,9 +205,9 @@ function buildFantasyMap(game) {
   mesh(box, stone(0x713554), -5.5, ground + 1.95, -4.47, 0.54, 0.84, 0.038);
   cross(-5.5, ground + 1.97, -4.42, 0.55, flameCore);
 
-  game.addLevelMesh(new THREE.HemisphereLight(0xa4c7ff, 0x68526b, 1.25));
-  const moonlight = game.addLevelMesh(new THREE.DirectionalLight(0x88bcff, 1.95));
+  game.addLevelMesh(new THREE.HemisphereLight(0xa4c7ff, 0x68526b, 0.64));
+  const moonlight = game.addLevelMesh(new THREE.DirectionalLight(0x88bcff, 0.96));
   moonlight.position.set(4, 8, -7);
-  const fill = game.addLevelMesh(new THREE.DirectionalLight(0xffc796, 0.65));
+  const fill = game.addLevelMesh(new THREE.DirectionalLight(0xffc796, 0.36));
   fill.position.set(-5, 3, 6);
 }

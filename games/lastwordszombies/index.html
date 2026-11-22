@@ -201,8 +201,8 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             <!-- Game Start Overlay -->
             <div class="TEMPLATE-4weird-game-overlay" id="TEMPLATE-4weird-start-screen" role="dialog" aria-modal="true" aria-labelledby="start-overlay-title" aria-describedby="start-overlay-desc">
                 <div class="TEMPLATE-4weird-overlay-content lwz-menu-content">
-                    <h2 id="start-overlay-title">Last Words Zombies</h2>
-                    <p id="start-overlay-desc">Decrypt rogue cyber units before they compromise your terminal.</p>
+                    <h2 id="start-overlay-title">Last Words <span>Zombies</span></h2>
+                    <p id="start-overlay-desc">Type the words above the approaching zombies to survive.</p>
 
                     <!-- Returning-player stats + wallet (filled by JS, hidden until known) -->
                     <div id="menu-stats" class="menu-stats" style="display: none;" aria-label="Your best stats">
@@ -213,13 +213,13 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
                     <div class="lwz-menu-pages" aria-live="polite">
                     <section class="lwz-menu-page is-active" data-menu-page="briefing" aria-labelledby="lwz-briefing-title">
-                        <h3 id="lwz-briefing-title">DECRYPTION PROTOCOL</h3>
+                        <h3 id="lwz-briefing-title">HOW TO PLAY</h3>
                         <ol class="menu-tutorial" aria-label="How to play">
                             <li><b>TYPE</b> the glowing word to lock on</li>
-                            <li><b>FINISH</b> the word to overload the zombie</li>
+                            <li><b>FINISH</b> the word to defeat the zombie</li>
                             <li><b>SURVIVE</b> — boss every 5th wave</li>
                         </ol>
-                        <p class="lwz-page-hint">Choose a threat level and sector before deployment.</p>
+                        <p class="lwz-page-hint">Choose a difficulty and map, or start in Fantasy.</p>
                     </section>
                     
                     <!-- Difficulty Selection -->
@@ -386,7 +386,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
     <script src="zombie.js?v=9"></script>
     <script src="typing.js?v=9"></script>
     <script src="store.js?v=8"></script>
-    <script src="menu-flow.js?v=1"></script>
+    <script src="menu-flow.js?v=2"></script>
     <script src="fantasy.js?v=1"></script>
     <script src="keyboard-visuals.js?v=1"></script>
     <script src="game.js?v=9"></script>
@@ -412,12 +412,11 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
                     // Main title tags
                     setText('TEMPLATE-4weird-game-title', data.title);
-                    setText('start-overlay-title', data.title);
+                    if (data.title && data.title !== 'Last Words Zombies') setText('start-overlay-title', data.title);
 
                     // Genre and descriptions (textContent: game.json is
                     // contributor-supplied, never interpreted as HTML)
                     setText('TEMPLATE-4weird-game-genre', data.genre);
-                    setText('start-overlay-desc', data.description);
                     setText('TEMPLATE-4weird-how-to-play', data.instructions);
                     
                     // Set keyboard instructions hint

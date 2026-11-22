@@ -315,6 +315,9 @@
         capsule.alt = "";
         capsule.width = 512;
         capsule.height = 512;
+        // Keep the image inside its card if an older stylesheet is still cached.
+        capsule.style.maxWidth = "100%";
+        capsule.style.height = "auto";
         capsule.loading = "lazy";
         capsule.decoding = "async";
         capsule.addEventListener("error", () => {

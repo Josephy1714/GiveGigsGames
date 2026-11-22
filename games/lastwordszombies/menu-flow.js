@@ -7,7 +7,7 @@ class LWZMenuFlow {
     this.back = root?.querySelector('#lwz-menu-back');
     this.next = root?.querySelector('#lwz-menu-next');
     this.step = root?.querySelector('#lwz-menu-step');
-    this.labels = ['Briefing', 'Threat level', 'Sector'];
+    this.labels = ['Briefing', 'Threat level', 'Map'];
   }
 
   bind(root) {
