@@ -74,8 +74,8 @@
     };
 
     // ==================== CONFIG & UPGRADES ====================
-    const ARENA_RADIUS = 95;
-    const FLOOR_Y = -24;
+    const ARENA_RADIUS = 160;
+    const FLOOR_Y = -280;
     const SURFACE_Y = 34;
 
     const UPGRADE_DEFS = [
@@ -85,7 +85,10 @@
         { id: 'electric', name: 'Electric Aura', desc: 'Emits a shockwave every 3.5s that zaps nearby prey & enemies.', cost: { biomass: 22, debris: 10, mutagens: 1 } },
         { id: 'acid', name: 'Acidic Blood', desc: 'Leaves toxic acid clouds behind you that dissolve pursuers.', cost: { biomass: 20, debris: 8, mutagens: 1 } },
         { id: 'scales', name: 'Armored Scales', desc: 'Cyber-alloy dorsal plating reduces all incoming damage by 40%.', cost: { biomass: 25, debris: 12, mutagens: 2 } },
-        { id: 'missiles', name: 'Homing Bio-Missiles', desc: 'Automatically launches tracking torpedoes at nearby enemies.', cost: { biomass: 35, debris: 16, mutagens: 3 } }
+        { id: 'missiles', name: 'Homing Bio-Missiles', desc: 'Automatically launches tracking torpedoes at nearby enemies.', cost: { biomass: 35, debris: 16, mutagens: 3 } },
+        { id: 'aquariumRegen', name: 'BS-07 Bio-Regen Tank', desc: 'Upgrades your BS-07 Aquarium to rapidly heal your shark when inside.', cost: { biomass: 10, debris: 4, mutagens: 0 } },
+        { id: 'aquariumTurret', name: 'BS-07 Defense Turret', desc: 'Mounts an automated laser turret on BS-07 that zaps nearby enemies.', cost: { biomass: 16, debris: 8, mutagens: 1 } },
+        { id: 'flashlightMK2', name: 'Abyssal Flashlight MK-II', desc: 'Doubles your shark flashlight range, brightness, and beam width for deep caves.', cost: { biomass: 14, debris: 6, mutagens: 0 } }
     ];
 
     const PREY_TYPES = [
@@ -102,7 +105,29 @@
         { id: 'mine', name: 'Naval Mine', color: 0x334155, size: 2.2, damage: 35, hp: 30, debris: 3, speed: 0, isStatic: true },
         { id: 'toxic', name: 'Toxic Waste', color: 0x84cc16, size: 1.9, damage: 20, hp: 25, debris: 2, speed: 2.2, isDrifting: true },
         { id: 'diver', name: 'Cyber Diver', color: 0x0ea5e9, size: 2.0, damage: 15, hp: 40, debris: 5, speed: 7.5, shoots: true },
-        { id: 'sentinel', name: 'Mecha Sentinel', color: 0xf43f5e, size: 2.5, damage: 25, hp: 70, debris: 8, speed: 9.5, shoots: true }
+        { id: 'sentinel', name: 'Mecha Sentinel', color: 0xf43f5e, size: 2.5, damage: 25, hp: 70, debris: 8, speed: 9.5, shoots: true },
+        { id: 'scorpion', name: 'Sea Scorpion', color: 0x854d0e, size: 3.2, damage: 30, hp: 110, debris: 12, speed: 10.5, elite: true },
+        { id: 'jawfish', name: 'Bone-Plated Jaw Fish', color: 0x94a3b8, size: 3.4, damage: 35, hp: 140, debris: 15, speed: 8.5, elite: true },
+        { id: 'cyclops', name: 'Cyclops: Winged Relic', color: 0x7c3aed, size: 4.5, damage: 40, hp: 220, debris: 25, speed: 11.0, shoots: true, elite: true }
+    ];
+
+    const BOSS_ROSTER = [
+        { name: 'LEVIATHAN MECHA-SUB', color: 0x1e293b, glow: 0xff0044 },
+        { name: 'KRAKEN: TERROR OF THE ABYSS', color: 0x7f1d1d, glow: 0xf97316 },
+        { name: 'MEGALODON: GIANT HUNTER', color: 0x0f172a, glow: 0x00e5ff },
+        { name: 'MOSASAUR: ANCIENT APEX', color: 0x14532d, glow: 0x4ade80 },
+        { name: 'COLOSSUS: BEHEMOTH', color: 0x312e81, glow: 0xa855f7 },
+        { name: 'SCOURGE: DEEP DESTROYER', color: 0x4c0519, glow: 0xf43f5e }
+    ];
+
+    const SHOP_ITEMS = [
+        { id: 'skin_abyssal', name: 'Abyssal Shark Skin', type: 'skin', skin: 'magma', cost: 150, desc: 'Deep void scales with glowing violet-crimson cracks.' },
+        { id: 'skin_gold', name: 'Golden Apex Skin', type: 'skin', skin: 'gold', cost: 200, desc: 'Pure gilded armor plating for the ultimate predator.' },
+        { id: 'plushie', name: 'Shark Plushie Companion', type: 'companion', cost: 120, desc: 'A cute mini-shark plushie that swims alongside you!' },
+        { id: 'decor_chest', name: 'Treasure Chest Decor', type: 'decor', cost: 80, desc: 'Places a glowing gold Treasure Chest inside BS-07.' },
+        { id: 'decor_castle', name: 'Scottish Medieval Castle', type: 'decor', cost: 180, desc: 'Builds a miniature Highland Castle in your BS-07 Aquarium!' },
+        { id: 'decor_skeleton', name: 'Drunken Skeleton Decor', type: 'decor', cost: 160, desc: 'A legendary rum-loving skeleton blowing bubbles in BS-07.' },
+        { id: 'decor_ship', name: 'Sunken Ship Decor', type: 'decor', cost: 140, desc: 'Adds a weathered sunken galleon outside BS-07.' }
     ];
 
     // ==================== GAME STATE ====================
@@ -113,6 +138,8 @@
         biomass: 0,
         debris: 0,
         mutagens: 0,
+        coins: parseInt(localStorage.getItem('battlesharks_coins') || '0', 10),
+        shopOwned: JSON.parse(localStorage.getItem('battlesharks_shop') || '{}'),
         upgrades: {
             lasers: false, thruster: false, shield: false,
             electric: false, acid: false, scales: false, missiles: false
@@ -193,22 +220,107 @@
     let waterSurface;
     let planktonPoints;
 
-    function buildEnvironment() {
-        // Seafloor
-        const floorGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.6, ARENA_RADIUS * 2.6, 40, 40);
+    const AQUARIUM_POS = new THREE.Vector3(0, 6, 12);
+    const tutorial = {
+        active: false,
+        step: 0,
+        preyEaten: 0,
+        enemiesKilled: 0
+    };
+
+    function buildAquariumBase() {
+        const baseGroup = new THREE.Group();
+        baseGroup.position.copy(AQUARIUM_POS);
+
+        const steelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.3 });
+        const glassMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.14, side: THREE.DoubleSide });
+        const trimMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+
+        // Aquarium Glass & Steel Frame (open at -Z for Shark Loading Bay exit)
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 18), steelMat);
+        floor.position.y = -5.5;
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 18), steelMat);
+        roof.position.y = 5.5;
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 11, 0.8), steelMat);
+        backWall.position.z = 9;
+        baseGroup.add(floor, roof, backWall);
+
+        // Side Glass Panels
+        [-8, 8].forEach((x) => {
+            const glass = new THREE.Mesh(new THREE.PlaneGeometry(18, 10.5), glassMat);
+            glass.rotation.y = Math.PI / 2;
+            glass.position.x = x;
+            baseGroup.add(glass);
+
+            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.6, 11.4, 0.6), steelMat);
+            strut.position.set(x, 0, -9);
+            baseGroup.add(strut);
+        });
+
+        // Glowing Loading Bay Gate Arch (-Z)
+        const gateTop = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.4, 0.5), trimMat);
+        gateTop.position.set(0, 5.2, -9);
+        baseGroup.add(gateTop);
+
+        const baseLight = new THREE.PointLight(0x00e5ff, 1.8, 34);
+        baseLight.position.set(0, 3, 0);
+        baseGroup.add(baseLight);
+
+        scene.add(baseGroup);
+    }
+        // Seafloor (Abyssal Floor at y = -280)
+        const floorGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.6, ARENA_RADIUS * 2.6, 48, 48);
         floorGeo.rotateX(-Math.PI / 2);
         const posAttr = floorGeo.attributes.position;
         for (let i = 0; i < posAttr.count; i++) {
             const x = posAttr.getX(i);
             const z = posAttr.getZ(i);
-            const y = Math.sin(x * 0.08) * 1.4 + Math.cos(z * 0.08) * 1.4;
+            const y = Math.sin(x * 0.05) * 4.5 + Math.cos(z * 0.05) * 4.5;
             posAttr.setY(i, y);
         }
         floorGeo.computeVertexNormals();
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a2538, roughness: 0.9, metalness: 0.1 });
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x061624, roughness: 0.92, metalness: 0.1 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.position.y = FLOOR_Y;
         scene.add(floor);
+
+        // Deep Cave Systems: Arches, Rock Shelves & Bioluminescent Caverns
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.15 });
+        const crystalColors = [0x00e5ff, 0xa855f7, 0x10b981, 0xf43f5e];
+        for (let i = 0; i < 42; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 28 + Math.random() * (ARENA_RADIUS - 36);
+            const y = FLOOR_Y + 20 + Math.random() * 240;
+            const arch = new THREE.Mesh(
+                new THREE.TorusGeometry(12 + Math.random() * 14, 3.2 + Math.random() * 2.5, 8, 16, Math.PI),
+                rockMat
+            );
+            arch.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+            arch.rotation.y = Math.random() * Math.PI * 2;
+            scene.add(arch);
+
+            // Bioluminescent Crystal Cluster on cave arch
+            const cColor = crystalColors[i % crystalColors.length];
+            const crystal = new THREE.Mesh(
+                new THREE.OctahedronGeometry(2.2 + Math.random() * 2.0, 0),
+                new THREE.MeshBasicMaterial({ color: cColor })
+            );
+            crystal.position.copy(arch.position).add(new THREE.Vector3(0, 8, 0));
+            scene.add(crystal);
+        }
+
+        // Abyssal Hydrothermal Vents
+        const ventMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+        const magmaMat = new THREE.MeshBasicMaterial({ color: 0xff4500 });
+        for (let i = 0; i < 16; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 20 + Math.random() * (ARENA_RADIUS - 30);
+            const vent = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 4.2, 12, 10), ventMat);
+            vent.position.set(Math.cos(ang) * rad, FLOOR_Y + 5, Math.sin(ang) * rad);
+            const core = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 8), magmaMat);
+            core.position.set(vent.position.x, FLOOR_Y + 11, vent.position.z);
+            scene.add(vent, core);
+        }
 
         // Water Surface above
         const surfGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.8, ARENA_RADIUS * 2.8, 24, 24);
@@ -234,23 +346,54 @@
             scene.add(ring);
         }
 
-        // Corals & Rocks
-        const coralColors = [0xf43f5e, 0xa855f7, 0xfb923c, 0x14b8a6];
-        for (let i = 0; i < 45; i++) {
+        // Super-Detailed Multi-Branched Corals & Sunken Debris
+        const coralColors = [0xf43f5e, 0xa855f7, 0xfb923c, 0x14b8a6, 0x38bdf8];
+        const baseRockMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+        for (let i = 0; i < 48; i++) {
             const ang = Math.random() * Math.PI * 2;
-            const rad = 12 + Math.random() * (ARENA_RADIUS - 16);
+            const rad = 14 + Math.random() * (ARENA_RADIUS - 20);
             const x = Math.cos(ang) * rad;
             const z = Math.sin(ang) * rad;
-            const h = 2 + Math.random() * 5;
-            const geo = new THREE.DodecahedronGeometry(h * 0.6, 0);
-            const mat = new THREE.MeshStandardMaterial({
-                color: coralColors[i % coralColors.length],
-                roughness: 0.7
-            });
-            const coral = new THREE.Mesh(geo, mat);
-            coral.position.set(x, FLOOR_Y + h * 0.3, z);
-            coral.scale.set(1, 1.4, 1);
-            scene.add(coral);
+            const col = coralColors[i % coralColors.length];
+
+            const coralGroup = new THREE.Group();
+            coralGroup.position.set(x, FLOOR_Y, z);
+
+            const pedestal = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 1), baseRockMat);
+            pedestal.scale.set(1.2, 0.5, 1.2);
+            coralGroup.add(pedestal);
+
+            const branchMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, emissive: col, emissiveIntensity: 0.18 });
+            const tipMat = new THREE.MeshBasicMaterial({ color: col });
+            const branches = 3 + (i % 4);
+            for (let b = 0; b < branches; b++) {
+                const h = 2.5 + Math.random() * 4.5;
+                const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.55, h, 8), branchMat);
+                const bAng = (b / branches) * Math.PI * 2;
+                branch.position.set(Math.cos(bAng) * 0.9, h * 0.5, Math.sin(bAng) * 0.9);
+                branch.rotation.z = (Math.random() - 0.5) * 0.5;
+                branch.rotation.x = (Math.random() - 0.5) * 0.5;
+                const tip = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), tipMat);
+                tip.position.y = h * 0.5;
+                branch.add(tip);
+                coralGroup.add(branch);
+            }
+            scene.add(coralGroup);
+        }
+
+        // Random Sunken Debris & Wreckage
+        const debrisMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.4 });
+        const hazardMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.4, roughness: 0.5 });
+        for (let i = 0; i < 24; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 18 + Math.random() * (ARENA_RADIUS - 26);
+            const crate = new THREE.Group();
+            crate.position.set(Math.cos(ang) * rad, FLOOR_Y + 1.4, Math.sin(ang) * rad);
+            crate.rotation.set((Math.random() - 0.5) * 0.4, Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.4);
+            const box = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.4, 3.2), debrisMat);
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.4, 3.3), hazardMat);
+            crate.add(box, stripe);
+            scene.add(crate);
         }
 
         // Swaying Kelp
@@ -296,24 +439,38 @@
         const pMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.45, transparent: true, opacity: 0.65 });
         planktonPoints = new THREE.Points(pGeo, pMat);
         scene.add(planktonPoints);
+        buildAquariumBase();
     }
 
     // ==================== 3D SHARK MODEL ====================
-    let sharkGroup, sharkTail, sharkJaw, sharkShieldMesh, sharkAuraMesh, sharkLaserGroup, sharkJetGroup, sharkScalesGroup, sharkMissileGroup;
+    let sharkGroup, sharkTail, sharkJaw, sharkShieldMesh, sharkAuraMesh, sharkLaserGroup, sharkJetGroup, sharkScalesGroup, sharkMissileGroup, sharkFlashlight;
+    let flashlightOn = true;
 
-    function createSharkSkinTextures() {
+    const SHARK_SKINS = {
+        slate:  { top: '#0b1d33', mid: '#16385c', low: '#1e4a73', belly: '#f8fafc', glow: '#00e5ff' },
+        blue:   { top: '#0369a1', mid: '#0284c7', low: '#38bdf8', belly: '#f0f9ff', glow: '#38bdf8' },
+        camo:   { top: '#14532d', mid: '#15803d', low: '#22c55e', belly: '#ecfdf5', glow: '#4ade80' },
+        arctic: { top: '#7dd3fc', mid: '#bae6fd', low: '#e0f2fe', belly: '#ffffff', glow: '#00f0ff' },
+        magma:  { top: '#09090b', mid: '#27272a', low: '#7f1d1d', belly: '#fca5a5', glow: '#ef4444' },
+        gold:   { top: '#a16207', mid: '#ca8a04', low: '#eab308', belly: '#fefce8', glow: '#fde047' }
+    };
+    let currentSkin = localStorage.getItem('battlesharks_skin') || 'slate';
+    let sharkBodyMat = null;
+
+    function createSharkSkinTextures(skinKey = currentSkin) {
+        const pal = SHARK_SKINS[skinKey] || SHARK_SKINS.slate;
         const w = 512, h = 512;
         const diffCanvas = document.createElement('canvas');
         diffCanvas.width = w; diffCanvas.height = h;
         const dCtx = diffCanvas.getContext('2d');
 
-        // Great White countershading: deep metallic slate-blue dorsal -> crisp jagged white belly
+        // Great White countershading
         const grad = dCtx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0.0, '#0b1d33');
-        grad.addColorStop(0.45, '#16385c');
-        grad.addColorStop(0.56, '#1e4a73');
+        grad.addColorStop(0.0, pal.top);
+        grad.addColorStop(0.45, pal.mid);
+        grad.addColorStop(0.56, pal.low);
         grad.addColorStop(0.60, '#e2e8f0');
-        grad.addColorStop(1.0, '#f8fafc');
+        grad.addColorStop(1.0, pal.belly);
         dCtx.fillStyle = grad;
         dCtx.fillRect(0, 0, w, h);
 
@@ -335,7 +492,7 @@
         const eCtx = emCanvas.getContext('2d');
         eCtx.fillStyle = '#000000';
         eCtx.fillRect(0, 0, w, h);
-        eCtx.strokeStyle = '#00e5ff';
+        eCtx.strokeStyle = pal.glow;
         eCtx.lineWidth = 2;
         for (let i = 0; i < 18; i++) {
             eCtx.beginPath();
@@ -355,6 +512,16 @@
         return { map, emissiveMap };
     }
 
+    function applySharkSkin(skinKey) {
+        currentSkin = skinKey;
+        localStorage.setItem('battlesharks_skin', skinKey);
+        if (!sharkBodyMat) return;
+        const { map, emissiveMap } = createSharkSkinTextures(skinKey);
+        sharkBodyMat.map = map;
+        sharkBodyMat.emissiveMap = emissiveMap;
+        sharkBodyMat.needsUpdate = true;
+    }
+
     function buildSharkMesh() {
         sharkGroup = new THREE.Group();
 
@@ -367,6 +534,7 @@
             roughness: 0.28,
             metalness: 0.38
         });
+        sharkBodyMat = bodyMat;
         const bellyMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.42, metalness: 0.1 });
         const finMat = new THREE.MeshStandardMaterial({ color: 0x0b1f38, roughness: 0.32, metalness: 0.42 });
         const gumMat = new THREE.MeshStandardMaterial({ color: 0x9f1239, roughness: 0.6 });
@@ -560,28 +728,97 @@
         sharkMissileGroup.visible = false;
         sharkGroup.add(sharkMissileGroup);
 
+        // 7. Cyber-Flashlight (SpotLight pointing -Z)
+        sharkFlashlight = new THREE.SpotLight(0xa5f3fc, 2.8, 75, Math.PI / 5, 0.45, 1.2);
+        sharkFlashlight.position.set(0, 0.45, -2.5);
+        const flashTarget = new THREE.Object3D();
+        flashTarget.position.set(0, 0, -20);
+        sharkGroup.add(flashTarget);
+        sharkFlashlight.target = flashTarget;
+        sharkGroup.add(sharkFlashlight);
+
         scene.add(sharkGroup);
     }
 
     // ==================== ENTITIES ====================
     const preys = [];
     const enemies = [];
+    const friendlySharks = [];
     const projectiles = [];
     const particles = [];
     const acidClouds = [];
+
+    function spawnFriendlySharks() {
+        for (const f of friendlySharks) scene.remove(f.mesh);
+        friendlySharks.length = 0;
+
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.35, metalness: 0.4 });
+        const bellyMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.5 });
+        const finMat = new THREE.MeshStandardMaterial({ color: 0x0369a1, roughness: 0.4 });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00f5a0 });
+
+        for (let i = 0; i < 3; i++) {
+            const g = new THREE.Group();
+            const torso = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), bodyMat);
+            torso.scale.set(0.9, 0.85, 2.4);
+            const belly = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 10), bellyMat);
+            belly.scale.set(0.8, 0.5, 2.1);
+            belly.position.y = -0.28;
+            const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.3, 8), finMat);
+            dorsal.scale.set(0.2, 1, 1);
+            dorsal.position.set(0, 1.0, 0.2);
+            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), eyeMat);
+            eyeL.position.set(-0.5, 0.2, -1.5);
+            const eyeR = eyeL.clone();
+            eyeR.position.x = 0.5;
+            g.add(torso, belly, dorsal, eyeL, eyeR);
+
+            const ang = (i / 3) * Math.PI * 2;
+            g.position.set(AQUARIUM_POS.x + Math.cos(ang) * 20, AQUARIUM_POS.y + 2, AQUARIUM_POS.z + Math.sin(ang) * 20);
+            scene.add(g);
+            friendlySharks.push({ mesh: g, pos: g.position, angle: ang, biteCooldown: 0 });
+        }
+    }
 
     function spawnPrey() {
         if (preys.length >= 38) return;
         const type = PREY_TYPES[Math.floor(Math.random() * PREY_TYPES.length)];
         const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: type.color, roughness: 0.4 });
-        const body = new THREE.Mesh(new THREE.SphereGeometry(type.size * 0.65, 10, 8), mat);
-        body.scale.set(0.8, 0.85, 1.5);
+        const mat = new THREE.MeshStandardMaterial({ color: type.color, roughness: 0.35, metalness: 0.2 });
+        const finMat = new THREE.MeshStandardMaterial({ color: type.color, roughness: 0.45, transparent: true, opacity: 0.85 });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x020617 });
+
+        const s = type.size;
+        const body = new THREE.Mesh(new THREE.SphereGeometry(s * 0.65, 20, 14), mat);
+        body.scale.set(0.72, 0.88, 1.65);
         group.add(body);
 
-        const tail = new THREE.Mesh(new THREE.ConeGeometry(type.size * 0.45, type.size * 0.8, 4), mat);
+        // Dorsal & Pectoral Fins
+        const dorsal = new THREE.Mesh(new THREE.ConeGeometry(s * 0.3, s * 0.7, 6), finMat);
+        dorsal.scale.set(0.2, 1, 1.2);
+        dorsal.position.set(0, s * 0.68, 0);
+        group.add(dorsal);
+
+        [-1, 1].forEach((side) => {
+            const pec = new THREE.Mesh(new THREE.ConeGeometry(s * 0.22, s * 0.6, 5), finMat);
+            pec.scale.set(0.2, 1, 0.8);
+            pec.position.set(side * s * 0.48, -s * 0.1, -s * 0.15);
+            pec.rotation.z = -side * 1.1;
+            group.add(pec);
+
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(s * 0.14, 10, 10), eyeMat);
+            eye.position.set(side * s * 0.34, s * 0.15, -s * 0.72);
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.08, 8, 8), pupilMat);
+            pupil.position.set(side * s * 0.42, s * 0.15, -s * 0.76);
+            group.add(eye, pupil);
+        });
+
+        // Forked Tail Fin
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(s * 0.48, s * 0.85, 6), finMat);
+        tail.scale.set(0.22, 1, 1);
         tail.rotation.x = Math.PI / 2;
-        tail.position.z = type.size * 0.95;
+        tail.position.z = s * 1.05;
         group.add(tail);
 
         const ang = Math.random() * Math.PI * 2;
@@ -609,30 +846,94 @@
 
         if (type.id === 'mine') {
             const sphere = new THREE.Mesh(
-                new THREE.DodecahedronGeometry(type.size * 0.7, 1),
-                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 })
+                new THREE.SphereGeometry(type.size * 0.7, 18, 14),
+                new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.25 })
             );
             const core = new THREE.Mesh(
-                new THREE.SphereGeometry(type.size * 0.35, 8, 8),
+                new THREE.SphereGeometry(type.size * 0.35, 10, 10),
                 new THREE.MeshBasicMaterial({ color: 0xff0033 })
             );
             group.add(sphere, core);
+            const spikeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.85 });
+            for (let s = 0; s < 10; s++) {
+                const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.9, 6), spikeMat);
+                const phi = Math.acos(1 - 2 * (s + 0.5) / 10);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * s;
+                spike.position.setFromSphericalCoords(type.size * 0.82, phi, theta);
+                spike.lookAt(spike.position.clone().multiplyScalar(2));
+                spike.rotateX(Math.PI / 2);
+                group.add(spike);
+            }
         } else if (type.id === 'toxic') {
             const barrel = new THREE.Mesh(
-                new THREE.CylinderGeometry(type.size * 0.55, type.size * 0.55, type.size * 1.4, 12),
-                new THREE.MeshStandardMaterial({ color: 0x84cc16, emissive: 0x3f6212, roughness: 0.4 })
+                new THREE.CylinderGeometry(type.size * 0.55, type.size * 0.55, type.size * 1.4, 16),
+                new THREE.MeshStandardMaterial({ color: 0x84cc16, emissive: 0x3f6212, roughness: 0.35 })
             );
-            group.add(barrel);
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+            const rim1 = new THREE.Mesh(new THREE.TorusGeometry(type.size * 0.56, 0.1, 8, 18), rimMat);
+            rim1.rotation.x = Math.PI / 2;
+            rim1.position.y = type.size * 0.5;
+            const rim2 = rim1.clone();
+            rim2.position.y = -type.size * 0.5;
+            group.add(barrel, rim1, rim2);
+        } else if (type.id === 'diver') {
+            const suitMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 });
+            const armorMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.7, roughness: 0.25 });
+            const visorMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.5, 0.7), suitMat);
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 14), armorMat);
+            helmet.position.y = 1.1;
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.32, 0.35), visorMat);
+            visor.position.set(0, 1.12, -0.35);
+            const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.2, 10), armorMat);
+            tank.position.set(-0.26, 0.1, 0.5);
+            const tank2 = tank.clone();
+            tank2.position.x = 0.26;
+            const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.6, 8), armorMat);
+            gun.rotation.x = Math.PI / 2;
+            gun.position.set(0.65, 0.2, -0.7);
+            group.add(torso, helmet, visor, tank, tank2, gun);
+        } else if (type.id === 'sentinel') {
+            const hullMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, metalness: 0.75, roughness: 0.25 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.3 });
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+            const core = new THREE.Mesh(new THREE.SphereGeometry(type.size * 0.55, 16, 14), hullMat);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(type.size * 0.8, 0.14, 8, 24), darkMat);
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(type.size * 0.25, 10, 10), glowMat);
+            eye.position.z = -type.size * 0.5;
+            [-1, 1].forEach((side) => {
+                const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.8, 10), darkMat);
+                pod.rotation.x = Math.PI / 2;
+                pod.position.set(side * type.size * 0.75, 0, 0);
+                group.add(pod);
+            });
+            group.add(core, ring, eye);
+        } else if (type.id === 'cyclops') {
+            const relicMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, metalness: 0.5, roughness: 0.4 });
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+            const body = new THREE.Mesh(new THREE.SphereGeometry(type.size * 0.65, 18, 14), relicMat);
+            body.scale.set(1, 0.9, 1.6);
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(type.size * 0.32, 14, 14), eyeMat);
+            eye.position.set(0, 0.2, -type.size * 0.85);
+            [-1, 1].forEach((side) => {
+                const wing = new THREE.Mesh(new THREE.ConeGeometry(type.size * 0.9, type.size * 2.2, 4), relicMat);
+                wing.scale.set(0.15, 1, 1.1);
+                wing.position.set(side * type.size * 1.1, 0.2, 0);
+                wing.rotation.z = -side * 1.35;
+                group.add(wing);
+            });
+            group.add(body, eye);
         } else {
             const body = new THREE.Mesh(
-                new THREE.BoxGeometry(type.size * 0.9, type.size * 0.9, type.size * 1.6),
+                new THREE.SphereGeometry(type.size * 0.65, 16, 12),
                 new THREE.MeshStandardMaterial({ color: type.color, metalness: 0.6, roughness: 0.3 })
             );
+            body.scale.set(0.85, 0.75, 1.8);
             const visor = new THREE.Mesh(
-                new THREE.SphereGeometry(type.size * 0.4, 8, 8),
+                new THREE.SphereGeometry(type.size * 0.32, 10, 10),
                 new THREE.MeshBasicMaterial({ color: 0xff0055 })
             );
-            visor.position.z = -type.size * 0.7;
+            visor.position.z = -type.size * 0.95;
             group.add(body, visor);
         }
 
@@ -661,20 +962,37 @@
         boss.pos.set(0, 10, -ARENA_RADIUS + 18);
 
         const group = new THREE.Group();
-        const hullMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.25 });
+        const hullMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85, roughness: 0.22 });
+        const ribMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 });
         const glowMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
 
-        const hull = new THREE.Mesh(new THREE.SphereGeometry(5.5, 18, 14), hullMat);
-        hull.scale.set(1.1, 0.85, 2.4);
+        const hull = new THREE.Mesh(new THREE.SphereGeometry(5.5, 28, 20), hullMat);
+        hull.scale.set(1.1, 0.85, 2.5);
         group.add(hull);
 
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 12), glowMat);
-        eye.position.set(0, 0.6, -11.5);
+        // Armored Hull Ribs
+        for (let r = -6; r <= 6; r += 4) {
+            const rib = new THREE.Mesh(new THREE.TorusGeometry(5.3, 0.35, 8, 24), ribMat);
+            rib.position.z = r;
+            group.add(rib);
+        }
+
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 16), glowMat);
+        eye.position.set(0, 0.6, -12.2);
         group.add(eye);
 
-        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 5.5, 4.5), hullMat);
-        fin.position.set(0, 5.2, 1);
+        const fin = new THREE.Mesh(new THREE.ConeGeometry(2.2, 6.5, 8), hullMat);
+        fin.scale.set(0.2, 1, 1.4);
+        fin.position.set(0, 5.8, 1);
+        fin.rotation.x = 0.3;
         group.add(fin);
+
+        [-1, 1].forEach((side) => {
+            const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 5.5, 12), ribMat);
+            pod.rotation.x = Math.PI / 2;
+            pod.position.set(side * 6.2, -0.5, 0);
+            group.add(pod);
+        });
 
         boss.mesh = group;
         boss.mesh.position.copy(boss.pos);
@@ -735,8 +1053,14 @@
                 e.preventDefault();
                 toggleLab();
             }
+        } else if (e.code === 'KeyI' && state.running) {
+            toggleInventory();
+        } else if (e.code === 'KeyL' && state.running && !state.paused) {
+            toggleFlashlight();
         } else if (e.code === 'Escape') {
-            if (!document.getElementById('labModal').classList.contains('hidden')) {
+            if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
+                toggleInventory(false);
+            } else if (!document.getElementById('labModal').classList.contains('hidden')) {
                 toggleLab(false);
             } else if (state.running) {
                 togglePause();
@@ -977,6 +1301,30 @@
         }
         camera.lookAt(camCurrentLook);
 
+        // BS-07 Aquarium Base Regen & Defense Turret
+        const inAquarium = player.pos.distanceTo(AQUARIUM_POS) < 11;
+        if (inAquarium && state.upgrades.aquariumRegen && player.health < player.maxHealth) {
+            player.health = Math.min(player.maxHealth, player.health + 18 * dt);
+        }
+        if (state.upgrades.aquariumTurret && enemies.length > 0) {
+            state.turretTimer = (state.turretTimer || 0) - dt;
+            if (state.turretTimer <= 0) {
+                const near = enemies.find(e => e.pos.distanceTo(AQUARIUM_POS) < 42);
+                if (near) {
+                    state.turretTimer = 1.4;
+                    const dir = near.pos.clone().sub(AQUARIUM_POS).normalize();
+                    spawnProjectile(AQUARIUM_POS.clone().add(new THREE.Vector3(0, 5, 0)), dir, 55, 0x00e5ff, true, false, 35);
+                }
+            }
+        }
+
+        // Tutorial Step 1: Exit BS-07 Aquarium Bay
+        if (tutorial.active && tutorial.step === 0 && player.pos.z < 2) {
+            tutorial.step = 1;
+            document.getElementById('tutText').textContent = 'Step 2: Swim into 2 fish to devour them and gather Biomass!';
+            sfx.upgrade();
+        }
+
         // Spawning
         state.spawnTimer -= dt;
         if (state.spawnTimer <= 0) {
@@ -987,6 +1335,39 @@
 
         if (!boss.active && state.score >= state.nextBossScore) {
             spawnBoss();
+        }
+
+        // Friendly Guard Sharks defending BS-07
+        for (const f of friendlySharks) {
+            if (f.biteCooldown > 0) f.biteCooldown -= dt;
+            let targetIdx = -1;
+            let bestDist = 55;
+            for (let i = 0; i < enemies.length; i++) {
+                const d = enemies[i].pos.distanceTo(AQUARIUM_POS);
+                if (d < bestDist) { bestDist = d; targetIdx = i; }
+            }
+            if (targetIdx !== -1) {
+                const targetPos = enemies[targetIdx].pos;
+                const dir = targetPos.clone().sub(f.pos).normalize();
+                f.pos.addScaledVector(dir, 14 * dt);
+                f.mesh.lookAt(targetPos);
+                if (f.pos.distanceTo(targetPos) < 3.2 && f.biteCooldown <= 0) {
+                    f.biteCooldown = 0.7;
+                    enemies[targetIdx].hp -= 35;
+                    spawnParticles(targetPos, 0x00f5a0, 8, 8);
+                    if (enemies[targetIdx].hp <= 0) destroyEnemy(targetIdx);
+                }
+            } else {
+                f.angle += dt * 0.45;
+                const patrolPos = new THREE.Vector3(
+                    AQUARIUM_POS.x + Math.cos(f.angle) * 22,
+                    AQUARIUM_POS.y + Math.sin(f.angle * 2) * 3,
+                    AQUARIUM_POS.z + Math.sin(f.angle) * 22
+                );
+                const dir = patrolPos.clone().sub(f.pos).normalize();
+                f.pos.addScaledVector(dir, 10 * dt);
+                f.mesh.lookAt(patrolPos);
+            }
         }
 
         // Update Preys
@@ -1004,6 +1385,8 @@
 
             if (p.pos.distanceTo(player.pos) < eatRadius + p.type.size * 0.5) {
                 state.biomass += p.type.biomass;
+                state.coins += p.type.biomass * 2;
+                localStorage.setItem('battlesharks_coins', String(state.coins));
                 state.score += p.type.score;
                 player.health = Math.min(player.maxHealth, player.health + 6 + p.type.biomass * 2);
                 player.jawTimer = 0.25;
@@ -1012,6 +1395,14 @@
                 spawnParticles(p.pos, p.type.color, 8, 8);
                 scene.remove(p.mesh);
                 preys.splice(i, 1);
+                if (tutorial.active && tutorial.step === 1) {
+                    tutorial.preyEaten++;
+                    if (tutorial.preyEaten >= 2) {
+                        tutorial.step = 2;
+                        document.getElementById('tutText').textContent = 'Step 3: Bite or Laser (Click/F) an enemy mine or diver!';
+                        sfx.upgrade();
+                    }
+                }
             }
         }
 
@@ -1037,11 +1428,19 @@
             }
 
             if (dist < eatRadius + e.type.size * 0.65) {
+                player.jawTimer = 0.25;
+                sfx.chomp();
                 if (player.isDashing) {
                     destroyEnemy(i);
                 } else {
-                    damagePlayer(e.type.damage);
-                    if (e.type.isStatic) destroyEnemy(i);
+                    // Bite enemy!
+                    e.hp -= 45 + player.level * 10;
+                    spawnParticles(e.pos, 0xff4d6d, 10, 10);
+                    if (e.hp <= 0) {
+                        destroyEnemy(i);
+                    } else {
+                        damagePlayer(e.type.damage * 0.5);
+                    }
                 }
             }
         }
@@ -1130,6 +1529,15 @@
             }
         }
 
+        // Depth-Driven Atmosphere (Subnautica-style biome transition)
+        const depthNorm = Math.max(0, Math.min(1, (SURFACE_Y - player.pos.y) / (SURFACE_Y - FLOOR_Y)));
+        const shallowCol = new THREE.Color(0x042f4b);
+        const abyssCol = new THREE.Color(0x010712);
+        const curCol = shallowCol.lerp(abyssCol, depthNorm);
+        scene.background.copy(curCol);
+        scene.fog.color.copy(curCol);
+        scene.fog.density = 0.0085 + depthNorm * 0.0065;
+
         // Environment Animation
         for (const k of kelpList) {
             k.rotation.z = Math.sin(t * 1.4 + k.userData.phase) * 0.12;
@@ -1145,6 +1553,8 @@
     function destroyEnemy(index) {
         const e = enemies[index];
         state.debris += e.type.debris;
+        state.coins += e.type.debris * 3;
+        localStorage.setItem('battlesharks_coins', String(state.coins));
         state.score += e.type.debris * 15;
         if (Math.random() < 0.35) state.mutagens += 1;
         gainXp(35);
@@ -1152,6 +1562,16 @@
         spawnParticles(e.pos, 0xff7b54, 16, 15);
         scene.remove(e.mesh);
         enemies.splice(index, 1);
+        if (tutorial.active && tutorial.step === 2) {
+            tutorial.active = false;
+            localStorage.setItem('battlesharks_tut_done', 'true');
+            state.score += 150;
+            state.biomass += 10;
+            state.debris += 5;
+            sfx.upgrade();
+            document.getElementById('tutText').textContent = '✅ BS-07 Tutorial Complete! (+150 Score, +10 Biomass, +5 Debris)';
+            setTimeout(() => document.getElementById('tutorialBanner').classList.add('hidden'), 3200);
+        }
     }
 
     function defeatBoss() {
@@ -1216,7 +1636,12 @@
         document.getElementById('xpBar').style.width = `${(player.xp / player.nextLevelXp) * 100}%`;
         document.getElementById('xpText').textContent = `XP ${Math.floor(player.xp)} / ${player.nextLevelXp}`;
         document.getElementById('hudScore').textContent = state.score;
+        document.getElementById('hudCoins').textContent = state.coins;
         document.getElementById('hudBiomass').textContent = state.biomass;
+        const depthM = Math.max(0, Math.round(SURFACE_Y - player.pos.y));
+        document.getElementById('hudDepth').textContent = `${depthM}m`;
+        const biomeName = depthM < 45 ? 'BS-07 Shallows' : depthM < 130 ? 'Sunken Ruins' : depthM < 220 ? 'Deep Trenches' : 'Abyssal Caverns';
+        document.getElementById('hudBiome').textContent = biomeName;
         document.getElementById('hudDebris').textContent = state.debris;
         document.getElementById('hudMutagens').textContent = state.mutagens;
 
@@ -1286,6 +1711,105 @@
         }
     }
 
+    function toggleFlashlight() {
+        flashlightOn = !flashlightOn;
+        if (sharkFlashlight) {
+            const mk2 = state.upgrades.flashlightMK2;
+            sharkFlashlight.intensity = flashlightOn ? (mk2 ? 5.2 : 2.8) : 0;
+            sharkFlashlight.distance = mk2 ? 140 : 75;
+            sharkFlashlight.angle = mk2 ? Math.PI / 3.5 : Math.PI / 5;
+        }
+        sfx.tone(flashlightOn ? 720 : 420, 'sine', 0.08, 0.1);
+        if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
+            renderInventory();
+        }
+    }
+
+    function renderInventory() {
+        const grid = document.getElementById('inventoryGrid');
+        grid.innerHTML = '';
+
+        // Flashlight item with ON/OFF toggle
+        const flashCard = document.createElement('div');
+        flashCard.className = 'upgrade-item owned';
+        const mk2 = state.upgrades.flashlightMK2;
+        flashCard.innerHTML = `
+            <div>
+                <div class="upgrade-title">🔦 Cyber-Flashlight ${mk2 ? 'MK-II' : 'MK-I'}</div>
+                <div class="upgrade-desc">Illuminates deep caves &amp; abyssal trenches. Shortcut: <b>L</b></div>
+            </div>
+            <div class="upgrade-cost">Status: <b>${flashlightOn ? 'ON' : 'OFF'}</b></div>
+            <button class="upgrade-btn">${flashlightOn ? 'TURN OFF' : 'TURN ON'}</button>
+        `;
+        flashCard.querySelector('button').addEventListener('click', toggleFlashlight);
+        grid.appendChild(flashCard);
+
+        // Equipped Upgrades
+        for (const u of UPGRADE_DEFS) {
+            if (!state.upgrades[u.id]) continue;
+            const card = document.createElement('div');
+            card.className = 'upgrade-item owned';
+            card.innerHTML = `
+                <div>
+                    <div class="upgrade-title">${u.name}</div>
+                    <div class="upgrade-desc">${u.desc}</div>
+                </div>
+                <div class="upgrade-cost">EQUIPPED</div>
+            `;
+            grid.appendChild(card);
+        }
+    }
+
+    function renderShop() {
+        document.getElementById('shopCoins').textContent = state.coins;
+        const grid = document.getElementById('shopGrid');
+        grid.innerHTML = '';
+        for (const item of SHOP_ITEMS) {
+            const owned = !!state.shopOwned[item.id];
+            const canAfford = state.coins >= item.cost;
+            const card = document.createElement('div');
+            card.className = `upgrade-item ${owned ? 'owned' : ''}`;
+            card.innerHTML = `
+                <div>
+                    <div class="upgrade-title">${item.name}</div>
+                    <div class="upgrade-desc">${item.desc}</div>
+                </div>
+                <div class="upgrade-cost">🪙 ${item.cost} Coins</div>
+                <button class="upgrade-btn" ${owned || !canAfford ? 'disabled' : ''}>
+                    ${owned ? 'OWNED' : 'BUY'}
+                </button>
+            `;
+            if (!owned && canAfford) {
+                card.querySelector('button').addEventListener('click', () => {
+                    state.coins -= item.cost;
+                    state.shopOwned[item.id] = true;
+                    localStorage.setItem('battlesharks_coins', String(state.coins));
+                    localStorage.setItem('battlesharks_shop', JSON.stringify(state.shopOwned));
+                    if (item.skin) applySharkSkin(item.skin);
+                    sfx.upgrade();
+                    renderShop();
+                });
+            }
+            grid.appendChild(card);
+        }
+    }
+
+    function toggleShop(force) {
+        const modal = document.getElementById('shopModal');
+        const open = force !== undefined ? force : modal.classList.contains('hidden');
+        modal.classList.toggle('hidden', !open);
+        state.paused = open;
+        if (open) renderShop();
+    }
+
+    function toggleInventory(force) {
+        const modal = document.getElementById('inventoryModal');
+        const open = force !== undefined ? force : modal.classList.contains('hidden');
+        modal.classList.toggle('hidden', !open);
+        state.paused = open;
+        if (open) renderInventory();
+    }
+
     function toggleLab(force) {
         const modal = document.getElementById('labModal');
         const open = force !== undefined ? force : modal.classList.contains('hidden');
@@ -1318,7 +1842,7 @@
 
         Object.assign(state, {
             running: true, paused: false, score: 0, biomass: 0, debris: 0, mutagens: 0,
-            upgrades: { lasers: false, thruster: false, shield: false, electric: false, acid: false, scales: false, missiles: false },
+            upgrades: { lasers: true, thruster: true, shield: false, electric: false, acid: false, scales: false, missiles: false },
             shieldActive: false, shieldTimer: 0, electricTimer: 0, acidTimer: 0, missileTimer: 0,
             spawnTimer: 0, difficultyTimer: 0, difficulty: 1, bossActive: false, nextBossScore: 600
         });
@@ -1328,10 +1852,21 @@
             level: 1, xp: 0, nextLevelXp: 120, scale: 1.0,
             dashCooldown: 0, dashTimer: 0, isDashing: false, laserCooldown: 0, jawTimer: 0, invulnTimer: 0
         });
-        player.pos.set(0, 6, 0);
+        player.pos.set(0, 6, 12);
+        tutorial.active = localStorage.getItem('battlesharks_tut_done') !== 'true';
+        tutorial.step = 0;
+        tutorial.preyEaten = 0;
+        tutorial.enemiesKilled = 0;
+        const tutEl = document.getElementById('tutorialBanner');
+        if (tutorial.active) {
+            tutEl.classList.remove('hidden');
+            document.getElementById('tutText').textContent = 'Step 1: Swim forward (W) out of BS-07 Aquarium Bay!';
+        } else {
+            tutEl.classList.add('hidden');
+        }
         sharkGroup.scale.setScalar(1);
-        sharkLaserGroup.visible = false;
-        sharkJetGroup.visible = false;
+        sharkLaserGroup.visible = true;
+        sharkJetGroup.visible = true;
         sharkShieldMesh.visible = false;
         sharkAuraMesh.visible = false;
         sharkScalesGroup.visible = false;
@@ -1343,6 +1878,7 @@
 
         for (let i = 0; i < 20; i++) spawnPrey();
         for (let i = 0; i < 5; i++) spawnEnemy();
+        spawnFriendlySharks();
     }
 
     function startGame() {
@@ -1389,6 +1925,10 @@
     document.getElementById('btnRestartPause').addEventListener('click', startGame);
     document.getElementById('btnResume').addEventListener('click', togglePause);
     document.getElementById('btnPause').addEventListener('click', togglePause);
+    document.getElementById('btnShop').addEventListener('click', () => toggleShop());
+    document.getElementById('btnCloseShop').addEventListener('click', () => toggleShop(false));
+    document.getElementById('btnInventory').addEventListener('click', () => toggleInventory());
+    document.getElementById('btnCloseInv').addEventListener('click', () => toggleInventory(false));
     document.getElementById('btnLab').addEventListener('click', () => toggleLab());
     document.getElementById('btnCloseLab').addEventListener('click', () => toggleLab(false));
     document.getElementById('btnMute').addEventListener('click', (e) => {
@@ -1396,7 +1936,23 @@
         e.target.textContent = m ? '🔇' : '🔊';
     });
 
-    // Touch Joystick
+    document.querySelectorAll('#skinSelector .skin-swatch').forEach((btn) => {
+        if (btn.dataset.skin === currentSkin) {
+            document.querySelectorAll('#skinSelector .skin-swatch').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#skinSelector .skin-swatch').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applySharkSkin(btn.dataset.skin);
+        });
+    });
+
+    document.getElementById('btnSkipTut').addEventListener('click', () => {
+        tutorial.active = false;
+        localStorage.setItem('battlesharks_tut_done', 'true');
+        document.getElementById('tutorialBanner').classList.add('hidden');
+    });
     const joyZone = document.getElementById('joystickZone');
     const joyKnob = document.getElementById('joystickKnob');
     joyZone.addEventListener('touchmove', (e) => {

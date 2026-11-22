@@ -34,6 +34,14 @@
 
         <!-- In-Game HUD -->
         <div id="hud" class="hidden">
+            <!-- BS-07 Tutorial Mission Banner -->
+            <div id="tutorialBanner" class="tutorial-banner hidden">
+                <div class="tut-header">
+                    <span class="tut-badge">BS-07 TUTORIAL</span>
+                    <button id="btnSkipTut" class="tut-skip">Skip</button>
+                </div>
+                <div class="tut-text" id="tutText">Swim forward (W) out of BS-07 Aquarium Bay!</div>
+            </div>
             <div class="hud-top-left">
                 <div class="stat-panel">
                     <div class="level-row">
@@ -58,7 +66,7 @@
             <div class="hud-top-center">
                 <div class="score-panel">
                     <div class="score-main">SCORE <span id="hudScore">0</span></div>
-                    <div class="score-best">BEST <span id="hudHighScore">0</span></div>
+                    <div class="score-best">BEST <span id="hudHighScore">0</span> &nbsp;|&nbsp; <span id="hudDepth">0m</span> · <span id="hudBiome">BS-07 Shallows</span></div>
                 </div>
                 <div id="bossHud" class="hidden">
                     <div class="boss-name">LEVIATHAN MECHA-SUB</div>
@@ -70,11 +78,14 @@
 
             <div class="hud-top-right">
                 <div class="resource-panel">
+                    <div class="res-item" title="Gold Coins">🪙 <span id="hudCoins">0</span></div>
                     <div class="res-item" title="Biomass (from Prey)">🧬 <span id="hudBiomass">0</span></div>
                     <div class="res-item" title="Cyber-Debris (from Enemies)">⚙️ <span id="hudDebris">0</span></div>
                     <div class="res-item" title="Mutagens (Rare)">🧪 <span id="hudMutagens">0</span></div>
                 </div>
                 <div class="hud-actions">
+                    <button id="btnShop" class="hud-btn" title="BattleSharks Shop">🛒 SHOP</button>
+                    <button id="btnInventory" class="hud-btn" title="Inventory (I)">🎒 INV</button>
                     <button id="btnLab" class="hud-btn lab-btn" title="Upgrade Lab (Tab / U)">🧬 LAB <span class="badge-dot hidden" id="labBadge">!</span></button>
                     <button id="btnMute" class="hud-btn" title="Toggle Audio">🔊</button>
                     <button id="btnPause" class="hud-btn" title="Pause (Esc)">⏸️</button>
@@ -137,8 +148,42 @@
                         <div><b>Tab / U</b> Upgrade Lab</div>
                         <div><b>Esc</b> Pause</div>
                     </div>
+                    <div class="skin-selector" id="skinSelector">
+                        <span class="skin-label">SHARK SKIN:</span>
+                        <button class="skin-swatch active" data-skin="slate" title="Default Slate" style="background:#16385c;"></button>
+                        <button class="skin-swatch" data-skin="blue" title="Ocean Blue" style="background:#0284c7;"></button>
+                        <button class="skin-swatch" data-skin="camo" title="Camo Green" style="background:#15803d;"></button>
+                        <button class="skin-swatch" data-skin="arctic" title="Arctic White" style="background:#bae6fd;"></button>
+                        <button class="skin-swatch" data-skin="magma" title="Magma" style="background:linear-gradient(135deg,#18181b,#dc2626);"></button>
+                        <button class="skin-swatch" data-skin="gold" title="Golden" style="background:#eab308;"></button>
+                    </div>
                     <button id="btnStart" class="primary-btn">DIVE IN</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shopModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🛒 BATTLESHARKS SHOP</h2>
+                    <div class="lab-resources">
+                        <span>🪙 Coins: <b id="shopCoins">0</b></span>
+                    </div>
+                    <button id="btnCloseShop" class="close-btn">✕</button>
+                </div>
+                <div class="upgrades-grid" id="shopGrid"></div>
+            </div>
+        </div>
+
+        <!-- Inventory Modal -->
+        <div id="inventoryModal" class="overlay hidden">
+            <div class="modal-card lab-card">
+                <div class="modal-header">
+                    <h2>🎒 SHARK INVENTORY &amp; GEAR</h2>
+                    <button id="btnCloseInv" class="close-btn">✕</button>
+                </div>
+                <div class="upgrades-grid" id="inventoryGrid"></div>
             </div>
         </div>
 
