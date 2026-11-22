@@ -25,8 +25,16 @@
             this.pitch = 0;
 
             const bonusHp = permanentStats.health ? permanentStats.health * 25 : 0;
-            this.maxHp = rData.maxHp + bonusHp;
+            const raceMult = (window.DevDocMechanics && typeof window.DevDocMechanics.getHpMult === 'function')
+                ? window.DevDocMechanics.getHpMult(race) : 1.0;
+            this.maxHp = Math.round((rData.maxHp + bonusHp) * raceMult);
             this.hp = this.maxHp;
+            this.tempHp = 0;
+            this.wounded = false;
+            this.rageActiveTimer = 0;
+            this.adrenalineTimer = 0;
+            this.drunkTimer = 0;
+            this.peakY = 0;
             this.hpRegen = rData.hpRegen;
             this.stamina = rData.stamina;
             this.maxStamina = rData.stamina;
@@ -66,10 +74,25 @@
             const GameData = window.GraveGainGameData || {};
             const Race = GameData.Race || { HUMAN: 'human', ELF: 'elf', DWARF: 'dwarf', ORC: 'orc' };
 
-            // Health & stamina regeneration
+            // Health, Temp HP & stamina regeneration
             if (!this.stoneForm) {
-                this.hp = Math.min(this.maxHp, this.hp + this.hpRegen * dt);
+                const cap = this.wounded ? this.maxHp * 0.75 : this.maxHp;
+                if (this.hp < cap) {
+                    this.hp = Math.min(cap, this.hp + this.hpRegen * dt);
+                }
+                if (this.wounded && this.hp >= this.maxHp * 0.75) {
+                    this.wounded = false;
+                    if (window.GraveGainGame?.combatText) {
+                        window.GraveGainGame.combatText.spawnText(this.x, 26, this.y, 'WOUND CLEARED!', 'heal');
+                    }
+                }
             }
+            if (this.tempHp > 0) {
+                this.tempHp = Math.max(0, this.tempHp - 1.5 * dt);
+            }
+            if (this.adrenalineTimer > 0) this.adrenalineTimer = Math.max(0, this.adrenalineTimer - dt);
+            if (this.drunkTimer > 0) this.drunkTimer = Math.max(0, this.drunkTimer - dt);
+            if (this.rageActiveTimer > 0) this.rageActiveTimer = Math.max(0, this.rageActiveTimer - dt);
             if (this.race === Race.ELF) {
                 this.mana = Math.min(this.maxMana, this.mana + 3.0 * dt);
             }
@@ -106,6 +129,7 @@
 
             let currentSpeed = this.speed;
             if (this.hasPerk('swift')) currentSpeed *= 1.25;
+            if (this.adrenalineTimer > 0) currentSpeed *= 1.35;
 
             const isRunning = (input.keys['ShiftLeft'] || input.keys['ShiftRight']) && this.stamina > 5;
             if (isRunning) {
@@ -164,19 +188,36 @@
             } else if (input.keys['Space'] && !this.grounded && this.race === Race.HUMAN && this.stamina > 5) {
                 this.platVy = Math.min(180, this.platVy + 400 * dt);
                 this.stamina = Math.max(0, this.stamina - 30 * dt);
+            } else if (input.keys['Space'] && !this.grounded && this.race === Race.ELF && this.platVy < 0) {
+                // Elf Hover-Glide
+                this.platVy = Math.max(this.platVy, -65);
+            } else if (input.keys['Space'] && !this.grounded && this.race === Race.ORC) {
+                // Orc Stomp accelerate down
+                this.platVy = Math.min(this.platVy, -420);
             }
 
             if (!this.grounded) {
+                this.peakY = Math.max(this.peakY || 0, this.yElevation);
                 this.platVy -= 750 * dt;
                 this.yElevation += this.platVy * dt;
                 if (this.yElevation <= 0) {
                     this.yElevation = 0;
                     this.platVy = 0;
                     this.grounded = true;
+                    if (this.race === Race.ORC && this.peakY > 35 && window.GraveGainGame) {
+                        window.GraveGainGame.dealAoEDamage(this.x, this.y, 130, 28, 'stomp');
+                        window.GraveGainGame.combatText.spawnText(this.x, 22, this.y, 'ORC STOMP!', 'crit');
+                    }
+                    this.peakY = 0;
                 }
             }
 
             physics.moveEntityWithCollision(this, this.vx * dt, this.vy * dt, tilemap);
+        }
+
+        addTempHp(amt) {
+            if (this.isDead || amt <= 0) return;
+            this.tempHp = Math.min(this.maxHp * 0.75, (this.tempHp || 0) + amt);
         }
 
         hasPerk(id) {
@@ -224,6 +265,12 @@
                 this.shieldCooldown = 5.0;
             }
 
+            if (this.tempHp > 0 && dmg > 0) {
+                const absorbedTemp = Math.min(this.tempHp, dmg);
+                this.tempHp -= absorbedTemp;
+                dmg -= absorbedTemp;
+            }
+
             this.hp = Math.max(0, this.hp - dmg);
 
             if (window.GraveGainGame) {
@@ -232,7 +279,19 @@
                 window.GraveGainGame.combatText.spawnText(this.x, 20, this.y, `-${Math.round(dmg)}`, 'player-dmg');
             }
 
-            if (this.hp <= 0 && !this.isDead) {
+            if (this.hp <= 0 && !this.wounded && !this.isDead) {
+                // Second Wind / Wounded State (Dev Doc 2)
+                this.wounded = true;
+                this.hp = Math.max(10, Math.round(this.maxHp * 0.10));
+                this.tempHp = Math.round(this.maxHp * 0.40);
+                if (window.GraveGainGame) {
+                    window.GraveGainGame.audio.playSfx('levelup', 0.85);
+                    window.GraveGainGame.combatText.showBanner('⚠️ WOUNDED! HEAL TO 75% REAL HP TO RECOVER');
+                }
+                return;
+            }
+
+            if (this.hp <= 0 && this.wounded && !this.isDead) {
                 this.isDead = true;
                 if (window.GraveGainGame) window.GraveGainGame.gameOver(false);
             }

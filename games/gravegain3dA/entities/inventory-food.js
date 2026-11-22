@@ -2,26 +2,34 @@
     'use strict';
 
     const FOOD_ITEMS = [
-        { id: 'meat',   name: 'Roasted Meat',   icon: '🍖', hp: 35, stamina: 0,  value: 12, desc: 'Restores 35 HP' },
-        { id: 'apple',  name: 'Crimson Apple',  icon: '🍎', hp: 20, stamina: 25, value: 10, desc: 'Restores 20 HP & 25 Stamina' },
-        { id: 'bread',  name: 'Hearth Bread',   icon: '🍞', hp: 25, stamina: 15, value: 9,  desc: 'Restores 25 HP & 15 Stamina' },
-        { id: 'berry',  name: 'Void Berry',     icon: '🫐', hp: 45, stamina: 40, value: 20, desc: 'Restores 45 HP & 40 Stamina' },
-        { id: 'honey',  name: 'Golden Honey',   icon: '🍯', hp: 55, stamina: 20, value: 28, desc: 'Restores 55 HP & +20 Stamina' },
-        { id: 'shroom', name: 'Glowing Shroom', icon: '🍄', hp: 30, stamina: 50, value: 18, desc: 'Restores 30 HP & 50 Stamina' }
+        { id: 'meat',    name: 'Red Meat',    icon: '🍖', hp: 180, digestTime: 120, hpPerSec: 1.5,  staminaBoost: 0.05, stamina: 10, value: 18, desc: '+1.5 Real HP/s (120s)' },
+        { id: 'cheese',  name: 'Aged Cheese', icon: '🧀', hp: 144, digestTime: 180, hpPerSec: 0.8,  staminaBoost: 0.20, stamina: 20, value: 16, desc: '+0.8 HP/s & +20% Stam Regen' },
+        { id: 'fruit',   name: 'Sun Fruit',   icon: '🍎', hp: 30,  digestTime: 30,  hpPerSec: 1.0,  staminaBoost: 0.15, stamina: 25, value: 10, desc: '+1.0 HP/s (30s) & +15% Stam' },
+        { id: 'white',   name: 'White Meat',  icon: '🍗', hp: 90,  digestTime: 90,  hpPerSec: 1.0,  staminaBoost: 0.10, stamina: 15, value: 14, desc: '+1.0 Real HP/s (90s)' },
+        { id: 'bread',   name: 'Hearth Bread',icon: '🍞', hp: 45,  digestTime: 60,  hpPerSec: 0.75, staminaBoost: 0.05, stamina: 15, value: 9,  desc: '+0.75 Real HP/s (60s)' },
+        { id: 'fish',    name: 'River Fish',  icon: '🐟', hp: 100, digestTime: 80,  hpPerSec: 1.25, staminaBoost: 0.12, stamina: 20, value: 16, desc: '+1.25 Real HP/s (80s)' },
+        { id: 'berry',   name: 'Void Berries',icon: '🫐', hp: 32,  digestTime: 40,  hpPerSec: 0.8,  staminaBoost: 0.18, stamina: 35, value: 15, desc: '+0.8 HP/s & +18% Stam' },
+        { id: 'stew',    name: 'Hearty Stew', icon: '🍲', hp: 180, digestTime: 150, hpPerSec: 1.2,  staminaBoost: 0.16, stamina: 25, value: 26, desc: '+1.2 Real HP/s (150s)' },
+        { id: 'honey',   name: 'Golden Honey',icon: '🍯', hp: 42,  digestTime: 35,  hpPerSec: 1.2,  staminaBoost: 0.19, stamina: 20, value: 24, desc: '+1.2 HP/s & +19% Stam' },
+        { id: 'jerky',   name: 'Dried Jerky', icon: '🥩', hp: 182, digestTime: 130, hpPerSec: 1.4,  staminaBoost: 0.04, stamina: 10, value: 22, desc: '+1.4 Real HP/s (130s)' },
+        { id: 'shroom',  name: 'Mushrooms',   icon: '🍄', hp: 49,  digestTime: 55,  hpPerSec: 0.9,  staminaBoost: 0.09, stamina: 40, value: 18, desc: '+0.9 Real HP/s (55s)' },
+        { id: 'soup',    name: 'Moon Soup',   icon: '🥣', hp: 110, digestTime: 110, hpPerSec: 1.0,  staminaBoost: 0.14, stamina: 20, value: 20, desc: '+1.0 Real HP/s (110s)' }
     ];
 
     class InventoryManager {
         constructor() {
             this.foods = {}; // { foodId: count }
             this.weapons = []; // spare weapons in backpack (max 12)
+            this.digesting = []; // active stomach digestion slots (max 3)
             this.maxWeapons = 12;
             this.isOpen = false;
             this._injectToggleButton();
         }
 
         reset() {
-            this.foods = { bread: 2, apple: 1 };
+            this.foods = { bread: 2, fruit: 1 };
             this.weapons = [];
+            this.digesting = [];
             this.isOpen = false;
             this._renderModal();
         }
@@ -56,21 +64,47 @@
             const def = FOOD_ITEMS.find(f => f.id === foodId);
             if (!def) return false;
 
+            if (this.digesting.length >= 3) {
+                if (game.combatText) {
+                    game.combatText.spawnText(game.player.x, 22, game.player.y, 'STOMACH FULL (3/3)!', 'damage');
+                }
+                return false;
+            }
+
             this.foods[foodId] -= 1;
             if (this.foods[foodId] <= 0) delete this.foods[foodId];
 
-            if (def.hp > 0) {
-                game.player.hp = Math.min(game.player.maxHp, game.player.hp + def.hp);
-            }
+            this.digesting.push({
+                name: def.name,
+                remaining: def.digestTime || 45,
+                hpPerSec: def.hpPerSec || 1.0,
+                staminaBoost: def.staminaBoost || 0.1
+            });
             if (def.stamina > 0 && typeof game.player.stamina === 'number') {
                 game.player.stamina = Math.min(game.player.maxStamina || 100, game.player.stamina + def.stamina);
             }
             game.audio?.playSfx('heal');
             if (game.combatText) {
-                game.combatText.spawnText(game.player.x, 22, game.player.y, `${def.icon} +${def.hp} HP`, 'heal');
+                game.combatText.spawnText(game.player.x, 22, game.player.y, `${def.icon} Digesting ${def.name}`, 'heal');
             }
             if (this.isOpen) this._renderModal();
             return true;
+        }
+
+        updateDigestion(dt, player) {
+            if (!player || player.isDead || !this.digesting.length) return;
+            for (let i = this.digesting.length - 1; i >= 0; i--) {
+                const slot = this.digesting[i];
+                slot.remaining -= dt;
+                const cap = player.wounded ? player.maxHp * 0.75 : player.maxHp;
+                if (player.hp < cap) {
+                    player.hp = Math.min(cap, player.hp + slot.hpPerSec * dt);
+                }
+                if (typeof player.stamina === 'number') {
+                    player.stamina = Math.min(player.maxStamina || 100, player.stamina + (18 * slot.staminaBoost) * dt);
+                }
+                if (slot.remaining <= 0) this.digesting.splice(i, 1);
+            }
         }
 
         quickEatBest(game) {

@@ -43,8 +43,92 @@
             ambientSky: 0x78716c,
             ambientGround: 0x1c1712,
             dirColor: 0xe7e5e4
+        },
+        elven_grove: {
+            floor: 0x3b5241,
+            wall: 0x26382b,
+            accent: 0x4ade80,
+            fog: 0x09140d,
+            fogDensity: 0.0055,
+            ambientSky: 0x4d7c5f,
+            ambientGround: 0x0f1f14,
+            dirColor: 0xdcfce7
+        },
+        dwarven_forge: {
+            floor: 0x473c38,
+            wall: 0x2e2522,
+            accent: 0xf97316,
+            fog: 0x160c08,
+            fogDensity: 0.006,
+            ambientSky: 0x7c4a32,
+            ambientGround: 0x1f110b,
+            dirColor: 0xffedd5
+        },
+        arcane_citadel: {
+            floor: 0x3b3659,
+            wall: 0x25213b,
+            accent: 0xa855f7,
+            fog: 0x0c081a,
+            fogDensity: 0.0055,
+            ambientSky: 0x6366f1,
+            ambientGround: 0x120e24,
+            dirColor: 0xe0e7ff
+        },
+        necropolis: {
+            floor: 0x393e46,
+            wall: 0x22262c,
+            accent: 0xc084fc,
+            fog: 0x090a0f,
+            fogDensity: 0.0065,
+            ambientSky: 0x475569,
+            ambientGround: 0x0f1117,
+            dirColor: 0xcbd5e1
         }
     };
+
+    (function registerExtraBiomePalettes() {
+        var extra = {
+            crimson_keep: [0x4c2328, 0x2d1316, 0xef4444, 0x160709],
+            frost_glacier: [0x476a80, 0x2a4557, 0x38bdf8, 0x07121a],
+            fungal_cavern: [0x3b334f, 0x241e33, 0xa855f7, 0x0d0814],
+            sunken_temple: [0x2d4a4e, 0x1a2e31, 0x2dd4bf, 0x061214],
+            obsidian_spire: [0x27272a, 0x18181b, 0xf97316, 0x09090b],
+            sunless_mire: [0x3a4232, 0x23291e, 0x84cc16, 0x0b0f08],
+            sandstone_tomb: [0x785d43, 0x4d3a28, 0xfbbf24, 0x171008],
+            clockwork_vault: [0x52483e, 0x332c25, 0xd97706, 0x120f0b],
+            astral_nexus: [0x312e59, 0x1e1b3b, 0x818cf8, 0x07061a],
+            blighted_woods: [0x33402f, 0x1f281c, 0xa3e635, 0x090d07],
+            magma_caldera: [0x4a251d, 0x2b140f, 0xf97316, 0x140704],
+            crystal_grotto: [0x354b5e, 0x1e2e3d, 0x22d3ee, 0x071018],
+            iron_bastion: [0x4b5563, 0x2d343d, 0xf59e0b, 0x0e1114],
+            whispering_crypt: [0x3b424c, 0x23282e, 0xc084fc, 0x090b0f],
+            plague_sewer: [0x3d4732, 0x252b1e, 0x4ade80, 0x0a0d07],
+            storm_peaks: [0x475569, 0x2c3645, 0x60a5fa, 0x090e17],
+            shadow_fen: [0x2c3639, 0x1a2123, 0x2dd4bf, 0x06090a],
+            gilded_sanctum: [0x6b5839, 0x423521, 0xfacc15, 0x141008],
+            ashen_wastes: [0x4d4a47, 0x2e2c2a, 0xfb923c, 0x100f0e],
+            blood_altar: [0x4a1d24, 0x2b0f13, 0xf43f5e, 0x140507],
+            emerald_ruins: [0x2e4d3b, 0x1b3024, 0x34d399, 0x06120b],
+            starlit_observatory: [0x293252, 0x181e33, 0x93c5fd, 0x060814],
+            bone_catacombs: [0x57534e, 0x36332f, 0xe2e8f0, 0x100f0e],
+            ember_depths: [0x4d2a20, 0x2e1711, 0xef4444, 0x140805]
+        };
+        for (var k in extra) {
+            if (Object.prototype.hasOwnProperty.call(extra, k)) {
+                var c = extra[k];
+                BIOME_PALETTES[k] = {
+                    floor: c[0],
+                    wall: c[1],
+                    accent: c[2],
+                    fog: c[3],
+                    fogDensity: 0.0058,
+                    ambientSky: c[2],
+                    ambientGround: c[1],
+                    dirColor: 0xe2e8f0
+                };
+            }
+        }
+    })();
 
     var SURFACE_TINTS = {
         stone: 0xffffff,
@@ -90,31 +174,42 @@
                 ctx.lineWidth = 1.5;
                 ctx.strokeRect(18, 18, 28, 28);
             } else if (biome === 'manufactorum') {
-                ctx.fillStyle = 'rgba(217,119,6,0.16)';
+                ctx.fillStyle = '#4b5563';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.fillStyle = 'rgba(249,115,22,0.22)';
                 for (var i = 0; i < 128; i += 16) {
                     ctx.fillRect(i, 0, 4, 128);
                     ctx.fillRect(0, i, 128, 2);
                 }
-                ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                ctx.fillStyle = 'rgba(255,255,255,0.16)';
                 for (var rx = 12; rx < 128; rx += 32) {
                     for (var ry = 12; ry < 128; ry += 32) {
                         ctx.fillRect(rx, ry, 4, 4);
                     }
                 }
             } else if (biome === 'void_hull') {
-                ctx.strokeStyle = 'rgba(45,212,191,0.22)';
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.strokeStyle = 'rgba(45,212,191,0.28)';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(8, 8, 112, 112);
-                ctx.fillStyle = 'rgba(56,189,248,0.08)';
+                ctx.beginPath();
+                ctx.arc(64, 64, 34, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(56,189,248,0.1)';
                 ctx.fillRect(16, 16, 40, 96);
                 ctx.fillRect(72, 16, 40, 96);
             } else {
-                // trench
-                ctx.fillStyle = 'rgba(87,83,78,0.35)';
+                // trench: weathered timber & mossy stone
+                ctx.fillStyle = '#44403c';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.fillStyle = 'rgba(87,83,78,0.45)';
                 for (var y = 8; y < 128; y += 22) {
                     ctx.fillRect(4, y, 120, 12);
                 }
-                ctx.strokeStyle = 'rgba(132,204,22,0.16)';
+                ctx.fillStyle = 'rgba(132,204,22,0.14)';
+                ctx.fillRect(10, 10, 28, 18);
+                ctx.strokeStyle = 'rgba(132,204,22,0.2)';
                 ctx.strokeRect(2, 2, 124, 124);
             }
 
@@ -824,6 +919,7 @@
             buildPropMeshes(terrain);
             buildExitBeacon(terrain);
             buildRuinAtmosphere(terrain);
+            buildZoneProps(terrain);
             buildFogOfWar(terrain);
             buildWeather(terrain);
             syncDebris(terrain);
@@ -1152,6 +1248,224 @@
                         plant.position.set(cw.x + ((x % 2) - 0.5) * 0.5, cw.y, cw.z + ((z % 2) - 0.5) * 0.5);
                         worldRoot.add(plant);
                         plantCount++;
+                    }
+                }
+            }
+
+            // 4. Path of the Honored Dead: Spectral Violet Braziers & Gravestones
+            if (terrain.zoneArchetype === 'pass' || terrain.biome === 'cathedral') {
+                var graveMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 }));
+                var graveGeo = trackGeo(new THREE.BoxGeometry(0.45, 0.75, 0.16));
+                var brazierMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.4 }));
+                var flameMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xa855f7 }));
+                var brazierGeo = trackGeo(new THREE.CylinderGeometry(0.28, 0.2, 0.5, 8));
+                var flameGeo = trackGeo(new THREE.ConeGeometry(0.2, 0.45, 6));
+
+                for (var ri = 0; ri < rooms.length && ri < 5; ri++) {
+                    var rm2 = rooms[ri];
+                    var gc = terrain.getCell ? terrain.getCell(rm2.cx - 2, rm2.cz + 2) : null;
+                    if (gc && gc.type === 'floor') {
+                        var gw = terrain.gridToWorld(rm2.cx - 2, rm2.cz + 2);
+                        var grave = new THREE.Mesh(graveGeo, graveMat);
+                        grave.position.set(gw.x, gw.y + 0.375, gw.z);
+                        grave.rotation.y = (ri % 3) * 0.25;
+                        grave.castShadow = true;
+                        worldRoot.add(grave);
+                    }
+                    if (ri % 2 === 1) {
+                        var bc = terrain.getCell ? terrain.getCell(rm2.cx + 2, rm2.cz - 2) : null;
+                        if (bc && bc.type === 'floor') {
+                            var bw = terrain.gridToWorld(rm2.cx + 2, rm2.cz - 2);
+                            var brazier = new THREE.Group();
+                            var bowl = new THREE.Mesh(brazierGeo, brazierMat);
+                            bowl.position.y = 0.25;
+                            brazier.add(bowl);
+                            var flame = new THREE.Mesh(flameGeo, flameMat);
+                            flame.position.y = 0.65;
+                            brazier.add(flame);
+                            brazier.position.set(bw.x, bw.y, bw.z);
+                            worldRoot.add(brazier);
+                            if (terrain.lightAnchors) {
+                                terrain.lightAnchors.push({ x: bw.x, y: bw.y + 1.0, z: bw.z, color: 0xa855f7, distance: 10, intensity: 1.45 });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. Overworld Landmark River / Lava Channel (Temple Steppes / Forge Canyon)
+            if (terrain.riverAxis) {
+                var spanW = terrain.width * terrain.tileSize;
+                var spanH = terrain.height * terrain.tileSize;
+                var isLava = terrain.biome === 'manufactorum';
+                var riverGeo = trackGeo(new THREE.PlaneGeometry(
+                    terrain.riverAxis === 'x' ? spanW : 4.5,
+                    terrain.riverAxis === 'x' ? 4.5 : spanH
+                ));
+                riverGeo.rotateX(-Math.PI / 2);
+                var riverMat = trackMat(new THREE.MeshBasicMaterial({
+                    color: isLava ? 0xf97316 : 0x0ea5e9,
+                    transparent: true,
+                    opacity: isLava ? 0.65 : 0.42
+                }));
+                var riverMesh = new THREE.Mesh(riverGeo, riverMat);
+                riverMesh.position.set(spanW * 0.5, -0.35, spanH * 0.5);
+                worldRoot.add(riverMesh);
+
+                // Wooden/stone dock bridges spanning across the river channel
+                var bridgeMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.85 }));
+                var bridgeGeo = trackGeo(new THREE.BoxGeometry(
+                    terrain.riverAxis === 'x' ? 3.2 : 5.2,
+                    0.22,
+                    terrain.riverAxis === 'x' ? 5.2 : 3.2
+                ));
+                for (var bi = 1; bi <= 2; bi++) {
+                    var bMesh = new THREE.Mesh(bridgeGeo, bridgeMat);
+                    var frac = bi / 3;
+                    bMesh.position.set(
+                        terrain.riverAxis === 'x' ? spanW * frac : spanW * 0.5,
+                        0.04,
+                        terrain.riverAxis === 'x' ? spanH * 0.5 : spanH * frac
+                    );
+                    bMesh.castShadow = true;
+                    bMesh.receiveShadow = true;
+                    worldRoot.add(bMesh);
+                }
+            }
+
+            // 6. Hanging Iron Lantern Posts & Hexagonal Shrine Pedestals
+            var postMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.5 }));
+            var lanternMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+            var postGeo = trackGeo(new THREE.CylinderGeometry(0.06, 0.08, 2.2, 6));
+            var armGeo = trackGeo(new THREE.BoxGeometry(0.45, 0.06, 0.06));
+            var lanternGeo = trackGeo(new THREE.BoxGeometry(0.18, 0.26, 0.18));
+
+            for (var li = 0; li < rooms.length && li < 4; li++) {
+                var lrm = rooms[li];
+                var lc = terrain.getCell ? terrain.getCell(lrm.cx + 3, lrm.cz + 1) : null;
+                if (lc && lc.type === 'floor') {
+                    var lw = terrain.gridToWorld(lrm.cx + 3, lrm.cz + 1);
+                    var lGrp = new THREE.Group();
+                    var pMesh = new THREE.Mesh(postGeo, postMat);
+                    pMesh.position.y = 1.1;
+                    lGrp.add(pMesh);
+                    var arm = new THREE.Mesh(armGeo, postMat);
+                    arm.position.set(0.2, 2.1, 0);
+                    lGrp.add(arm);
+                    var lant = new THREE.Mesh(lanternGeo, lanternMat);
+                    lant.position.set(0.38, 1.9, 0);
+                    lGrp.add(lant);
+                    lGrp.position.set(lw.x, lw.y, lw.z);
+                    worldRoot.add(lGrp);
+                    if (terrain.lightAnchors) {
+                        terrain.lightAnchors.push({ x: lw.x + 0.38, y: lw.y + 1.85, z: lw.z, color: 0xf59e0b, distance: 9, intensity: 1.25 });
+                    }
+                }
+            }
+
+            // Hexagonal Shrine Pedestal in an offshoot room
+            if (rooms.length >= 3) {
+                var srm = rooms[2];
+                var sc = terrain.getCell ? terrain.getCell(srm.cx, srm.cz) : null;
+                if (sc && sc.type === 'floor') {
+                    var srw = terrain.gridToWorld(srm.cx, srm.cz);
+                    var hexGeo = trackGeo(new THREE.CylinderGeometry(0.85, 1.0, 0.45, 6));
+                    var hexMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 }));
+                    var hexMesh = new THREE.Mesh(hexGeo, hexMat);
+                    hexMesh.position.set(srw.x, srw.y + 0.225, srw.z);
+                    hexMesh.castShadow = true;
+                    worldRoot.add(hexMesh);
+
+                    var shrineRingGeo = trackGeo(new THREE.RingGeometry(0.95, 1.15, 6));
+                    shrineRingGeo.rotateX(-Math.PI * 0.5);
+                    var shrineRingMat = trackMat(new THREE.MeshBasicMaterial({ color: 0x84cc16, side: THREE.DoubleSide }));
+                    var shrineRing = new THREE.Mesh(shrineRingGeo, shrineRingMat);
+                    shrineRing.position.set(srw.x, srw.y + 0.05, srw.z);
+                    worldRoot.add(shrineRing);
+                }
+            }
+        }
+
+        function buildZoneProps(terrain) {
+            if (!terrain || !terrain.rooms) return;
+            var rooms = terrain.rooms;
+            var isOutdoor = terrain.zoneArchetype === 'overworld' || terrain.zoneArchetype === 'pass';
+
+            var woodMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.85 }));
+            var stoneMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x3b444f, roughness: 0.88 }));
+            var roofMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.9 }));
+            var foliageMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.85 }));
+            var bannerMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.75, side: THREE.DoubleSide }));
+
+            if (isOutdoor) {
+                // Outdoor: Timber-framed cottage facades, wooden carts, and gnarled autumn trees
+                var baseGeo = trackGeo(new THREE.BoxGeometry(2.2, 1.4, 1.6));
+                var roofGeo = trackGeo(new THREE.ConeGeometry(1.55, 1.1, 4));
+                roofGeo.rotateY(Math.PI * 0.25);
+                var trunkGeo = trackGeo(new THREE.CylinderGeometry(0.14, 0.22, 1.5, 6));
+                var crownGeo = trackGeo(new THREE.DodecahedronGeometry(0.85, 0));
+                var cartBedGeo = trackGeo(new THREE.BoxGeometry(1.1, 0.35, 0.75));
+                var wheelGeo = trackGeo(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 10));
+                wheelGeo.rotateX(Math.PI * 0.5);
+
+                for (var i = 0; i < rooms.length && i < 5; i++) {
+                    var rm = rooms[i];
+                    // Gnarled autumn tree
+                    var tc = terrain.getCell ? terrain.getCell(rm.cx - 3, rm.cz - 2) : null;
+                    if (tc && tc.type === 'floor') {
+                        var tw = terrain.gridToWorld(rm.cx - 3, rm.cz - 2);
+                        var tree = new THREE.Group();
+                        var trunk = new THREE.Mesh(trunkGeo, woodMat);
+                        trunk.position.y = 0.75;
+                        trunk.castShadow = true;
+                        tree.add(trunk);
+                        var crown = new THREE.Mesh(crownGeo, foliageMat);
+                        crown.position.y = 1.75;
+                        crown.castShadow = true;
+                        tree.add(crown);
+                        tree.position.set(tw.x, tw.y, tw.z);
+                        worldRoot.add(tree);
+                    }
+                    // Wooden supply cart
+                    if (i % 2 === 0) {
+                        var cc = terrain.getCell ? terrain.getCell(rm.cx + 1, rm.cz + 3) : null;
+                        if (cc && cc.type === 'floor') {
+                            var cw = terrain.gridToWorld(rm.cx + 1, rm.cz + 3);
+                            var cart = new THREE.Group();
+                            var bed = new THREE.Mesh(cartBedGeo, woodMat);
+                            bed.position.y = 0.35;
+                            bed.castShadow = true;
+                            cart.add(bed);
+                            var w1 = new THREE.Mesh(wheelGeo, woodMat);
+                            w1.position.set(0, 0.28, 0.42);
+                            cart.add(w1);
+                            var w2 = new THREE.Mesh(wheelGeo, woodMat);
+                            w2.position.set(0, 0.28, -0.42);
+                            cart.add(w2);
+                            cart.position.set(cw.x, cw.y, cw.z);
+                            cart.rotation.y = i * 0.6;
+                            worldRoot.add(cart);
+                        }
+                    }
+                }
+            } else {
+                // Indoor: Hanging crimson war banners & stone buttress arches
+                var poleGeo = trackGeo(new THREE.CylinderGeometry(0.04, 0.04, 2.4, 6));
+                var clothGeo = trackGeo(new THREE.PlaneGeometry(0.65, 1.35));
+                for (var j = 0; j < rooms.length && j < 6; j++) {
+                    var irm = rooms[j];
+                    var bc = terrain.getCell ? terrain.getCell(irm.cx - 2, irm.cz - 2) : null;
+                    if (bc && bc.type === 'floor') {
+                        var bw = terrain.gridToWorld(irm.cx - 2, irm.cz - 2);
+                        var bGrp = new THREE.Group();
+                        var pole = new THREE.Mesh(poleGeo, stoneMat);
+                        pole.position.y = 1.2;
+                        bGrp.add(pole);
+                        var cloth = new THREE.Mesh(clothGeo, bannerMat);
+                        cloth.position.set(0.35, 1.55, 0);
+                        bGrp.add(cloth);
+                        bGrp.position.set(bw.x, bw.y, bw.z);
+                        worldRoot.add(bGrp);
                     }
                 }
             }

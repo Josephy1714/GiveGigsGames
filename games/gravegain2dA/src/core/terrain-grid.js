@@ -1,7 +1,16 @@
 (function (root) {
     'use strict';
 
-    var BIOMES = ['cathedral', 'manufactorum', 'void_hull', 'trench'];
+    var BIOMES = [
+        'cathedral', 'manufactorum', 'void_hull', 'trench',
+        'elven_grove', 'dwarven_forge', 'arcane_citadel', 'necropolis',
+        'crimson_keep', 'frost_glacier', 'fungal_cavern', 'sunken_temple',
+        'obsidian_spire', 'sunless_mire', 'sandstone_tomb', 'clockwork_vault',
+        'astral_nexus', 'blighted_woods', 'magma_caldera', 'crystal_grotto',
+        'iron_bastion', 'whispering_crypt', 'plague_sewer', 'storm_peaks',
+        'shadow_fen', 'gilded_sanctum', 'ashen_wastes', 'blood_altar',
+        'emerald_ruins', 'starlit_observatory', 'bone_catacombs', 'ember_depths'
+    ];
 
     var SURFACE_PENALTY = {
         stone: 1.0,
@@ -40,8 +49,58 @@
             weather: { kind: 'acid_rain', density: 1.35, speed: 6.5, color: 0x84cc16 },
             coverMaterial: 'sandbag',
             primarySurface: 'mud'
+        },
+        elven_grove: {
+            hazards: ['poison', 'warp'],
+            surfaces: ['mud', 'stone', 'rubble'],
+            weather: { kind: 'warp_spores', density: 1.0, speed: 0.85, color: 0x4ade80 },
+            coverMaterial: 'masonry',
+            primarySurface: 'stone'
+        },
+        dwarven_forge: {
+            hazards: ['fire', 'fire'],
+            surfaces: ['stone', 'grate', 'rubble'],
+            weather: { kind: 'soot_sparks', density: 1.25, speed: 2.4, color: 0xf97316 },
+            coverMaterial: 'masonry',
+            primarySurface: 'stone'
+        },
+        arcane_citadel: {
+            hazards: ['warp', 'cryo'],
+            surfaces: ['stone', 'ice', 'rubble'],
+            weather: { kind: 'warp_spores', density: 1.1, speed: 1.1, color: 0xa855f7 },
+            coverMaterial: 'masonry',
+            primarySurface: 'stone'
+        },
+        necropolis: {
+            hazards: ['warp', 'poison'],
+            surfaces: ['stone', 'rubble', 'mud'],
+            weather: { kind: 'ash', density: 1.15, speed: 1.2, color: 0x94a3b8 },
+            coverMaterial: 'masonry',
+            primarySurface: 'stone'
         }
     };
+
+    (function registerExtraBiomes() {
+        var presets = [
+            { kind: 'ash', color: 0xd6cfc2, hz: ['fire', 'warp'], sf: ['stone', 'rubble'] },
+            { kind: 'warp_spores', color: 0x38bdf8, hz: ['cryo', 'warp'], sf: ['ice', 'stone'] },
+            { kind: 'soot_sparks', color: 0xf97316, hz: ['fire', 'poison'], sf: ['grate', 'rubble'] },
+            { kind: 'acid_rain', color: 0x84cc16, hz: ['poison', 'fire'], sf: ['mud', 'sludge'] }
+        ];
+        for (var i = 0; i < BIOMES.length; i++) {
+            var b = BIOMES[i];
+            if (!BIOME_CONFIG[b]) {
+                var p = presets[i % presets.length];
+                BIOME_CONFIG[b] = {
+                    hazards: p.hz,
+                    surfaces: p.sf,
+                    weather: { kind: p.kind, density: 1.0, speed: 1.5, color: p.color },
+                    coverMaterial: 'masonry',
+                    primarySurface: p.sf[0]
+                };
+            }
+        }
+    })();
 
     function FallbackRNG(seed) {
         this._seed = (seed === undefined || seed === null ? 1337 : Number(seed)) >>> 0 || 1337;
@@ -319,8 +378,12 @@
 
         var cfg = BIOME_CONFIG[this.biome] || BIOME_CONFIG.cathedral;
 
-        // 1. Place 12 non-overlapping tactical rooms
-        var targetRooms = 12;
+        // Torchlight II-inspired zone archetype: 'overworld' (18 chunks + river), 'pass' (10 chunks), 'dungeon' (14 chunks)
+        this.zoneArchetype = (opts && opts.zoneArchetype) || rng.pick(['overworld', 'pass', 'dungeon']);
+        this.riverAxis = this.zoneArchetype === 'overworld' ? (rng.chance(0.5) ? 'x' : 'z') : null;
+
+        // 1. Place non-overlapping tactical rooms/chunks
+        var targetRooms = this.zoneArchetype === 'overworld' ? 18 : (this.zoneArchetype === 'pass' ? 10 : 14);
         var archetypes = ['catwalk_hall', 'pillared_sanctum', 'chokepoint_corridor', 'bunker_overlook', 'hazard_vat', 'interior_shrine', 'treasury', 'normal'];
         var attempts = 0;
         while (this.rooms.length < targetRooms && attempts < 220) {
@@ -369,8 +432,17 @@
                 };
             }
 
+            var isCircular = (rType === 'safespace' || rType === 'interior_shrine');
+            var radiusX = rw * 0.5;
+            var radiusZ = rh * 0.5;
+
             for (var ix = rx; ix < rx + rw; ix++) {
                 for (var iz = rz; iz < rz + rh; iz++) {
+                    if (isCircular) {
+                        var nx = (ix + 0.5 - (rx + radiusX)) / radiusX;
+                        var nz = (iz + 0.5 - (rz + radiusZ)) / radiusZ;
+                        if (nx * nx + nz * nz > 1.05) continue;
+                    }
                     var cell = this.getCell(ix, iz);
                     cell.type = 'floor';
                     cell.roomId = roomId;
@@ -406,7 +478,8 @@
         for (var ci = 0; ci < this.rooms.length - 1; ci++) {
             this._digCorridor(this.rooms[ci].cx, this.rooms[ci].cz, this.rooms[ci + 1].cx, this.rooms[ci + 1].cz, 3);
         }
-        for (var li = 0; li < 4 && this.rooms.length > 3; li++) {
+        var loopCount = this.zoneArchetype === 'overworld' ? 7 : (this.zoneArchetype === 'dungeon' ? 6 : 3);
+        for (var li = 0; li < loopCount && this.rooms.length > 3; li++) {
             var ra = this.rooms[rng.int(0, this.rooms.length - 1)];
             var rb = this.rooms[rng.int(0, this.rooms.length - 1)];
             if (ra !== rb) this._digCorridor(ra.cx, ra.cz, rb.cx, rb.cz, 2);
