@@ -87,6 +87,13 @@ def main():
                 continue
             bpy.data.objects.remove(obj, do_unlink=True)
 
+    # FBX imports leave their original temporary actions in Blender's datablocks.
+    # Remove those source actions so only the five production clips are exported.
+    production_actions = {"Idle", "Run", "Jump", "Slide", "Fall"}
+    for candidate in list(bpy.data.actions):
+        if candidate.name not in production_actions:
+            bpy.data.actions.remove(candidate)
+
     # Keep a single skinned character and a single armature in the export.
     bpy.ops.object.select_all(action="DESELECT")
     for obj in base_objects:
@@ -129,12 +136,12 @@ def main():
         document = json.loads(stream.read(chunk_length).decode("utf-8").rstrip(" \\t\\r\\n\\0"))
     if not document.get("skins") or not document.get("meshes"):
         raise RuntimeError("GLB must contain a skinned character mesh.")
-    exported_names = {item.get("name") for item in document.get("animations", [])}
+    exported_names = [item.get("name") for item in document.get("animations", [])]
     required_names = {"Idle", "Run", "Jump", "Slide", "Fall"}
-    if not required_names.issubset(exported_names):
+    if set(exported_names) != required_names or len(exported_names) != len(required_names):
         raise RuntimeError(
-            "GLB animation export is incomplete; missing: "
-            + ", ".join(sorted(required_names - exported_names))
+            "GLB must contain exactly the five production clips. Exported: "
+            + ", ".join(str(name) for name in exported_names)
         )
     print("GLB VERIFIED", {
         "meshes": len(document["meshes"]),
