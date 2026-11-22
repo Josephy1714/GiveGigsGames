@@ -288,7 +288,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const recovered=sample(0,impactTime+.031);
   return {impact,recovered};
  },
- probeCarCollision:({lane=1,jump=1}={})=>threeRenderer?.probeTrafficCollision(g,{lane,jump})??null,
+ probeCarCollision:({lane=1,jump=1,vehicleIndex=0}={})=>threeRenderer?.probeTrafficCollision(g,{lane,jump,vehicleIndex})??null,
  probeLateBus:()=>{
   if(!g||!g.on||!threeRenderer)return null;
   const saved=g.obs;
