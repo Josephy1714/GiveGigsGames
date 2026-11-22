@@ -278,6 +278,13 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   Object.assign(g,saved);
   return result;
  },
+ probeImpactCamera:()=>{
+  if(!g||!g.on||!threeRenderer)return null;
+  const sample=(hitTimer,offset)=>{threeRenderer.render({...g,t:g.t+offset,hitTimer});const node=$("#three-world");return {base:Number(node.dataset.cameraBaseX),world:Number(node.dataset.cameraWorldX),shakeX:Number(node.dataset.cameraShakeX),shakeY:Number(node.dataset.cameraShakeY)};};
+  const impact=sample(.62,.031);
+  const recovered=sample(0,.062);
+  return {impact,recovered};
+ },
  probeLateBus:()=>{
   if(!g||!g.on||!threeRenderer)return null;
   const saved=g.obs;
