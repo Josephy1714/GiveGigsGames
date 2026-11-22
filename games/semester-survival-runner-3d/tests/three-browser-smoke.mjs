@@ -38,6 +38,14 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
 
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForFunction(() => {
+      const world = document.querySelector("#three-world");
+      return world && Number.isFinite(Number(world.dataset.jayLean)) && Math.abs(Number(world.dataset.jayLean)) > 0.01;
+    }, null, { timeout: 2500 });
+    assert.ok(Number.isFinite(Number((await world.evaluate(node => node.dataset.jayImpact)))), "impact response telemetry should be available");
+    await page.keyboard.press("ArrowRight");
+
     await page.keyboard.press("ArrowUp");
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 2500 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 4000 });
