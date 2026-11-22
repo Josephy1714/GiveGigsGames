@@ -22,7 +22,8 @@ try{
  const initial=await mount.evaluate(el=>({...el.dataset,canvasCount:el.querySelectorAll("canvas").length,canvasWidth:el.querySelector("canvas")?.width,canvasHeight:el.querySelector("canvas")?.height}));
  assert.ok(initial.canvasCount>0,"Three.js renderer did not create a canvas.");
  assert.ok(Number(initial.jayClipCount)>=5,"Unified Jay gameplay clips were not loaded.");
- assert.ok(initial.jayClips.includes("Run_InPlace"),"Run_InPlace is missing from the loaded unified asset.");
+ assert.equal(initial.jayRunMotionFound,"true","The loader did not detect the authored in-place run clip.");
+ assert.equal(initial.jayRunMotionFallback,"false","The gameplay loader unexpectedly used the legacy run-motion fallback.");
  await page.screenshot({path:"/tmp/jay-live-runner-home.png",fullPage:false});
  await page.locator("#play").click();
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:10000});
