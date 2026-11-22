@@ -38,7 +38,7 @@ jobs:
       - name: Install Blender
         run: |
           sudo apt-get update
-          sudo apt-get install -y blender
+          sudo apt-get install -y blender python3-pil
           # Bootstrap pip explicitly: Debian/Ubuntu disables ensurepip.
           BLENDER_PYTHON=$(blender --background --python-expr "import sys; print(sys.executable)" 2>/dev/null | grep "^/" | tail -n 1)
           test -x "$BLENDER_PYTHON"
@@ -48,6 +48,8 @@ jobs:
       - name: Merge Ajay rig and all supplied Mixamo clips
         run: |
           blender --background --python games/semester-survival-runner-3d/tools/build-jay-glb.py
+      - name: Build compact Jay UI portrait
+        run: python3 games/semester-survival-runner-3d/tools/build-jay-portrait.py
       - name: Validate exported GLB
         run: |
           test -s games/semester-survival-runner-3d/assets/3d/jay/jay.glb
@@ -57,7 +59,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add games/semester-survival-runner-3d/assets/3d/jay/jay.glb
+          git add games/semester-survival-runner-3d/assets/3d/jay/jay.glb games/semester-survival-runner-3d/assets/3d/jay/jay-portrait.webp
           if git diff --cached --quiet; then
             echo "GLB unchanged."
           else
