@@ -20,6 +20,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       mouthPose: node.dataset.jayMouthPose,
       runMotionFound: node.dataset.jayRunMotionFound === "true",
       runMotionTracks: Number(node.dataset.jayRunMotionTracks),
+      runMotionFallback: node.dataset.jayRunMotionFallback === "true",
       runApproachEndpoint: Number(node.dataset.jayRunApproachEndpoint),
       neutralizedMouthMorphs: Number(node.dataset.jayMouthMorphsNeutralized),
       quality: node.dataset.graphicsQuality,
@@ -37,7 +38,8 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.equal(diagnostics.quality, "High");
     assert.equal(diagnostics.mouthPose, "neutral", "Jay must start with a neutral closed-mouth facial pose");
     assert.equal(diagnostics.runMotionFound, true, "Jay run clip must expose a detectable root-motion channel");
-    assert.ok(diagnostics.runMotionTracks >= 1, "the root-motion channel must be neutralized for the endless loop");
+    assert.equal(diagnostics.runMotionTracks, 0, "the authored in-place run clip should contain no root-motion tracks");
+    assert.equal(diagnostics.runMotionFallback, false, "the endless run must use the authored in-place clip, not a fallback");
     assert.ok(diagnostics.runApproachEndpoint > 0, "the first run must stop at its forward-most pose");
     assert.ok(Number.isFinite(diagnostics.neutralizedMouthMorphs), "facial pose diagnostics must be present");
 
