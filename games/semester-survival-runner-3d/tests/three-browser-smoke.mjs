@@ -67,7 +67,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     assert.equal(powerupProbe.remaining, 0, "collected power-ups must leave the active world");
     const collisionProbe = await page.evaluate(() => window.__runnerSmoke.probeObstacle({ action: "jump", jump: 0 }));
     assert.equal(collisionProbe.hit, true, "a mistimed jump must register an obstacle collision");
-    assert.equal(collisionProbe.energy, 68, "a standard obstacle collision must apply the expected energy penalty");
+    assert.ok(Math.abs(collisionProbe.energy - 68) < 0.02, "a standard obstacle collision must apply the expected energy penalty, allowing the frame energy drain");
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
     assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
