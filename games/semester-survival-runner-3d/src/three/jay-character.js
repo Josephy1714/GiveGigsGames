@@ -84,12 +84,12 @@ function makeRunInPlace(clip) {
   const trackNames = [];
 
   copy.tracks = copy.tracks.map(track => {
-    if (!/\\.position$/i.test(track.name || "")) return track;
+    if (!/\.position$/i.test(track.name || "")) return track;
 
     // GLTFLoader track names can be "Hips.position", "Armature/Hips.position",
     // or a namespaced Mixamo path. Inspect the whole binding path, not just
     // its first segment, so the actual pelvis/root channel is never missed.
-    const bindingPath = String(track.name).replace(/\\.position$/i, "");
+    const bindingPath = String(track.name).replace(/\.position$/i, "");
     const nodePath = bindingPath.replace(/[^a-z0-9]/gi, "").toLowerCase();
     const isHips = /(hips|pelvis|waist)/i.test(nodePath);
     const isRoot = /(root|rootnode|armature|master|motion|trajectory|global|center|centre)/i.test(nodePath);
