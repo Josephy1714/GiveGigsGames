@@ -10,7 +10,7 @@ const VEHICLES = [
 ];
 
 const clean = value => String(value ?? "").trim();
-const titleCase = value => value.toLowerCase().replace(/\\b[a-z]/g, letter => letter.toUpperCase());
+const titleCase = value => value.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase());
 
 export function buildCollisionReport({
   label = "unknown obstacle",
