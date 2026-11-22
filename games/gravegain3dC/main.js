@@ -783,7 +783,6 @@ function createScene() {
         if (mode === 'player' && e.button === 0) {
             if (document.pointerLockElement !== canvas) {
                 lockPointer();
-                return;
             }
             firing = true;
             firePlayerWeapon();
