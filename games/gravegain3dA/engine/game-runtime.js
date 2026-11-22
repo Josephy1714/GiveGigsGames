@@ -745,6 +745,20 @@
                 }
             } catch (_) { /* garnish only */ }
 
+            // Ruined temple / bioluminescent crypt decor (pillars, totems, statues,
+            // charge plants, urns, floor sigils & accent lights).
+            try {
+                if (window.LevelDecor && typeof window.LevelDecor.build === 'function') {
+                    window.LevelDecor.build({
+                        scene: this.scene,
+                        dungeon: this.dungeon,
+                        mapMeshes: this.mapMeshes,
+                        gfxPreset: this.gfxPreset,
+                        lightBudget: Math.max(2, Math.floor(((this.gfxPreset && this.gfxPreset.lightCount) || 8) * 0.5))
+                    });
+                }
+            } catch (_) { /* decor is optional */ }
+
             // Spawn Torches, Props & Enemies in rooms
             // Campaign curve is folded in here (endless = x1, untouched).
             // Soft cap: past depth 30 the curve plateaus so endless stays hard but finite.

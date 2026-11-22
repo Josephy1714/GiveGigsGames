@@ -5,14 +5,14 @@
 
     var BIOME_PALETTES = {
         cathedral: {
-            floor: 0x726a80,
-            wall: 0x554b63,
-            accent: 0xb48a48,
-            fog: 0x0b0812,
-            fogDensity: 0.005,
-            ambientSky: 0x584c73,
-            ambientGround: 0x16121c,
-            dirColor: 0xffdfb0
+            floor: 0x3b444f,
+            wall: 0x262d35,
+            accent: 0x2dd4bf,
+            fog: 0x0b1016,
+            fogDensity: 0.0055,
+            ambientSky: 0x3d5266,
+            ambientGround: 0x101419,
+            dirColor: 0xcbeafe
         },
         manufactorum: {
             floor: 0x63707d,
@@ -69,15 +69,26 @@
             ctx.fillRect(0, 0, 128, 128);
 
             if (biome === 'cathedral') {
-                ctx.strokeStyle = 'rgba(180,138,72,0.28)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(4, 4, 120, 120);
-                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-                ctx.strokeRect(32, 32, 64, 64);
+                // Chiseled slate stone blocks with subtle moss & teal rune accents
+                ctx.fillStyle = kind === 'wall' ? '#58626e' : '#7c8794';
+                ctx.fillRect(0, 0, 128, 128);
+                ctx.strokeStyle = 'rgba(15,23,42,0.55)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(2, 2, 124, 124);
                 ctx.beginPath();
                 ctx.moveTo(0, 64); ctx.lineTo(128, 64);
-                ctx.moveTo(64, 0); ctx.lineTo(64, 128);
+                ctx.moveTo(64, 0); ctx.lineTo(64, 64);
+                ctx.moveTo(32, 64); ctx.lineTo(32, 128);
+                ctx.moveTo(96, 64); ctx.lineTo(96, 128);
                 ctx.stroke();
+                // Subtle moss patches
+                ctx.fillStyle = 'rgba(101,163,13,0.16)';
+                ctx.fillRect(6, 56, 20, 12);
+                ctx.fillRect(88, 6, 26, 10);
+                // Faint carved rune line
+                ctx.strokeStyle = 'rgba(45,212,191,0.18)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(18, 18, 28, 28);
             } else if (biome === 'manufactorum') {
                 ctx.fillStyle = 'rgba(217,119,6,0.16)';
                 for (var i = 0; i < 128; i += 16) {
@@ -812,6 +823,7 @@
             buildRoofGroups(terrain);
             buildPropMeshes(terrain);
             buildExitBeacon(terrain);
+            buildRuinAtmosphere(terrain);
             buildFogOfWar(terrain);
             buildWeather(terrain);
             syncDebris(terrain);
@@ -1005,12 +1017,144 @@
         function buildExitBeacon(terrain) {
             if (!terrain.safespaceRoom) return;
             var w = terrain.gridToWorld(terrain.safespaceRoom.cx, terrain.safespaceRoom.cz);
-            var geo = trackGeo(new THREE.TorusGeometry(1.1, 0.12, 8, 24));
+            var portalGrp = new THREE.Group();
+
+            // Floor rune ring
+            var geo = trackGeo(new THREE.TorusGeometry(1.15, 0.1, 8, 24));
             geo.rotateX(Math.PI * 0.5);
-            var mat = trackMat(new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-            exitBeacon = new THREE.Mesh(geo, mat);
-            exitBeacon.position.set(w.x, w.y + 0.18, w.z);
-            worldRoot.add(exitBeacon);
+            var ringMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+            var ring = new THREE.Mesh(geo, ringMat);
+            ring.position.y = 0.14;
+            portalGrp.add(ring);
+
+            // Stone archway pillars + lintel
+            var stoneMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85, metalness: 0.15 }));
+            var pillarGeo = trackGeo(new THREE.BoxGeometry(0.42, 2.4, 0.42));
+            var leftP = new THREE.Mesh(pillarGeo, stoneMat);
+            leftP.position.set(-1.1, 1.2, 0);
+            leftP.castShadow = true;
+            portalGrp.add(leftP);
+
+            var rightP = new THREE.Mesh(pillarGeo, stoneMat);
+            rightP.position.set(1.1, 1.2, 0);
+            rightP.castShadow = true;
+            portalGrp.add(rightP);
+
+            var lintelGeo = trackGeo(new THREE.BoxGeometry(2.8, 0.45, 0.55));
+            var lintel = new THREE.Mesh(lintelGeo, stoneMat);
+            lintel.position.set(0, 2.45, 0);
+            lintel.castShadow = true;
+            portalGrp.add(lintel);
+
+            // Warm glowing portal core
+            var coreGeo = trackGeo(new THREE.PlaneGeometry(1.75, 2.1));
+            var coreMat = trackMat(new THREE.MeshBasicMaterial({
+                color: 0xf59e0b,
+                transparent: true,
+                opacity: 0.42,
+                side: THREE.DoubleSide
+            }));
+            var core = new THREE.Mesh(coreGeo, coreMat);
+            core.position.set(0, 1.18, 0);
+            portalGrp.add(core);
+
+            portalGrp.position.set(w.x, w.y, w.z);
+            worldRoot.add(portalGrp);
+            exitBeacon = ring;
+
+            if (terrain.lightAnchors) {
+                terrain.lightAnchors.push({ x: w.x, y: w.y + 1.6, z: w.z, color: 0xfbbf24, distance: 12, intensity: 1.8 });
+            }
+        }
+
+        function buildRuinAtmosphere(terrain) {
+            if (!terrain || !terrain.cells) return;
+            var rooms = terrain.rooms || [];
+
+            // 1. Central Floor Rune Sigil (Puzzle / Ritual Area)
+            var sigilRoom = rooms[Math.floor(rooms.length * 0.5)] || rooms[0];
+            if (sigilRoom) {
+                var sw = terrain.gridToWorld(sigilRoom.cx, sigilRoom.cz);
+                var sigilOuter = trackGeo(new THREE.RingGeometry(1.4, 1.65, 24));
+                sigilOuter.rotateX(-Math.PI * 0.5);
+                var sigilMat = trackMat(new THREE.MeshBasicMaterial({
+                    color: 0x2dd4bf,
+                    transparent: true,
+                    opacity: 0.45,
+                    side: THREE.DoubleSide
+                }));
+                var sigilMesh = new THREE.Mesh(sigilOuter, sigilMat);
+                sigilMesh.position.set(sw.x, sw.y + 0.06, sw.z);
+                worldRoot.add(sigilMesh);
+
+                if (terrain.lightAnchors) {
+                    terrain.lightAnchors.push({ x: sw.x, y: sw.y + 1.1, z: sw.z, color: 0x2dd4bf, distance: 11, intensity: 1.4 });
+                }
+            }
+
+            // 2. Carved Rune Totem Pillars in rooms
+            var pillarStoneMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x3b444f, roughness: 0.85, metalness: 0.15 }));
+            var runeBandMat = trackMat(new THREE.MeshBasicMaterial({ color: 0x2dd4bf }));
+            var baseGeo = trackGeo(new THREE.BoxGeometry(0.7, 1.4, 0.7));
+            var bandGeo = trackGeo(new THREE.BoxGeometry(0.74, 0.22, 0.74));
+            var capGeo = trackGeo(new THREE.BoxGeometry(0.82, 0.35, 0.82));
+
+            for (var r = 0; r < rooms.length && r < 4; r++) {
+                var rm = rooms[r];
+                var px = rm.cx + (r % 2 === 0 ? 2 : -2);
+                var pz = rm.cz + (r < 2 ? 2 : -2);
+                var cell = terrain.getCell ? terrain.getCell(px, pz) : null;
+                if (!cell || cell.type !== 'floor') continue;
+                var pw = terrain.gridToWorld(px, pz);
+                var tot = new THREE.Group();
+                var bMesh = new THREE.Mesh(baseGeo, pillarStoneMat);
+                bMesh.position.y = 0.7;
+                bMesh.castShadow = true;
+                tot.add(bMesh);
+                var band = new THREE.Mesh(bandGeo, runeBandMat);
+                band.position.y = 0.85;
+                tot.add(band);
+                var cap = new THREE.Mesh(capGeo, pillarStoneMat);
+                cap.position.y = 1.55;
+                cap.castShadow = true;
+                tot.add(cap);
+                tot.position.set(pw.x, pw.y, pw.z);
+                worldRoot.add(tot);
+            }
+
+            // 3. Bioluminescent Charge Plants near ramps & wall corners
+            var bulbGeo = trackGeo(new THREE.SphereGeometry(0.18, 8, 8));
+            var bulbMat = trackMat(new THREE.MeshStandardMaterial({
+                color: 0xa3e635,
+                emissive: 0x65a30d,
+                emissiveIntensity: 1.35,
+                roughness: 0.35
+            }));
+            var leafGeo = trackGeo(new THREE.ConeGeometry(0.22, 0.32, 5));
+            var leafMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x365314, roughness: 0.8 }));
+
+            var plantCount = 0;
+            for (var z = 1; z < terrain.height - 1 && plantCount < 18; z += 2) {
+                for (var x = 1; x < terrain.width - 1 && plantCount < 18; x += 3) {
+                    var c = terrain.getCell(x, z);
+                    if (!c || c.type !== 'floor') continue;
+                    var nWall = terrain.getCell(x, z - 1);
+                    var wWall = terrain.getCell(x - 1, z);
+                    if ((nWall && nWall.type === 'wall') || (wWall && wWall.type === 'wall')) {
+                        var cw = terrain.gridToWorld(x, z);
+                        var plant = new THREE.Group();
+                        var leaf = new THREE.Mesh(leafGeo, leafMat);
+                        leaf.position.y = 0.16;
+                        plant.add(leaf);
+                        var bulb = new THREE.Mesh(bulbGeo, bulbMat);
+                        bulb.position.y = 0.34;
+                        plant.add(bulb);
+                        plant.position.set(cw.x + ((x % 2) - 0.5) * 0.5, cw.y, cw.z + ((z % 2) - 0.5) * 0.5);
+                        worldRoot.add(plant);
+                        plantCount++;
+                    }
+                }
+            }
         }
 
         function update(dt, focusPos) {

@@ -812,16 +812,27 @@
             const dummy = new THREE.Object3D();
             const pillarTransforms = [];
             const capTransforms = [];
+            const runeBandTransforms = [];
             const beamTransforms = [];
             const bannerTransforms = [];
+            const vineTransforms = [];
+            const fountainTransforms = [];
+            const basinTransforms = [];
+            const sigilTransforms = [];
+            const plantTransforms = [];
+            const plantLeafTransforms = [];
+            const urnTransforms = [];
 
-            for (const room of rooms) {
+            for (let rIdx = 0; rIdx < rooms.length; rIdx++) {
+                const room = rooms[rIdx];
                 const x0 = room.x * ts;
                 const z0 = room.y * ts;
                 const x1 = (room.x + room.w) * ts;
                 const z1 = (room.y + room.h) * ts;
+                const rcx = (x0 + x1) * 0.5;
+                const rcz = (z0 + z1) * 0.5;
 
-                // Cornerstone castle pillars in larger rooms
+                // Cornerstone carved temple pillars with glowing rune bands in larger rooms
                 if (room.w >= 7 && room.h >= 7) {
                     const inset = ts * 1.15;
                     const corners = [
@@ -834,20 +845,44 @@
                         pillarTransforms.push({ x: px, y: wallHeight * 0.5, z: pz, sx: 1, sy: 1, sz: 1 });
                         capTransforms.push({ x: px, y: 5, z: pz });
                         capTransforms.push({ x: px, y: wallHeight - 5, z: pz });
+                        runeBandTransforms.push({ x: px, y: 14, z: pz });
+                        runeBandTransforms.push({ x: px, y: wallHeight - 14, z: pz });
                     }
+
+                    // Central tiered temple fountain / glowing basin in large rooms
+                    basinTransforms.push({ x: rcx, y: 1.5, z: rcz });
+                    fountainTransforms.push({ x: rcx, y: 18, z: rcz, s: 1 });
+                    fountainTransforms.push({ x: rcx, y: 36, z: rcz, s: 0.68 });
+                } else if (rIdx % 2 === 0) {
+                    // Glowing carved floor sigil in smaller/medium rooms
+                    sigilTransforms.push({ x: rcx, y: 0.35, z: rcz });
                 }
 
-                // Overhead castle timber/stone ceiling beams
+                // Overhead castle timber/stone ceiling beams + hanging moss vines
                 if (room.w >= 6) {
                     for (let bz = z0 + ts * 1.5; bz < z1 - ts; bz += ts * 2) {
-                        beamTransforms.push({ x: (x0 + x1) * 0.5, y: wallHeight - 7, z: bz, w: room.w * ts * 0.96 });
+                        beamTransforms.push({ x: rcx, y: wallHeight - 7, z: bz, w: room.w * ts * 0.96 });
+                        vineTransforms.push({ x: rcx - ts * 0.9, y: wallHeight - 22, z: bz });
+                        vineTransforms.push({ x: rcx + ts * 0.9, y: wallHeight - 25, z: bz });
                     }
                 }
 
-                // Hanging royal banners on north/south walls
+                // Bioluminescent "Charge Plants" & carved stone urns near corners
+                const plantX = x0 + ts * 0.65;
+                const plantZ = z0 + ts * 0.65;
+                plantTransforms.push({ x: plantX, y: 6, z: plantZ, s: 1 });
+                plantTransforms.push({ x: plantX + 6, y: 4.5, z: plantZ + 4, s: 0.72 });
+                plantLeafTransforms.push({ x: plantX, y: 2, z: plantZ });
+
+                const urnX = x1 - ts * 0.65;
+                const urnZ = z1 - ts * 0.65;
+                urnTransforms.push({ x: urnX, y: 7, z: urnZ, s: 1 });
+                urnTransforms.push({ x: urnX - 9, y: 5.5, z: urnZ - 4, s: 0.78 });
+
+                // Hanging royal banners on north walls
                 const bannerY = Math.min(wallHeight - 36, 92);
-                bannerTransforms.push({ x: (x0 + x1) * 0.5 - 32, y: bannerY, z: z0 + 2 });
-                bannerTransforms.push({ x: (x0 + x1) * 0.5 + 32, y: bannerY, z: z0 + 2 });
+                bannerTransforms.push({ x: rcx - 32, y: bannerY, z: z0 + 2 });
+                bannerTransforms.push({ x: rcx + 32, y: bannerY, z: z0 + 2 });
             }
 
             const addInstanced = (geo, mat, items, setupFn) => {
@@ -887,6 +922,60 @@
                 d.position.set(b.x, b.y, b.z);
                 d.rotation.set(0, 0, 0);
                 d.scale.set(1, 1, 1);
+            });
+
+            // Bioluminescent rune bands, temple fountains, floor sigils, charge plants, vines & urns
+            const runeGlowMat = new THREE.MeshStandardMaterial({
+                color: 0xa3e635, emissive: 0x84cc16, emissiveIntensity: 1.35, roughness: 0.35
+            });
+            const basinMat = new THREE.MeshStandardMaterial({
+                color: 0x65a30d, emissive: 0x4d7c0f, emissiveIntensity: 1.1, roughness: 0.15, transparent: true, opacity: 0.88
+            });
+            const vineMat = new THREE.MeshStandardMaterial({ color: 0x2d4a22, roughness: 0.92, side: THREE.DoubleSide });
+            const plantPodMat = new THREE.MeshStandardMaterial({
+                color: 0xbef264, emissive: 0x84cc16, emissiveIntensity: 1.2, roughness: 0.4
+            });
+            const urnMat = new THREE.MeshStandardMaterial({ map: this.textures.wall, color: 0x526570, roughness: 0.82 });
+
+            addInstanced(new THREE.CylinderGeometry(8.2, 8.2, 2.2, 8), runeGlowMat, runeBandTransforms, (d, r) => {
+                d.position.set(r.x, r.y, r.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.BoxGeometry(58, 3, 58), basinMat, basinTransforms, (d, b) => {
+                d.position.set(b.x, b.y, b.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.CylinderGeometry(11, 14, 24, 8), stoneMat, fountainTransforms, (d, f) => {
+                d.position.set(f.x, f.y, f.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(f.s, 1, f.s);
+            });
+            addInstanced(new THREE.RingGeometry(16, 22, 16), runeGlowMat, sigilTransforms, (d, s) => {
+                d.position.set(s.x, s.y, s.z);
+                d.rotation.set(-Math.PI / 2, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.PlaneGeometry(5, 22), vineMat, vineTransforms, (d, v) => {
+                d.position.set(v.x, v.y, v.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.SphereGeometry(4.2, 8, 8), plantPodMat, plantTransforms, (d, p) => {
+                d.position.set(p.x, p.y, p.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(p.s, p.s * 1.35, p.s);
+            });
+            addInstanced(new THREE.ConeGeometry(7, 4, 6), vineMat, plantLeafTransforms, (d, l) => {
+                d.position.set(l.x, l.y, l.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.CylinderGeometry(4.5, 5.5, 14, 8), urnMat, urnTransforms, (d, u) => {
+                d.position.set(u.x, u.y, u.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(u.s, u.s, u.s);
             });
 
             // Place shared 3D models from /models/ (window.GGG_MODEL_CATALOG) in rooms

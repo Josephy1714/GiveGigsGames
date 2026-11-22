@@ -60,7 +60,7 @@
             hazards: [7, 2],
             graveHazards: [7, 7, 2],
             corridorWidth: [1, 2],
-            atmosphere: { fogColor: 0x101018, fogDensity: 0.0035, ambientColor: 0x8b8fa3 }
+            atmosphere: { fogColor: 0x0d1519, fogDensity: 0.0036, ambientColor: 0x5c7a89 }
         },
         citadel_darkness: {
             roomBonus: 3,

@@ -449,7 +449,7 @@ class ProceduralTextures {
             dwarven_vault:   { floor: 0xfbbf24, wall: 0xf59e0b },
             orc_wastes:      { floor: 0xfca5a5, wall: 0xef4444 },
             toxic_catacombs: { floor: 0x86efac, wall: 0x22c55e },
-            stone_crypt:     { floor: 0xffffff, wall: 0xd6d3d1 },
+            stone_crypt:     { floor: 0x8ea4b0, wall: 0x6c828f },
             citadel_darkness:{ floor: 0xc4b5fd, wall: 0x8b5cf6 }
         };
         return TINTS[theme] || TINTS.stone_crypt;
