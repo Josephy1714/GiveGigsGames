@@ -248,6 +248,16 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const result={hit:g.hit,energy:g.energy,damage:100-g.energy};
   Object.assign(g,saved);
   return result;
+ },
+ probeLateBus:()=>{
+  if(!g||!g.on||!threeRenderer)return null;
+  const saved=g.obs;
+  g.obs=[{lane:1,z:.55,label:"LATE BUS",action:"lane"}];
+  render();
+  const active=Number($("#three-world").dataset.activeVehicleObstacles);
+  g.obs=saved;
+  render();
+  return active;
  }
 };
 const oldDrawPages = drawPages;
