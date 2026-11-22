@@ -61,13 +61,13 @@
             });
         }
 
-        spawnSparks(x, z, hexColor = 0xffcc4c, count = 15) {
+        spawnSparks(x, z, hexColor = 0xffcc4c, count = 15, y = 14) {
             const n = this._budget(count);
             if (!n) return;
             const mat = this._additiveMat(hexColor);
             for (let i = 0; i < n; i++) {
                 const mesh = new THREE.Mesh(this._boxGeo || new THREE.BoxGeometry(1.8, 1.8, 1.8), mat);
-                mesh.position.set(x, 14, z);
+                mesh.position.set(x, y, z);
                 this.scene.add(mesh);
                 const maxLife = 0.4 + Math.random() * 0.3;
                 this.chunks.push({
@@ -81,21 +81,21 @@
             }
         }
 
-        spawnBlood(x, z, hexColor = 0xef4444, count = 12) {
+        spawnBlood(x, z, hexColor = 0xef4444, count = 12, y = 16, direction = null) {
             const n = this._budget(count);
             if (!n) return;
             const mat = new THREE.MeshBasicMaterial({ color: hexColor, transparent: true, opacity: 1 });
             for (let i = 0; i < n; i++) {
                 const mesh = new THREE.Mesh(this._bloodGeo || new THREE.BoxGeometry(2.5, 2.5, 2.5), mat);
-                mesh.position.set(x + (Math.random() * 6 - 3), 16, z + (Math.random() * 6 - 3));
+                mesh.position.set(x + (Math.random() * 6 - 3), y, z + (Math.random() * 6 - 3));
                 this.scene.add(mesh);
                 const maxLife = 0.5 + Math.random() * 0.3;
                 this.chunks.push({
                     mesh,
                     mat,
-                    vx: (Math.random() * 2 - 1) * 100,
+                    vx: (Math.random() * 2 - 1) * 100 + (direction?.x || 0) * 90,
                     vy: 100 + Math.random() * 80,
-                    vz: (Math.random() * 2 - 1) * 100,
+                    vz: (Math.random() * 2 - 1) * 100 + (direction?.z || 0) * 90,
                     life: maxLife, maxLife, additive: false
                 });
             }

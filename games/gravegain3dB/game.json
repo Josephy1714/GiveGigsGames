@@ -44,7 +44,7 @@
             "H": "Drop current weapon (keep at least one)",
             "R": "Reload",
             "Z / X": "Lean left / right",
-            "Shift": "Sprint",
+            "Shift": "Hold while moving forward to build sprint speed. Press with sideways or backward movement to dodge.",
             "C": "Slide while sprinting; crouch when held without sprint",
             "Ctrl": "Crouch",
             "B": "Block (defend / wait in turn-based mode)",

@@ -50,6 +50,12 @@
             this.isDead = false;
             this.isBlocking = false;
             this.sprinting = false;
+            this.sprintBlend = 0;
+            this.shiftHeld = false;
+            this.dodgeTimer = 0;
+            this.dodgeCooldown = 0;
+            this.dodgeVx = 0;
+            this.dodgeVy = 0;
             this.parryWindow = 0;
 
             this.potions = 1 + (permanentStats.potions || 0);
@@ -152,22 +158,38 @@
             this.slideTimer = Math.max(0, this.slideTimer - dt);
             this.slideCooldown = Math.max(0, this.slideCooldown - dt);
             this.isSliding = this.slideTimer > 0;
-            let currentSpeed = this.speed;
+            this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
+            this.dodgeCooldown = Math.max(0, this.dodgeCooldown - dt);
+            let currentSpeed = this.speed * 1.25;
             if (this.hasPerk('swift')) currentSpeed *= 1.25;
 
             this.crouching = this.isSliding || !!(input.keys['ControlLeft'] || input.keys['ControlRight'] || input.keys['KeyC']);
             if (this.overclockTimer > 0) currentSpeed *= 1.3;
-            const isRunning = !this.crouching && (input.keys['ShiftLeft'] || input.keys['ShiftRight']) &&
-                this.stamina > 5 && moveLen > 0.05;
+            const shiftHeld = Boolean(input.keys.ShiftLeft || input.keys.ShiftRight);
+            const cosYaw = Math.cos(this.yaw);
+            const sinYaw = Math.sin(this.yaw);
+            const directionX = (moveX * cosYaw + moveZ * sinYaw) / Math.max(1, moveLen);
+            const directionY = (-moveX * sinYaw + moveZ * cosYaw) / Math.max(1, moveLen);
+            const touchSprint = Boolean(input.cryptStick?.sprint);
+            if (shiftHeld && !this.shiftHeld && !touchSprint && (Math.abs(moveX) > 0.05 || moveZ > 0.05) &&
+                this.grounded && !this.crouching && !this.isBlocking && this.dodgeCooldown === 0) {
+                this.dodgeTimer = 0.16;
+                this.dodgeCooldown = 0.45;
+                this.dodgeVx = directionX * currentSpeed * 2.6;
+                this.dodgeVy = directionY * currentSpeed * 2.6;
+            }
+            this.shiftHeld = shiftHeld;
+            const isRunning = !this.crouching && !this.isBlocking && shiftHeld &&
+                this.dodgeTimer === 0 && (moveZ < -0.05 || (touchSprint && moveLen > 0.05));
             this.sprinting = isRunning;
             const aiming = !!input.mouse?.aiming && !isRunning;
-            if (isRunning) {
-                currentSpeed *= 1.4;
-                const cost = this.hasPerk('swift') ? 12 : 20;
-                this.stamina = Math.max(0, this.stamina - cost * dt);
-            } else {
-                this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
+            this.sprintBlend = isRunning
+                ? Math.min(1, this.sprintBlend + dt)
+                : Math.max(0, this.sprintBlend - dt * 6);
+            if (!this.crouching && !this.isBlocking && !aiming) {
+                currentSpeed *= 1 + 1.2 * Math.pow(this.sprintBlend, 0.8);
             }
+            this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
 
             if (this.crouching) currentSpeed *= 0.58;
             if (aiming) currentSpeed *= 0.78;
@@ -181,14 +203,12 @@
                 const momentum = 0.62 + 0.48 * progress;
                 this.vx = this.slideVx * momentum;
                 this.vy = this.slideVy * momentum;
+            } else if (this.dodgeTimer > 0) {
+                this.vx = this.dodgeVx;
+                this.vy = this.dodgeVy;
             } else if (moveLen > 0.05) {
-                const normX = moveX / Math.max(1, moveLen);
-                const normZ = moveZ / Math.max(1, moveLen);
-
-                const cosYaw = Math.cos(this.yaw);
-                const sinYaw = Math.sin(this.yaw);
-                this.vx = (normX * cosYaw + normZ * sinYaw) * currentSpeed;
-                this.vy = (-normX * sinYaw + normZ * cosYaw) * currentSpeed;
+                this.vx = directionX * currentSpeed;
+                this.vy = directionY * currentSpeed;
             } else {
                 this.vx = 0;
                 this.vy = 0;

@@ -22,6 +22,36 @@
         { id: 'sniper', name: 'WRAITH BOLT SNIPER', magazine: 5, reserve: 25, damage: 84, meleeDamage: 24, fireRate: 0.82, boltCycle: 0.28, reload: 2.15, range: 1250, falloffStart: 720, minDamageScale: 0.58, adsFov: 26, spreadScale: 0.46, pellets: 1, automatic: false, recoilPattern: [[0.0008, 0.042]], adsRecoilPattern: [[0.0003, 0.019]] }
     ];
 
+    const ROLL_MAKERS = [
+        { name: 'Ashforge', damage: 1.22, fireRate: 1.12 },
+        { name: 'Hollowcoil', damage: 0.86, fireRate: 0.78 },
+        { name: 'Pale Meridian', damage: 1.05, fireRate: 1.04 },
+        { name: 'Gravetide', damage: 0.96, fireRate: 0.92 },
+        { name: 'Cinder Abbey', damage: 1.12, fireRate: 1.05 }
+    ];
+    const ROLL_BARRELS = ['Pinpoint', 'Tight', 'Standard', 'Sweep', 'Scatter'];
+    const ROLL_FEEDS = ['Stub', 'Light', 'Field', 'Extended', 'Deep', 'Siege'];
+
+    function rollWeapon(definition) {
+        const makerIndex = Math.floor(Math.random() * ROLL_MAKERS.length);
+        const barrel = Math.floor(Math.random() * ROLL_BARRELS.length);
+        const feed = Math.floor(Math.random() * ROLL_FEEDS.length);
+        const maker = ROLL_MAKERS[makerIndex];
+        const magazine = Math.max(1, definition.magazine + feed - 2);
+        return {
+            ...definition,
+            rollId: `1:${definition.id}:${makerIndex}:${barrel}:${feed}`,
+            name: `${maker.name} ${ROLL_BARRELS[barrel]} ${definition.name} · ${ROLL_FEEDS[feed]}`,
+            magazine,
+            damage: definition.damage * maker.damage * (0.90 + barrel * 0.05),
+            fireRate: definition.fireRate * maker.fireRate,
+            spreadScale: definition.spreadScale * (0.64 + barrel * 0.18),
+            range: Math.round(definition.range * (1.16 - barrel * 0.08)),
+            reload: definition.reload * (0.84 + feed * 0.08),
+            shellReload: definition.shellReload && definition.shellReload * (0.84 + feed * 0.08)
+        };
+    }
+
     // Pointer lock is optional (and commonly unavailable inside embedded game
     // players). Never let a rejected lock request break the rest of the game.
     function requestPointerLockSafely(element) {
@@ -249,7 +279,6 @@
             this.swingTime = 0;
             this.swingDuration = 0.26;
             this.swingCombo = 0;
-            this.hitstop = 0;
             this.isPaused = false;
             this.lastFrameTime = performance.now();
             this.hordeTimer = 35.0;
@@ -1536,7 +1565,11 @@
             }).sort((a, b) => a.ratio - b.ratio);
             const lowestRatio = ranked[0]?.ratio ?? 1;
             const candidates = ranked.filter(item => item.ratio <= lowestRatio + 0.15);
-            const weapon = candidates[(Math.random() * candidates.length) | 0]?.definition || FPS_WEAPONS[0];
+            const definition = candidates[(Math.random() * candidates.length) | 0]?.definition || FPS_WEAPONS[0];
+            // Keep some standard caches available for replenishing starter guns.
+            const weapon = Math.random() < 0.75
+                ? rollWeapon(FPS_WEAPONS[Math.floor(Math.random() * FPS_WEAPONS.length)])
+                : definition;
             const loot = new LootItem(x, y, 'weapon', 1, {
                 ...weapon,
                 ammo: weapon.magazine,
@@ -1596,7 +1629,14 @@
                 }
             } else if (loot.type === 'weapon' && loot.weaponData) {
                 const picked = loot.weaponData;
-                const existing = this.weaponInventory.find(weapon => weapon.id === picked.id);
+                const existing = this.weaponInventory.find(weapon => (weapon.rollId || weapon.id) === (picked.rollId || picked.id));
+                if (picked.rollId && !existing && this.weaponInventory.length >= FPS_WEAPONS.length) {
+                    if (!loot.fullInventoryNotice) {
+                        this.combatText.spawnText(this.player.x, 20, this.player.y, 'SLOTS FULL · H TO DROP A WEAPON', 'block');
+                        loot.fullInventoryNotice = true;
+                    }
+                    return;
+                }
                 if (existing) {
                     const oldTotal = existing.ammo + existing.reserveAmmo;
                     const incoming = (picked.ammo || 0) + (picked.reserveAmmo || 0);
@@ -1796,7 +1836,7 @@
             }
             const slots = document.getElementById('hudWeaponSlots');
             if (slots) {
-                const signature = this.weaponInventory.map((item, index) => `${item.id}:${item.ammo}:${item.reserveAmmo}:${item.secondaryAmmo || 0}:${item.secondaryReserveAmmo || 0}:${index === this.activeWeaponIndex}`).join('|');
+                const signature = this.weaponInventory.map((item, index) => `${item.rollId || item.id}:${item.ammo}:${item.reserveAmmo}:${item.secondaryAmmo || 0}:${item.secondaryReserveAmmo || 0}:${index === this.activeWeaponIndex}`).join('|');
                 if (slots.dataset.signature !== signature) {
                     const shortNames = { rifle: 'RIFLE', sidearm: 'PISTOL', scattergun: 'SHOTGUN', sniper: 'SNIPER' };
                     slots.replaceChildren(...this.weaponInventory.map((item, index) => {
@@ -1915,7 +1955,7 @@
                     }
                     hits.set(enemy, hit);
                 } else if (prop) this.breakProp(prop);
-                else this.vfx.spawnSparks(impact.x, impact.z, tracerColor, 3);
+                else this.vfx.spawnSparks(impact.x, impact.z, tracerColor, 3, impact.y);
             }
 
             const forward = new THREE.Vector3();
@@ -2110,10 +2150,13 @@
             enemy.kx = dir.x * 160;
             enemy.ky = dir.z * 160;
 
-            // Trigger hitstop & audio
-            this.hitstop = 0.04;
-            this.vfx.spawnBlood(enemy.x, enemy.y, enemy.bloodColor);
-            this.emitGraphicsBurst(enemy.x, enemy.y, isCrit || isHeadshot ? '#fbbf24' : '#ef4444', isCrit || isHeadshot ? 1.5 : 0.8);
+            const hitX = impact?.x ?? enemy.x;
+            const hitY = impact?.y ?? 16;
+            const hitZ = impact?.z ?? enemy.y;
+            const strongHit = isCrit || isHeadshot || enemy.hp <= 0;
+            this.vfx.spawnBlood(hitX, hitZ, enemy.bloodColor, strongHit ? 14 : 7, hitY, dir);
+            if (strongHit) this.vfx.spawnSparks(hitX, hitZ, 0xffcc4c, 8, hitY);
+            this.emitGraphicsBurst(hitX, hitZ, strongHit ? '#fbbf24' : '#ef4444', strongHit ? 1.5 : 0.8);
             this.audio.playSfx(isCrit || isHeadshot ? 'crit' : 'hit', isHeadshot ? 1.2 : 1);
 
             const hitLabel = `${isHeadshot ? 'HEADSHOT! ' : ''}${isCrit ? 'CRIT! ' : ''}${Math.round(dmg)}`;
@@ -2629,11 +2672,6 @@
 
         update(dt) {
             if (!this.player) return;
-            if (this.hitstop > 0) {
-                this.hitstop -= dt;
-                return;
-            }
-
             const isShake = document.getElementById('settingsCameraShake').checked;
 
             // 1. Determine effectiveDt based on controlMode

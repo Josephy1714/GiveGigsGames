@@ -42,7 +42,36 @@
             return [{ key: 'warrior', title: 'Warrior', weaponName: 'Moonsteel Long-Putter', desc: 'Master of swordplay.' }];
         }
 
+        function openCampaign(missionId) {
+            state.mode = 'campaign';
+            if (window.GG4D_Campaign && window.GG4D_Campaign.get(missionId)) {
+                state.mission = Number(missionId);
+            }
+            buildCharSelect();
+            show('charSelectScreen');
+        }
+
+        function buildMissionPicker() {
+            var picker = $('campaignMissionPicker');
+            var select = $('campaignMissionSelect');
+            var campaign = window.GG4D_Campaign;
+            if (!picker || !select) return;
+            picker.hidden = state.mode !== 'campaign' || !campaign;
+            if (picker.hidden) return;
+
+            select.textContent = '';
+            campaign.all().forEach(function (mission) {
+                var option = document.createElement('option');
+                option.value = mission.id;
+                option.textContent = mission.id + '. ' + mission.title;
+                select.appendChild(option);
+            });
+            select.value = state.mission;
+            select.onchange = function () { state.mission = Number(select.value); };
+        }
+
         function buildCharSelect() {
+            buildMissionPicker();
             try {
                 var rg = $('raceGrid');
                 if (rg && !rg.children.length) {
@@ -85,11 +114,11 @@
                 if (M && M.boot) { try { M.boot({ race: state.race, cls: state.cls, mode: state.mode, mission: state.mission }); } catch (e) {} }
                 var game = window.GG4D_Game;
                 if (game) { game.gigglesHelpUses = 3; try { if (window.GigglesHelpDraft) window.GigglesHelpDraft.present('gravegain4dA', game, null, true); } catch (e) {} }
-                var C = window.GG4D_Campaign || window.GG4D_CampaignMissions;
+                var C = window.GG4D_Campaign;
                 if (state.mode === 'campaign' && C) {
                     try {
-                        var cur = C.getCurrent ? C.getCurrent() : (C.current || null);
-                        if (window.GG4D_Contract) window.GG4D_Contract.setMission(cur);
+                        var cur = C.get(state.mission);
+                        if (cur && window.GG4D_Contract) window.GG4D_Contract.setMission(cur.title, cur.objectives);
                     } catch (e) {}
                 }
                 try {
@@ -175,7 +204,7 @@
         function wire() {
             buildCharSelect();
             buildLoreList();
-            on($('btnStoryMode'), 'click', function () { state.mode = 'campaign'; buildCharSelect(); show('charSelectScreen'); });
+            on($('btnStoryMode'), 'click', function () { openCampaign(); });
             on($('btnPlay'), 'click', function () { state.mode = 'endless'; buildCharSelect(); show('charSelectScreen'); });
             on($('btnEnterHub'), 'click', function () { returnToHub(); });
             on($('btnOpenSettings'), 'click', function () { show('settingsScreen'); });
@@ -201,6 +230,6 @@
             try { document.addEventListener('DOMContentLoaded', wire); } catch (e) {}
         } else { wire(); }
 
-        window.GG4D_Flow = { show: show, state: state, startRun: startRun, returnToHub: returnToHub, openLore: openLore, speakLore: speakLore };
+        window.GG4D_Flow = { show: show, openCampaign: openCampaign, state: state, startRun: startRun, returnToHub: returnToHub, openLore: openLore, speakLore: speakLore };
     } catch (e) {}
 })();

@@ -48,13 +48,11 @@
                     return c ? c.get(n - 1) : null;
                 } catch (_) { return null; }
             },
-            isUnlocked: function (id, clearedIds) {
+            isUnlocked: function (id) {
                 try {
                     var n = Number(id);
-                    if (!isFinite(n)) return false;
-                    if (n === 1) return true;
-                    if (!Array.isArray(clearedIds)) return false;
-                    return clearedIds.indexOf(n - 1) !== -1;
+                    var c = campaign();
+                    return Number.isInteger(n) && !!(c && c.get(n));
                 } catch (_) { return false; }
             },
             // Difficulty ramp summary: w-slices descend 0..-9 as ids rise.

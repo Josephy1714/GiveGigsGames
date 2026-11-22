@@ -303,11 +303,7 @@
         }
 
         static isUnlocked(missionId) {
-            if (missionId === 1) return true;
-            const progress = StoryEngine.getProgress();
-            const mission = StoryEngine.getMission(missionId);
-            if (!mission) return false;
-            return progress.completedMissions.includes(mission.unlockedBy);
+            return StoryEngine.getMission(missionId) !== null;
         }
 
         static completeMission(missionId, starsGained = 3) {

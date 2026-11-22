@@ -4,7 +4,7 @@
     // GraveGain4D LuckyStarShip hub loop — Return-to-Starship flow:
     //   heal to full, bank gold -> KillCredits -> $UUSD exchange,
     //   repair modules (cost), mission select terminal (10 missions,
-    //   lock/unlock + par/stars), Q-juice refill.
+    //   par/stars), Q-juice refill.
     // All state JSON-serializable under state.hub (see createHubState /
     // serializeHub / deserializeHub). Never assumes other files exist:
     // every cross-module read (Quarters/Crops/Economy, game root, #hub DOM)
@@ -285,29 +285,22 @@
         };
     }
 
-    function isUnlocked(hub, index) {
-        if (index <= 0) return true;
-        const prev = missionEntry(hub, MISSIONS[index - 1].id);
-        return prev.stars > 0;
-    }
-
     function listMissions(root) {
         const hub = ensureHub(root);
-        return MISSIONS.map((m, i) => {
+        return MISSIONS.map((m) => {
             const e = missionEntry(hub, m.id);
             return {
                 id: m.id, name: m.name, par: m.par,
-                unlocked: isUnlocked(hub, i),
+                unlocked: true,
                 stars: e.stars, best: e.best
             };
         });
     }
 
     function selectMission(root, missionId) {
-        const hub = ensureHub(root);
+        ensureHub(root);
         const idx = MISSIONS.findIndex((m) => m.id === missionId);
         if (idx < 0) return { ok: false, reason: 'unknown-mission' };
-        if (!isUnlocked(hub, idx)) return { ok: false, reason: 'locked' };
         try {
             if (root && typeof root === 'object') root.missionId = missionId;
         } catch (e) { /* mission select still succeeds */ }
@@ -463,7 +456,10 @@
             else if (act === 'repair') repairModule(state, id);
             else if (act === 'repair-all') repairAll(state);
             else if (act === 'qjuice') refillQJuice(state);
-            else if (act === 'mission') selectMission(state, id);
+            else if (act === 'mission') {
+                const result = selectMission(state, id);
+                if (result.ok && window.GG4D_Flow) window.GG4D_Flow.openCampaign(Number(id.slice(1)));
+            }
             else if (act === 'return') returnToStarship(state);
         } catch (e) { /* panel actions are best-effort */ }
     }

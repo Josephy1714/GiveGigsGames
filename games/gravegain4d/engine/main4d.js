@@ -71,6 +71,7 @@
     Main4D.prototype.init = function (opts) {
         try {
             opts = opts || this.opts || {};
+            this.state.mission = opts.mission || 1;
             this.mods = pick();
             var M = this.mods;
             // Engine: putt instance (fresh per boot unless caller passes one).
