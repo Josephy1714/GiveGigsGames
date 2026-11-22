@@ -53,7 +53,7 @@ class StateManager {
     // Difficulty Settings
     this.difficulty = 'normal';
     this.difficultyMultiplier = 1.0;
-    this.selectedLevel = 'hallway';
+    this.selectedLevel = 'fantasy';
     this.waveWords = new Set();
     
     // Settings and Customizations (private-mode-safe storage reads)

@@ -1137,10 +1137,29 @@
                 osc.stop(now + 0.1);
             }
         }
-        speakFallback(text) {
+        speakFallback(text, speaker) {
             if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.volume = this.masterVolume;
+                if (speaker) {
+                    let h = 0;
+                    for (let i = 0; i < speaker.length; i++) h = ((h << 5) - h + speaker.charCodeAt(i)) | 0;
+                    h = Math.abs(h);
+                    const wantFemale = (h % 2) === 1;
+                    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+                    const enVoices = voices.filter(v => !v.lang || /^en/i.test(v.lang));
+                    const pool = enVoices.length ? enVoices : voices;
+                    if (pool.length) {
+                        const femRe = /female|woman|zira|samantha|victoria|karen|moira|tessa|fiona|susan|hazel|aria|jenny|sonia|libby|natasha|ava|emma|allison/i;
+                        const maleRe = /\bmale\b|\bman\b|david|mark|alex|daniel|george|ryan|guy|christopher|eric|liam|thomas|fred|oliver|arthur/i;
+                        const gendered = pool.filter(v => wantFemale ? femRe.test(v.name) : maleRe.test(v.name));
+                        const pick = gendered.length ? gendered : pool;
+                        utterance.voice = pick[h % pick.length];
+                    }
+                    utterance.pitch = 0.7 + ((h % 7) * 0.12);
+                    utterance.rate = 0.9 + (((h >> 3) % 5) * 0.07);
+                }
                 window.speechSynthesis.speak(utterance);
             }
         }
@@ -2966,6 +2985,7 @@
             const speaker = document.getElementById('dialogueSpeaker');
             const text = document.getElementById('dialogueText');
             const nextBtn = document.getElementById('btnNextDialogue');
+            const skipAllBtn = document.getElementById('btnSkipAllDialogue');
 
             if (!dialogueScreen) {
                 if (onComplete) onComplete();
@@ -2981,7 +3001,15 @@
                 portrait.textContent = item.portrait || '🤖';
                 speaker.textContent = item.speaker;
                 text.textContent = item.text;
-                this.audio.speakFallback(`${item.speaker} says: ${item.text}`);
+                this.audio.speakFallback(item.text, item.speaker);
+            };
+
+            const finishDialogue = () => {
+                nextBtn.onclick = null;
+                if (skipAllBtn) skipAllBtn.onclick = null;
+                dialogueScreen.classList.add('hidden');
+                this.isDialogueActive = false;
+                if (onComplete) onComplete();
             };
 
             const handleNext = () => {
@@ -2989,14 +3017,12 @@
                 if (idx < dialogueList.length) {
                     showLine();
                 } else {
-                    nextBtn.removeEventListener('click', handleNext);
-                    dialogueScreen.classList.add('hidden');
-                    this.isDialogueActive = false;
-                    if (onComplete) onComplete();
+                    finishDialogue();
                 }
             };
 
             nextBtn.onclick = handleNext;
+            if (skipAllBtn) skipAllBtn.onclick = finishDialogue;
             showLine();
         }
 

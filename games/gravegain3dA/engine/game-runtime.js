@@ -545,6 +545,9 @@
             this.torches = [];
 
             this.enemies.forEach(e => e.destroy());
+            if (window.SquadAllies && typeof window.SquadAllies.clear === 'function') {
+                window.SquadAllies.clear(this.scene);
+            }
             window.GraveGainEnemyVoxels.clear(this.scene);
             this.enemies = [];
 
@@ -759,10 +762,26 @@
                 }
             } catch (_) { /* decor is optional */ }
 
+            // Spawn 3 AI squadmates (Sir Gareth, Lyra, Watcher Vance)
+            try {
+                if (window.SquadAllies && typeof window.SquadAllies.init === 'function') {
+                    window.SquadAllies.init(this.scene, this.player, this.mapMeshes);
+                }
+                if (window.FPCombatFeel && typeof window.FPCombatFeel.init === 'function' && this.camera3d) {
+                    window.FPCombatFeel.init(this.camera3d);
+                }
+                if (window.DevDocMechanics && typeof window.DevDocMechanics.init === 'function' && this.camera3d) {
+                    window.DevDocMechanics.init(this.camera3d);
+                }
+            } catch (_) { /* optional */ }
+
             // Spawn Torches, Props & Enemies in rooms
             // Campaign curve is folded in here (endless = x1, untouched).
             // Soft cap: past depth 30 the curve plateaus so endless stays hard but finite.
-            const diffScale = (1.0 + (Math.min(this.floorIndex, 30) * 0.18)) * this.getMissionScaleMult();
+            const timeScale = (window.DevDocMechanics && typeof window.DevDocMechanics.getDifficultyScale === 'function')
+                ? window.DevDocMechanics.getDifficultyScale()
+                : 1.0;
+            const diffScale = (1.0 + (Math.min(this.floorIndex, 30) * 0.18)) * this.getMissionScaleMult() * timeScale;
             const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
 
             this.dungeon.rooms.forEach((room, roomIdx) => {
@@ -937,6 +956,7 @@
                 portal.position.set(sx, 20, sy);
                 this.scene.add(portal);
                 this.mapMeshes.push(portal);
+                this.exitPortal = portal;
             }
 
             this.updateHUD();
@@ -960,6 +980,9 @@
             this.swingCombo = (this.swingCombo + 1) % 3;
 
             this.cameraController.applyPunch(0.04, -0.02);
+            if (window.FPCombatFeel && typeof window.FPCombatFeel.triggerSwing === 'function') {
+                window.FPCombatFeel.triggerSwing(false, this.player.stamina < 25);
+            }
 
             const forward = new THREE.Vector3();
             this.camera3d.getWorldDirection(forward);
@@ -1086,7 +1109,7 @@
             btn.id = 'btnAiSpectator';
             btn.type = 'button';
             btn.textContent = '🤖 AI Spectator [V]';
-            btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(56,189,248,0.45);background:rgba(12,10,24,0.88);color:#e0f2fe;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
+            btn.style.cssText = 'position:fixed;bottom:68px;right:16px;z-index:90;padding:8px 14px;border-radius:8px;border:1px solid rgba(56,189,248,0.45);background:rgba(12,10,24,0.88);color:#e0f2fe;font-family:Orbitron,sans-serif;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);';
             btn.addEventListener('click', () => this.toggleAiSpectator());
             document.body.appendChild(btn);
         }
@@ -1246,6 +1269,11 @@
             if (this.player.hasPerk('goldrush')) {
                 dmg *= (1.0 + (this.gold / 20) * 0.01);
             }
+            if (window.DevDocMechanics && typeof window.DevDocMechanics.getDamageMult === 'function') {
+                dmg *= window.DevDocMechanics.getDamageMult(this.player.classType);
+            }
+            if (this.player.adrenalineTimer > 0) dmg *= 1.5;
+            if (enemy.tagged) dmg *= 1.15;
 
             let isCrit = Math.random() < (ClassData[this.player.classType].critChance + (activeWpn.critBonus || 0) + (this.player.hasPerk('critfury') ? 0.20 : 0));
             if (isCrit) {
@@ -1264,6 +1292,17 @@
 
             // Trigger hitstop & audio
             this.hitstop = 0.04;
+            if (window.FPCombatFeel && typeof window.FPCombatFeel.triggerHitStop === 'function') {
+                window.FPCombatFeel.triggerHitStop(0.04);
+            }
+            if (typeof enemy.applyStatus === 'function') {
+                if (!impact) enemy.applyStatus('staggered', 0.35);
+                if (this.player.hasPerk('pyromancy') || activeWpn.tag === 'Fire') enemy.applyStatus('flaming', 3.5);
+                if (isCrit) enemy.applyStatus('bleeding', 4.0);
+            }
+            if (enemy.hp <= 0 && !impact && typeof this.player.addTempHp === 'function') {
+                this.player.addTempHp(this.player.classType === 'tank' ? 9 : 6);
+            }
             this.vfx.spawnBlood(enemy.x, enemy.y, enemy.bloodColor);
             this.emitGraphicsBurst(enemy.x, enemy.y, isCrit ? '#fbbf24' : '#ef4444', isCrit ? 1.5 : 0.8);
             this.audio.playSfx(isCrit ? 'crit' : 'hit');
@@ -1693,6 +1732,9 @@
                         this.gold += goldGain;
                         this.kills++;
                         this.player.addXp(xpGain);
+                        if (window.DevDocMechanics && typeof window.DevDocMechanics.onEnemyKilled === 'function') {
+                            window.DevDocMechanics.onEnemyKilled(e, this);
+                        }
                         this.vfx.spawnBlood(e.x, e.y, e.bloodColor);
                         if (e.isBoss && this.vfx.spawnDeathBurst) this.vfx.spawnDeathBurst(e.x, e.y, e.name, 30);
                         if (this.weaponLoot) this.weaponLoot.maybeDropFromEnemy(this.scene, e, this.floor);
@@ -1831,6 +1873,9 @@
             // 2. Realtime/Chrono updates
             if (this.controlMode !== 'turnbased') {
                 this.player.isBlocking = this.input.mouse.isBlocking;
+                if (window.FPCombatFeel && typeof window.FPCombatFeel.setBlocking === 'function') {
+                    window.FPCombatFeel.setBlocking(this.player.isBlocking);
+                }
 
                 // Handle primary attack
                 if (this.input.mouse.click) {
@@ -1845,6 +1890,21 @@
                 }
 
                 this.player.update(effectiveDt, this.input, this.physics, this.dungeon);
+
+                if (window.SquadAllies && typeof window.SquadAllies.update === 'function') {
+                    window.SquadAllies.update(effectiveDt, this.player, this.enemies);
+                }
+                if (window.FPCombatFeel && typeof window.FPCombatFeel.update === 'function' && this.camera3d) {
+                    const isMoving = this.player && (Math.abs(this.player.vx) > 2 || Math.abs(this.player.vy) > 2);
+                    const lowStamina = this.player && this.player.stamina < 25;
+                    window.FPCombatFeel.update(effectiveDt, this.camera3d, isMoving, lowStamina);
+                }
+                if (window.DevDocMechanics && typeof window.DevDocMechanics.update === 'function') {
+                    window.DevDocMechanics.update(effectiveDt, this);
+                    if (this.exitPortal && typeof window.DevDocMechanics.applyRainbowSafeSpace === 'function') {
+                        window.DevDocMechanics.applyRainbowSafeSpace(this.exitPortal, effectiveDt);
+                    }
+                }
 
                 // Update enemies
                 this.enemies.forEach(e => e.update(effectiveDt, this.player, this.physics, this.dungeon, this));
@@ -1867,6 +1927,9 @@
                         this.gold += goldGain;
                         this.kills++;
                         this.player.addXp(xpGain);
+                        if (window.DevDocMechanics && typeof window.DevDocMechanics.onEnemyKilled === 'function') {
+                            window.DevDocMechanics.onEnemyKilled(e, this);
+                        }
                         this.vfx.spawnBlood(e.x, e.y, e.bloodColor);
                         if (e.isBoss && this.vfx.spawnDeathBurst) this.vfx.spawnDeathBurst(e.x, e.y, e.name, 30);
                         if (this.weaponLoot) this.weaponLoot.maybeDropFromEnemy(this.scene, e, this.floor);

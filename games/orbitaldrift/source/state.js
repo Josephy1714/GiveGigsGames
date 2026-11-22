@@ -122,6 +122,81 @@ const SAT_BASE_SPEED = 0.045;
 
 const GRAZE_MIN = 9, GRAZE_MAX = 22;
 
+// ---------- Camera Views ----------
+const CAMERA_MODES = ['chase', 'forward', 'solar'];
+const CAMERA_LABELS = { chase: '3RD PERSON', forward: 'FORWARD', solar: 'SOLAR VIEW' };
+let cameraMode = store.get('orbitaldrift_cam', 'chase');
+if (!CAMERA_MODES.includes(cameraMode)) cameraMode = 'chase';
+const camPosCurrent = new THREE.Vector3(0, -230, 220);
+const camLookCurrent = new THREE.Vector3(0, 0, 0);
+
+// ---------- Orbital Levels ----------
+const LEVELS = {
+    earth: {
+        id: 'earth',
+        name: 'Low Earth Orbit',
+        emoji: '🌍',
+        desc: 'Classic single-planet orbit. Stable gravity, clean debris lanes.',
+        centerType: 'earth',
+        centerRadius: 35,
+        hasRings: true,
+        ringColor: 0xa855f7,
+        scoreMult: 1.0,
+        debrisRate: 1.0,
+        bodies: []
+    },
+    earth_moon: {
+        id: 'earth_moon',
+        name: 'Earth-Moon System',
+        emoji: '🌗',
+        desc: 'Dodge the orbiting Moon & ride its gravity for Lunar Slingshot bonuses.',
+        centerType: 'earth',
+        centerRadius: 33,
+        hasRings: false,
+        scoreMult: 1.25,
+        debrisRate: 1.1,
+        bodies: [
+            { name: 'Moon', radius: 10, orbitR: 132, speed: 0.0085, angle: 1.2, color: 0xd1d5db, emissive: 0x374151, slingshotBonus: 180 }
+        ]
+    },
+    earth_mars: {
+        id: 'earth_mars',
+        name: 'Earth-Mars Transfer',
+        emoji: '🔴',
+        desc: 'Heliocentric orbit around the Sun! Weave between Earth & Mars.',
+        centerType: 'sun',
+        centerRadius: 32,
+        hasRings: false,
+        scoreMult: 1.5,
+        debrisRate: 1.2,
+        bodies: [
+            { name: 'Earth', radius: 9.5, orbitR: 86, speed: 0.011, angle: 0.5, color: 0x38bdf8, emissive: 0x0369a1, slingshotBonus: 150 },
+            { name: 'Mars', radius: 8.5, orbitR: 152, speed: 0.0065, angle: 3.6, color: 0xef4444, emissive: 0x7f1d1d, slingshotBonus: 220 }
+        ]
+    },
+    saturn: {
+        id: 'saturn',
+        name: "Saturn's Rings",
+        emoji: '🪐',
+        desc: 'High-speed ring-skimming around a ringed giant & orbiting Titan.',
+        centerType: 'saturn',
+        centerRadius: 36,
+        hasRings: true,
+        ringColor: 0xfde68a,
+        scoreMult: 1.75,
+        debrisRate: 1.35,
+        bodies: [
+            { name: 'Titan', radius: 11, orbitR: 156, speed: 0.007, angle: 2.4, color: 0xf59e0b, emissive: 0x78350f, slingshotBonus: 250 }
+        ]
+    }
+};
+
+let selectedLevel = store.get('orbitaldrift_level', 'earth');
+if (!LEVELS[selectedLevel]) selectedLevel = 'earth';
+const levelCfg = () => LEVELS[selectedLevel];
+let secondaryBodies = [];
+let slingshotCD = 0;
+
 // ---------- Flyable ship classes ----------
 const SHIPS = {
     cubesat: { id: 'cubesat', name: 'CubeSat', emoji: '📦', maxIntegrity: 75, thrustOut: 6.0, thrustIn: 5.2, agility: 0.22, hitMod: -2, pickupR: 8, grazeMod: 2, magnetMod: -8, scoreMult: 1.25, trail: 0xfacc15 },

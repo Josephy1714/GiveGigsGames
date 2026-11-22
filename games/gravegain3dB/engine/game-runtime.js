@@ -303,7 +303,7 @@
             try {
                 if ('toneMapping' in this.renderer && THREE.ACESFilmicToneMapping !== undefined) {
                     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                    this.renderer.toneMappingExposure = 1.12;
+                    this.renderer.toneMappingExposure = 1.24;
                 }
                 if (this.renderer.outputEncoding !== undefined && THREE.sRGBEncoding !== undefined) {
                     this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -338,7 +338,11 @@
             this.ambientLight = new THREE.AmbientLight(0x2d1f4d, 0.65);
             this.scene.add(this.ambientLight);
             // Cool overhead light picks out silhouettes and floor edges in dark rooms.
-            this.scene.add(new THREE.HemisphereLight(0xa2caff, 0x392448, 0.52));
+            this.scene.add(new THREE.HemisphereLight(0x9ec5e8, 0x1b262c, 0.68));
+            // Directional rim light for crisp stone & enemy silhouettes
+            this.rimLight = new THREE.DirectionalLight(0x88bbee, 0.75);
+            this.rimLight.position.set(120, 240, 80);
+            this.scene.add(this.rimLight);
 
             // Player lantern with subtle warm dynamic aura
             this.playerLantern = new THREE.PointLight(0xffecd2, 2.4, 210, 1.2);
@@ -822,6 +826,52 @@
             const plantTransforms = [];
             const plantLeafTransforms = [];
             const urnTransforms = [];
+            const barricadeTransforms = [];
+            const brazierTransforms = [];
+            const flameTransforms = [];
+            const parapetTransforms = [];
+            const godRayTransforms = [];
+            // 32+ additional Vermintide / temple-crypt architectural & prop details
+            const buttressTransforms = [];
+            const corniceTransforms = [];
+            const floorTrimTransforms = [];
+            const archLintelTransforms = [];
+            const archJambTransforms = [];
+            const ruinedPillarTransforms = [];
+            const rubbleTransforms = [];
+            const chainTransforms = [];
+            const lanternCageTransforms = [];
+            const lanternCoreTransforms = [];
+            const scaffoldPlankTransforms = [];
+            const scaffoldPostTransforms = [];
+            const stakeTransforms = [];
+            const barrelPropTransforms = [];
+            const barrelHoopTransforms = [];
+            const cratePropTransforms = [];
+            const awningTransforms = [];
+            const statuePlinthTransforms = [];
+            const statueTorsoTransforms = [];
+            const statueHeadTransforms = [];
+            const gargoyleTransforms = [];
+            const gargoyleEyeTransforms = [];
+            const alcoveTransforms = [];
+            const skullPileTransforms = [];
+            const crystalShardTransforms = [];
+            const grateTransforms = [];
+            const mossPatchTransforms = [];
+            const fungusTransforms = [];
+            const rackTransforms = [];
+            const portcullisTransforms = [];
+            const stepTransforms = [];
+            const obeliskTransforms = [];
+
+            this.levelInteractables = {
+                chargePlants: [],
+                braziers: [],
+                sigils: [],
+                urns: [],
+                barricades: []
+            };
 
             for (let rIdx = 0; rIdx < rooms.length; rIdx++) {
                 const room = rooms[rIdx];
@@ -883,6 +933,71 @@
                 const bannerY = Math.min(wallHeight - 36, 92);
                 bannerTransforms.push({ x: rcx - 32, y: bannerY, z: z0 + 2 });
                 bannerTransforms.push({ x: rcx + 32, y: bannerY, z: z0 + 2 });
+
+                // Vermintide-inspired: wooden palisade barricades, fire braziers, low parapets & light shafts
+                barricadeTransforms.push({ x: x0 + ts * 0.85, y: 9, z: z1 - ts * 0.45, ry: 0.18 });
+                brazierTransforms.push({ x: x1 - ts * 0.55, y: 6, z: z0 + ts * 0.55 });
+                flameTransforms.push({ x: x1 - ts * 0.55, y: 13.5, z: z0 + ts * 0.55 });
+
+                if (room.w >= 6 && room.h >= 6) {
+                    parapetTransforms.push({ x: rcx - ts * 1.4, y: 6, z: rcz, ry: 0 });
+                    parapetTransforms.push({ x: rcx + ts * 1.4, y: 6, z: rcz, ry: 0 });
+                }
+                if (rIdx % 2 === 1) {
+                    godRayTransforms.push({ x: rcx, y: wallHeight * 0.5, z: rcz });
+                }
+
+                // Register interactive nodes for the 5 gameplay features
+                this.levelInteractables.chargePlants.push({ x: plantX, z: plantZ, cooldown: 0 });
+                this.levelInteractables.braziers.push({ x: x1 - ts * 0.55, z: z0 + ts * 0.55, stoked: false, cooldown: 0 });
+                if (rIdx % 2 === 0 && !(room.w >= 7 && room.h >= 7)) {
+                    this.levelInteractables.sigils.push({ x: rcx, z: rcz, cooldown: 0 });
+                }
+                this.levelInteractables.urns.push({ x: urnX, z: urnZ, broken: false });
+                this.levelInteractables.barricades.push({ x: x0 + ts * 0.85, z: z1 - ts * 0.45, hp: 3 });
+
+                // Populate 32+ architectural & prop details per room
+                buttressTransforms.push({ x: x0 + 4, y: wallHeight * 0.45, z: rcz });
+                buttressTransforms.push({ x: x1 - 4, y: wallHeight * 0.45, z: rcz });
+                corniceTransforms.push({ x: rcx, y: wallHeight - 3, z: z0 + 3, w: room.w * ts * 0.9 });
+                floorTrimTransforms.push({ x: rcx, y: 0.6, z: z0 + 6, w: room.w * ts * 0.85 });
+                archLintelTransforms.push({ x: rcx, y: 42, z: z0 + 3 });
+                archJambTransforms.push({ x: rcx - 18, y: 21, z: z0 + 3 });
+                archJambTransforms.push({ x: rcx + 18, y: 21, z: z0 + 3 });
+                portcullisTransforms.push({ x: rcx - 10, y: 34, z: z0 + 3 });
+                portcullisTransforms.push({ x: rcx, y: 34, z: z0 + 3 });
+                portcullisTransforms.push({ x: rcx + 10, y: 34, z: z0 + 3 });
+                ruinedPillarTransforms.push({ x: x0 + ts * 0.4, y: 11, z: z1 - ts * 0.4 });
+                rubbleTransforms.push({ x: x0 + ts * 0.55, y: 2.5, z: z1 - ts * 0.35, ry: 0.5 });
+                rubbleTransforms.push({ x: x0 + ts * 0.3, y: 2, z: z1 - ts * 0.55, ry: 1.2 });
+                chainTransforms.push({ x: rcx - 28, y: wallHeight - 24, z: rcz });
+                lanternCageTransforms.push({ x: rcx - 28, y: wallHeight - 44, z: rcz });
+                lanternCoreTransforms.push({ x: rcx - 28, y: wallHeight - 44, z: rcz });
+                scaffoldPlankTransforms.push({ x: x0 + 18, y: 24, z: rcz + 24 });
+                scaffoldPostTransforms.push({ x: x0 + 10, y: 12, z: rcz + 12 });
+                scaffoldPostTransforms.push({ x: x0 + 26, y: 12, z: rcz + 36 });
+                stakeTransforms.push({ x: x0 + ts * 0.72, y: 8, z: z1 - ts * 0.45 });
+                stakeTransforms.push({ x: x0 + ts * 0.98, y: 8, z: z1 - ts * 0.45 });
+                barrelPropTransforms.push({ x: x1 - ts * 0.4, y: 6.5, z: z0 + ts * 0.85 });
+                barrelHoopTransforms.push({ x: x1 - ts * 0.4, y: 9.5, z: z0 + ts * 0.85 });
+                cratePropTransforms.push({ x: x1 - ts * 0.6, y: 6, z: z0 + ts * 0.9 });
+                awningTransforms.push({ x: x1 - ts * 0.5, y: 28, z: z0 + ts * 0.6 });
+                if (room.w >= 6) {
+                    statuePlinthTransforms.push({ x: rcx + 42, y: 6, z: rcz - 36 });
+                    statueTorsoTransforms.push({ x: rcx + 42, y: 19, z: rcz - 36 });
+                    statueHeadTransforms.push({ x: rcx + 42, y: 29, z: rcz - 36 });
+                }
+                gargoyleTransforms.push({ x: rcx - 22, y: 46, z: z0 + 6 });
+                gargoyleEyeTransforms.push({ x: rcx - 22, y: 47, z: z0 + 9 });
+                alcoveTransforms.push({ x: x1 - 2, y: 20, z: rcz });
+                skullPileTransforms.push({ x: x0 + ts * 0.35, y: 2.2, z: z0 + ts * 0.35 });
+                crystalShardTransforms.push({ x: plantX + 10, y: 5, z: plantZ - 6, ry: 0.4 });
+                grateTransforms.push({ x: rcx, y: 0.25, z: rcz + 26 });
+                mossPatchTransforms.push({ x: x0 + ts * 0.5, y: 0.2, z: z0 + ts * 0.5 });
+                fungusTransforms.push({ x: x0 + ts * 0.45, y: 1.8, z: z0 + ts * 0.6 });
+                rackTransforms.push({ x: x0 + 3, y: 16, z: rcz - 22 });
+                stepTransforms.push({ x: rcx, y: 1.5, z: z0 + 10 });
+                obeliskTransforms.push({ x: x1 - ts * 0.35, y: 16, z: z1 - ts * 0.35 });
             }
 
             const addInstanced = (geo, mat, items, setupFn) => {
@@ -978,6 +1093,84 @@
                 d.scale.set(u.s, u.s, u.s);
             });
 
+            // Vermintide-inspired barricades, fire braziers, stone parapets & volumetric-style light shafts
+            const ironMat = new THREE.MeshStandardMaterial({ color: 0x2c3034, roughness: 0.75, metalness: 0.45 });
+            const emberMat = new THREE.MeshStandardMaterial({
+                color: 0xff7b00, emissive: 0xff5500, emissiveIntensity: 1.8, roughness: 0.3
+            });
+            const godRayMat = new THREE.MeshBasicMaterial({
+                color: 0xcbd5e1, transparent: true, opacity: 0.055,
+                depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+            });
+
+            addInstanced(new THREE.BoxGeometry(28, 18, 5), beamMat, barricadeTransforms, (d, b) => {
+                d.position.set(b.x, b.y, b.z);
+                d.rotation.set(0, b.ry, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.CylinderGeometry(7, 4.5, 12, 8), ironMat, brazierTransforms, (d, b) => {
+                d.position.set(b.x, b.y, b.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.ConeGeometry(5, 9, 6), emberMat, flameTransforms, (d, f) => {
+                d.position.set(f.x, f.y, f.z);
+                d.rotation.set(0, 0, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.BoxGeometry(8, 12, 36), stoneMat, parapetTransforms, (d, p) => {
+                d.position.set(p.x, p.y, p.z);
+                d.rotation.set(0, p.ry, 0);
+                d.scale.set(1, 1, 1);
+            });
+            addInstanced(new THREE.CylinderGeometry(14, 38, wallHeight, 12, 1, true), godRayMat, godRayTransforms, (d, g) => {
+                d.position.set(g.x, g.y, g.z);
+                d.rotation.set(0.18, 0, 0.12);
+                d.scale.set(1, 1, 1);
+            });
+
+            // 32+ additional architectural & prop instanced meshes
+            const boneMat = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.85 });
+            const crystalMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x22c55e, emissiveIntensity: 1.4, roughness: 0.2 });
+            const clothMat = new THREE.MeshStandardMaterial({ color: 0x4b3621, roughness: 0.92, side: THREE.DoubleSide });
+            const setPos = (d, item, rx = 0, ry = 0, rz = 0) => {
+                d.position.set(item.x, item.y, item.z);
+                d.rotation.set(rx, item.ry ?? ry, rz);
+                d.scale.set(item.w || 1, 1, 1);
+            };
+            addInstanced(new THREE.BoxGeometry(10, wallHeight * 0.9, 14), stoneMat, buttressTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(1, 6, 8), stoneMat, corniceTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(1, 1.2, 6), stoneMat, floorTrimTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(44, 8, 10), stoneMat, archLintelTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(8, 42, 10), stoneMat, archJambTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(2, 1.2, 10, 6), ironMat, portcullisTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(6.5, 8, 22, 7), stoneMat, ruinedPillarTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(8, 5, 7), stoneMat, rubbleTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(1, 1, 40, 5), ironMat, chainTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(7, 9, 7), ironMat, lanternCageTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.SphereGeometry(2.4, 6, 6), emberMat, lanternCoreTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(28, 2.5, 14), beamMat, scaffoldPlankTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(2, 2.5, 24, 6), beamMat, scaffoldPostTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.ConeGeometry(2.5, 16, 5), beamMat, stakeTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(6, 6, 13, 10), beamMat, barrelPropTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.TorusGeometry(6.2, 0.7, 6, 12), ironMat, barrelHoopTransforms, (d, i) => setPos(d, i, Math.PI / 2));
+            addInstanced(new THREE.BoxGeometry(12, 12, 12), beamMat, cratePropTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.PlaneGeometry(28, 20), clothMat, awningTransforms, (d, i) => setPos(d, i, -Math.PI / 3));
+            addInstanced(new THREE.BoxGeometry(18, 12, 18), stoneMat, statuePlinthTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(4.5, 6, 16, 8), stoneMat, statueTorsoTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.SphereGeometry(4, 8, 8), stoneMat, statueHeadTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(8, 8, 10), stoneMat, gargoyleTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.SphereGeometry(1.1, 6, 6), crystalMat, gargoyleEyeTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(4, 28, 18), ironMat, alcoveTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.SphereGeometry(3.2, 6, 5), boneMat, skullPileTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.ConeGeometry(3, 12, 5), crystalMat, crystalShardTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(16, 0.5, 16), ironMat, grateTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CircleGeometry(10, 8), vineMat, mossPatchTransforms, (d, i) => setPos(d, i, -Math.PI / 2));
+            addInstanced(new THREE.ConeGeometry(3.5, 4, 6), plantPodMat, fungusTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(4, 18, 14), ironMat, rackTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.BoxGeometry(36, 3, 10), stoneMat, stepTransforms, (d, i) => setPos(d, i));
+            addInstanced(new THREE.CylinderGeometry(2.5, 5, 32, 4), stoneMat, obeliskTransforms, (d, i) => setPos(d, i));
+
             // Place shared 3D models from /models/ (window.GGG_MODEL_CATALOG) in rooms
             const catalog = Array.isArray(window.GGG_MODEL_CATALOG) ? window.GGG_MODEL_CATALOG : [];
             const propEntries = catalog.filter(m => m && typeof m.build === 'function' && (m.category === 'prop' || m.category === 'props' || !m.category));
@@ -994,6 +1187,77 @@
                         }
                     } catch (_) {}
                 });
+            }
+        }
+
+        updateLevelInteractables(dt) {
+            const li = this.levelInteractables;
+            if (!li || !this.player) return;
+            const px = this.player.x;
+            const py = this.player.y;
+
+            // 1. Charge Plant Overcharge Buff
+            for (const cp of li.chargePlants) {
+                if (cp.cooldown > 0) { cp.cooldown -= dt; continue; }
+                if (Math.hypot(px - cp.x, py - cp.z) < 32) {
+                    cp.cooldown = 15;
+                    this.player.stamina = Math.min(this.player.maxStamina || 100, (this.player.stamina || 0) + 20);
+                    this.combatText?.spawnText(px, 24, py, 'WARP-CHARGE +20 STAMINA', 'heal');
+                }
+            }
+
+            // 2. Temple Brazier Stoking
+            for (const br of li.braziers) {
+                if (br.cooldown > 0) { br.cooldown -= dt; continue; }
+                if (Math.hypot(px - br.x, py - br.z) < 36) {
+                    br.cooldown = 20;
+                    br.stoked = true;
+                    this.player.hp = Math.min(this.player.maxHp || 100, (this.player.hp || 0) + 5);
+                    this.combatText?.spawnText(px, 24, py, 'BRAZIER STOKED +5 HP', 'heal');
+                }
+            }
+
+            // 3. Floor Sigil Shockwave
+            for (const sg of li.sigils) {
+                if (sg.cooldown > 0) { sg.cooldown -= dt; continue; }
+                if (Math.hypot(px - sg.x, py - sg.z) < 34 && Array.isArray(this.enemies)) {
+                    sg.cooldown = 12;
+                    let hits = 0;
+                    for (const e of this.enemies) {
+                        if (!e || e.dead) continue;
+                        const d = Math.hypot(e.x - sg.x, e.y - sg.z);
+                        if (d < 160) {
+                            e.hp = Math.max(0, (e.hp || 10) - 18);
+                            hits++;
+                        }
+                    }
+                    if (hits > 0) this.combatText?.spawnText(sg.x, 22, sg.z, `SIGIL PULSE (${hits})`, 'crit');
+                }
+            }
+
+            // 4. Breakable Stone Urns (projectile or player dash/contact)
+            for (const urn of li.urns) {
+                if (urn.broken) continue;
+                const hitByPlayer = Math.hypot(px - urn.x, py - urn.z) < 26;
+                const hitByProj = Array.isArray(this.projectiles) && this.projectiles.some(p => !p.dead && Math.hypot(p.x - urn.x, p.y - urn.z) < 26);
+                if (hitByPlayer || hitByProj) {
+                    urn.broken = true;
+                    this.gold = (this.gold || 0) + 15;
+                    this.combatText?.spawnText(urn.x, 18, urn.z, '+15 GOLD (URN)', 'loot');
+                }
+            }
+
+            // 5. Palisade Barricade Slow & Splinter
+            for (const bar of li.barricades) {
+                if (bar.hp <= 0 || !Array.isArray(this.enemies)) continue;
+                for (const e of this.enemies) {
+                    if (!e || e.dead) continue;
+                    if (Math.hypot(e.x - bar.x, e.y - bar.z) < 26) {
+                        e.vx = (e.vx || 0) * 0.85;
+                        e.vy = (e.vy || 0) * 0.85;
+                        bar.hp -= dt * 0.8;
+                    }
+                }
             }
         }
 
@@ -1042,13 +1306,13 @@
 
             const wallHeight = this.dungeon.arena?.ceiling || this.dungeon.ceiling;
             const wallGeo = new THREE.BoxGeometry(48, wallHeight, 48);
-            const wallMat = new THREE.MeshStandardMaterial({ map: this.textures.wall, roughness: 0.85 });
+            const wallMat = new THREE.MeshStandardMaterial({ map: this.textures.wall, roughness: 0.72, metalness: 0.14 });
 
             const floorGeo = new THREE.PlaneGeometry(48, 48);
-            const floorMat = new THREE.MeshStandardMaterial({ map: this.textures.floor, roughness: 0.9 });
+            const floorMat = new THREE.MeshStandardMaterial({ map: this.textures.floor, roughness: 0.74, metalness: 0.12 });
 
             const ceilGeo = new THREE.PlaneGeometry(48, 48);
-            const ceilMat = new THREE.MeshStandardMaterial({ map: this.textures.ceiling, roughness: 0.95 });
+            const ceilMat = new THREE.MeshStandardMaterial({ map: this.textures.ceiling, roughness: 0.85, metalness: 0.08 });
 
             const waterMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, transparent: true, opacity: 0.75, roughness: 0.1 });
             const poisonMat = new THREE.MeshStandardMaterial({ color: 0x15803d, transparent: true, opacity: 0.7, roughness: 0.2 });
@@ -2979,10 +3243,22 @@
             this.enemies.forEach(enemy => { if (enemy && enemy.hp > 0 && enemy.group3d) targets.push(enemy.group3d); });
             this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
             const pelletCount = aimed?.pellets ?? weapon.pellets;
+            const adsSpreadMult = this.ads
+                ? ((weapon.id === 'scattergun' || weapon.id === 'c_shotgun') ? 0.42
+                    : (weapon.id === 'sniper' || weapon.id === 'vortex') ? 0.25
+                    : 0.5)
+                : 1;
+            const effectiveSpread = spread * adsSpreadMult;
+            const adsDmgMult = this.ads
+                ? ((weapon.id === 'sniper' || weapon.id === 'vortex') ? 1.40
+                    : (weapon.id === 'scattergun' || weapon.id === 'c_shotgun') ? 1.35
+                    : (weapon.id === 'sidearm' || weapon.id === 'revolver') ? 1.30
+                    : 1.25)
+                : 1.0;
             for (let pellet = 0; pellet < pelletCount; pellet++) {
                 raycaster.far = weapon.range;
                 const volleyOffset = weapon.trait === 'triad' ? (pellet - 1) * 0.048 : 0;
-                raycaster.setFromCamera({ x: volleyOffset + (Math.random() - 0.5) * spread, y: (Math.random() - 0.5) * spread }, this.camera3d);
+                raycaster.setFromCamera({ x: volleyOffset + (Math.random() - 0.5) * effectiveSpread, y: (Math.random() - 0.5) * effectiveSpread }, this.camera3d);
                 let intersections = raycaster.intersectObjects(targets, true);
                 let traveled = 0;
                 let tracerStart = raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, 9);
@@ -3821,6 +4097,9 @@
                 });
                 this.projectiles.filter(p => p.dead).forEach(p => { this.scene.remove(p.mesh); p.dispose(); });
                 this.projectiles = this.projectiles.filter(p => !p.dead);
+                if (typeof this.updateLevelInteractables === 'function') {
+                    this.updateLevelInteractables(effectiveDt);
+                }
 
                 // Enemies take turn
                 this.enemies.forEach(e => {
@@ -4090,6 +4369,9 @@
                 });
                 this.projectiles.filter(p => p.dead).forEach(p => { this.scene.remove(p.mesh); p.dispose(); });
                 this.projectiles = this.projectiles.filter(p => !p.dead);
+                if (typeof this.updateLevelInteractables === 'function') {
+                    this.updateLevelInteractables(effectiveDt);
+                }
 
                 // Update Loot Pickups
                 const pickupBaseRange = parseFloat(document.getElementById('settingsPickupRange').value) * 24 || 120;
@@ -4154,8 +4436,8 @@
                     : 0;
                 const reloadDip = Math.sin(reloadProgress * Math.PI);
                 const firearm = !!weaponId;
-                const baseX = -swapDip * 1.25 + aimX * this.weaponAimBlend;
-                const baseY = -swapDip * 8 + aimY * this.weaponAimBlend - reloadDip * 4;
+                let baseX = -swapDip * 1.25 + aimX * this.weaponAimBlend;
+                let baseY = -swapDip * 8 + aimY * this.weaponAimBlend - reloadDip * 4;
                 const hand = this.weaponGroup.mainHand;
                 const pose = hand?.userData.idlePose;
                 const supportHand = this.weaponGroup.supportHand;
@@ -4163,7 +4445,11 @@
                 const moving = Math.hypot(this.player.vx, this.player.vy) > 8;
                 const sprinting = moving && this.player.sprinting;
                 const bobRate = sprinting ? 0.015 : (moving ? 0.011 : 0.003);
-                const aimStability = this.ads ? 0.2 : 1;
+                this.adsBlend = THREE.MathUtils.lerp(this.adsBlend || 0, this.ads ? 1 : 0, Math.min(1, animDt * 14));
+                const adsSlide = this.adsBlend;
+                const aimStability = 1 - adsSlide * 0.8;
+                baseX = THREE.MathUtils.lerp(baseX, 0.0, adsSlide);
+                baseY = THREE.MathUtils.lerp(baseY, -1.6, adsSlide);
                 const bobAmount = (sprinting ? 0.28 : (moving ? 0.16 : 0.07)) * aimStability;
                 this.weaponBobPhase = ((this.weaponBobPhase || 0) + animDt * bobRate * 1000) % (Math.PI * 4);
                 const sway = moving ? Math.cos(this.weaponBobPhase * 0.5) * (sprinting ? 0.14 : 0.08) * aimStability : 0;

@@ -584,7 +584,7 @@
                 }
             } else {
                 this.hoverPhase = ((this.hoverPhase || 0) + dt * 5) % (Math.PI * 2);
-                this.skull.position.y = 18 + Math.sin(this.hoverPhase) * 1.6;
+                if (this.skull) this.skull.position.y = 18 + Math.sin(this.hoverPhase) * 1.6;
                 if (this.rotor) this.rotor.rotation.y += dt * 14;
             }
 

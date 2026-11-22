@@ -8,6 +8,7 @@ function handleKeyDown(e) {
         if (gameActive && !isPaused) { sfx.init(); setThrust(true); }
     }
     if (e.code === 'KeyM') { sfx.init(); sfx.toggleMute(); applyMuteUI(); }
+    if (e.code === 'KeyV' || e.code === 'KeyC') { cycleCameraView(); }
     if (e.code === 'KeyH' && (!gameActive || isPaused)) showHangar('key');
     if (!gameActive) {
         if (e.code === 'Digit1') applyShipSelection('cubesat', true);

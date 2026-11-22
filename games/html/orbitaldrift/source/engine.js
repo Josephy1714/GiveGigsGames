@@ -333,6 +333,7 @@ function initThree() {
         new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })
     );
     scene.add(magnetRing);
+    buildLevelEnvironment();
 
     fitToContainer();
     if (window.ResizeObserver && container) new ResizeObserver(fitToContainer).observe(container);
@@ -341,66 +342,217 @@ function initThree() {
 
 
 function buildSatelliteMesh(shipId) {
-    const s = SHIPS[shipId] || SHIPS.dart;
     const g = new THREE.Group();
+
+    const makeNavLight = (color, x, y, z) => {
+        const m = new THREE.Mesh(
+            new THREE.SphereGeometry(0.32, 8, 8),
+            new THREE.MeshBasicMaterial({ color })
+        );
+        m.position.set(x, y, z);
+        g.add(m);
+        return m;
+    };
+
     if (shipId === 'cubesat') {
-        // 1U CubeSat: compact box bus + deployable panels + whip antenna
-        const bus = new THREE.Mesh(
-            new THREE.BoxGeometry(4.5, 4.5, 4.5),
-            new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0x92400e, shininess: 80 })
-        );
+        // Detailed 3U CubeSat: gold MLI foil bus, structural ribs, solar array wings with grid, dish antenna, ion thruster
+        const goldMat = new THREE.MeshPhongMaterial({ color: 0xf59e0b, emissive: 0x78350f, shininess: 110, specular: 0xfef08a });
+        const frameMat = new THREE.MeshPhongMaterial({ color: 0x334155, emissive: 0x0f172a, shininess: 60 });
+        const panelMat = new THREE.MeshPhongMaterial({ color: 0x1d4ed8, emissive: 0x0c4a6e, shininess: 85, specular: 0x60a5fa });
+        const silverMat = new THREE.MeshPhongMaterial({ color: 0xe2e8f0, emissive: 0x475569, shininess: 90 });
+
+        const bus = new THREE.Mesh(new THREE.BoxGeometry(4.2, 5.2, 4.2), goldMat);
         g.add(bus);
-        const panelMat = new THREE.MeshPhongMaterial({ color: 0x1d4ed8, emissive: 0x0c4a6e, shininess: 60 });
-        [-4.2, 4.2].forEach((x) => {
-            const p = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.3, 5.5), panelMat);
-            p.position.set(x, 0, 0);
-            g.add(p);
+
+        // Structural corner rails
+        [[-2.05, -2.05], [2.05, -2.05], [-2.05, 2.05], [2.05, 2.05]].forEach(([x, z]) => {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(0.35, 5.5, 0.35), frameMat);
+            rail.position.set(x, 0, z);
+            g.add(rail);
         });
-        const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-        ant.position.set(0, 3.5, 0);
+
+        // Deployable solar wings with support yokes & cell dividers
+        [-1, 1].forEach((side) => {
+            const yoke = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.2, 6), silverMat);
+            yoke.rotation.z = Math.PI / 2;
+            yoke.position.set(side * 3.1, 0, 0);
+            g.add(yoke);
+
+            const wing = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.22, 6.2), panelMat);
+            wing.position.set(side * 6.0, 0, 0);
+            g.add(wing);
+
+            const trim = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.28, 0.25), silverMat);
+            trim.position.set(side * 6.0, 0, 0);
+            g.add(trim);
+        });
+
+        // High-gain parabolic dish on dorsal face
+        const dish = new THREE.Mesh(new THREE.ConeGeometry(1.7, 0.8, 14, 1, true), silverMat);
+        dish.rotation.x = Math.PI;
+        dish.position.set(0, 1.2, 2.7);
+        g.add(dish);
+        const feed = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.4, 6), silverMat);
+        feed.rotation.x = Math.PI / 2;
+        feed.position.set(0, 1.2, 3.2);
+        g.add(feed);
+
+        // Forward whip antenna & sensor baffle
+        const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4.2, 6), silverMat);
+        ant.position.set(0, 4.2, 0);
         g.add(ant);
-        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
-        tip.position.set(0, 6, 0);
-        g.add(tip);
+        const baffle = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.4, 1.0, 10), frameMat);
+        baffle.position.set(1.1, 2.8, 0.8);
+        g.add(baffle);
+
+        // Aft ion thruster nozzle + plasma glow
+        const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.05, 1.1, 12), frameMat);
+        nozzle.position.set(0, -3.0, 0);
+        g.add(nozzle);
+        const glow = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        glow.position.set(0, -3.5, 0);
+        g.add(glow);
+
+        makeNavLight(0xef4444, -8.4, 0, 0);
+        makeNavLight(0x22c55e, 8.4, 0, 0);
+        g.userData.bodyMat = goldMat;
     } else if (shipId === 'station') {
-        // Harbour Station: truss spine + cans + big arrays (ISS-like)
-        const truss = new THREE.Mesh(
-            new THREE.BoxGeometry(20, 1.2, 1.2),
-            new THREE.MeshPhongMaterial({ color: 0x9ca3af, emissive: 0x374151, shininess: 40 })
-        );
+        // Detailed Harbour Station: central truss, pressurized modules with docking collars, cupola, 4 solar arrays, centrifuge ring
+        const trussMat = new THREE.MeshPhongMaterial({ color: 0x94a3b8, emissive: 0x1e293b, shininess: 50 });
+        const modMat = new THREE.MeshPhongMaterial({ color: 0xf1f5f9, emissive: 0x475569, shininess: 65 });
+        const arrMat = new THREE.MeshPhongMaterial({ color: 0x1e3a8a, emissive: 0x172554, shininess: 85, specular: 0x60a5fa });
+        const goldMat = new THREE.MeshPhongMaterial({ color: 0xfbbf24, emissive: 0x78350f, shininess: 90 });
+
+        const truss = new THREE.Mesh(new THREE.BoxGeometry(22, 1.1, 1.1), trussMat);
         g.add(truss);
-        const modMat = new THREE.MeshPhongMaterial({ color: 0xe5e7eb, emissive: 0x6b7280, shininess: 50 });
-        [-5, 0, 5].forEach((x) => {
-            const mod = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 5, 10), modMat);
+
+        // Central core & pressurized habitat modules
+        const core = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 9.5, 14), modMat);
+        g.add(core);
+        [-2.8, 0, 2.8].forEach((y) => {
+            const collar = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.22, 8, 18), goldMat);
+            collar.rotation.x = Math.PI / 2;
+            collar.position.set(0, y, 0);
+            g.add(collar);
+        });
+
+        // Side lab modules
+        [-5.2, 5.2].forEach((x) => {
+            const mod = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 5.2, 12), modMat);
             mod.rotation.z = Math.PI / 2;
-            mod.position.set(x, -2.4, 0);
+            mod.position.set(x, -1.8, 0);
             g.add(mod);
         });
-        const cupola = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 10), new THREE.MeshPhongMaterial({ color: 0x06b6d4, emissive: 0x0e7490 }));
-        cupola.position.set(0, 2.2, 0);
+
+        // Cupola observation dome
+        const cupola = new THREE.Mesh(
+            new THREE.SphereGeometry(1.55, 12, 12),
+            new THREE.MeshPhongMaterial({ color: 0x06b6d4, emissive: 0x0e7490, shininess: 110 })
+        );
+        cupola.position.set(0, 1.2, 2.1);
         g.add(cupola);
-        const arrMat = new THREE.MeshPhongMaterial({ color: 0x1e3a8a, emissive: 0x1e40af, shininess: 70 });
-        [-12.5, 12.5].forEach((x) => {
-            const arr = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, 4.5), arrMat);
-            arr.position.set(x, 1.2, 0);
-            g.add(arr);
+
+        // 4 large solar array wings
+        [-11.5, 11.5].forEach((x) => {
+            [-3.2, 3.2].forEach((y) => {
+                const arr = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.6, 0.2), arrMat);
+                arr.position.set(x, y, 0);
+                g.add(arr);
+            });
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 7.6, 8), trussMat);
+            mast.position.set(x, 0, 0);
+            g.add(mast);
         });
+
+        // Aft thruster cluster
+        [-1.1, 1.1].forEach((x) => {
+            const noz = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.75, 1.0, 10), trussMat);
+            noz.position.set(x, -5.1, 0);
+            g.add(noz);
+        });
+
+        makeNavLight(0xef4444, -15, 0, 0);
+        makeNavLight(0x22c55e, 15, 0, 0);
+        g.userData.bodyMat = modMat;
     } else {
-        // Dart: futuristic neon triangular fighter capsule (default)
-        const bodyGeom = new THREE.ConeGeometry(4, 10, 4);
-        bodyGeom.rotateX(Math.PI / 2);
-        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x06b6d4, emissive: 0x0891b2, shininess: 100 });
-        const body = new THREE.Mesh(bodyGeom, bodyMat);
-        g.add(body);
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(9, 1.8, 0.4), new THREE.MeshPhongMaterial({ color: 0xa78bfa }));
-        wing.position.set(0, -2, 0);
-        g.add(wing);
+        // Detailed Dart: sleek interceptor fuselage, cockpit canopy, swept delta wings, twin stabilizers, dual plasma thrusters
+        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x06b6d4, emissive: 0x0e7490, shininess: 110, specular: 0xa5f3fc });
+        const darkMat = new THREE.MeshPhongMaterial({ color: 0x1e293b, emissive: 0x0f172a, shininess: 70 });
+        const wingMat = new THREE.MeshPhongMaterial({ color: 0x8b5cf6, emissive: 0x4c1d95, shininess: 90 });
+        const canopyMat = new THREE.MeshPhongMaterial({ color: 0x38bdf8, emissive: 0x0284c7, shininess: 120 });
+
+        // Main fuselage + nose
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(2.1, 6.2, 8), bodyMat);
+        nose.position.set(0, 3.6, 0);
+        g.add(nose);
+
+        const hull = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.4, 5.2, 8), bodyMat);
+        hull.position.set(0, -1.6, 0);
+        g.add(hull);
+
+        // Cockpit canopy
+        const canopy = new THREE.Mesh(new THREE.SphereGeometry(1.15, 10, 10), canopyMat);
+        canopy.scale.set(0.85, 1.9, 0.75);
+        canopy.position.set(0, 1.4, 1.25);
+        g.add(canopy);
+
+        // Swept delta wings
+        [-1, 1].forEach((side) => {
+            const wing = new THREE.Mesh(new THREE.BoxGeometry(4.6, 3.4, 0.32), wingMat);
+            wing.position.set(side * 3.4, -2.0, 0);
+            wing.rotation.z = side * -0.35;
+            g.add(wing);
+
+            // Wingtip pylon + nav light
+            const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.8, 6), darkMat);
+            pylon.position.set(side * 5.6, -2.4, 0);
+            g.add(pylon);
+
+            // Angled vertical stabilizer
+            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.2, 1.9), wingMat);
+            fin.position.set(side * 1.6, -3.0, 1.1);
+            fin.rotation.y = side * 0.25;
+            g.add(fin);
+        });
+
+        // Dual aft thruster bells + plasma cores
+        [-0.95, 0.95].forEach((x) => {
+            const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 1.2, 10), darkMat);
+            bell.position.set(x, -4.6, 0);
+            g.add(bell);
+            const core = new THREE.Mesh(new THREE.SphereGeometry(0.48, 8, 8), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
+            core.position.set(x, -5.2, 0);
+            g.add(core);
+        });
+
+        makeNavLight(0xef4444, -5.6, -1.0, 0.2);
+        makeNavLight(0x22c55e, 5.6, -1.0, 0.2);
         g.userData.bodyMat = bodyMat;
     }
-    const fieldR = shipId === 'station' ? 11 : shipId === 'cubesat' ? 6 : 7;
+
+    const fieldR = shipId === 'station' ? 12 : shipId === 'cubesat' ? 7 : 7.5;
     const fieldMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.0, wireframe: true });
     forcefield = new THREE.Mesh(new THREE.SphereGeometry(fieldR, 16, 16), fieldMat);
     g.add(forcefield);
+
+    // Dynamic aft thruster plasma plume
+    const plumeColor = shipId === 'cubesat' ? 0xfacc15 : shipId === 'station' ? 0x34d399 : 0x22d3ee;
+    const plumeGeom = new THREE.ConeGeometry(1.15, 5.5, 10, 1, true);
+    plumeGeom.translate(0, -2.75, 0);
+    const plumeMat = new THREE.MeshBasicMaterial({
+        color: plumeColor,
+        transparent: true,
+        opacity: 0.0,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const plume = new THREE.Mesh(plumeGeom, plumeMat);
+    plume.rotation.z = Math.PI;
+    plume.position.set(0, shipId === 'station' ? -5.4 : shipId === 'cubesat' ? -3.6 : -5.2, 0);
+    g.add(plume);
+    g.userData.plume = plume;
+
     g.userData.shipId = shipId;
     g.userData.fieldR = fieldR;
     return g;

@@ -41,8 +41,23 @@
                 metalness: 0.05
             });
             const mossMat = new THREE.MeshStandardMaterial({
-                color: 0x365314,
-                roughness: 0.95
+                color: 0x5c752b,
+                roughness: 0.94
+            });
+            const blossomMat = new THREE.MeshStandardMaterial({
+                color: 0xc084fc,
+                emissive: 0x6b21a8,
+                emissiveIntensity: 0.35,
+                roughness: 0.7
+            });
+            const bronzeMat = new THREE.MeshStandardMaterial({
+                color: 0x92400e,
+                roughness: 0.45,
+                metalness: 0.65
+            });
+            const barrelMat = new THREE.MeshStandardMaterial({
+                color: 0x5c3a21,
+                roughness: 0.85
             });
             const urnMat = new THREE.MeshStandardMaterial({
                 color: 0x4b5563,
@@ -211,6 +226,52 @@
                 addPointLight(0xf59e0b, 1.3, 140, x, 32, z + 16);
             }
 
+            function spawnForgeTower(x, z) {
+                const group = new THREE.Group();
+                group.position.set(x, 0, z);
+
+                const base = new THREE.Mesh(new THREE.BoxGeometry(30, 12, 30), darkStoneMat);
+                base.position.y = 6;
+                group.add(base);
+
+                const hearth = new THREE.Mesh(new THREE.BoxGeometry(14, 9, 31), amberRuneMat);
+                hearth.position.y = 6;
+                group.add(hearth);
+
+                const chimney = new THREE.Mesh(new THREE.CylinderGeometry(8, 13, 38, 6), stoneMat);
+                chimney.position.y = 31;
+                group.add(chimney);
+
+                const crown = new THREE.Mesh(new THREE.CylinderGeometry(11, 8, 8, 6), bronzeMat);
+                crown.position.y = 53;
+                group.add(crown);
+
+                addMesh(group);
+                addPointLight(0xf97316, 1.6, 160, x, 14, z + 18);
+            }
+
+            function spawnBarrelCluster(x, z) {
+                const group = new THREE.Group();
+                group.position.set(x, 0, z);
+                const bGeo = new THREE.CylinderGeometry(3.8, 3.8, 9, 10);
+                [[0, 0], [8.5, 2], [4, 7.5]].forEach(([bx, bz]) => {
+                    const b = new THREE.Mesh(bGeo, barrelMat);
+                    b.position.set(bx, 4.5, bz);
+                    group.add(b);
+                });
+                addMesh(group);
+            }
+
+            function spawnMossyTerrace(x, z) {
+                const turf = new THREE.Mesh(new THREE.BoxGeometry(22, 5, 14), mossMat);
+                turf.position.set(x, 66, z);
+                addMesh(turf);
+
+                const bloom = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 0), blossomMat);
+                bloom.position.set(x + 4, 68.5, z + 3);
+                addMesh(bloom);
+            }
+
             // Decorate each room based on its type and size
             dungeon.rooms.forEach((room) => {
                 const cx = room.cx * TILE_SIZE + 24;
@@ -245,8 +306,12 @@
                     spawnChargePlant(maxX - 10, minZ + 10, 0.85);
                 }
 
-                // Urns & mossy rubble
+                // Urns, barrels & mossy rubble
                 spawnUrnCluster(maxX - 12, maxZ - 12);
+                if (!isLow) {
+                    spawnBarrelCluster(minX + 12, minZ + 12);
+                    spawnMossyTerrace(cx, minZ - 14);
+                }
 
                 // Room-type focal pieces
                 if (room.type === 'spawn') {
@@ -254,6 +319,8 @@
                 } else if (room.type === 'boss') {
                     spawnFloorSigil(cx, cz, true);
                     spawnBackwallStatue(cx, minZ + 8);
+                } else if (room.type === 'forge') {
+                    spawnForgeTower(cx, cz);
                 } else if (room.type === 'treasury' || room.type === 'lab' || room.type === 'sanctum') {
                     if (room.w >= 6 && room.h >= 6) {
                         spawnCarvedTotem(cx, cz);

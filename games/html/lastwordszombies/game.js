@@ -101,51 +101,34 @@ class GameApp {
   }
 
   buildLevelScene() {
-    // Clear old level meshes
-    if (this.levelMeshes) {
-      this.levelMeshes.forEach(mesh => {
-        this.scene.remove(mesh);
-        if (mesh.geometry) mesh.geometry.dispose();
-        if (mesh.material) {
-          if (Array.isArray(mesh.material)) {
-            mesh.material.forEach(m => m.dispose());
-          } else {
-            mesh.material.dispose();
-          }
-        }
-      });
+    const geometries = new Set();
+    const materials = new Set();
+    for (const mesh of this.levelMeshes) {
+      this.scene.remove(mesh);
+      if (mesh.isInstancedMesh) mesh.dispose();
+      if (mesh.geometry) geometries.add(mesh.geometry);
+      for (const material of [].concat(mesh.material || [])) materials.add(material);
     }
-    
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => {
+      if (material.map) material.map.dispose();
+      material.dispose();
+    });
+
     this.levelMeshes = [];
     this.spawnDoors = [];
     this.lights = [];
     this.corridorGirders = [];
-    
-    const level = this.state.selectedLevel || 'hallway';
-    
-    if (level === 'city') {
-      this.scene.background = new THREE.Color(0x05050c);
-      if (this.scene.fog) {
-        this.scene.fog.color.setHex(0x05050c);
-        this.scene.fog.density = 0.02;
-      }
-      this.buildCity();
-    } else if (level === 'graveyard') {
-      this.scene.background = new THREE.Color(0x08040d);
-      if (this.scene.fog) {
-        this.scene.fog.color.setHex(0x08040d);
-        this.scene.fog.density = 0.028;
-      }
-      this.buildGraveyard();
-    } else {
-      // Default: Hallway
-      this.scene.background = new THREE.Color(0x030308);
-      if (this.scene.fog) {
-        this.scene.fog.color.setHex(0x030308);
-        this.scene.fog.density = 0.022;
-      }
-      this.buildHallway();
-    }
+    const fantasy = this.state.selectedLevel === 'fantasy';
+    this.scene.background.setHex(fantasy ? 0x162a55 : 0x08091c);
+    this.scene.fog.color.setHex(fantasy ? 0x3b5c8c : 0x19132f);
+    this.scene.fog.density = fantasy ? 0.032 : 0.023;
+    this.renderer.toneMappingExposure = fantasy ? 1.0 : 0.83;
+    this.container.closest('.TEMPLATE-4weird-game-frame').dataset.map = this.state.selectedLevel;
+    this.applyKeyboardFinish(fantasy);
+
+    if (fantasy) buildFantasyMap(this);
+    else this.buildHallway();
   }
 
   buildHallway() {
@@ -229,211 +212,14 @@ class GameApp {
     }
     
     // Add ambient fill light
-    const ambientLight = new THREE.HemisphereLight(0x18304d, 0x050609, 0.22);
+    const ambientLight = new THREE.HemisphereLight(0x799cf6, 0x591d62, 0.85);
     this.addLevelMesh(ambientLight);
     
     // Add directional lighting down the corridor
-    const dirLight = new THREE.DirectionalLight(0x8eefff, 0.32);
+    const dirLight = new THREE.DirectionalLight(0x8eefff, 0.8);
     dirLight.position.set(0, 3, 5);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.set(1024, 1024);
-    this.addLevelMesh(dirLight);
-  }
-
-  buildCity() {
-    const roadLength = 170;
-    const roadWidth = 6.0;
-    
-    // Road (asphalt)
-    const roadGeo = new THREE.PlaneGeometry(roadWidth, roadLength);
-    const roadMat = new THREE.MeshStandardMaterial({ 
-      color: 0x121217, 
-      roughness: 0.8, 
-      metalness: 0.1 
-    });
-    const road = new THREE.Mesh(roadGeo, roadMat);
-    road.rotation.x = -Math.PI / 2;
-    road.position.set(0, -1.2, -roadLength / 2 + 10);
-    road.receiveShadow = true;
-    this.addLevelMesh(road);
-    
-    // Skyscrapers & Building Facades
-    const bColors = [0x08090f, 0x050608];
-    const windowMat = new THREE.MeshBasicMaterial({ color: 0xffcc33, transparent: true, opacity: 0.8 });
-    
-    for (let z = 10; z > -roadLength + 10; z -= 12) {
-      if (Math.abs((z - 2) % 24) < 1.5 || Math.abs((z - 14) % 24) < 1.5) {
-        // Leave gaps for alleyway doors
-        this.createClassroomDoor(z, true, roadWidth);
-        this.createClassroomDoor(z - 12.0, false, roadWidth);
-        continue;
-      }
-      
-      // Building Left
-      const bLeftGeo = new THREE.BoxGeometry(4.0, 15.0, 10.0);
-      const bLeftMat = new THREE.MeshStandardMaterial({ color: bColors[Math.abs(Math.floor(z)) % 2], roughness: 0.5 });
-      const bLeft = new THREE.Mesh(bLeftGeo, bLeftMat);
-      bLeft.position.set(-roadWidth / 2 - 2.0, 7.5 - 1.2, z);
-      this.addLevelMesh(bLeft);
-      
-      // Add glowing windows on left building
-      for (let w = 0; w < 4; w++) {
-        const wMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.25), windowMat);
-        wMesh.position.set(-roadWidth / 2 - 0.01, 1.0 + w * 2.0, z - 3 + w * 2);
-        wMesh.rotation.y = Math.PI / 2;
-        this.addLevelMesh(wMesh);
-      }
-      
-      // Building Right
-      const bRight = bLeft.clone();
-      bRight.position.x = roadWidth / 2 + 2.0;
-      this.addLevelMesh(bRight);
-      
-      // Add glowing windows on right building
-      for (let w = 0; w < 4; w++) {
-        const wMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.25), windowMat);
-        wMesh.position.set(roadWidth / 2 + 0.01, 1.0 + w * 2.0, z + 3 - w * 2);
-        wMesh.rotation.y = -Math.PI / 2;
-        this.addLevelMesh(wMesh);
-      }
-      
-      // Neon streetlights acting as flicker lights
-      const streetlightGeo = new THREE.CylinderGeometry(0.02, 0.02, 3.2, 8);
-      const streetlightMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
-      const streetlightL = new THREE.Mesh(streetlightGeo, streetlightMat);
-      streetlightL.position.set(-roadWidth / 2 + 0.1, 1.6 - 1.2, z);
-      this.addLevelMesh(streetlightL);
-      
-      const lightBulb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff00ff }));
-      lightBulb.position.set(-roadWidth / 2 + 0.1, 3.2 - 1.2, z);
-      this.addLevelMesh(lightBulb);
-      
-      const light = new THREE.PointLight(0xff00ff, 9.0, 11.0);
-      light.position.set(-roadWidth / 2 + 0.1, 3.0 - 1.2, z);
-      this.addLevelMesh(light);
-      this.lights.push({ bulb: lightBulb, light, baseIntensity: 9.0, zOffset: z });
-    }
-    
-    // Ambient night lighting
-    const ambientLight = new THREE.HemisphereLight(0x1b2450, 0x0b0610, 0.2);
-    this.addLevelMesh(ambientLight);
-    
-    // Directional sky light
-    const dirLight = new THREE.DirectionalLight(0xa78bfa, 0.28);
-    dirLight.position.set(0, 5, 5);
-    this.addLevelMesh(dirLight);
-  }
-
-  buildGraveyard() {
-    const roadLength = 170;
-    const roadWidth = 6.0;
-    
-    // Ground (grass/dirt)
-    const groundGeo = new THREE.PlaneGeometry(roadWidth, roadLength);
-    const groundMat = new THREE.MeshStandardMaterial({ 
-      color: 0x090e09, 
-      roughness: 0.95, 
-      metalness: 0.05 
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, -1.2, -roadLength / 2 + 10);
-    ground.receiveShadow = true;
-    this.addLevelMesh(ground);
-    
-    // Spooky Purple Digital Moon
-    const moonGeo = new THREE.RingGeometry(0.1, 6.0, 32);
-    const moonMat = new THREE.MeshBasicMaterial({ color: 0x9d00ff, side: THREE.DoubleSide });
-    const moon = new THREE.Mesh(moonGeo, moonMat);
-    moon.position.set(0, 8.0, -110);
-    this.addLevelMesh(moon);
-    
-    // Crypt doors / tombs
-    for (let z = 2.0; z > -roadLength + 10; z -= 24.0) {
-      this.createClassroomDoor(z, true, roadWidth);
-      this.createClassroomDoor(z - 12.0, false, roadWidth);
-    }
-    
-    // Tombstones, iron fences, and spooky cyber-trees
-    const fenceMat = new THREE.MeshStandardMaterial({ color: 0x1a1a24, metalness: 0.8, roughness: 0.3 });
-    const crossMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.9 });
-    
-    for (let z = 10; z > -roadLength + 10; z -= 6.0) {
-      if (Math.abs((z - 2) % 24) < 1.5 || Math.abs((z - 14) % 24) < 1.5) continue;
-      
-      // Gothic Fence Pillars
-      const pillarGeo = new THREE.BoxGeometry(0.2, 2.0, 0.2);
-      const pillarL = new THREE.Mesh(pillarGeo, fenceMat);
-      pillarL.position.set(-roadWidth / 2, 1.0 - 1.2, z);
-      this.addLevelMesh(pillarL);
-      
-      const pillarR = pillarL.clone();
-      pillarR.position.x = roadWidth / 2;
-      this.addLevelMesh(pillarR);
-      
-      // Spooky cyber tree every 18 units
-      if (Math.abs(z) % 18 === 0) {
-        const treeGroup = new THREE.Group();
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 3.0, 8), new THREE.MeshStandardMaterial({ color: 0x111116 }));
-        trunk.position.set(0, 1.5, 0);
-        treeGroup.add(trunk);
-        
-        const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.6, 6, 6), new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true }));
-        leaves.position.set(0, 3.0, 0);
-        treeGroup.add(leaves);
-        
-        treeGroup.position.set(-roadWidth / 2 - 1.0, -1.2, z);
-        this.addLevelMesh(treeGroup);
-      }
-      
-      // Holographic Gravestones
-      const stoneGeo = new THREE.BoxGeometry(0.15, 0.8, 0.45);
-      const stoneMat = new THREE.MeshStandardMaterial({ color: 0x22222a, roughness: 0.9 });
-      
-      // Left Tombstone
-      const stoneL = new THREE.Mesh(stoneGeo, stoneMat);
-      stoneL.position.set(-roadWidth / 2 + 0.6, 0.4 - 1.2, z);
-      this.addLevelMesh(stoneL);
-      // Glowing cross on left stone
-      const crossVertL = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.3, 0.05), crossMat);
-      crossVertL.position.set(-roadWidth / 2 + 0.68, 0.45 - 1.2, z);
-      this.addLevelMesh(crossVertL);
-      const crossHorizL = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.05, 0.18), crossMat);
-      crossHorizL.position.set(-roadWidth / 2 + 0.68, 0.5 - 1.2, z);
-      this.addLevelMesh(crossHorizL);
-      
-      // Right Tombstone
-      const stoneR = new THREE.Mesh(stoneGeo, stoneMat);
-      stoneR.position.set(roadWidth / 2 - 0.6, 0.4 - 1.2, z - 2.0);
-      this.addLevelMesh(stoneR);
-      // Glowing cross on right stone
-      const crossVertR = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.3, 0.05), crossMat);
-      crossVertR.position.set(roadWidth / 2 - 0.68, 0.45 - 1.2, z - 2.0);
-      this.addLevelMesh(crossVertR);
-      const crossHorizR = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.05, 0.18), crossMat);
-      crossHorizR.position.set(roadWidth / 2 - 0.68, 0.5 - 1.2, z - 2.0);
-      this.addLevelMesh(crossHorizR);
-      
-      // Spooky green ground lights
-      if (Math.abs(z) % 12 === 0) {
-        const lightBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00ff88 }));
-        lightBulb.position.set(roadWidth / 2 - 0.4, 0.05 - 1.2, z);
-        this.addLevelMesh(lightBulb);
-        
-        const light = new THREE.PointLight(0x00ff88, 7.0, 8.0);
-        light.position.set(roadWidth / 2 - 0.4, 0.2 - 1.2, z);
-        this.addLevelMesh(light);
-        this.lights.push({ bulb: lightBulb, light, baseIntensity: 7.0, zOffset: z });
-      }
-    }
-    
-    // Spooky graveyard ground ambient glow
-    const ambientLight = new THREE.HemisphereLight(0x2a173d, 0x030804, 0.18);
-    this.addLevelMesh(ambientLight);
-    
-    // Cool purple moonlight
-    const dirLight = new THREE.DirectionalLight(0xc084fc, 0.25);
-    dirLight.position.set(0, 6, 6);
     this.addLevelMesh(dirLight);
   }
 
@@ -656,6 +442,7 @@ class GameApp {
     volumetricCone.rotation.x = -Math.PI / 2;
     volumetricCone.position.set(0, -0.15, -2.95);
     this.handsGroup.add(volumetricCone);
+    this.keyboardFinish = { suitMat, skinMat, kbBaseMat, stripeMat, volumetricMat };
     
     // Create QWERTY keys layout
     const rows = [
@@ -664,9 +451,9 @@ class GameApp {
       ['z', 'x', 'c', 'v', 'b', 'n', 'm']
     ];
     
-    const keyW = 0.02;
+    const keyW = 0.022;
     const keyH = 0.006;
-    const keyD = 0.016;
+    const keyD = 0.022;
     const keySpacing = 0.024;
     
     const keyColors = [0x00f2fe, 0xff0055, 0x00ffcc, 0xbd00ff];
@@ -695,6 +482,7 @@ class GameApp {
         const kx = startX + c * keySpacing;
         keyMesh.position.set(kx, 0.009, rowZ);
         
+        keyMesh.userData.cyberColor = kColor;
         this.keyboardGroup.add(keyMesh);
         this.qwertyKeyMeshes[char] = keyMesh;
         this.keyboardKeys.push(keyMesh);
@@ -744,11 +532,56 @@ class GameApp {
     this.rightArmGroup.rotation.set(-Math.PI / 8, -Math.PI / 10, -Math.PI / 18);
     this.handsGroup.add(this.rightArmGroup);
     
+    this.keyboardFinish.railMat = addKeyboardLegends(this.keyboardGroup, this.qwertyKeyMeshes);
+    const cuffMat = new THREE.MeshBasicMaterial({ color: 0xffbc56, fog: false });
+    this.keyboardFinish.cuffMat = cuffMat;
+    const fingerGeo = new THREE.BoxGeometry(0.0085, 0.012, 0.025);
+    for (const [arm, direction] of [[leftArmGroup, -1], [this.rightArmGroup, 1]]) {
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.031, 0.015, 8), cuffMat);
+      cuff.rotation.x = Math.PI / 2;
+      cuff.position.z = 0.04;
+      arm.add(cuff);
+      for (let i = 0; i < 4; i++) {
+        const finger = new THREE.Mesh(fingerGeo, skinMat);
+        finger.position.set((i - 1.5) * 0.009, direction === 1 ? 0.011 : 0, direction === 1 ? -0.057 : -0.027);
+        finger.rotation.x = (i - 1) * 0.1;
+        arm.add(finger);
+      }
+    }
+    this.keyboardSigil = createKeyboardSigil();
+    this.handsGroup.add(this.keyboardSigil);
     this.camera.add(this.handsGroup);
     
     this.pokeTimer = 0.0;
     this.pokeDuration = 0.18;
     this.targetPokeCamPos = new THREE.Vector3();
+  }
+
+  applyKeyboardFinish(fantasy) {
+    const { suitMat, skinMat, kbBaseMat, stripeMat, railMat, cuffMat, volumetricMat } = this.keyboardFinish;
+    const accent = fantasy ? 0xffba43 : 0x28edff;
+    suitMat.color.setHex(fantasy ? 0x594077 : 0x29334b);
+    skinMat.color.setHex(fantasy ? 0xe6a18c : 0x374860);
+    kbBaseMat.color.setHex(fantasy ? 0x503048 : 0x273450);
+    stripeMat.color.setHex(accent);
+    railMat.color.setHex(accent);
+    cuffMat.color.setHex(fantasy ? 0xf3b64b : 0xa772ff);
+    volumetricMat.color.setHex(accent);
+    volumetricMat.opacity = fantasy ? 0.035 : 0.07;
+    this.flashlight.color.setHex(fantasy ? 0xffca81 : 0x8eefff);
+    this.keyboardSigil.visible = fantasy;
+    for (const key of this.keyboardKeys) {
+      key.material.color.setHex(fantasy ? 0x64434d : 0x18233b);
+      key.material.emissive.setHex(fantasy ? 0xffad45 : key.userData.cyberColor);
+      key.material.emissiveIntensity = fantasy ? 0.48 : 0.28;
+      key.userData.idleGlow = key.material.emissiveIntensity;
+      key.userData.pressTime = 0;
+      key.position.y = 0.009;
+    }
+  }
+
+  getTypingEffectColor() {
+    return this.state.selectedLevel === 'fantasy' ? 0xffcd66 : 0x00f2fe;
   }
 
   animateKeyboardPress(char) {
@@ -761,13 +594,9 @@ class GameApp {
         this.keyboardGroup.scale.set(1.05, 1.05, 1.05);
       }
 
-      const origIntensity = keyMesh.material.emissiveIntensity;
+      keyMesh.userData.pressTime = 0.14;
       keyMesh.material.emissiveIntensity = 2.5;
       keyMesh.position.y = 0.005;
-      setTimeout(() => {
-        keyMesh.material.emissiveIntensity = origIntensity;
-        keyMesh.position.y = 0.009;
-      }, 75);
 
       this.keyboardGroup.updateMatrix();
       this.targetPokeCamPos.copy(keyMesh.position).applyMatrix4(this.keyboardGroup.matrix);
@@ -1345,7 +1174,10 @@ class GameApp {
         e.currentTarget.classList.add('active');
         e.currentTarget.setAttribute('aria-pressed', 'true');
         const lvl = e.currentTarget.getAttribute('data-level');
-        this.state.selectedLevel = lvl;
+        if (this.state.selectedLevel !== lvl) {
+          this.state.selectedLevel = lvl;
+          this.buildLevelScene();
+        }
       });
     });
 
@@ -2277,7 +2109,7 @@ class GameApp {
     }
 
     const z = new Zombie(this.scene, word, speed, spawnZ, this.state.equippedFont, {
-      type, scoreValue: cfg.score, coinValue: cfg.coins, damage: cfg.damage, knockResist: cfg.knockResist
+      type, fantasy: this.state.selectedLevel === 'fantasy', scoreValue: cfg.score, coinValue: cfg.coins, damage: cfg.damage, knockResist: cfg.knockResist
     });
     z.worldX = spawnX;
 
@@ -2317,6 +2149,10 @@ class GameApp {
         // Cryo freeze: dim warm lights, push everything icy blue
         intensity *= 0.55;
         l.bulb.material.color.setHex(0x88ddff);
+      } else if (l.torch) {
+        intensity *= 0.86 + noise * 0.14;
+        l.bulb.scale.y = 0.57 + noise * 0.10;
+        l.bulb.material.color.setHex(l.light.color.getHex());
       } else if (noise > 0.75) {
         intensity *= 0.15;
         l.bulb.material.color.setHex(0x111115);
@@ -2328,6 +2164,17 @@ class GameApp {
     });
     
     const time = this.flickerTimer * 2.2;
+    if (this.keyboardSigil.visible) {
+      this.keyboardSigil.rotation.z = time * 0.16;
+      this.keyboardSigil.scale.setScalar(1 + this.muzzleFlash * 0.2);
+    }
+    for (const key of this.keyboardKeys) {
+      if (key.userData.pressTime <= 0) continue;
+      key.userData.pressTime = Math.max(0, key.userData.pressTime - rdt);
+      const amount = key.userData.pressTime / 0.14;
+      key.position.y = 0.009 - 0.004 * amount;
+      key.material.emissiveIntensity = THREE.MathUtils.lerp(key.userData.idleGlow, 2.5, amount);
+    }
     
     // Bobbing / breathing animation for keyboard
     if (this.keyboardGroup) {
@@ -2347,7 +2194,7 @@ class GameApp {
     if (this.rightArmGroup) {
       if (this.pokeTimer > 0) {
         this.pokeTimer -= rdt;
-        const progress = 1.0 - (this.pokeTimer / this.pokeDuration);
+        const progress = 1 - Math.max(0, this.pokeTimer / this.pokeDuration);
         const factor = Math.sin(progress * Math.PI);
         
         this.rightArmGroup.position.copy(this.rightArmIdlePos).lerp(this.targetPokeCamPos, factor);

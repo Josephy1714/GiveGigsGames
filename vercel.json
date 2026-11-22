@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run catalog:build",
   "redirects": [
     { "source": "/ggg", "destination": "/ggg/", "permanent": false }
   ],

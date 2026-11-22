@@ -224,9 +224,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 24px;
+    padding: 12px;
     box-sizing: border-box;
-    overflow-y: auto;
+    overflow: hidden;
     z-index: 1000;
     opacity: 1;
     transition: opacity 0.3s ease;
@@ -242,12 +242,14 @@
 }
 
 .menu-content {
-    width: 90%;
+    width: 94%;
     max-width: 600px;
-    padding: 40px;
+    padding: clamp(14px, 2.5vh, 28px);
     text-align: center;
     box-sizing: border-box;
-    max-height: calc(100dvh - 48px);
+    max-height: calc(100dvh - 24px);
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
 }
 
@@ -491,6 +493,7 @@
 
 .hub-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 

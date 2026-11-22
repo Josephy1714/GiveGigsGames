@@ -29,6 +29,8 @@
             this.spawnY = y;
             this.attackTimer = 0;
             this.attackInterval = typeData.attackInterval || 1.0;
+            this.tagged = false;
+            this.statuses = { flaming: 0, bleeding: 0, staggered: 0, stunned: 0, confused: 0, scared: 0 };
 
             this.group3d = new THREE.Group();
             this.group3d.scale.set(this.scale, this.scale, this.scale);
@@ -276,8 +278,23 @@
             }
         }
 
+        applyStatus(name, duration) {
+            if (!this.statuses) return;
+            if (name === 'bleeding' && (this.type === 'skeleton' || this.type === 'skull')) return; // Skeletons can't bleed
+            this.statuses[name] = Math.max(this.statuses[name] || 0, duration || 2.0);
+        }
+
         update(dt, player, physics, tilemap, game) {
             const dist = Math.hypot(player.x - this.x, player.y - this.y);
+
+            // Tick status conditions (Dev Doc 2)
+            if (this.statuses) {
+                for (const k in this.statuses) {
+                    if (this.statuses[k] > 0) this.statuses[k] = Math.max(0, this.statuses[k] - dt);
+                }
+                if (this.statuses.flaming > 0) this.hp -= 8 * dt;
+                if (this.statuses.bleeding > 0) this.hp -= 6 * dt;
+            }
 
             // Decay knockback
             this.x += this.kx * dt;
@@ -288,6 +305,13 @@
             // Attack cooldown
             if (this.attackTimer > 0) this.attackTimer -= dt;
 
+            if (this.statuses && (this.statuses.staggered > 0 || this.statuses.stunned > 0)) {
+                if (this.statuses.stunned > 0) this.angle += dt * 4.5;
+                this.group3d.position.set(this.x, 0, this.y);
+                this.group3d.rotation.y = -this.angle + Math.PI / 2;
+                return;
+            }
+
             let walkDistance = 0;
 
             // AI states
@@ -296,7 +320,14 @@
             }
 
             if (this.state === 'chase') {
-                this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                if (this.statuses && this.statuses.scared > 0) {
+                    this.angle = Math.atan2(this.y - player.y, this.x - player.x);
+                } else if (this.statuses && this.statuses.confused > 0 && game && game.enemies && game.enemies.length > 1) {
+                    const other = game.enemies.find(o => o !== this && o.hp > 0);
+                    this.angle = other ? Math.atan2(other.y - this.y, other.x - this.x) : (this.angle + dt * 3);
+                } else {
+                    this.angle = Math.atan2(player.y - this.y, player.x - this.x);
+                }
 
                 if (this.type === 'mage' && dist < 320 && dist > 140) {
                     // Ranged attacker keeps distance and casts shadow skull

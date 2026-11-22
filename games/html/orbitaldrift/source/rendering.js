@@ -1,5 +1,51 @@
 
 
+function cycleCameraView() {
+    const idx = CAMERA_MODES.indexOf(cameraMode);
+    cameraMode = CAMERA_MODES[(idx + 1) % CAMERA_MODES.length];
+    store.set('orbitaldrift_cam', cameraMode);
+    const btn = $('od-cam-btn');
+    if (btn) btn.textContent = '📷 ' + CAMERA_LABELS[cameraMode];
+    showWaveBanner('CAMERA', CAMERA_LABELS[cameraMode]);
+}
+
+function updateCameraView(dt60) {
+    if (!camera || !satellite) return;
+    const satX = satellite.position.x;
+    const satY = satellite.position.y;
+    const tx = -Math.sin(satelliteAngle);
+    const ty = Math.cos(satelliteAngle);
+    const rx = Math.cos(satelliteAngle);
+    const ry = Math.sin(satelliteAngle);
+
+    let targetPos, targetLook;
+    if (cameraMode === 'chase') {
+        targetPos = new THREE.Vector3(
+            satX - tx * 34 + rx * 12,
+            satY - ty * 34 + ry * 12,
+            18
+        );
+        targetLook = new THREE.Vector3(satX + tx * 22, satY + ty * 22, 0);
+    } else if (cameraMode === 'forward') {
+        targetPos = new THREE.Vector3(
+            satX - tx * 4,
+            satY - ty * 4,
+            7.5
+        );
+        targetLook = new THREE.Vector3(satX + tx * 70, satY + ty * 70, -2);
+    } else {
+        targetPos = new THREE.Vector3(0, -230, 220);
+        targetLook = new THREE.Vector3(0, 0, 0);
+    }
+
+    const lerpAmt = 1 - Math.pow(0.84, dt60);
+    camPosCurrent.lerp(targetPos, lerpAmt);
+    camLookCurrent.lerp(targetLook, lerpAmt);
+    camera.position.copy(camPosCurrent);
+    camera.up.set(0, 0, 1);
+    camera.lookAt(camLookCurrent);
+}
+
 // Main Game Frame Logic
 function animate(currentTime = performance.now()) {
     requestAnimationFrame(animate);
@@ -56,6 +102,36 @@ function animate(currentTime = performance.now()) {
             planet.rotation.y += 0.006 * dt60;
             planet.rotation.z += 0.003 * dt60;
             if (rings) rings.rotation.z += 0.0006 * dt60;
+
+            if (slingshotCD > 0) slingshotCD -= delta;
+            secondaryBodies.forEach((b) => {
+                b.currentAngle += b.speed * dt60;
+                b.mesh.position.set(
+                    Math.cos(b.currentAngle) * b.orbitR,
+                    Math.sin(b.currentAngle) * b.orbitR,
+                    0
+                );
+                b.mesh.rotation.y += 0.015 * dt60;
+                const dist = satellite.position.distanceTo(b.mesh.position);
+                if (dist < b.radius + 4.5 && !cloakActive && !shieldActive) {
+                    if (slingshotCD <= 0) {
+                        slingshotCD = 2.0;
+                        integrity = Math.max(0, integrity - 18);
+                        updateShieldUI();
+                        screenShake = Math.max(screenShake, 8);
+                        sfx.playHit();
+                        scorePopup(satellite.position, b.name.toUpperCase() + ' IMPACT!', 'crit');
+                        if (integrity <= 0) { dying = true; dyingT = 0; }
+                    }
+                } else if (dist < b.radius + 16 && slingshotCD <= 0) {
+                    slingshotCD = 3.5;
+                    const bonus = Math.round((b.slingshotBonus || 150) * comboMult() * levelCfg().scoreMult);
+                    score += bonus;
+                    $('hud-score').textContent = Math.floor(score);
+                    scorePopup(satellite.position, b.name.toUpperCase() + ' SLINGSHOT +' + bonus, 'big');
+                    sfx.playPhaseUp();
+                }
+            });
 
             const effTimeScale = timeScale * (chronoActive ? 1 : 1);
             void effTimeScale;
@@ -117,6 +193,14 @@ function animate(currentTime = performance.now()) {
             const radiusDiff = targetRadius - orbitRadius;
             satellite.rotation.z = satelliteAngle + Math.PI / 2;
             satellite.rotation.y = THREE.MathUtils.clamp(radiusDiff * 0.06, -0.6, 0.6);
+
+            if (satellite.userData.plume) {
+                const plume = satellite.userData.plume;
+                const boost = dashT > 0 ? 2.2 : thrustActive ? 1.35 : 0.35;
+                const flicker = 0.85 + Math.random() * 0.3;
+                plume.scale.set(1, boost * flicker, 1);
+                plume.material.opacity = dashT > 0 ? 0.85 : thrustActive ? 0.65 : 0.18;
+            }
 
             // FOV kick with speed
             const targetFov = 55 + ratio * 6 + (thrustActive ? 3 : 0);
@@ -388,14 +472,13 @@ function animate(currentTime = performance.now()) {
         }
     }
 
+    updateCameraView(dt60);
+
     if (shakeEnabled && screenShake > 0) {
-        camera.position.x = (Math.random() - 0.5) * screenShake;
-        camera.position.y = -230 + (Math.random() - 0.5) * screenShake;
+        camera.position.x += (Math.random() - 0.5) * screenShake;
+        camera.position.y += (Math.random() - 0.5) * screenShake;
         screenShake *= Math.pow(0.88, dt60);
         if (screenShake < 0.1) screenShake = 0;
-    } else {
-        camera.position.x = 0;
-        camera.position.y = -230;
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {
