@@ -26,7 +26,7 @@ export function createBotComms() {
             speech.speak(utterance);
         },
         reset() {
-            if (active && (speech.speaking || speech.pending)) speech.cancel();
+            if (speech && active && (speech.speaking || speech.pending)) speech.cancel();
             active = null;
             lastSpoken = -Infinity;
         }
