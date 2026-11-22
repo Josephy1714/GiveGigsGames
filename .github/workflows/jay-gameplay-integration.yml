@@ -9,6 +9,7 @@ on:
       - 'games/semester-survival-runner-3d/src/three/runner-three-renderer.js'
       - 'games/semester-survival-runner-3d/tests/jay-gameplay-integration.*'
       - 'games/semester-survival-runner-3d/tests/run-motion.test.mjs'
+      - 'games/semester-survival-runner-3d/tests/jay-live-runner-e2e.mjs'
       - 'games/semester-survival-runner-3d/package.json'
       - '.github/workflows/jay-gameplay-integration.yml'
 
@@ -46,3 +47,16 @@ jobs:
           PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
         run: |
           node games/semester-survival-runner-3d/tests/jay-gameplay-integration.mjs
+      - name: Launch the complete runner and verify Jay in gameplay
+        env:
+          PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
+        run: |
+          node games/semester-survival-runner-3d/tests/jay-live-runner-e2e.mjs
+      - name: Upload real gameplay screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jay-live-runner-gameplay
+          path: /tmp/jay-live-runner-*.png
+          if-no-files-found: ignore
+          retention-days: 7
