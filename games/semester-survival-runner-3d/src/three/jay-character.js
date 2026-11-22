@@ -136,7 +136,8 @@ export async function loadJayCharacter({
     throw new Error("Jay GLB is not rigged: no skinned mesh was found.");
   }
 
-  const { resolved, missing } = resolveClips(gltf.animations || []);\n  const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
+  const { resolved, missing } = resolveClips(gltf.animations || []);
+  const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
   // when no dedicated recovery FBX was supplied.
   if (resolved.fall && !resolved.getUp) {
@@ -222,7 +223,8 @@ export async function loadJayCharacter({
     mixer,
     fit,
     availableClips: Object.freeze(Object.keys(actions)),
-    missingClips: Object.freeze(missing),\n    neutralizedMouthMorphs: Object.freeze(neutralizedMouthMorphs),
+    missingClips: Object.freeze(missing),
+    neutralizedMouthMorphs: Object.freeze(neutralizedMouthMorphs),
     play,
     update,
     dispose,
