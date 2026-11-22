@@ -32,7 +32,18 @@
         <!-- Damage / Heal Screen Vignette -->
         <div id="vignette"></div>
 
+        <!-- Human Mode Cockpit Overlay -->
+        <div id="cockpitOverlay" class="hidden">
+            <div class="cockpit-frame"></div>
+            <div class="cockpit-heat-wrap">
+                <span>TURRET HEAT</span>
+                <div class="bar-wrap"><div class="bar-fill heat-fill" id="heatBar"></div></div>
+            </div>
+        </div>
+
         <!-- In-Game HUD -->
+        <div id="cockpitFrame" class="hidden"></div>
+        <div id="cockpitCracks" class="hidden"></div>
         <div id="hud" class="hidden">
             <!-- BS-07 Tutorial Mission Banner -->
             <div id="tutorialBanner" class="tutorial-banner hidden">
@@ -65,7 +76,7 @@
 
             <div class="hud-top-center">
                 <div class="score-panel">
-                    <div class="score-main">SCORE <span id="hudScore">0</span></div>
+                    <div class="score-main">SCORE <span id="hudScore">0</span> <span id="hudCombo" class="combo-badge hidden">x1</span></div>
                     <div class="score-best">BEST <span id="hudHighScore">0</span> &nbsp;|&nbsp; <span id="hudDepth">0m</span> · <span id="hudBiome">BS-07 Shallows</span></div>
                 </div>
                 <div id="bossHud" class="hidden">
@@ -157,7 +168,10 @@
                         <button class="skin-swatch" data-skin="magma" title="Magma" style="background:linear-gradient(135deg,#18181b,#dc2626);"></button>
                         <button class="skin-swatch" data-skin="gold" title="Golden" style="background:#eab308;"></button>
                     </div>
-                    <button id="btnStart" class="primary-btn">DIVE IN</button>
+                    <div class="start-btn-row">
+                        <button id="btnStart" class="primary-btn">🦈 PLAY AS SHARK</button>
+                        <button id="btnStartHuman" class="secondary-btn">🚤 PLAY AS HUMAN (SUB GUNNER)</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -230,7 +244,11 @@
         </div>
     </div>
 
-    <script src="game.js?v=4"></script>
+    <script src="lore-data.js?v=6"></script>
+    <script src="ocean-hunter.js?v=6"></script>
+    <script src="world.js?v=6"></script>
+    <script src="creatures.js?v=6"></script>
+    <script src="game.js?v=6"></script>
     <script src="../_shared/game-select.js" defer></script>
 </body>
 </html>

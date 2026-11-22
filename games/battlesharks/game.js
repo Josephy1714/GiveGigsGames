@@ -132,6 +132,7 @@
 
     // ==================== GAME STATE ====================
     const state = {
+        mode: 'shark', // 'shark' or 'human' (Ocean Hunter Sub Gunner)
         running: false,
         paused: false,
         score: 0,
@@ -156,6 +157,12 @@
         bossActive: false,
         bossDefeated: false,
         nextBossScore: 600,
+        combo: 1,
+        comboTimer: 0,
+        frenzyTimer: 0,
+        turretHeat: 0,
+        turretOverheated: false,
+        humanCamFirstPerson: false,
         lastTime: 0
     };
 
@@ -176,7 +183,16 @@
         isDashing: false,
         laserCooldown: 0,
         jawTimer: 0,
-        invulnTimer: 0
+        invulnTimer: 0,
+        tailPhase: 0,
+        isAirborne: false,
+        airVelY: 0,
+        lungeCooldown: 0,
+        recentEats: [],
+        grabbedEnemy: null,
+        grabTimer: 0,
+        scars: 0,
+        sonarPulseTimer: 0
     };
 
     const boss = {
@@ -228,45 +244,16 @@
         enemiesKilled: 0
     };
 
+    let treasureChests = [];
+    let plushieCompanion = null;
     function buildAquariumBase() {
-        const baseGroup = new THREE.Group();
-        baseGroup.position.copy(AQUARIUM_POS);
-
-        const steelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.3 });
-        const glassMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.14, side: THREE.DoubleSide });
-        const trimMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-
-        // Aquarium Glass & Steel Frame (open at -Z for Shark Loading Bay exit)
-        const floor = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 18), steelMat);
-        floor.position.y = -5.5;
-        const roof = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 18), steelMat);
-        roof.position.y = 5.5;
-        const backWall = new THREE.Mesh(new THREE.BoxGeometry(16, 11, 0.8), steelMat);
-        backWall.position.z = 9;
-        baseGroup.add(floor, roof, backWall);
-
-        // Side Glass Panels
-        [-8, 8].forEach((x) => {
-            const glass = new THREE.Mesh(new THREE.PlaneGeometry(18, 10.5), glassMat);
-            glass.rotation.y = Math.PI / 2;
-            glass.position.x = x;
-            baseGroup.add(glass);
-
-            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.6, 11.4, 0.6), steelMat);
-            strut.position.set(x, 0, -9);
-            baseGroup.add(strut);
-        });
-
-        // Glowing Loading Bay Gate Arch (-Z)
-        const gateTop = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.4, 0.5), trimMat);
-        gateTop.position.set(0, 5.2, -9);
-        baseGroup.add(gateTop);
-
-        const baseLight = new THREE.PointLight(0x00e5ff, 1.8, 34);
-        baseLight.position.set(0, 3, 0);
-        baseGroup.add(baseLight);
-
-        scene.add(baseGroup);
+        if (window.BSWorld) {
+            window.BSWorld.buildAquariumComplex(scene, AQUARIUM_POS, state.shopOwned || {});
+            treasureChests = window.BSWorld.buildTreasureChests(scene, ARENA_RADIUS, FLOOR_Y);
+        }
+        if (window.BSCreatures) {
+            plushieCompanion = window.BSCreatures.buildPlushieCompanion(scene);
+        }
     }
 
     function buildEnvironment() {
@@ -1027,6 +1014,84 @@
         });
     }
 
+    function spawnFloatingText(worldPos, text, color = '#ffffff') {
+        if (!camera || !worldPos) return;
+        const v = worldPos.clone().project(camera);
+        if (v.z > 1) return; // behind camera
+        const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+        const el = document.createElement('div');
+        el.className = 'bs-float-text';
+        el.textContent = text;
+        el.style.left = `${Math.round(x)}px`;
+        el.style.top = `${Math.round(y)}px`;
+        el.style.color = color;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 850);
+    }
+
+    function getSharkRank(level) {
+        if (level >= 8) return 'Abyssal Apex';
+        if (level >= 5) return 'Trench Terror';
+        if (level >= 3) return 'Reef Stalker';
+        return 'Cyber Pup';
+    }
+
+    // #12 Cave Echo-Location Pulse
+    const sonarRings = [];
+    function triggerSonarRing() {
+        player.sonarPulseTimer = 3.5;
+        const ringGeo = new THREE.TorusGeometry(1.5, 0.14, 8, 36);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.85 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.copy(player.pos);
+        ring.rotation.x = Math.PI / 2;
+        scene.add(ring);
+        sonarRings.push({ mesh: ring, age: 0, maxAge: 1.2 });
+        spawnFloatingText(player.pos, 'SONAR PULSE', '#00e5ff');
+    }
+
+    // #6 Dynamic Scar System
+    function addSharkScar() {
+        if (!sharkGroup || player.scars >= 6) return;
+        player.scars++;
+        const scarGeo = new THREE.BoxGeometry(0.06, 0.35 + Math.random() * 0.35, 0.9 + Math.random() * 0.5);
+        const scarMat = new THREE.MeshBasicMaterial({ color: 0x991b1b });
+        const scar = new THREE.Mesh(scarGeo, scarMat);
+        const side = Math.random() < 0.5 ? -1 : 1;
+        scar.position.set(side * 0.72, 0.1 + (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 2.2);
+        scar.rotation.z = (Math.random() - 0.5) * 0.5;
+        sharkGroup.add(scar);
+    }
+
+    // #7 Glowing Fin Mutation, #8 Extra-Eye Mutation, #9 Bigger Teeth Mutation
+    let thirdEyeMesh = null;
+    function updateMutationVisuals() {
+        if (!sharkGroup) return;
+        const unlockedCount = Object.values(state.upgrades).filter(Boolean).length;
+        // #7 Glowing Fin Mutation
+        if (unlockedCount >= 3) {
+            sharkGroup.traverse((obj) => {
+                if (obj.isMesh && obj.material && obj.material.emissive && obj.geometry && obj.geometry.type === 'BoxGeometry') {
+                    obj.material.emissive.setHex(0x00e5ff);
+                    obj.material.emissiveIntensity = 0.65;
+                }
+            });
+        }
+        // #8 Extra-Eye Mutation
+        if (unlockedCount >= 2 && !thirdEyeMesh) {
+            const eyeGeo = new THREE.SphereGeometry(0.16, 12, 12);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            thirdEyeMesh = new THREE.Mesh(eyeGeo, eyeMat);
+            thirdEyeMesh.position.set(0, 0.68, -1.65);
+            sharkGroup.add(thirdEyeMesh);
+        }
+        // #9 Bigger Teeth Mutation
+        if (unlockedCount >= 4 && sharkJaw) {
+            sharkJaw.scale.setScalar(1.28);
+        }
+    }
+
     function spawnParticles(pos, color, count = 12, speed = 10) {
         const geo = new THREE.SphereGeometry(0.24, 6, 6);
         const mat = new THREE.MeshBasicMaterial({ color });
@@ -1059,6 +1124,16 @@
             toggleInventory();
         } else if (e.code === 'KeyL' && state.running && !state.paused) {
             toggleFlashlight();
+        } else if (e.code === 'KeyC' && state.running && !state.paused) {
+            // Echo-location sonar pulse
+            spawnParticles(player.pos, 0x00e5ff, 22, 24);
+            sfx.electric();
+            triggerSonarRing();
+        } else if (e.code === 'KeyV' && state.running && state.mode === 'human') {
+            state.humanCamFirstPerson = !state.humanCamFirstPerson;
+        } else if (e.code === 'KeyR' && state.running && state.mode === 'human') {
+            state.turretHeat = 0;
+            state.turretOverheated = false;
         } else if (e.code === 'Escape') {
             if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
                 toggleInventory(false);
@@ -1072,6 +1147,8 @@
             triggerDash();
         } else if (e.code === 'KeyF' && state.running && !state.paused) {
             fireLasers();
+        } else if (e.code === 'KeyB' && state.running && !state.paused && state.mode === 'shark') {
+            triggerBiteLunge();
         }
     });
 
@@ -1083,6 +1160,8 @@
         if (!state.running || state.paused) return;
         if (e.button === 0) {
             fireLasers();
+        } else if (e.button === 2 && state.mode === 'shark') {
+            triggerBiteLunge();
         }
     });
 
@@ -1103,7 +1182,58 @@
     });
 
     // ==================== ACTIONS & MECHANICS ====================
+    function triggerBiteLunge() {
+        if (player.lungeCooldown > 0) return;
+        player.lungeCooldown = 0.75;
+        player.jawTimer = 0.28;
+        player.speed = Math.max(player.speed, player.baseMaxSpeed * 1.45);
+        sfx.bite();
+        const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
+        const bitePoint = player.pos.clone().addScaledVector(forward, 3.2 * player.scale);
+        spawnParticles(bitePoint, 0x00e5ff, 8, 8);
+        const unlockedCount = Object.values(state.upgrades).filter(Boolean).length;
+        const teethMult = unlockedCount >= 4 ? 1.25 : 1.0;
+        const dmg = Math.round(35 * (state.frenzyTimer > 0 ? 1.3 : 1.0) * teethMult);
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            if (enemies[i].pos.distanceTo(bitePoint) < 4.5 * player.scale) {
+                if (player.level >= 5 && enemies[i].hp <= 55) {
+                    enemies[i].hp = 0;
+                    spawnFloatingText(enemies[i].pos, 'SWALLOWED!', '#00f5a0');
+                    destroyEnemy(i);
+                } else {
+                    enemies[i].hp -= dmg;
+                    spawnFloatingText(enemies[i].pos, `-${dmg}`, '#f87171');
+                    if (enemies[i].hp <= 0) destroyEnemy(i);
+                }
+            }
+        }
+    }
+
     function triggerDash() {
+        if (state.mode === 'human') {
+            // Depth Charge / Sonic Pulse in Human Mode
+            if (player.dashCooldown > 0) return;
+            player.dashCooldown = 3.0;
+            sfx.explosion();
+            spawnParticles(player.pos, 0x38bdf8, 28, 26);
+            spawnFloatingText(player.pos, 'SONIC PULSE!', '#38bdf8');
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (enemies[i].pos.distanceTo(player.pos) < 28) {
+                    enemies[i].hp -= 65;
+                    spawnFloatingText(enemies[i].pos, '-65', '#38bdf8');
+                    if (enemies[i].hp <= 0) destroyEnemy(i);
+                }
+            }
+            if (typeof enemyLasers !== 'undefined') {
+                for (let i = enemyLasers.length - 1; i >= 0; i--) {
+                    if (enemyLasers[i].pos.distanceTo(player.pos) < 32) {
+                        scene.remove(enemyLasers[i].mesh);
+                        enemyLasers.splice(i, 1);
+                    }
+                }
+            }
+            return;
+        }
         if (!state.upgrades.thruster || player.dashCooldown > 0) return;
         player.isDashing = true;
         player.dashTimer = 0.35;
@@ -1113,6 +1243,24 @@
     }
 
     function fireLasers() {
+        if (state.mode === 'human') {
+            if (state.turretOverheated || player.laserCooldown > 0) return;
+            player.laserCooldown = 0.14;
+            state.turretHeat = Math.min(100, state.turretHeat + 8);
+            if (state.turretHeat >= 100) {
+                state.turretOverheated = true;
+                spawnFloatingText(player.pos, 'OVERHEAT! [R]', '#f97316');
+            }
+            sfx.laser();
+            state.cameraShake = Math.max(state.cameraShake, 0.08);
+            const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
+            const origin = player.pos.clone().add(forward.clone().multiplyScalar(2.6));
+            spawnParticles(origin, 0x38bdf8, 4, 10);
+            const isCrit = Math.random() < 0.28;
+            const dmg = isCrit ? Math.round(38 * 2.5) : 38;
+            spawnProjectile(origin, forward, 85, isCrit ? 0xfacc15 : 0x38bdf8, true, false, dmg);
+            return;
+        }
         if (!state.upgrades.lasers || player.laserCooldown > 0) return;
         player.laserCooldown = 0.22;
         sfx.laser();
@@ -1133,6 +1281,9 @@
         }
         const mult = state.upgrades.scales ? 0.6 : 1.0;
         player.health -= amount * mult;
+        state.combo = 1;
+        state.comboTimer = 0;
+        if (amount * mult >= 15) addSharkScar();
         player.invulnTimer = 0.45;
         state.cameraShake = 0.55;
         sfx.hit();
@@ -1148,6 +1299,7 @@
     }
 
     function gainXp(amount) {
+        updateMutationVisuals();
         player.xp += amount;
         while (player.xp >= player.nextLevelXp) {
             player.xp -= player.nextLevelXp;
@@ -1188,15 +1340,35 @@
         if (keys['KeyS'] || keys['ArrowDown']) moveInput -= 0.5;
         moveInput -= touchState.y;
 
-        const maxSpd = player.isDashing ? player.baseMaxSpeed * 2.2 : player.baseMaxSpeed;
+        const frenzyMult = state.frenzyTimer > 0 ? 1.3 : 1.0;
+        const maxSpd = (player.isDashing ? player.baseMaxSpeed * 2.2 : player.baseMaxSpeed) * frenzyMult;
         const targetSpeed = moveInput * maxSpd;
+        const prevSpeed = player.speed;
         player.speed += (targetSpeed - player.speed) * Math.min(1, dt * 6);
 
         const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
         player.pos.addScaledVector(forward, player.speed * dt);
 
-        // Arena Bounds
-        player.pos.y = Math.max(FLOOR_Y + 2, Math.min(SURFACE_Y - 1.5, player.pos.y));
+        // #2 Breaching / Water Surface Leap
+        if (!player.isAirborne && player.pos.y >= SURFACE_Y - 1.5 && player.speed > 14 && player.pitch > 0.2) {
+            player.isAirborne = true;
+            player.airVelY = Math.sin(player.pitch) * player.speed * 0.85;
+            spawnParticles(player.pos, 0x99eeff, 22, 16);
+            spawnFloatingText(player.pos, 'BREACH!', '#38bdf8');
+        }
+        if (player.isAirborne) {
+            player.airVelY -= 24 * dt;
+            player.pos.y += player.airVelY * dt;
+            if (player.pos.y <= SURFACE_Y - 1.5 && player.airVelY < 0) {
+                player.isAirborne = false;
+                player.airVelY = 0;
+                player.pos.y = SURFACE_Y - 1.5;
+                spawnParticles(player.pos, 0x99eeff, 26, 18);
+                state.cameraShake = Math.max(state.cameraShake, 0.25);
+            }
+        } else {
+            player.pos.y = Math.max(FLOOR_Y + 2, Math.min(SURFACE_Y - 1.5, player.pos.y));
+        }
         const horizLen = Math.hypot(player.pos.x, player.pos.z);
         if (horizLen > ARENA_RADIUS - 3) {
             const scaleBack = (ARENA_RADIUS - 3) / horizLen;
@@ -1206,12 +1378,16 @@
 
         // Update Shark Mesh & Animations
         sharkGroup.position.copy(player.pos);
-        sharkGroup.rotation.set(player.pitch, player.yaw, -turnInput * 0.28, 'YXZ');
+        const breachTilt = player.isAirborne ? Math.sin(performance.now() * 0.008) * 0.12 : 0;
+        sharkGroup.rotation.set(player.pitch, player.yaw, -turnInput * 0.28 + breachTilt, 'YXZ');
         sharkLight.position.copy(player.pos).add(new THREE.Vector3(0, 4, 0));
 
-        const t = performance.now() * 0.001;
-        const swimFreq = 5 + Math.abs(player.speed) * 0.45;
-        sharkTail.rotation.y = Math.sin(t * swimFreq) * 0.35;
+        // #1 Smooth Lateral Tail-Beat Physics
+        const accelFactor = Math.min(1.8, Math.abs(player.speed - prevSpeed) / Math.max(0.001, dt) * 0.02 + Math.abs(turnInput) * 0.5);
+        const swimFreq = 5 + Math.abs(player.speed) * 0.45 + Math.abs(turnInput) * 3.5;
+        const tailAmp = 0.28 + Math.min(0.35, Math.abs(player.speed) * 0.012 + accelFactor * 0.16);
+        player.tailPhase += dt * swimFreq;
+        sharkTail.rotation.y = Math.sin(player.tailPhase) * tailAmp;
 
         if (player.jawTimer > 0) {
             player.jawTimer -= dt;
@@ -1222,6 +1398,35 @@
 
         // Cooldowns & Upgrades
         if (player.dashCooldown > 0) player.dashCooldown -= dt;
+        if (player.lungeCooldown > 0) player.lungeCooldown -= dt;
+        if (player.sonarPulseTimer > 0) player.sonarPulseTimer = Math.max(0, player.sonarPulseTimer - dt);
+        for (let i = sonarRings.length - 1; i >= 0; i--) {
+            const sr = sonarRings[i];
+            sr.age += dt;
+            const s = 1 + sr.age * 28;
+            sr.mesh.scale.set(s, s, 1);
+            sr.mesh.material.opacity = Math.max(0, 0.85 * (1 - sr.age / sr.maxAge));
+            if (sr.age >= sr.maxAge) {
+                scene.remove(sr.mesh);
+                sonarRings.splice(i, 1);
+            }
+        }
+        // #11 Hydrothermal Vent Boosts
+        if (state.mode === 'shark' && player.pos.y < FLOOR_Y + 6.5) {
+            if (Math.sin(player.pos.x * 0.15) * Math.cos(player.pos.z * 0.15) > 0.85) {
+                player.pos.y += 18 * dt;
+                if (Math.random() < 0.35) spawnParticles(player.pos, 0xf97316, 2, 10);
+            }
+        }
+        // #18 Jet Pack Flame Trails
+        if (state.upgrades.thruster && player.isDashing && Math.random() < 0.7) {
+            spawnParticles(player.pos, Math.random() < 0.5 ? 0xf97316 : 0x38bdf8, 2, 8);
+        }
+        if (state.frenzyTimer > 0) state.frenzyTimer = Math.max(0, state.frenzyTimer - dt);
+        if (state.comboTimer > 0) {
+            state.comboTimer -= dt;
+            if (state.comboTimer <= 0) state.combo = 1;
+        }
         if (player.dashTimer > 0) {
             player.dashTimer -= dt;
             if (player.dashTimer <= 0) player.isDashing = false;
@@ -1283,6 +1488,23 @@
                 sfx.missile();
                 spawnProjectile(player.pos.clone(), dir, 38, 0x00f5a0, true, true, 45);
             }
+        }
+
+        // Submarine Gunner Mode (Ocean Hunter inspired)
+        if (state.mode === 'human') {
+            const tSub = performance.now() * 0.00035;
+            player.pos.x = Math.sin(tSub) * 65;
+            player.pos.z = Math.cos(tSub * 0.8) * 65;
+            player.pos.y = 10 - Math.min(220, state.difficultyTimer * 2.2);
+            sharkGroup.visible = false;
+            if (subGroup) {
+                subGroup.visible = true;
+                subGroup.position.copy(player.pos);
+                subGroup.rotation.set(player.pitch * 0.5, player.yaw, 0, 'YXZ');
+            }
+        } else {
+            sharkGroup.visible = true;
+            if (subGroup) subGroup.visible = false;
         }
 
         // Third-Person Camera
@@ -1386,15 +1608,30 @@
             p.mesh.rotation.y = p.yaw + Math.PI;
 
             if (p.pos.distanceTo(player.pos) < eatRadius + p.type.size * 0.5) {
+                state.combo = Math.min(5, state.combo + 1);
+                state.comboTimer = 4.5;
+                const coinGain = p.type.biomass * 2 * state.combo;
+                const scoreGain = p.type.score * state.combo;
                 state.biomass += p.type.biomass;
-                state.coins += p.type.biomass * 2;
+                state.coins += coinGain;
                 localStorage.setItem('battlesharks_coins', String(state.coins));
-                state.score += p.type.score;
+                state.score += scoreGain;
                 player.health = Math.min(player.maxHealth, player.health + 6 + p.type.biomass * 2);
                 player.jawTimer = 0.25;
                 gainXp(p.type.score * 1.4);
                 sfx.chomp();
                 spawnParticles(p.pos, p.type.color, 8, 8);
+                spawnFloatingText(p.pos, `+${coinGain}c${state.combo > 1 ? ` (${state.combo}x)` : ''}`, '#fbbf24');
+
+                // #3 Blood-in-the-Water Frenzy
+                const nowMs = performance.now();
+                player.recentEats.push(nowMs);
+                player.recentEats = player.recentEats.filter(ts => nowMs - ts <= 5000);
+                if (player.recentEats.length >= 3 && state.frenzyTimer <= 0) {
+                    state.frenzyTimer = 8.0;
+                    spawnFloatingText(player.pos, 'FEEDING FRENZY! +30%', '#ef4444');
+                }
+
                 scene.remove(p.mesh);
                 preys.splice(i, 1);
                 if (tutorial.active && tutorial.step === 1) {
@@ -1531,6 +1768,27 @@
             }
         }
 
+        // Companion Shark Plushie & Breakable Treasure Chests
+        if (plushieCompanion) {
+            plushieCompanion.visible = !!state.shopOwned.plushie;
+            if (plushieCompanion.visible) {
+                const targetP = player.pos.clone().add(new THREE.Vector3(3.2, 1.2, 2.5));
+                plushieCompanion.position.lerp(targetP, Math.min(1, dt * 6));
+                plushieCompanion.lookAt(player.pos);
+            }
+        }
+        for (const ch of treasureChests) {
+            if (!ch.opened && ch.pos.distanceTo(player.pos) < 4.5) {
+                ch.opened = true;
+                ch.mesh.visible = false;
+                state.coins += 35;
+                state.score += 100;
+                localStorage.setItem('battlesharks_coins', String(state.coins));
+                sfx.upgrade();
+                spawnParticles(ch.pos, 0xfacc15, 20, 14);
+            }
+        }
+
         // Depth-Driven Atmosphere (Subnautica-style biome transition)
         const depthNorm = Math.max(0, Math.min(1, (SURFACE_Y - player.pos.y) / (SURFACE_Y - FLOOR_Y)));
         const shallowCol = new THREE.Color(0x042f4b);
@@ -1540,7 +1798,25 @@
         scene.fog.color.copy(curCol);
         scene.fog.density = 0.0085 + depthNorm * 0.0065;
 
-        // Environment Animation
+        // Combo & Frenzy timers
+        if (state.comboTimer > 0) {
+            state.comboTimer -= dt;
+            if (state.comboTimer <= 0) state.combo = 1;
+        }
+        if (state.frenzyTimer > 0) state.frenzyTimer -= dt;
+        if (state.mode === 'human' && state.turretHeat > 0) {
+            state.turretHeat = Math.max(0, state.turretHeat - 22 * dt);
+            if (state.turretHeat < 25) state.turretOverheated = false;
+        }
+
+        // Dynamic Shark Rank
+        const ranks = ['Cyber Pup', 'Reef Stalker', 'Trench Terror', 'Abyssal Apex', 'Omega Cyber-Shark'];
+        document.getElementById('hudRank').textContent = state.mode === 'human' ? 'Sub Gunner' : ranks[Math.min(ranks.length - 1, Math.floor((player.level - 1) / 2))];
+
+        // 3D Bubble Trail when swimming fast
+        if (Math.abs(player.speed) > 14 && Math.random() < 0.35) {
+            spawnParticles(player.pos, 0xbae6fd, 1, 2.5);
+        }
         for (const k of kelpList) {
             k.rotation.z = Math.sin(t * 1.4 + k.userData.phase) * 0.12;
         }
@@ -1632,12 +1908,34 @@
     }
 
     function updateHUD() {
-        document.getElementById('hudLevel').textContent = `LVL ${player.level}`;
+        const rankLabel = state.mode === 'human' ? 'SUB GUNNER' : getSharkRank(player.level);
+        document.getElementById('hudLevel').textContent = `LVL ${player.level} · ${rankLabel}`;
         document.getElementById('healthBar').style.width = `${(player.health / player.maxHealth) * 100}%`;
         document.getElementById('healthText').textContent = `${Math.ceil(player.health)} / ${player.maxHealth} HP`;
         document.getElementById('xpBar').style.width = `${(player.xp / player.nextLevelXp) * 100}%`;
         document.getElementById('xpText').textContent = `XP ${Math.floor(player.xp)} / ${player.nextLevelXp}`;
         document.getElementById('hudScore').textContent = state.score;
+        const comboEl = document.getElementById('hudCombo');
+        comboEl.classList.toggle('hidden', state.combo <= 1 && state.frenzyTimer <= 0);
+        comboEl.textContent = state.frenzyTimer > 0
+            ? `FRENZY ${Math.ceil(state.frenzyTimer)}s${state.combo > 1 ? ` · x${state.combo}` : ''}`
+            : `x${state.combo}`;
+        if (state.mode === 'human') {
+            document.getElementById('heatBar').style.width = `${state.turretHeat}%`;
+            const cockpit = document.getElementById('cockpitFrame');
+            const cracks = document.getElementById('cockpitCracks');
+            if (cockpit) cockpit.classList.remove('hidden');
+            if (cracks) {
+                const dmgRatio = 1 - (player.health / player.maxHealth);
+                cracks.classList.toggle('hidden', dmgRatio < 0.2);
+                cracks.style.opacity = Math.min(0.9, dmgRatio * 1.1).toFixed(2);
+            }
+        } else {
+            const cockpit = document.getElementById('cockpitFrame');
+            const cracks = document.getElementById('cockpitCracks');
+            if (cockpit) cockpit.classList.add('hidden');
+            if (cracks) cracks.classList.add('hidden');
+        }
         document.getElementById('hudCoins').textContent = state.coins;
         document.getElementById('hudBiomass').textContent = state.biomass;
         const depthM = Math.max(0, Math.round(SURFACE_Y - player.pos.y));
@@ -1883,7 +2181,26 @@
         spawnFriendlySharks();
     }
 
-    function startGame() {
+    let subGroup = null;
+    function buildSubmarineMesh() {
+        subGroup = new THREE.Group();
+        const hullMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.65, roughness: 0.3 });
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.25 });
+        const glassMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
+
+        const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 3.6, 16), hullMat);
+        hull.rotation.x = Math.PI / 2;
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 14), glassMat);
+        dome.position.z = -1.6;
+        const turret = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 1.2), darkMat);
+        turret.position.set(0, 1.2, -0.4);
+        subGroup.add(hull, dome, turret);
+        subGroup.visible = false;
+        scene.add(subGroup);
+    }
+
+    function startGame(mode = 'shark') {
+        state.mode = mode;
         sfx.init();
         sfx.startMusic();
         resetGame();
@@ -1892,6 +2209,7 @@
         document.getElementById('pauseModal').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('crosshair').classList.remove('hidden');
+        document.getElementById('cockpitOverlay').classList.toggle('hidden', mode !== 'human');
 
         if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
             document.getElementById('touchControls').classList.remove('hidden');
@@ -1901,9 +2219,11 @@
     function gameOver() {
         state.running = false;
         sfx.stopMusic();
-        const prevBest = parseInt(localStorage.getItem('battlesharks_highscore') || '0', 10);
+        const modeKey = state.mode === 'human' ? 'battlesharks_highscore_human' : 'battlesharks_highscore_shark';
+        const prevBest = parseInt(localStorage.getItem(modeKey) || localStorage.getItem('battlesharks_highscore') || '0', 10);
         const best = Math.max(prevBest, state.score);
-        localStorage.setItem('battlesharks_highscore', String(best));
+        localStorage.setItem(modeKey, String(best));
+        localStorage.setItem('battlesharks_highscore', String(Math.max(best, parseInt(localStorage.getItem('battlesharks_highscore') || '0', 10))));
 
         document.getElementById('finalScore').textContent = state.score;
         document.getElementById('finalHighScore').textContent = best;
@@ -1922,7 +2242,8 @@
     }
 
     // ==================== UI BINDINGS ====================
-    document.getElementById('btnStart').addEventListener('click', startGame);
+    document.getElementById('btnStart').addEventListener('click', () => startGame('shark'));
+    document.getElementById('btnStartHuman').addEventListener('click', () => startGame('human'));
     document.getElementById('btnRestart').addEventListener('click', startGame);
     document.getElementById('btnRestartPause').addEventListener('click', startGame);
     document.getElementById('btnResume').addEventListener('click', togglePause);
@@ -1987,5 +2308,6 @@
 
     buildEnvironment();
     buildSharkMesh();
+    buildSubmarineMesh();
     requestAnimationFrame(animate);
 })();
