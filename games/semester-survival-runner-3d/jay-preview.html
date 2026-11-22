@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Jay — Character & Animation Lab</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}*{box-sizing:border-box}body{margin:0;background:#080d18;color:#eef4ff;min-height:100vh}main{max-width:1100px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}h1{font-size:clamp(22px,4vw,34px);margin:0;letter-spacing:-.04em}.sub{color:#93a6c4;font-size:13px;margin-top:5px}.tag{font-size:11px;border:1px solid #705a30;color:#f6cf7b;background:#211b10;padding:7px 10px;border-radius:999px;white-space:nowrap}.viewer{height:min(68vh,650px);min-height:420px;position:relative;overflow:hidden;border:1px solid #1c2a43;border-radius:20px;background:radial-gradient(ellipse at 50% 35%,#203451 0%,#101b2c 48%,#080d18 100%)}canvas{display:block;width:100%;height:100%}.hint{position:absolute;left:16px;top:14px;color:#a9bddb;font-size:12px;pointer-events:none}.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}.panel{background:#101a2a;border:1px solid #1e2c43;border-radius:14px;padding:13px}label{display:block;font-size:11px;color:#91a6c6;margin-bottom:8px}select,button,input{font:inherit}select{width:100%;background:#0b1321;color:#eef4ff;border:1px solid #2b3b56;border-radius:9px;padding:10px}button{background:#c7e4ff;color:#0a1627;border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}button.secondary{background:#1d2b41;color:#e8f1ff;border:1px solid #314562}.actions{display:flex;gap:8px;flex-wrap:wrap}input[type=range]{width:100%;accent-color:#8dc8ff}.status{font-size:12px;color:#93a6c4;margin-top:12px;line-height:1.5}@media(max-width:700px){main{padding:14px}.viewer{min-height:360px;height:55vh}.controls{grid-template-columns:repeat(2,minmax(0,1fr))}header{align-items:flex-start;flex-direction:column}}
+</style></head><body><main>
+<header><div><h1>JAY / ANIMATION LAB</h1><div class="sub">Unified character preview · separate experimental build</div></div><div class="tag">RUN LOOP UNDER VALIDATION</div></header>
+<section class="viewer" id="viewer"><div class="hint">Drag to orbit · pinch or scroll to zoom</div></section>
+<section class="controls">
+<div class="panel"><label for="clip">ANIMATION CLIP</label><select id="clip"></select></div>
+<div class="panel"><label for="speed">PLAYBACK SPEED · <span id="speedText">1.00×</span></label><input id="speed" type="range" min=".25" max="1.5" step=".05" value="1"></div>
+<div class="panel"><label>PLAYBACK</label><div class="actions"><button id="play">Pause</button><button id="restart" class="secondary">Restart</button></div></div>
+<div class="panel"><label>CAMERA</label><div class="actions"><button id="front" class="secondary">Front</button><button id="side" class="secondary">Side</button><button id="reset" class="secondary">Reset</button></div></div>
+</section><div class="status" id="status">Loading Jay's unified GLB…</div></main>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
+const host=document.getElementById("viewer"),status=document.getElementById("status");
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,1,.1,100);
+camera.position.set(0,2,6.4);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;host.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,1,0);controls.minDistance=2.4;controls.maxDistance=10;
+scene.add(new THREE.HemisphereLight(0xc9e3ff,0x172238,2));
+const key=new THREE.DirectionalLight(0xffffff,3);key.position.set(3,6,4);scene.add(key);
+const rim=new THREE.DirectionalLight(0x5caaff,2.2);rim.position.set(-4,3,-3);scene.add(rim);
+const floor=new THREE.Mesh(new THREE.CircleGeometry(2.2,64),new THREE.MeshStandardMaterial({color:0x13253a,roughness:.9,metalness:.15}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);
+const grid=new THREE.GridHelper(8,32,0x33506f,0x1a2b40);grid.position.y=-.01;scene.add(grid);
+let mixer=null,active=null,clips=[],model=null;const clock=new THREE.Clock();
+function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+new ResizeObserver(resize).observe(host);resize();
+function playClip(name){if(!mixer)return;const clip=clips.find(c=>c.name===name);if(!clip)return;if(active){active.fadeOut(.12);mixer.stopAllAction()}active=mixer.clipAction(clip);active.reset().setLoop(THREE.LoopRepeat,Infinity);active.clampWhenFinished=false;active.fadeIn(.12).play();active.timeScale=Number(document.getElementById("speed").value);document.getElementById("play").textContent="Pause";status.textContent=name==="Run_InPlace"?"Playing Run_InPlace. The current export has a visible loop-boundary discontinuity; inspect it here while the cycle is being corrected.":"Playing "+name+" · "+clip.duration.toFixed(2)+" seconds"}
+try{
+const gltf=await new GLTFLoader().loadAsync("./assets/3d/jay/jay-unified.glb");model=gltf.scene;scene.add(model);clips=gltf.animations;
+const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());model.position.x-=center.x;model.position.z-=center.z;model.position.y-=box.min.y;
+const maxDim=Math.max(size.x,size.y,size.z);controls.target.set(0,size.y*.48,0);camera.position.set(0,size.y*.65,maxDim*2.5);controls.update();
+mixer=new THREE.AnimationMixer(model);const select=document.getElementById("clip");clips.forEach(c=>{const opt=document.createElement("option");opt.value=c.name;opt.textContent=c.name;select.appendChild(opt)});
+select.value=clips.some(c=>c.name==="Run_InPlace")?"Run_InPlace":clips[0].name;playClip(select.value);status.textContent="Loaded Jay · "+clips.length+" animation clips · "+size.y.toFixed(2)+" model units tall.";
+}catch(e){status.textContent="Could not load Jay's GLB: "+e.message;console.error(e)}
+document.getElementById("clip").addEventListener("change",e=>playClip(e.target.value));
+document.getElementById("speed").addEventListener("input",e=>{const v=Number(e.target.value);document.getElementById("speedText").textContent=v.toFixed(2)+"×";if(active)active.timeScale=v});
+document.getElementById("play").addEventListener("click",()=>{if(!active)return;active.paused=!active.paused;document.getElementById("play").textContent=active.paused?"Play":"Pause"});
+document.getElementById("restart").addEventListener("click",()=>{if(active){active.reset();active.play();active.paused=false;document.getElementById("play").textContent="Pause"}});
+document.getElementById("front").addEventListener("click",()=>{camera.position.set(0,2,6.4);controls.target.set(0,1,0)});
+document.getElementById("side").addEventListener("click",()=>{camera.position.set(6.4,2,0);controls.target.set(0,1,0)});
+document.getElementById("reset").addEventListener("click",()=>{if(model){const b=new THREE.Box3().setFromObject(model),s=b.getSize(new THREE.Vector3());camera.position.set(0,s.y*.65,Math.max(s.x,s.y,s.z)*2.5);controls.target.set(0,s.y*.48,0)}});
+function animate(){requestAnimationFrame(animate);if(mixer)mixer.update(Math.min(clock.getDelta(),.05));controls.update();renderer.render(scene,camera)}animate();
+</script></body></html>
