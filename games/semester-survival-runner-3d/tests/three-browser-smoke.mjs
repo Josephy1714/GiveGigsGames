@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 
 // Regression coverage: preserve impact shake while keeping camera recovery drift-free.
-test("production 3D runner loads Jay and plays real jump and slide states", async () => {
+test("production 3D runner validates Jay, vehicle impacts, and retry", async () => {
   const browser = await chromium.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"]
