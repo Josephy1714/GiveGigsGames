@@ -477,7 +477,7 @@ function createScene() {
         let hazardDmg = 0;
         for (const hz of currentMap.hazards) {
             if (Math.abs(pos.x - hz.x) < hz.w / 2 && Math.abs(pos.z - hz.z) < hz.d / 2 && pos.y <= hz.maxY) {
-                hazardDmg += hz.dps * dt;
+                hazardDmg += hz.dps * dt + (vel.y <= 0.5 ? 18 : 0);
                 vel.y = Math.max(vel.y, hz.bounceVy);
                 entityState.grounded = false;
             }
