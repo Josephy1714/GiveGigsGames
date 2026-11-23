@@ -81,6 +81,7 @@ try{
  const carryRestarts=await page.evaluate(()=>window.__runnerSmoke.probeCarryRestart());
  assert.equal(carryRestarts.length,7);
  assert.ok(carryRestarts.every(result=>result.wasVisible&&result.reset&&result.hidden),"Restart must clear and hide the carry vehicle from every event state.");
+ await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000}).catch(async error=>{const state=await page.evaluate(()=>window.__runnerSmoke.state());throw new Error("Original player animation did not recover after carry/restart probes: "+JSON.stringify(state)+"; "+error.message)});
  const final=await mount.evaluate(el=>({...el.dataset}));
  assert.equal(final.rendererReady,"true");
  assert.equal(final.activeAnimation,"slide");
