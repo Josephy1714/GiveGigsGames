@@ -241,6 +241,25 @@ export async function loadJayCharacter({
     return { ok: true, state, changed: true };
   }
 
+  function isFinished(state) {
+    const action = actions[state];
+    if (!action) return false;
+    const duration = action.getClip().duration;
+    return duration > 0 && action.paused && action.time >= duration - 1e-3;
+  }
+
+  function reset() {
+    if (disposed) return;
+    mixer.stopAllAction();
+    for (const action of Object.values(actions)) {
+      action.reset(); action.enabled = true; action.paused = false; action.setEffectiveWeight(1);
+    }
+    runLoopAction.reset(); runLoopAction.enabled = true; runLoopAction.paused = false;
+    runApproachCompleted = Boolean(runMotion.inPlaceAuthored);
+    activeState = null;
+    mixer.update(0);
+  }
+
   function update(deltaSeconds) {
     if (disposed) return;
     // Keep gameplay-owned placement (lane, jump height and hit response)
@@ -278,6 +297,8 @@ export async function loadJayCharacter({
     runMotionUsedFallback: Boolean(runMotion.usedFallback),
     play,
     getClipDuration(state) { return actions[state]?.getClip()?.duration ?? 0; },
+    isFinished,
+    reset,
     update,
     dispose,
     get activeState() { return activeState; },
