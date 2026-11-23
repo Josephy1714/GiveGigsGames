@@ -64,6 +64,8 @@
                     uusd: game.uusd,
                     quartersLevel: game.quartersLevel,
                     armoryRanks: game.armoryRanks,
+                    pistolUpgrades: game.pistolUpgrades,
+                    skillTrees: game.skillTrees,
                     botanyCrops: game.botanyCrops,
                     difficulty: game.difficulty,
                     favoriteWeapons: game.favoriteWeapons

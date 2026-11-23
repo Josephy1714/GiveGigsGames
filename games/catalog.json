@@ -30,6 +30,35 @@
       "runtimeType": "static"
     },
     {
+      "slug": "gravegain2dE",
+      "title": "GraveGain2DE: Smash Slash Bash Mash",
+      "capsule": "images/capsules/gravegain2dE.webp",
+      "description": "A MoonRock platform arena brawler featuring 16 pickable heroes across all four GraveGain races and classes, five arenas, directional specials, Ley Core ultimates, Arcade Gauntlet, and 2-4 player brawls.",
+      "genre": "Action",
+      "tags": [
+        "Action",
+        "Fighting",
+        "Platformer",
+        "Multiplayer",
+        "Offline-friendly"
+      ],
+      "emoji": "💥",
+      "status": "preview",
+      "entrypoint": "gravegain2dE/index.html",
+      "guideEntrypoint": "gravegain2dE/guide.html",
+      "inputs": [
+        "touch",
+        "keyboard",
+        "gamepad"
+      ],
+      "controls": "1P: WASD/Arrows move, W/Space jump, J/Z attack, K/X special, L/Shift shield/dodge, U smash. 2P: Arrows + Numpad 1/2/3. Touch & Gamepad supported.",
+      "modes": [
+        "solo",
+        "multiplayer"
+      ],
+      "runtimeType": "static"
+    },
+    {
       "slug": "ecosystemic-evolver",
       "title": "Ecosystemic Evolver",
       "capsule": "images/capsules/ecosystemic-evolver.webp",

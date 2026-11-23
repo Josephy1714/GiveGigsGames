@@ -1,0 +1,120 @@
+<!doctype html>
+<html data-grave-dimension="2d" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#080614">
+  <title>GraveGain2DE: Smash Slash Bash Mash</title>
+  <meta name="description" content="A MoonRock platform fighter with 16 pickable heroes across all four GraveGain races and classes, five arenas, Ley Core ultimates, and local or AI brawls.">
+  <link rel="stylesheet" href="../_shared/gravegain.css">
+  <link rel="stylesheet" href="./game.css">
+</head>
+<body data-slug="gravegain2dE">
+  <div id="appShell">
+    <!-- Lobby & Character Select -->
+    <main id="menuScreen" aria-label="Character and Stage Select">
+      <header class="gg-header">
+        <div class="gg-title-wrap">
+          <h1>GRAVEGAIN 2DE: SMASH SLASH BASH MASH</h1>
+          <p class="gg-sub">16 MoonRock Heroes · 4 Races × 4 Classes · Platform Arena Brawler</p>
+        </div>
+        <div class="gg-career" id="careerSummary">Career: 0 Wins · 0 KOs</div>
+      </header>
+
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab is-active" data-gmode="brawl">⚔️ Brawl</button>
+        <button type="button" class="mode-tab" data-gmode="arcade">🏆 Arcade Gauntlet</button>
+        <button type="button" class="mode-tab" data-gmode="training">🎯 Training</button>
+        <div class="rules-bar" id="rulesBar">
+          <label>Rule <select id="ruleTypeSelect"><option value="stock">Stock</option><option value="timed">Timed (2m)</option></select></label>
+          <label>Stocks <select id="stocksSelect"><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option></select></label>
+          <label><input type="checkbox" id="itemsToggle" checked> Items &amp; Ley Cores</label>
+        </div>
+      </div>
+
+      <section class="select-layout" aria-label="Roster and Fighter Inspector">
+        <div class="roster-grid" id="rosterGrid" role="group" aria-label="16 GraveGain Heroes"></div>
+        <aside class="inspector-panel" aria-live="polite">
+          <div class="inspect-head">
+            <canvas id="previewCanvas" width="170" height="138" aria-label="Selected hero preview"></canvas>
+            <div class="inspect-meta">
+              <h2 id="inspectTitle">Soldier</h2>
+              <p id="inspectSub">Rushdown Striker</p>
+            </div>
+          </div>
+          <p class="inspect-blurb" id="inspectBlurb"></p>
+          <div class="stat-bars" id="statBars"></div>
+          <div class="inspect-moves" id="inspectMoves"></div>
+        </aside>
+      </section>
+
+      <section class="slots-row" id="slotsRow" aria-label="Fighter Slots"></section>
+      <section class="stage-row" id="stageRow" aria-label="Stage Select"></section>
+
+      <footer class="deploy-bar">
+        <div class="controls-help">
+          <strong>1P:</strong> WASD/Arrows Move · W/↑/Space Jump · J/Z Attack · K/X Special · L/Shift Shield · U Smash · <strong>2P:</strong> Arrows + Numpad 1/2/3 (or / . ,)
+        </div>
+        <button type="button" id="deployBtn" class="deploy-btn">💥 MASH! START BRAWL</button>
+      </footer>
+    </main>
+
+    <!-- Live Match Arena -->
+    <section id="gameScreen" hidden aria-label="Battle Arena">
+      <div class="top-hud">
+        <span class="hud-pill" id="hudMode">3 STOCK</span>
+        <span class="hud-pill" id="hudTimer">Compact Spire</span>
+        <div class="hud-btns">
+          <button type="button" id="muteBtn" aria-label="Toggle audio">🔊</button>
+          <button type="button" id="pauseBtn" aria-label="Pause match">⏸</button>
+        </div>
+      </div>
+
+      <canvas id="arenaCanvas" width="960" height="540"></canvas>
+      <div class="fighter-cards" id="fighterCards"></div>
+
+      <div id="touchControls" aria-label="Touch Controls">
+        <div class="touch-stick-zone" id="touchStickZone"><div class="touch-stick-knob" id="touchStickKnob"></div></div>
+        <div class="touch-buttons">
+          <button type="button" data-tact="attack">ATK</button>
+          <button type="button" data-tact="special">SPEC</button>
+          <button type="button" data-tact="jump">JUMP</button>
+          <button type="button" data-tact="shield">SHLD</button>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="pauseModal" hidden role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <h2>MATCH PAUSED</h2>
+          <p>Press P or Escape to resume fighting.</p>
+          <div class="modal-actions">
+            <button type="button" class="primary-btn" id="resumeBtn">▶ Resume</button>
+            <button type="button" id="quitMatchBtn">← Character Select</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="resultsModal" hidden role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <h2 id="resultsTitle">VICTORY!</h2>
+          <p id="resultsSummary"></p>
+          <div id="resultsTable"></div>
+          <div class="modal-actions">
+            <button type="button" class="primary-btn" id="rematchBtn">⚡ Rematch</button>
+            <button type="button" class="primary-btn" id="nextRoundBtn" hidden>➡ Next Challenger</button>
+            <button type="button" id="resultsMenuBtn">← Character Select</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="./roster.js"></script>
+  <script src="./stages.js"></script>
+  <script src="./audio.js"></script>
+  <script src="./renderer.js"></script>
+  <script src="./engine.js"></script>
+  <script src="./game.js"></script>
+  <script src="../_shared/game-select.js" defer></script>
+</body>
+</html>

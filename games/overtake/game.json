@@ -1,9 +1,9 @@
 {
     "title": "Overtake",
     "slug": "overtake",
-    "description": "A fast pseudo-3D arcade racer with unlockable routes, garage progression, and nitro boosts.",
+    "description": "A fast Babylon.js 3D arcade racer with vertical hills, tunnels, bridges, arcade battle items, garage tuning, and nitro boosts.",
     "genre": "Racing",
-    "tags": ["HTML5", "Racing", "Arcade", "Canvas"],
+    "tags": ["HTML5", "Babylon.js", "WebGL", "3D", "Racing", "Arcade"],
     "maker": {
         "name": "bytegarage",
         "bio": "bytegarage builds compact browser games with a focus on systems that feel immediate, replayable, and easy to launch. Overtake brings that approach to a dependency-light canvas racer: quick menus, clear car progression, readable routes, responsive touch controls, and an old-school arcade rhythm tuned for short browser sessions. The project uses TypeScript for source clarity and ships a browser-ready JavaScript build so players can race without installing anything.",
@@ -22,15 +22,16 @@
     ],
     "controls": {
         "keyboard": {
-            "Arrow Keys / WASD": "Steer, accelerate, and brake",
+            "Arrow Keys / WASD": "Steer, throttle, and brake / drift",
             "Space / Shift / N": "Use nitro",
             "P / Esc": "Pause",
-            "R": "Restart current route"
+            "R": "Restart current race"
         },
         "touch": true,
-        "mouse": true
+        "mouse": true,
+        "gamepad": true
     },
-    "instructions": "Pick a route, choose a car, then race through pseudo-3D traffic. Finish well to earn coins, unlock faster cars, and open later routes. Use nitro when the bar has charge, collect nitro refills on the road, and avoid losing speed in collisions.",
+    "instructions": "Pick a route, mode, and difficulty, customize and upgrade cars in your garage, then weave through traffic. Chain clean overtakes and slipstreams for bonus coins, grab nitro, shield, EMP, magnet, and overdrive pickups, and master drifting around tight curves.",
     "technical": {
         "canvasSize": {"width": 1280, "height": 720},
         "targetFPS": 60,
@@ -39,9 +40,9 @@
     "assets": {
         "external": [
             {
-                "type": "image-audio",
+                "type": "audio",
                 "url": "https://overtake-assets.vercel.app/",
-                "description": "Hosted car, map, UI, and audio assets"
+                "description": "Optional hosted music and UI audio assets"
             },
             {
                 "type": "font",

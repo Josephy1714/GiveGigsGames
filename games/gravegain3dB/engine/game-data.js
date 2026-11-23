@@ -122,11 +122,37 @@
     ];
 
     const ArmoryUpgrades = [
-        { id: 'health', name: 'Genetic Hull Infusion', icon: '🧬', desc: '+25 Starting Max HP per rank.', baseCost: 150, mult: 1.8, maxRank: 5 },
-        { id: 'damage', name: 'Plasma Weapon Tuning', icon: '⚡', desc: '+15% Weapon & Spell Damage per rank.', baseCost: 200, mult: 2.0, maxRank: 5 },
-        { id: 'speed', name: 'Kinetic Leg Servos', icon: '🏃', desc: '+10% Movement & Sprint speed per rank.', baseCost: 150, mult: 1.8, maxRank: 5 },
-        { id: 'potions', name: 'Nanite Flask Satchel', icon: '🧪', desc: 'Start runs with +1 Healing Potion per rank.', baseCost: 250, mult: 2.2, maxRank: 3 },
-        { id: 'greed', name: 'Matter Synthesizer', icon: '🪙', desc: '+25% Dungeon Gold and $UUSD yields.', baseCost: 180, mult: 1.9, maxRank: 5 }
+        { id: 'health', category: 'vitality', name: 'Genetic Hull Infusion', icon: '🧬', desc: '+25 Starting Max HP per rank.', baseCost: 100, mult: 1.65, maxRank: 8 },
+        { id: 'shields', category: 'vitality', name: 'Aegis Energy Matrix', icon: '🛡️', desc: '+15 Max Regenerating Energy Shield & +0.6/s recharge per rank (all races).', baseCost: 120, mult: 1.7, maxRank: 6 },
+        { id: 'armor', category: 'vitality', name: 'Subdermal Carbide Weave', icon: '🔰', desc: '+5% Flat Damage Reduction per rank.', baseCost: 130, mult: 1.75, maxRank: 5 },
+        { id: 'potions', category: 'vitality', name: 'Nanite Flask Satchel', icon: '🧪', desc: '+1 Starting Potion & +1 Max Potion Cap per rank.', baseCost: 160, mult: 1.9, maxRank: 4 },
+        { id: 'damage', category: 'offense', name: 'Plasma Weapon Tuning', icon: '⚡', desc: '+12% Weapon & Spell Damage per rank.', baseCost: 140, mult: 1.75, maxRank: 8 },
+        { id: 'attackRate', category: 'offense', name: 'Cyclic Accelerator', icon: '🔥', desc: '+8% Fire Rate & Class Attack Speed per rank.', baseCost: 130, mult: 1.75, maxRank: 6 },
+        { id: 'crit', category: 'offense', name: 'Targeting Telemetry', icon: '🎯', desc: '+4% Crit Chance & +10% Crit Damage per rank.', baseCost: 140, mult: 1.75, maxRank: 5 },
+        { id: 'reloadSpeed', category: 'handling', name: 'Tactical Magwell Servos', icon: '🔄', desc: '+10% Reload Speed across all firearms per rank.', baseCost: 110, mult: 1.7, maxRank: 6 },
+        { id: 'ammoPool', category: 'handling', name: 'Dimensional Bandolier', icon: '🎒', desc: '+15% Reserve Ammo Pool & +10% Magazine Capacity per rank.', baseCost: 120, mult: 1.7, maxRank: 6 },
+        { id: 'grenades', category: 'handling', name: 'Ordnance Pouch', icon: '💣', desc: '+1 Starting & Max Grenade Cap and +10% Blast Damage per rank.', baseCost: 150, mult: 1.85, maxRank: 4 },
+        { id: 'humanDoubleBarrel', category: 'handling', name: 'Double-Barrel Conversion', icon: '💥', desc: 'Unlocks the Double-Barrel Shotgun as a selectable starting weapon for Humans.', baseCost: 220, mult: 1, maxRank: 1 },
+        { id: 'cooldown', category: 'mobility', name: 'Chrono-Capacitor', icon: '⏳', desc: '-8% Ability, Dodge & Shield Recharge Cooldowns per rank.', baseCost: 130, mult: 1.75, maxRank: 6 },
+        { id: 'speed', category: 'mobility', name: 'Kinetic Leg Servos', icon: '🏃', desc: '+8% Base Move Speed per rank.', baseCost: 100, mult: 1.65, maxRank: 6 },
+        { id: 'sprintSpeed', category: 'mobility', name: 'Overdrive Sprint Thrusters', icon: '💨', desc: '+10% Sprint Speed & -8% Slide Cooldown per rank.', baseCost: 110, mult: 1.7, maxRank: 6 },
+        { id: 'jumpHeight', category: 'mobility', name: 'Grav-Boot Hydraulics', icon: '🦘', desc: '+8% Jump Height & Air Launch per rank.', baseCost: 100, mult: 1.65, maxRank: 5 },
+        { id: 'greed', category: 'economy', name: 'Matter Synthesizer', icon: '🪙', desc: '+20% Dungeon Gold & $UUSD Salvage yields per rank.', baseCost: 120, mult: 1.7, maxRank: 6 }
+    ];
+
+    const PistolUpgrades = [
+        { id: 'pistolDamage', name: 'Match-Grade Receiver', icon: '💥', desc: '+14% Service Pistol base damage per rank.', baseCost: 80, mult: 1.65, maxRank: 6 },
+        { id: 'pistolFireRate', name: 'Hair-Trigger Sear', icon: '⚡', desc: '+11% Service Pistol fire rate per rank.', baseCost: 80, mult: 1.65, maxRank: 6 },
+        { id: 'pistolMag', name: 'Extended Tactical Mag', icon: '🔋', desc: '+3 Magazine size & +18 Reserve ammo per rank.', baseCost: 70, mult: 1.6, maxRank: 6 },
+        { id: 'pistolReload', name: 'Flared Magwell', icon: '🔄', desc: '+14% Service Pistol reload speed per rank.', baseCost: 70, mult: 1.6, maxRank: 5 },
+        { id: 'pistolPrecision', name: 'Rifled Match Barrel', icon: '🎯', desc: '-12% Spread, +75 Range & +10% Headshot Damage per rank.', baseCost: 90, mult: 1.65, maxRank: 5 }
+    ];
+
+    const PistolPerks = [
+        { id: 'pistol_hollowpoint', name: 'Tungsten Hollow-Points', icon: '🔩', cost: 220, reqRanks: 2, desc: 'Service Pistol deals +35% Armor & Ward shred and gains +15% Crit Chance.' },
+        { id: 'pistol_ricochet', name: 'Ricochet Rifling', icon: '↩️', cost: 280, reqRanks: 4, desc: 'Service Pistol rounds gain Bank Shot wall ricochet & +40% tracer visibility.' },
+        { id: 'pistol_quickdraw', name: 'Quickdraw Holster', icon: '🤠', cost: 260, reqRanks: 3, desc: 'Swapping to the Service Pistol is 50% faster and empowers your next 2 shots with +30% damage.' },
+        { id: 'pistol_executioner', name: 'Executioner Slide', icon: '💀', cost: 380, reqRanks: 6, desc: 'Kills with the Service Pistol immediately chamber +2 rounds from reserve and restore 12 Stamina.' }
     ];
 
     const RoguelikePerks = [
@@ -148,15 +174,39 @@
         { id: 'overclock', name: 'Adrenaline Rush', rarity: 'legendary', icon: '⏳', desc: 'Killing an enemy grants +40% Attack Speed and +30% Movement Speed for 4s.' }
     ];
 
+    const RaceStartingWeapons = {
+        [Race.HUMAN]: [
+            { id: 'sidearm', name: 'Service Pistol', icon: '🔫', desc: 'Tactical semi-auto sidearm. Fully upgradable in the Service Pistol Workbench.' },
+            { id: 'double_barrel', name: 'Double-Barrel Shotgun', icon: '💥', desc: 'Heavy twin-barrel breach shotgun. Devastating 8-pellet close-range blast.', unlockArmoryId: 'humanDoubleBarrel', unlockCost: 220 }
+        ],
+        [Race.ELF]: [
+            { id: 'swift_bow', name: 'Swift Bow', icon: '🏹', desc: 'Rapid-draw elven recurve bow with agile handling and crisp arrow volleys.' },
+            { id: 'longbow', name: 'Elven Longbow', icon: '🎯', desc: 'High-tension warbow with deep ADS zoom, long range, and heavy headshot power.' }
+        ],
+        [Race.DWARF]: [
+            { id: 'steam_cannon', name: 'Steam Handcannon', icon: '💨', desc: 'Brass-boiler steam-powered handcannon with heavy armor-breaking slugs.' },
+            { id: 'flamethrower', name: 'Dwarven Flamethrower', icon: '🔥', desc: 'Pressurized subterranean flame projector that ignites crowds at close range.' }
+        ],
+        [Race.ORC]: [
+            { id: 'crossbow', name: 'Orcish Crossbow', icon: '🏹', desc: 'Heavy iron-limbed bolt crossbow with crushing single-shot knockback.' },
+            { id: 'throwing_rock', name: 'Throwing Rocks', icon: '🪨', desc: 'Jagged ironstone boulders hurled with brutal impact & stagger.' },
+            { id: 'throwing_cross', name: 'Throwing Crosses', icon: '✝️', desc: 'Balanced cruciform war-blades that ricochet off stone walls.' },
+            { id: 'throwing_spear', name: 'Throwing Spears', icon: '🔱', desc: 'Heavy barbed war javelins with long reach and deadly precision.' }
+        ]
+    };
+
     window.GraveGainGameData = {
         Race,
         ClassType,
         DifficultyData,
         RaceData,
         ClassData,
+        RaceStartingWeapons,
         QuartersUpgrades,
         BotanySeeds,
         ArmoryUpgrades,
+        PistolUpgrades,
+        PistolPerks,
         RoguelikePerks
     };
 })();

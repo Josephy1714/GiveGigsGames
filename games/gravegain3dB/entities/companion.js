@@ -12,12 +12,15 @@
     };
 
     class Companion {
-        constructor(chassis, skin) {
+        constructor(chassis, skin, permanentBuild = null) {
             this.cat = chassis === 'cat';
             this.name = this.cat ? 'Pounce' : 'Bulwark';
-            this.maxHp = this.cat ? 72 : 112;
+            const hpMult = permanentBuild?.companionHpMult || 1;
+            this.dmgMult = permanentBuild?.companionDmgMult || 1;
+            this.rateMult = permanentBuild?.companionRateMult || 1;
+            this.maxHp = Math.round((this.cat ? 72 : 112) * hpMult);
             this.hp = this.maxHp;
-            this.revives = 1;
+            this.revives = 1 + (permanentBuild?.companionExtraRevives || 0);
             this.mood = 0;
             this.time = 0;
             this.nextShot = 0;
@@ -90,6 +93,10 @@
             const healed = Math.min(32, this.maxHp - this.hp);
             this.hp = Math.min(this.maxHp, this.hp + 32);
             this.mood = this.time + 18;
+            if (p.hasPermanentPerk && p.hasPermanentPerk('s_capstone_panacea')) {
+                p.hp = Math.min(p.maxHp, p.hp + 25);
+                game.combatText.spawnText(p.x, p.yElevation + 26, p.y, '+25 HP (PANACEA)', 'heal');
+            }
             game.vfx.spawnSparks(at.x, at.z, 0xff9ed3, 8, at.y);
             game.combatText.spawnText(at.x, at.y + 18, at.z, healed > 0 ? `HAPPY · +${healed} BOT HP` : 'HAPPY · BOT PATTED', 'pet-happy');
             game.audio.playSfx('loot', 1.45);
@@ -140,7 +147,7 @@
                 ? (Math.sin(this.time * 12) > -0.2 ? 0xff9ed3 : this.glow)
                 : this.glow);
             if (this.hp <= 0 || this.time < this.nextShot) return;
-            this.nextShot = this.time + (this.cat ? 0.34 : 1.05);
+            this.nextShot = this.time + (this.cat ? 0.34 : 1.05) / (this.rateMult || 1);
             let target = null;
             let range = 285;
             for (const enemy of game.enemies) {
@@ -156,7 +163,7 @@
             this.mesh.rotation.y = Math.atan2(-direction.x, -direction.z);
             this.attackFlashTimer = this.cat ? 0.09 : 0.16;
             game.spawnWeaponTracer(at, hit, this.glow);
-            game.applyHitToEnemy(target, this.cat ? 7 : 23, direction, 1, 0, null, hit, 'shot', this.cat ? undefined : 'impact');
+            game.applyHitToEnemy(target, (this.cat ? 7 : 23) * (this.dmgMult || 1), direction, 1, 0, null, hit, 'shot', this.cat ? undefined : 'impact');
         }
 
         dispose(game) {

@@ -1141,7 +1141,17 @@
             state.turretHeat = 0;
             state.turretOverheated = false;
         } else if (e.code === 'Escape') {
-            if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
+            if (!document.getElementById('aquariumShopModal')?.classList.contains('hidden')) {
+                document.getElementById('aquariumShopModal').classList.add('hidden');
+            } else if (!document.getElementById('aquariumModal')?.classList.contains('hidden') && window.BSAquarium) {
+                BSAquarium.close();
+            } else if (!document.getElementById('baseBuilderModal')?.classList.contains('hidden') && window.BSBaseBuilder) {
+                BSBaseBuilder.close();
+            } else if (!document.getElementById('colosseumModal')?.classList.contains('hidden') && window.BSColosseum) {
+                BSColosseum.close();
+            } else if (!document.getElementById('humanArsenalModal')?.classList.contains('hidden') && window.BSColosseum) {
+                BSColosseum.closeArsenal();
+            } else if (!document.getElementById('inventoryModal').classList.contains('hidden')) {
                 toggleInventory(false);
             } else if (!document.getElementById('labModal').classList.contains('hidden')) {
                 toggleLab(false);

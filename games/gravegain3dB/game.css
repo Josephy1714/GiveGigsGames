@@ -59,15 +59,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 135px 10px 135px;
-    gap: 15px;
+    padding: 8px 16px;
+    gap: 10px 14px;
     flex-wrap: wrap;
 }
 
 .hud-group {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .hud-stat {
@@ -77,15 +77,15 @@
 }
 
 .hud-label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--grave-text-muted);
 }
 
 .hud-bar-container {
-    width: 160px;
+    width: 118px;
     height: 10px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 5px;
@@ -789,15 +789,15 @@
 
 .minimap-label {
     position: absolute;
-    bottom: 4px;
+    bottom: 7px;
     left: 0;
     width: 100%;
     text-align: center;
-    font-size: 0.55rem;
+    font-size: 0.48rem;
     font-family: 'Orbitron', monospace;
     font-weight: 700;
-    color: rgba(76, 127, 255, 0.8);
-    letter-spacing: 0.1em;
+    color: rgba(76, 127, 255, 0.85);
+    letter-spacing: 0.08em;
 }
 
 /* ===== BOSS HEALTH BAR ===== */
@@ -1493,14 +1493,15 @@ body.touch-enabled .mobile-action-buttons {
 .hud-weapon-readout {
     position: absolute;
     z-index: 45;
-    bottom: 18px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 14px;
+    right: 14px;
+    left: auto;
+    transform: none;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
     gap: 2px 12px;
-    width: min(420px, calc(100% - 20px));
+    width: min(340px, 38vw);
     min-width: 190px;
     box-sizing: border-box;
     padding: 8px 13px;
@@ -1812,11 +1813,11 @@ body.touch-enabled .game-wrapper {
 }
 
 /* The game main area fills full screen */
-body.touch-enabled .game-main {
+body.touch-enabled .game-main:not(.hidden) {
     height: 100%;
     width: 100%;
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 /* Desktop HUD is hidden on touch - we use the mini-HUD overlay instead */
@@ -1836,9 +1837,11 @@ body.touch-enabled .desktop-bottom-row {
 
 /* Canvas container fills all available space */
 body.touch-enabled .canvas-container {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 0;
+    flex: 1 1 0% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
     border-radius: 0;
     border: none;
     touch-action: none;
@@ -1850,11 +1853,66 @@ body.touch-enabled #gameCanvas {
 
 /* Minimap repositioned on mobile */
 body.touch-enabled .hud-minimap-container {
-    top: auto;
-    bottom: 180px;
-    left: 10px;
-    width: 90px;
-    height: 90px;
+    top: calc(50px + env(safe-area-inset-top));
+    bottom: auto;
+    left: max(8px, env(safe-area-inset-left));
+    width: 82px;
+    height: 82px;
+}
+
+body.touch-enabled .hud-weapon-readout {
+    top: calc(50px + env(safe-area-inset-top));
+    bottom: auto;
+    left: 98px;
+    right: 58px;
+    transform: none;
+    width: auto;
+    min-width: 0;
+    padding: 5px 8px;
+    gap: 1px 6px;
+}
+
+body.touch-enabled .hud-weapon-readout strong {
+    font-size: 13px;
+}
+
+body.touch-enabled #hudDodge,
+body.touch-enabled #hudGrenades,
+body.touch-enabled #hudFavoriteWeapon,
+body.touch-enabled #hudFireModeToggle {
+    display: none;
+}
+
+body.touch-enabled .starter-weapon-cache:not([hidden]),
+body.touch-enabled .weapon-comparison:not([hidden]) {
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(26rem, calc(100% - 24px));
+    max-height: 62%;
+    overflow-y: auto;
+    z-index: 65;
+}
+
+body.touch-enabled .mmh-center {
+    flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+body.touch-enabled .mmh-bar-wrap {
+    width: 40px;
+}
+
+body.touch-enabled #gigglesHelpReopen {
+    top: auto !important;
+    bottom: max(194px, calc(190px + env(safe-area-inset-bottom))) !important;
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: auto !important;
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    z-index: 55 !important;
 }
 
 /* Screen overlays are fixed on mobile */
@@ -1874,11 +1932,15 @@ body.touch-enabled .menu-content {
 }
 
 body.touch-enabled .menu-title {
-    font-size: 2rem;
+    font-size: clamp(1.35rem, 6vw, 2rem);
 }
 
 body.touch-enabled .menu-subtitle {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+}
+
+body.touch-enabled .btn-group {
+    gap: 10px;
 }
 
 body.touch-enabled .char-grid {
@@ -2265,17 +2327,21 @@ body.touch-enabled .mobile-action-buttons {
 
 /* ===== MOBILE JOYSTICK & ACTION BUTTONS (fullscreen mode) ===== */
 body.touch-enabled .mobile-joystick-container {
-    bottom: max(30px, env(safe-area-inset-bottom));
-    left: max(20px, env(safe-area-inset-left));
-    width: 125px;
-    height: 125px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: max(14px, env(safe-area-inset-left));
+    width: 112px;
+    height: 112px;
     display: flex !important;
     align-items: center;
     justify-content: center;
     z-index: 50;
 }
 
-body.touch-enabled .mobile-lean-buttons { display: flex; }
+body.touch-enabled .mobile-lean-buttons {
+    display: flex;
+    bottom: max(142px, calc(138px + env(safe-area-inset-bottom)));
+    left: max(14px, env(safe-area-inset-left));
+}
 body.touch-enabled .weapon-slot-strip { display: none; }
 
 body.touch-enabled .mobile-touch-look-zone {
@@ -2289,60 +2355,171 @@ body.touch-enabled .mobile-touch-look-zone {
 }
 
 body.touch-enabled .mobile-action-buttons {
-    bottom: max(20px, env(safe-area-inset-bottom));
-    right: max(14px, env(safe-area-inset-right));
-    width: 210px;
-    height: 210px;
+    inset: 0;
+    width: auto;
+    height: auto;
     display: block !important;
+    pointer-events: none;
     z-index: 50;
 }
 
+body.touch-enabled .mobile-action-btn {
+    pointer-events: auto;
+}
+
 body.touch-enabled .mobile-action-btn.btn-attack {
-    bottom: 8px;
-    right: 8px;
-    width: 75px;
-    height: 75px;
-    font-size: 2rem;
+    top: auto;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(12px, env(safe-area-inset-right));
+    width: 68px;
+    height: 68px;
+    font-size: 1.85rem;
 }
 
 body.touch-enabled .mobile-action-btn.btn-block {
-    bottom: 96px;
-    right: 16px;
-    width: 58px;
-    height: 58px;
-    font-size: 1.4rem;
-}
-
-body.touch-enabled .mobile-action-btn.btn-ability {
-    bottom: 16px;
-    right: 96px;
-    width: 58px;
-    height: 58px;
-    font-size: 1.4rem;
-}
-
-body.touch-enabled .mobile-action-btn.btn-jump {
-    bottom: 88px;
-    right: 88px;
-    width: 50px;
-    height: 50px;
+    top: auto;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    right: max(16px, env(safe-area-inset-right));
+    width: 52px;
+    height: 52px;
     font-size: 1.3rem;
 }
 
+body.touch-enabled .mobile-action-btn.btn-ability {
+    top: auto;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    right: calc(92px + env(safe-area-inset-right));
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-jump {
+    top: auto;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    right: calc(80px + env(safe-area-inset-right));
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+}
+
 body.touch-enabled .mobile-action-btn.btn-potion {
-    bottom: 158px;
-    right: 56px;
+    top: auto;
+    bottom: calc(158px + env(safe-area-inset-bottom));
+    right: max(18px, env(safe-area-inset-right));
     width: 46px;
     height: 46px;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
 body.touch-enabled .mobile-action-btn.btn-wait {
-    bottom: 156px;
-    right: 112px;
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
+    top: auto;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    right: calc(136px + env(safe-area-inset-right));
+    width: 48px;
+    height: 48px;
+    font-size: 1.15rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-melee {
+    top: auto;
+    bottom: calc(146px + env(safe-area-inset-bottom));
+    right: calc(78px + env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+    font-size: 1.05rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-weapon-melee {
+    top: auto;
+    bottom: calc(146px + env(safe-area-inset-bottom));
+    right: calc(130px + env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-slide {
+    top: auto;
+    bottom: calc(22px + env(safe-area-inset-bottom));
+    right: calc(152px + env(safe-area-inset-right));
+    width: 46px;
+    height: 46px;
+    font-size: 1.15rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-reload {
+    top: calc(102px + env(safe-area-inset-top));
+    bottom: auto;
+    right: max(10px, env(safe-area-inset-right));
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1.25rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-grenade {
+    top: calc(150px + env(safe-area-inset-top));
+    bottom: auto;
+    right: max(10px, env(safe-area-inset-right));
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1.05rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-aim {
+    top: calc(198px + env(safe-area-inset-top));
+    bottom: auto;
+    right: max(10px, env(safe-area-inset-right));
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 0.95rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-launcher {
+    top: calc(246px + env(safe-area-inset-top));
+    bottom: auto;
+    right: max(10px, env(safe-area-inset-right));
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1rem;
+}
+
+body.touch-enabled .mobile-action-btn.btn-weapon-prev {
+    top: calc(102px + env(safe-area-inset-top));
+    bottom: auto;
+    right: calc(58px + env(safe-area-inset-right));
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+}
+
+body.touch-enabled .mobile-action-btn.btn-weapon-next {
+    top: calc(150px + env(safe-area-inset-top));
+    bottom: auto;
+    right: calc(58px + env(safe-area-inset-right));
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+}
+
+body.touch-enabled .mobile-action-btn.btn-drop-weapon {
+    top: calc(198px + env(safe-area-inset-top));
+    bottom: auto;
+    right: calc(58px + env(safe-area-inset-right));
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
 }
 
 /* Story campaign launch button: unmistakable disabled state. */
@@ -2352,17 +2529,32 @@ body.touch-enabled .mobile-action-btn.btn-wait {
     filter: grayscale(0.7);
 }
 
-/* ===== NARROW-IFRAME HARDENING: touch/action bars + 16/9 canvas (2026-09-13) ===== */
-/* Canvas keeps a true 16/9 box at any iframe width (styling/colors untouched). */
+/* ===== NARROW-IFRAME HARDENING: touch/action bars + full-stage canvas ===== */
+.game-main:not(.hidden) {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 6px 12px;
+    gap: 6px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
 .canvas-container {
-    aspect-ratio: 16 / 9;
+    flex: 1 1 0%;
     height: auto;
-    min-height: 240px;
+    min-height: 180px;
+    max-height: none;
+    aspect-ratio: auto;
     max-width: 100%;
 }
 
 /* Touch + desktop action bars: wrap first, scroll if still too narrow — never clip buttons. */
 .control-modes-bar {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    gap: 10px;
     max-width: 100%;
     overflow-x: auto;
     scrollbar-width: thin;
@@ -2385,20 +2577,33 @@ body.touch-enabled .mobile-action-btn.btn-wait {
     white-space: nowrap;
 }
 .desktop-bottom-row {
-    flex-wrap: wrap !important;
-    gap: 10px !important;
+    flex-shrink: 0;
+    margin-top: 0 !important;
+    padding-right: 170px;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px 10px !important;
     max-width: 100% !important;
     overflow-x: auto !important;
     scrollbar-width: thin;
 }
 .desktop-bottom-row > div {
-    flex-wrap: wrap;
+    flex: 1 1 0%;
+    flex-wrap: nowrap;
+    align-items: center;
     min-width: 0;
     max-width: 100%;
+}
+.desktop-bottom-row .btn-game {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 0.84rem;
 }
 #controlsHint {
     min-width: 0;
     flex: 1 1 200px;
+    font-size: 0.68rem;
+    line-height: 1.25;
 }
 .mmp-speed-row {
     flex-wrap: wrap;
@@ -2631,10 +2836,10 @@ body.touch-enabled .mobile-joystick-container:active {
     display: grid;
     gap: 0.3rem;
     position: absolute;
-    bottom: 24%;
+    bottom: 66px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(32rem, 66%);
+    width: min(30rem, 62%);
     padding: 0.6rem 0.8rem;
     pointer-events: auto;
     text-align: left;
@@ -2643,24 +2848,24 @@ body.touch-enabled .mobile-joystick-container:active {
     border: 1px solid #a5804a;
     border-radius: 5px;
     font-size: clamp(0.66rem, 1.6vw, 0.85rem);
-    z-index: 3;
+    z-index: 51;
 }
 .weapon-comparison span:nth-child(2) { color: #b8c8d9; }
 .starter-weapon-cache:not([hidden]) {
     display: grid;
     gap: 0.3rem;
     position: absolute;
-    bottom: 18%;
+    bottom: 66px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(30rem, 72%);
+    width: min(29rem, 64%);
     padding: 0.55rem;
     pointer-events: auto;
     background: #111b28f2;
     border: 1px solid #b88a54;
     color: #f0d5a0;
     border-radius: 5px;
-    z-index: 4;
+    z-index: 52;
 }
 .starter-weapon-cache button {
     padding: 0.4rem 0.55rem;
@@ -2681,3 +2886,564 @@ body.touch-enabled .mobile-joystick-container:active {
     font-size: 0.85rem;
 }
 #goWeaponReport li + li { margin-top: 0.35rem; }
+
+/* ===== HUB BALANCES, ARMORY FILTERS, PISTOL WORKBENCH & SKILL TREES ===== */
+.hub-balances {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 6px 0;
+}
+
+.hub-balance-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(15, 10, 28, 0.85);
+    border: 1px solid rgba(255, 204, 76, 0.38);
+    color: var(--grave-gold);
+    font-size: 0.82rem;
+}
+
+.hub-balance-pill.hub-balance-uusd {
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #38bdf8;
+}
+
+.hub-quick-convert {
+    font-size: 0.75rem !important;
+    padding: 5px 10px !important;
+}
+
+.armory-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0 4px 0;
+}
+
+.armory-filter-btn {
+    background: rgba(15, 10, 28, 0.7);
+    border: 1px solid var(--grave-border);
+    color: var(--grave-text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.armory-filter-btn:hover,
+.armory-filter-btn.active {
+    color: #fff;
+    border-color: var(--grave-gold);
+    background: rgba(168, 85, 247, 0.25);
+}
+
+.armory-card.can-afford {
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
+.armory-card.is-max {
+    border-color: rgba(74, 222, 128, 0.45);
+    background: rgba(15, 28, 22, 0.55);
+}
+
+.armory-max-pill {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #4ade80;
+    padding: 4px 9px;
+    border-radius: 4px;
+    background: rgba(74, 222, 128, 0.14);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.pistol-summary-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(28, 16, 48, 0.88));
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 10px 0 14px 0;
+}
+
+.pistol-summary-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.pistol-mark-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #7dd3fc;
+}
+
+.pistol-stat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pistol-stat-pills span {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 4px 9px;
+    font-size: 0.75rem;
+    color: var(--grave-text-muted);
+}
+
+.pistol-stat-pills strong {
+    color: #fff;
+    margin-left: 4px;
+}
+
+.char-tree-badge {
+    margin-top: 8px;
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.char-tree-badge.muted {
+    color: var(--grave-text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.class-tree-pts {
+    opacity: 0.78;
+    font-size: 0.75em;
+}
+
+/* Skill Trees */
+.skill-trees-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.skill-tree-selectors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.skill-tree-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.skill-group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--grave-gold);
+    font-weight: 700;
+    min-width: 84px;
+}
+
+.skill-tree-selector-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.skill-tree-select-btn {
+    background: rgba(12, 10, 24, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--grave-text);
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.skill-tree-select-btn span {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.skill-tree-select-btn:hover,
+.skill-tree-select-btn.active {
+    border-color: var(--tree-accent, var(--grave-gold));
+    background: rgba(30, 22, 52, 0.92);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.28);
+    color: #fff;
+}
+
+.skill-tree-header-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.38);
+    border: 1px solid var(--grave-border);
+    border-left: 4px solid var(--grave-gold);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.skill-tree-pts-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--grave-gold);
+    white-space: nowrap;
+}
+
+.skill-tree-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(240px, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+@media (max-width: 780px) {
+    .skill-tree-workspace {
+        grid-template-columns: 1fr;
+    }
+}
+
+.skill-tree-graph {
+    position: relative;
+    background: radial-gradient(circle at 50% 25%, rgba(45, 28, 74, 0.45), rgba(8, 6, 18, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 14px;
+    min-height: 390px;
+}
+
+.skill-tree-edges {
+    position: absolute;
+    inset: 14px;
+    width: calc(100% - 28px);
+    height: calc(100% - 28px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.skill-edge {
+    stroke: rgba(148, 163, 184, 0.24);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 2;
+}
+
+.skill-edge.unlocked {
+    stroke: rgba(56, 189, 248, 0.6);
+    stroke-dasharray: none;
+    stroke-width: 1.1;
+}
+
+.skill-edge.invested {
+    stroke: #fbbf24;
+    stroke-dasharray: none;
+    stroke-width: 1.4;
+}
+
+.skill-tree-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(78px, auto));
+    gap: 14px 10px;
+}
+
+.skill-node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 6px;
+    border-radius: 9px;
+    background: rgba(14, 12, 26, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    color: var(--grave-text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.skill-node:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.skill-node.selected {
+    box-shadow: 0 0 0 2px #fff, 0 0 16px rgba(56, 189, 248, 0.45);
+}
+
+.skill-node.locked {
+    opacity: 0.52;
+}
+
+.skill-node.unlocked {
+    border-color: rgba(148, 163, 184, 0.5);
+    color: #e2e8f0;
+}
+
+.skill-node.affordable {
+    border-color: #38bdf8;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.22);
+}
+
+.skill-node.invested {
+    border-color: var(--tree-accent, var(--grave-gold));
+    background: rgba(34, 24, 58, 0.94);
+    color: #fff;
+}
+
+.skill-node.maxed {
+    border-color: #4ade80;
+    background: rgba(16, 36, 26, 0.94);
+    color: #fff;
+}
+
+.skill-node.is-capstone {
+    border-width: 2px;
+}
+
+.skill-node-tier {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    opacity: 0.72;
+}
+
+.skill-node-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.skill-node-name {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: inherit;
+}
+
+.skill-node-rank {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--grave-gold);
+}
+
+.skill-node-cost {
+    font-size: 0.64rem;
+    color: #38bdf8;
+}
+
+.skill-tree-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skill-inspector {
+    background: rgba(12, 10, 24, 0.85);
+    border: 1px solid var(--tree-accent, var(--grave-border));
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.skill-inspector-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.skill-inspector-icon {
+    font-size: 2rem;
+}
+
+.skill-inspector-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.skill-inspector-meta {
+    font-size: 0.74rem;
+    color: var(--grave-gold);
+}
+
+.skill-inspector-desc {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--grave-text);
+    margin: 0 0 10px 0;
+}
+
+.skill-inspector-reqs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--grave-text-muted);
+    margin-bottom: 10px;
+}
+
+.req-pill {
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: #fca5a5;
+}
+
+.req-pill.met {
+    background: rgba(74, 222, 128, 0.14);
+    border-color: rgba(74, 222, 128, 0.45);
+    color: #86efac;
+}
+
+.skill-inspector-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.skill-synergy-box {
+    background: rgba(12, 10, 24, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.synergy-pill {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    color: var(--grave-text-muted);
+}
+
+.synergy-pill.unlocked {
+    border-color: rgba(251, 191, 36, 0.65);
+    background: rgba(251, 191, 36, 0.1);
+    color: #fef3c7;
+}
+
+.synergy-pill small {
+    font-size: 0.7rem;
+    opacity: 0.88;
+}
+
+.starting-weapon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 10px;
+    width: 100%;
+    margin-top: 6px;
+}
+
+.starting-weapon-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(12, 10, 24, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+.starting-weapon-card:hover:not(.locked) {
+    border-color: rgba(255, 204, 76, 0.65);
+    transform: translateY(-2px);
+}
+
+.starting-weapon-card.selected {
+    border-color: var(--grave-gold);
+    background: rgba(45, 26, 70, 0.72);
+    box-shadow: 0 0 16px rgba(255, 204, 76, 0.25);
+}
+
+.starting-weapon-card.locked {
+    opacity: 0.78;
+    cursor: default;
+}
+
+.starting-weapon-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.86rem;
+    color: #fff;
+}
+
+.starting-weapon-icon {
+    font-size: 1.25rem;
+}
+
+.starting-weapon-mk {
+    font-size: 0.68rem;
+    color: #38bdf8;
+    margin-left: 4px;
+}
+
+.starting-weapon-desc {
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: var(--grave-text-muted);
+}
+
+.starting-weapon-status {
+    margin-top: auto;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #4ade80;
+}
+
+.starting-weapon-lock {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: #fca5a5;
+}

@@ -99,11 +99,35 @@
   -webkit-text-size-adjust: 100%;
 }
 
-.overtake-shell #gameCanvas {
+.overtake-shell #skyCanvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   background: #05070a;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.overtake-shell #babylonCanvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overtake-shell #gameCanvas {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
   touch-action: none;
   overscroll-behavior: none;
 }
@@ -186,6 +210,7 @@
   position: absolute;
   top: 16px;
   left: 16px;
+  z-index: 5;
   width: 168px;
   height: 168px;
   border: 1px solid var(--line);
@@ -198,8 +223,9 @@
 
 .overtake-shell .hud {
   position: absolute;
-  top: 16px;
+  top: 98px;
   left: 196px;
+  z-index: 5;
   width: 180px;
   pointer-events: none;
 }
@@ -208,7 +234,8 @@
   position: absolute;
   top: 16px;
   left: 196px;
-  width: 112px;
+  z-index: 5;
+  width: 132px;
   pointer-events: none;
 }
 
@@ -216,6 +243,7 @@
   position: absolute;
   right: 18px;
   top: 70px;
+  z-index: 5;
   display: grid;
   width: 150px;
   gap: 8px;
@@ -403,6 +431,7 @@
 .overtake-shell .panel {
   position: absolute;
   inset: 0;
+  z-index: 8;
   display: grid;
   grid-template-rows: auto 1fr;
   padding: 28px;
@@ -858,33 +887,34 @@
   .overtake-shell #miniMapCanvas {
     top: 10px;
     left: 10px;
-    width: 132px;
-    height: 132px;
+    width: 120px;
+    height: 120px;
   }
 
   .overtake-shell .hud {
-    top: 10px;
-    left: 152px;
-    width: 128px;
+    top: 84px;
+    left: 140px;
+    width: 112px;
   }
 
   .overtake-shell .race-timer {
     top: 10px;
-    left: 152px;
-    width: 104px;
+    left: 140px;
+    width: 112px;
   }
 
   .overtake-shell .map-stats {
-    top: 150px;
+    top: 138px;
     left: 10px;
-    width: 132px;
+    width: 120px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .overtake-shell .drive-hud {
     right: 10px;
-    top: 62px;
-    width: 132px;
+    top: 114px;
+    width: 124px;
   }
 
   .overtake-shell .pause-button {
@@ -896,15 +926,15 @@
   }
 
   .overtake-shell .hud-item.speed-hud strong {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .overtake-shell .hud-item {
-    padding: 7px 8px;
+    padding: 6px 7px;
   }
 
   .overtake-shell .hud-item strong {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .overtake-shell .panel {
@@ -1011,24 +1041,38 @@
 
 @container overtake-shell (max-width: 520px) {
   .overtake-shell #miniMapCanvas {
-    width: 104px;
-    height: 104px;
+    width: 94px;
+    height: 94px;
   }
 
-  .overtake-shell .hud,
   .overtake-shell .race-timer {
-    left: 122px;
-    width: 96px;
+    top: 10px;
+    left: 112px;
+    width: 98px;
+  }
+
+  .overtake-shell .hud {
+    top: 76px;
+    left: 112px;
+    width: 98px;
   }
 
   .overtake-shell .map-stats {
-    top: 122px;
-    width: 104px;
+    top: 112px;
+    width: 94px;
+  }
+
+  .overtake-shell .map-stats .hud-item {
+    padding: 5px 5px;
+  }
+
+  .overtake-shell .map-stats .hud-item strong {
+    font-size: 12px;
   }
 
   .overtake-shell .drive-hud {
     right: 8px;
-    top: 56px;
+    top: 108px;
     width: 112px;
   }
 
@@ -1146,9 +1190,10 @@
 }
 
 .overtake-shell .touch-cluster-right {
-  display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .overtake-shell .touch-button-steer {
@@ -1256,40 +1301,72 @@
 /* Portrait scaling: keep canvas playable, shrink HUD, keep controls clear. */
 @media (orientation: portrait) {
   .overtake-shell .touch-cluster-left {
-    left: max(10px, env(safe-area-inset-left));
-    bottom: max(16px, env(safe-area-inset-bottom));
+    left: max(8px, env(safe-area-inset-left));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
   }
 
   .overtake-shell .touch-cluster-right {
-    right: max(10px, env(safe-area-inset-right));
-    bottom: max(16px, env(safe-area-inset-bottom));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .overtake-shell .touch-button-steer {
+    width: clamp(56px, 16vw, 72px);
+    height: clamp(56px, 16vw, 72px);
+    font-size: clamp(22px, 6.5vw, 30px);
+    border-radius: 14px;
+  }
+
+  .overtake-shell .touch-button-pedal {
+    width: clamp(60px, 17vw, 78px);
+    height: clamp(46px, 12vw, 56px);
+    font-size: clamp(13px, 3.8vw, 16px);
+    border-radius: 12px;
   }
 
   .overtake-shell .touch-nitro-slam {
-    bottom: calc(max(16px, env(safe-area-inset-bottom)) + clamp(84px, 24vw, 116px));
-    width: clamp(92px, 27vw, 124px);
-    height: clamp(92px, 27vw, 124px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: clamp(68px, 19vw, 86px);
+    height: clamp(68px, 19vw, 86px);
+    font-size: clamp(13px, 3.8vw, 16px);
   }
 
   .overtake-shell .tilt-toggle {
-    bottom: calc(max(16px, env(safe-area-inset-bottom)) + clamp(184px, 54vw, 248px));
+    left: max(8px, env(safe-area-inset-left));
+    transform: none;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + clamp(64px, 17.5vw, 80px));
+    height: 28px;
+    min-width: 82px;
+    font-size: 11px;
+  }
+
+  .overtake-shell .touch-item-btn {
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    transform: none;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + clamp(56px, 14vw, 68px));
+    min-width: 68px;
+    height: 36px;
+    font-size: 12px;
   }
 
   .overtake-shell #miniMapCanvas {
-    width: 104px;
-    height: 104px;
+    width: 94px;
+    height: 94px;
   }
 
   .overtake-shell .map-stats {
-    top: 122px;
+    top: 112px;
     left: 10px;
-    width: 104px;
+    width: 94px;
   }
 
   .overtake-shell .drive-hud {
-    top: auto;
-    bottom: calc(max(16px, env(safe-area-inset-bottom)) + clamp(190px, 56vw, 260px));
-    right: 10px;
+    top: 108px;
+    bottom: auto;
+    right: 8px;
     width: 112px;
   }
 }
@@ -1310,5 +1387,875 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.18),
       0 18px 44px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ---- Enhanced HUD, Garage, Summary, Career & Modes ---- */
+
+.overtake-shell[data-high-contrast="true"] {
+  --glass: rgba(8, 12, 20, 0.88);
+  --glass-strong: rgba(14, 20, 32, 0.96);
+  --line: rgba(255, 255, 255, 0.62);
+}
+
+.overtake-shell[data-compact-hud="true"] #miniMapCanvas,
+.overtake-shell[data-compact-hud="true"] .hud,
+.overtake-shell[data-compact-hud="true"] .hud-subline {
+  opacity: 0.72;
+}
+
+.overtake-shell .panel-title-wrap {
+  display: grid;
+  gap: 2px;
+}
+
+.overtake-shell .option-grid.route-page {
+  grid-template-columns: minmax(0, 620px);
+  justify-content: center;
+}
+
+.overtake-shell .panel-subtitle {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+  .overtake-shell #app:not([data-touch-active="true"]) .touch-controls {
+    display: none !important;
+  }
+}
+
+.overtake-shell .item-box-hud {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border: 2px solid rgba(255, 207, 66, 0.72);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 22, 34, 0.85), rgba(30, 41, 59, 0.78));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.overtake-shell .item-box-hud.spinning {
+  border-color: #6ff2ff;
+  animation: item-roulette-pulse 220ms infinite alternate;
+}
+
+.overtake-shell .item-box-hud.ready {
+  border-color: #78ffaa;
+  box-shadow: 0 0 22px rgba(120, 255, 170, 0.45);
+}
+
+@keyframes item-roulette-pulse {
+  from { transform: translateX(-50%) scale(0.96); }
+  to { transform: translateX(-50%) scale(1.04); }
+}
+
+.overtake-shell .item-slot-frame {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.24), rgba(5, 7, 10, 0.65));
+}
+
+.overtake-shell .item-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.overtake-shell .item-meta {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.overtake-shell .item-meta strong {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.overtake-shell .item-meta small {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.overtake-shell .coin-bonus-hud {
+  position: absolute;
+  top: auto;
+  bottom: 18px;
+  right: 18px;
+  width: 150px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.overtake-shell .touch-item-btn {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + clamp(150px, 42vw, 200px));
+  transform: translateX(-50%);
+  min-width: 96px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 2px solid #78ffaa;
+  background: rgba(16, 48, 36, 0.78);
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.overtake-shell .callout-stack {
+  top: 122px;
+}
+
+.overtake-shell .incoming-warning {
+  top: 168px;
+}
+
+@container overtake-shell (max-width: 760px) {
+  .overtake-shell .item-box-hud {
+    top: 56px;
+    right: 8px;
+    left: auto;
+    transform: none;
+    max-width: 138px;
+    padding: 4px 8px 4px 4px;
+  }
+
+  .overtake-shell .item-meta strong {
+    font-size: 11px;
+  }
+
+  .overtake-shell .item-meta small {
+    display: none;
+  }
+
+  .overtake-shell .item-slot-frame {
+    width: 30px;
+    height: 30px;
+  }
+
+  .overtake-shell .item-icon {
+    font-size: 18px;
+  }
+
+  .overtake-shell .touch-item-btn {
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    transform: none;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 74px);
+    min-width: 66px;
+    height: 40px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .overtake-shell .callout-stack {
+    top: 228px;
+  }
+
+  .overtake-shell .coin-bonus-hud {
+    top: auto;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 122px);
+    right: 8px;
+    width: 112px;
+  }
+}
+
+.overtake-shell .panel-header-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.overtake-shell .panel-challenge {
+  border: 1px solid rgba(111, 242, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(111, 242, 255, 0.12);
+  padding: 8px 13px;
+  color: #cffafe;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(12px);
+}
+
+.overtake-shell .hud-mode-badge {
+  font-style: normal;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+.overtake-shell .hud-subline {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.overtake-shell .place-delta {
+  font-style: normal;
+  margin-left: 4px;
+  font-weight: 800;
+}
+
+.overtake-shell .place-delta.up {
+  color: #78ffaa;
+}
+
+.overtake-shell .place-delta.down {
+  color: var(--danger);
+}
+
+.overtake-shell .speed-gear-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.overtake-shell .gear-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 207, 66, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 207, 66, 0.14);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.overtake-shell .rpm-meter {
+  margin-top: 6px;
+}
+
+.overtake-shell .rpm-meter i {
+  background: linear-gradient(90deg, #6ff2ff, #ffcf42 75%, #ff5f5a);
+}
+
+.overtake-shell .race-progress-bar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(320px, 34vw);
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(7, 11, 16, 0.56);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.overtake-shell .race-progress-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: visible;
+}
+
+.overtake-shell .race-progress-track > i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6ff2ff, #ffcf42);
+}
+
+.overtake-shell .race-progress-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overtake-shell .progress-pip {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(5, 7, 10, 0.9);
+}
+
+.overtake-shell .progress-pip.player {
+  width: 10px;
+  height: 10px;
+  background: #ffcf42;
+  border-color: #fff;
+  z-index: 2;
+}
+
+.overtake-shell .race-progress-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 34px;
+  text-align: right;
+}
+
+.overtake-shell .buffs-hud {
+  display: grid;
+  gap: 6px;
+}
+
+.overtake-shell .buff-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 9px;
+  border: 1px solid rgba(111, 242, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(7, 11, 16, 0.68);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.overtake-shell .buff-pill.shield { border-color: rgba(111, 242, 255, 0.72); color: #6ff2ff; }
+.overtake-shell .buff-pill.magnet { border-color: rgba(255, 207, 66, 0.72); color: #ffcf42; }
+.overtake-shell .buff-pill.overdrive { border-color: rgba(196, 128, 255, 0.8); color: #e2b8ff; }
+.overtake-shell .buff-pill.slipstream { border-color: rgba(120, 255, 170, 0.72); color: #78ffaa; }
+.overtake-shell .buff-pill.drift { border-color: rgba(255, 145, 77, 0.8); color: #ffb37a; }
+
+.overtake-shell .combo-hud {
+  position: absolute;
+  left: 16px;
+  top: 266px;
+  z-index: 4;
+  width: 168px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 207, 66, 0.65);
+  border-radius: 8px;
+  background: rgba(16, 18, 24, 0.72);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.overtake-shell .combo-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-family: var(--font-display);
+}
+
+.overtake-shell .combo-row strong {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.overtake-shell .combo-row span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.overtake-shell .combo-bar {
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.overtake-shell .combo-bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #ff5f5a, #ffcf42);
+}
+
+.overtake-shell .callout-stack {
+  position: absolute;
+  left: 50%;
+  top: 128px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.overtake-shell .callout-toast {
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 999px;
+  background: rgba(7, 11, 16, 0.76);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  animation: callout-in 180ms ease-out;
+}
+
+.overtake-shell .callout-toast.gold { border-color: rgba(255, 207, 66, 0.8); color: #ffcf42; }
+.overtake-shell .callout-toast.cyan { border-color: rgba(111, 242, 255, 0.8); color: #6ff2ff; }
+.overtake-shell .callout-toast.green { border-color: rgba(120, 255, 170, 0.8); color: #78ffaa; }
+.overtake-shell .callout-toast.red { border-color: rgba(255, 95, 90, 0.85); color: #ff8e8a; }
+
+@keyframes callout-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.overtake-shell .incoming-warning {
+  position: absolute;
+  left: 50%;
+  top: 126px;
+  transform: translateX(-50%);
+  z-index: 7;
+  padding: 8px 18px;
+  border: 2px solid #ff5f5a;
+  border-radius: 8px;
+  background: rgba(92, 14, 18, 0.84);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  animation: warning-flash 360ms infinite alternate;
+}
+
+@keyframes warning-flash {
+  from { opacity: 0.72; transform: translateX(-50%) scale(0.98); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.03); }
+}
+
+/* Main menu 2x2 / 4-card + quick race */
+.overtake-shell .main-menu-grid {
+  grid-template-columns: repeat(4, minmax(150px, 190px));
+}
+
+.overtake-shell .menu-quick-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.overtake-shell .route-config-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(620px, 100%);
+  margin: 0 auto;
+}
+
+.overtake-shell .chip-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(7, 11, 16, 0.56);
+  backdrop-filter: blur(12px);
+}
+
+.overtake-shell .chip-btn {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.overtake-shell .chip-btn.active {
+  border-color: rgba(255, 207, 66, 0.8);
+  background: rgba(255, 207, 66, 0.18);
+  color: var(--text);
+}
+
+.overtake-shell .route-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.overtake-shell .route-preview-svg {
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(5, 7, 10, 0.45);
+  padding: 6px;
+}
+
+.overtake-shell .car-page {
+  grid-template-columns: minmax(0, 620px);
+}
+
+.overtake-shell .car-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.overtake-shell .stat-bars {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.overtake-shell .stat-row {
+  display: grid;
+  grid-template-columns: 78px 1fr 38px;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.overtake-shell .stat-track {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.overtake-shell .stat-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6ff2ff, #ffcf42);
+}
+
+.overtake-shell .swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.overtake-shell .swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  padding: 0;
+}
+
+.overtake-shell .swatch-btn.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--accent);
+  transform: scale(1.1);
+}
+
+.overtake-shell .upgrade-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.overtake-shell .upgrade-btn {
+  display: grid;
+  gap: 2px;
+  padding: 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+
+.overtake-shell .upgrade-btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.overtake-shell .upgrade-btn strong {
+  font-size: 13px;
+}
+
+.overtake-shell .upgrade-btn span {
+  font-size: 11px;
+  margin-top: 0;
+  color: var(--accent);
+}
+
+.overtake-shell .career-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.overtake-shell .career-stat-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--glass);
+  padding: 12px 14px;
+  backdrop-filter: blur(12px);
+}
+
+.overtake-shell .career-stat-card span {
+  display: block;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.overtake-shell .career-stat-card strong {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.overtake-shell .achievement-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(760px, 100%);
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding-right: 4px;
+}
+
+.overtake-shell .achievement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 11, 16, 0.56);
+}
+
+.overtake-shell .achievement-item.unlocked {
+  border-color: rgba(120, 255, 170, 0.65);
+  background: rgba(120, 255, 170, 0.1);
+}
+
+.overtake-shell .achievement-item strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.overtake-shell .achievement-item span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.overtake-shell .pause-controls-hint {
+  width: min(560px, 100%);
+  margin: 8px auto 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 11, 16, 0.56);
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.overtake-shell .summary-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 7, 10, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.overtake-shell .summary-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid rgba(255, 207, 66, 0.55);
+  border-radius: 12px;
+  background: linear-gradient(165deg, rgba(16, 22, 34, 0.94), rgba(7, 11, 16, 0.96));
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.55);
+}
+
+.overtake-shell .summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.overtake-shell .summary-eyebrow {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.overtake-shell .summary-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 36px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.overtake-shell .summary-medal {
+  font-size: 42px;
+}
+
+.overtake-shell .summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.overtake-shell .summary-stat {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.overtake-shell .summary-stat span {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.overtake-shell .summary-stat strong {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.overtake-shell .summary-coins {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 207, 66, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 207, 66, 0.08);
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.overtake-shell .summary-coin-line {
+  display: flex;
+  justify-content: space-between;
+}
+
+.overtake-shell .summary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.overtake-shell .summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@container overtake-shell (max-width: 760px) {
+  .overtake-shell .race-progress-bar {
+    display: none;
+  }
+
+  .overtake-shell .combo-hud {
+    top: 170px;
+    left: 10px;
+    width: 120px;
+  }
+
+  .overtake-shell .main-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overtake-shell .car-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .overtake-shell .career-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overtake-shell .achievement-list {
+    grid-template-columns: 1fr;
+  }
+
+  .overtake-shell .summary-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

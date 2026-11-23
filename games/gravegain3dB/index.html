@@ -45,6 +45,7 @@
     <script src="graphics/particle-system.js"></script>
     <script src="entities/projectile.js"></script>
     <script src="engine/game-data.js"></script>
+    <script src="engine/skill-trees.js"></script>
     <script src="entities/weapon-factory.js"></script>
     <script src="entities/player.js"></script>
     <script src="../html/gravegain-enemy-voxels.js"></script>
@@ -75,7 +76,7 @@ body{display:block!important}
    Collapse to a single full-bleed column and let the frame fill the iframe
    height instead of letterboxing. Dark scrollbars so overlay scrolling never
    flashes a light native scrollbar inside the dark game window. */
-[class*="game-main"]{display:grid!important;grid-template-columns:1fr!important;gap:0!important;width:100%!important}
+[class*="game-main"]:not(.hidden){display:flex!important;flex-direction:column!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important}
 [class*="game-frame"]{aspect-ratio:auto!important;height:100%!important;min-height:100%!important}
 /* Stripped-bundle fallback for the v1 TEMPLATE-4weird layout: styles.css is
    removed above, but kouzi/orbitaldrift-style bundles rely on it for frame
@@ -431,6 +432,14 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <!-- Populated by JS -->
                 </div>
 
+                <!-- Starting Weapon Selector -->
+                <fieldset class="companion-designer" id="startingWeaponFieldset">
+                    <legend>Race Starting Weapon</legend>
+                    <div class="starting-weapon-grid" id="startingWeaponGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </fieldset>
+
                 <!-- Control Mode Selector in Char Select -->
                 <div style="margin: 15px 0 10px 0;">
                     <div style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:var(--grave-gold); margin-bottom:8px;">TEMPORAL SIMULATION MODE</div>
@@ -504,8 +513,9 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                         <option value="">Standard loadout</option>
                     </select></label>
                 </fieldset>
-                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
                     <button class="btn-game" id="btnCharSelectBack">← Main Menu</button>
+                    <button class="btn-game" id="btnCharSelectHub">🌳 Skill Trees &amp; Armory</button>
                     <button class="btn-game btn-primary" id="btnCharSelectStart">🚀 Deploy to Dungeon</button>
                 </div>
             </div>
@@ -513,17 +523,24 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
 
         <!-- 3. LUCKYSTARSHIP HUB SCREEN -->
         <div class="screen-overlay hidden" id="hubScreen">
-            <div class="menu-content glass-panel" style="max-width: 850px; text-align: left;">
+            <div class="menu-content glass-panel" style="max-width: 980px; text-align: left;">
                 <div class="hub-header">
                     <div>
                         <h2 class="menu-title" style="font-size: 2rem; margin: 0;">LuckyStarShip Hub</h2>
                         <p style="margin: 5px 0 0 0; color: var(--grave-text-muted); font-size: 0.85rem;">Universal Operations Deck</p>
+                    </div>
+                    <div class="hub-balances">
+                        <span class="hub-balance-pill">🪙 <strong id="hubBalanceGold">0</strong> Gold</span>
+                        <span class="hub-balance-pill hub-balance-uusd">💵 <strong id="hubBalanceUusd">250</strong> $UUSD</span>
+                        <button type="button" class="btn-game hub-quick-convert" id="btnHubQuickConvert" title="Convert 10 Gold to 100 $UUSD">+100 $UUSD (10g)</button>
                     </div>
                     <div class="hub-tabs">
                         <button class="hub-tab-btn active" data-tab="quarters">🏠 Quarters</button>
                         <button class="hub-tab-btn" data-tab="botany">🌱 Botany Station</button>
                         <button class="hub-tab-btn" data-tab="repair">🔧 Repair Station</button>
                         <button class="hub-tab-btn" data-tab="armory">🛡️ Armory Upgrades</button>
+                        <button class="hub-tab-btn" data-tab="pistol">🔫 Service Pistol</button>
+                        <button class="hub-tab-btn" data-tab="skills">🌳 Skill Trees</button>
                         <button class="hub-tab-btn" data-tab="exchange">🪙 Exchange</button>
                         <button class="hub-tab-btn" data-tab="lore">📖 Lore Codex</button>
                     </div>
@@ -567,23 +584,41 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                 <!-- Armory Tab -->
                 <div class="hub-pane" id="tab-armory">
                     <h3 style="margin-top: 0; color: var(--grave-gold);">Starship Engineering Armory</h3>
-                    <p style="font-size: 0.9rem;">Invest synthesized $UUSD into permanent genetic and technological suit augmentations.</p>
-                    <fieldset class="companion-designer">
+                    <p style="font-size: 0.9rem;">Invest synthesized $UUSD into permanent suit, weapon, shield, mobility, and ordnance augmentations.</p>
+                    <div class="armory-filter-bar" id="armoryFilterBar"></div>
+                    <div class="armory-grid" id="armoryGrid">
+                        <!-- Filled by JS -->
+                    </div>
+                    <fieldset class="companion-designer" style="margin-top: 16px;">
                         <legend>Warden contract</legend>
                         <label>Reward target <select id="weaponContract">
                             <option value="">No contract</option>
                         </select></label>
                         <span>Defeat a Balcony Warden to earn a roll from your chosen maker or weapon class. One reward per deployment.</span>
                     </fieldset>
-                    <div class="armory-grid" id="armoryGrid">
-                        <!-- Filled by JS -->
-                    </div>
                     <fieldset class="companion-designer">
                         <legend>Barrel workshop</legend>
                         <label>Saved gun <select id="rerollWeapon"></select></label>
                         <button type="button" class="btn-game" id="btnRerollWeapon">Reroll barrel · 75 gold</button>
                         <span id="rerollWeaponResult" role="status"></span>
                     </fieldset>
+                </div>
+
+                <!-- Service Pistol Workbench Tab -->
+                <div class="hub-pane" id="tab-pistol">
+                    <h3 style="margin-top: 0; color: var(--grave-gold);">Service Pistol Permanent Workbench</h3>
+                    <p style="font-size: 0.9rem;">Permanently upgrade your signature Service Pistol across all runs. Higher upgrade tiers unlock match-grade optics, compensators, and tactical finish.</p>
+                    <div id="pistolWorkshopSummary" class="pistol-summary-card"></div>
+                    <div class="armory-grid" id="pistolUpgradesGrid"></div>
+                    <h4 style="margin: 18px 0 8px 0; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 0.95rem;">Signature Sidearm Perks</h4>
+                    <div class="armory-grid" id="pistolPerksGrid"></div>
+                </div>
+
+                <!-- Skill Trees Tab -->
+                <div class="hub-pane" id="tab-skills">
+                    <div id="skillTreesContainer">
+                        <!-- Populated dynamically by hub-quarters.js -->
+                    </div>
                 </div>
 
                 <!-- Exchange Tab -->
@@ -731,13 +766,17 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                     <div class="stat-row"><span>Max Floor Depth:</span> <strong id="goFloor">Layer 1</strong></div>
                     <div class="stat-row"><span>Enemies Slain:</span> <strong id="goKills">0</strong></div>
                     <div class="stat-row"><span>Gold Harvested:</span> <strong class="highlight-gold" id="goGold">0</strong></div>
+                    <div class="stat-row"><span>$UUSD Salvaged:</span> <strong class="highlight-cyan" id="goUusd">+0 $UUSD</strong></div>
                     <div class="stat-row"><span>XP Gained:</span> <strong id="goXp">0</strong></div>
                     <div class="stat-row"><span>Time at full sprint</span> <strong id="goSprintTime">0s</strong></div>
                     <div class="stat-row"><span>Weapon kills from above</span> <strong id="goElevatedKills">0</strong></div>
                     <ul id="goWeaponReport" aria-label="Weapon performance" hidden></ul>
                 </div>
 
-                <button class="btn-game btn-primary" id="btnGoToMenu">Return to Main Menu</button>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-game" id="btnGoToHub">🌳 Upgrades &amp; Skill Trees</button>
+                    <button class="btn-game btn-primary" id="btnGoToMenu">Return to Main Menu</button>
+                </div>
             </div>
         </div>
 
@@ -835,7 +874,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                         g.camera3d.aspect = w / h;
                         if (typeof g.camera3d.updateProjectionMatrix === 'function') g.camera3d.updateProjectionMatrix();
                     }
-                    if (g && g.renderer && typeof g.renderer.setSize === 'function') g.renderer.setSize(w, h);
+                    if (g && g.renderer && typeof g.renderer.setSize === 'function') g.renderer.setSize(w, h, false);
                 } catch (e) {}
             };
             document.addEventListener('fullscreenchange', gg3dRefit);
