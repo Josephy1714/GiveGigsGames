@@ -38,9 +38,10 @@ try{
  assert.notEqual(lane,null,"Lane lean telemetry should be available.");
  await page.keyboard.press("ArrowUp");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="jump",{timeout:5000});
- await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000});
+ await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:5000});
  await page.keyboard.press("ArrowDown");
- await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:5000}).catch(async error=>{const state=await mount.evaluate(el=>({...el.dataset}));throw new Error("Slide input did not activate. Live renderer telemetry: "+JSON.stringify(state)+"; browser errors: "+errors.join(" | ")+"; original: "+error.message)});
+ await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000}).catch(async error=>{const state=await mount.evaluate(el=>({...el.dataset}));throw new Error("Slide input did not activate. Live renderer telemetry: "+JSON.stringify(state)+"; browser errors: "+errors.join(" | ")+"; original: "+error.message)});
+ await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:5000});
  await page.waitForTimeout(250);
  const ramp=await page.evaluate(()=>window.__runnerSmoke.probeRampVehicle());
  assert.ok(ramp,"Ramp vehicle browser probe should run.");
