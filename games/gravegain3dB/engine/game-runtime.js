@@ -30,7 +30,16 @@
         { id: 'devastator', name: 'DEVASTATOR', magazine: 6, reserve: 24, damage: 70, meleeDamage: 26, fireRate: 0.6, reload: 2.1, range: 720, falloffStart: 720, minDamageScale: 1, adsFov: 60, spreadScale: 0.85, pellets: 1, automatic: false, blastRadius: 82, recoilPattern: [[0, 0.036]] },
         { id: 'vortex', name: 'VORTEX', magazine: 6, reserve: 30, damage: 90, meleeDamage: 22, fireRate: 0.85, reload: 2.0, range: 1300, falloffStart: 800, minDamageScale: 0.75, adsFov: 32, spreadScale: 0.38, pellets: 1, automatic: false, recoilPattern: [[0, 0.032]], adsRecoilPattern: [[0, 0.014]] },
         { id: 'c_shotgun', name: 'SHOTGUN', magazine: 8, reserve: 40, damage: 10, meleeDamage: 26, fireRate: 0.48, reload: 1.7, range: 400, falloffStart: 140, minDamageScale: 0.32, adsFov: 64, spreadScale: 4.0, pellets: 5, automatic: false, recoilPattern: [[0, 0.024]], adsRecoilPattern: [[0, 0.016]] },
-        { id: 'electro', name: 'ELECTRO', magazine: 24, reserve: 120, damage: 26, meleeDamage: 20, fireRate: 0.13, reload: 1.5, range: 680, falloffStart: 380, minDamageScale: 0.65, adsFov: 60, spreadScale: 0.9, pellets: 1, automatic: true, blastRadius: 42, recoilPattern: [[0.001, 0.006], [-0.001, 0.006]], adsRecoilPattern: [[0.0005, 0.003]] }
+        { id: 'electro', name: 'ELECTRO', magazine: 24, reserve: 120, damage: 26, meleeDamage: 20, fireRate: 0.13, reload: 1.5, range: 680, falloffStart: 380, minDamageScale: 0.65, adsFov: 60, spreadScale: 0.9, pellets: 1, automatic: true, blastRadius: 42, recoilPattern: [[0.001, 0.006], [-0.001, 0.006]], adsRecoilPattern: [[0.0005, 0.003]] },
+        { id: 'double_barrel', name: 'DOUBLE-BARREL SHOTGUN', magazine: 2, reserve: 40, damage: 13, meleeDamage: 28, fireRate: 0.24, reload: 1.45, range: 390, falloffStart: 135, minDamageScale: 0.34, adsFov: 62, spreadScale: 3.8, pellets: 8, automatic: false, trait: 'impact', recoilPattern: [[0, 0.036]], adsRecoilPattern: [[0, 0.024]] },
+        { id: 'swift_bow', name: 'SWIFT BOW', magazine: 18, reserve: 90, damage: 28, meleeDamage: 18, fireRate: 0.21, reload: 0.95, range: 780, falloffStart: 420, minDamageScale: 0.72, adsFov: 56, spreadScale: 0.45, pellets: 1, automatic: false, recoilPattern: [[0, 0.009]], adsRecoilPattern: [[0, 0.004]] },
+        { id: 'longbow', name: 'ELVEN LONGBOW', magazine: 10, reserve: 50, damage: 64, meleeDamage: 20, fireRate: 0.54, reload: 1.35, range: 1180, falloffStart: 700, minDamageScale: 0.78, adsFov: 36, spreadScale: 0.28, pellets: 1, automatic: false, recoilPattern: [[0, 0.022]], adsRecoilPattern: [[0, 0.01]] },
+        { id: 'steam_cannon', name: 'STEAM HANDCANNON', magazine: 6, reserve: 42, damage: 56, meleeDamage: 25, fireRate: 0.44, reload: 1.55, range: 640, falloffStart: 320, minDamageScale: 0.62, adsFov: 60, spreadScale: 0.72, pellets: 1, automatic: false, trait: 'impact', recoilPattern: [[0, 0.028], [0.002, 0.03]], adsRecoilPattern: [[0, 0.017]] },
+        { id: 'flamethrower', name: 'DWARVEN FLAMETHROWER', magazine: 60, reserve: 240, damage: 7, meleeDamage: 24, fireRate: 0.065, reload: 2.0, range: 230, falloffStart: 120, minDamageScale: 0.55, adsFov: 65, spreadScale: 3.2, pellets: 3, automatic: true, trait: 'burn', element: 'fire', recoilPattern: [[0.001, 0.003], [-0.001, 0.003]], adsRecoilPattern: [[0.0005, 0.002]] },
+        { id: 'crossbow', name: 'ORCISH CROSSBOW', magazine: 8, reserve: 48, damage: 52, meleeDamage: 24, fireRate: 0.42, reload: 1.4, range: 820, falloffStart: 460, minDamageScale: 0.68, adsFov: 52, spreadScale: 0.48, pellets: 1, automatic: false, trait: 'impact', recoilPattern: [[0, 0.022]], adsRecoilPattern: [[0, 0.011]] },
+        { id: 'throwing_rock', name: 'THROWING ROCKS', magazine: 6, reserve: 42, damage: 46, meleeDamage: 26, fireRate: 0.36, reload: 1.15, range: 460, falloffStart: 240, minDamageScale: 0.65, adsFov: 64, spreadScale: 0.95, pellets: 1, automatic: false, trait: 'impact', recoilPattern: [[0, 0.018]], adsRecoilPattern: [[0, 0.01]] },
+        { id: 'throwing_cross', name: 'THROWING CROSSES', magazine: 8, reserve: 56, damage: 34, meleeDamage: 22, fireRate: 0.24, reload: 1.05, range: 580, falloffStart: 320, minDamageScale: 0.7, adsFov: 60, spreadScale: 0.58, pellets: 1, automatic: false, trait: 'ricochet', recoilPattern: [[0, 0.012]], adsRecoilPattern: [[0, 0.007]] },
+        { id: 'throwing_spear', name: 'THROWING SPEARS', magazine: 5, reserve: 35, damage: 62, meleeDamage: 28, fireRate: 0.46, reload: 1.3, range: 760, falloffStart: 440, minDamageScale: 0.74, adsFov: 56, spreadScale: 0.4, pellets: 1, automatic: false, recoilPattern: [[0, 0.02]], adsRecoilPattern: [[0, 0.01]] }
     ];
 
     const ROLL_MAKERS = [
@@ -190,13 +199,13 @@
     }
 
     function weaponContractOptions() {
-        const classNames = { smg: 'SMG', launcher: 'Mortar', rifle: 'Rifle', sidearm: 'Pistol', scattergun: 'Shotgun', sniper: 'Sniper' };
+        const classNames = { smg: 'SMG', launcher: 'Mortar', rifle: 'Rifle', sidearm: 'Pistol', scattergun: 'Shotgun', sniper: 'Sniper', double_barrel: 'Double-Barrel', swift_bow: 'Swift Bow', longbow: 'Longbow', steam_cannon: 'Steam Cannon', flamethrower: 'Flamethrower', crossbow: 'Crossbow', throwing_rock: 'Throwing Rocks', throwing_cross: 'Throwing Crosses', throwing_spear: 'Throwing Spears' };
         return [
             ...ROLL_MAKERS.map((maker, makerIndex) => ({
                 id: `maker:${makerIndex}`, label: maker.name, makerIndex
             })),
-            ...FPS_WEAPONS.map(weapon => ({
-                id: `class:${weapon.id}`, label: classNames[weapon.id], weapon
+            ...FPS_WEAPONS.filter(w => classNames[w.id]).map(weapon => ({
+                id: `class:${weapon.id}`, label: classNames[weapon.id] || weapon.name, weapon
             }))
         ];
     }
@@ -382,7 +391,17 @@
             this.difficulty = 'normal';
             this.kills = 0;
             this.runCombatStats = { sprintSeconds: 0, elevatedKills: 0, weapons: new Map() };
-            this.armoryRanks = { health: 0, damage: 0, speed: 0, potions: 0, greed: 0 };
+            this.armoryRanks = {
+                health: 0, shields: 0, armor: 0, potions: 0,
+                damage: 0, attackRate: 0, crit: 0,
+                reloadSpeed: 0, ammoPool: 0, grenades: 0, humanDoubleBarrel: 0,
+                cooldown: 0, speed: 0, sprintSpeed: 0, jumpHeight: 0, greed: 0
+            };
+            const SkillTrees = window.GraveGainSkillTrees;
+            this.pistolUpgrades = SkillTrees ? SkillTrees.defaultPistolUpgrades() : { ranks: {}, perks: [] };
+            this.skillTrees = SkillTrees ? SkillTrees.defaultSkillTrees() : {};
+            this.permanentBuild = null;
+            this.maxGrenades = 5;
 
             this.botanyCrops = [
                 { seedId: null, startTime: 0, growthTime: 0 },
@@ -581,12 +600,17 @@
 
         loadSave() {
             const data = SaveSystem.load();
+            const SkillTrees = window.GraveGainSkillTrees;
             this.favoriteWeapons = readFavoriteWeapons(data?.favoriteWeapons);
             if (data) {
                 this.gold = data.gold || 0;
                 this.uusd = data.uusd !== undefined ? data.uusd : 250;
                 this.quartersLevel = data.quartersLevel || 1;
-                if (data.armoryRanks) this.armoryRanks = data.armoryRanks;
+                if (data.armoryRanks) this.armoryRanks = { ...this.armoryRanks, ...data.armoryRanks };
+                if (SkillTrees) {
+                    this.pistolUpgrades = SkillTrees.normalizePistolUpgrades(data.pistolUpgrades);
+                    this.skillTrees = SkillTrees.normalizeSkillTrees(data.skillTrees);
+                }
                 if (data.botanyCrops) this.botanyCrops = data.botanyCrops;
                 if (DifficultyData[data.difficulty]) this.difficulty = data.difficulty;
             }
@@ -594,6 +618,8 @@
             if (difficultySelect) difficultySelect.value = this.difficulty;
             this.updateHubQuartersUI();
             this.renderArmory();
+            this.renderPistolWorkshop();
+            this.renderSkillTrees();
             this.refreshBossArmory();
         }
 
@@ -619,17 +645,50 @@
             requestAnimationFrame(frame);
         }
 
-        initRun(race, classType) {
-            this.player = new PlayerEntity(race, classType, this.armoryRanks);
+        prepareRunWeapon(weapon) {
+            if (!weapon) return weapon;
+            const SkillTrees = window.GraveGainSkillTrees;
+            let out = weapon;
+            if (SkillTrees && this.permanentBuild) {
+                if (out.id === 'sidearm') out = SkillTrees.applyPistolUpgradesToWeapon(out, this.permanentBuild);
+                out = SkillTrees.applyGlobalWeaponBonuses(out, this.permanentBuild);
+            }
+            return loadedWeapon(out);
+        }
+
+        isStartingWeaponUnlocked(race, weaponId) {
+            if (weaponId === 'double_barrel') {
+                return race === 'human' && ((this.armoryRanks?.humanDoubleBarrel || 0) >= 1 || (this.skillTrees?.human?.h_tactical || 0) >= 2);
+            }
+            return true;
+        }
+
+        getDefaultStartingWeaponId(race) {
+            const list = GameData.RaceStartingWeapons?.[race];
+            return list?.[0]?.id || 'sidearm';
+        }
+
+        initRun(race, classType, startingWeaponId = null) {
+            const SkillTrees = window.GraveGainSkillTrees;
+            this.permanentBuild = SkillTrees
+                ? SkillTrees.computePermanentBuild(race, classType, this.armoryRanks, this.pistolUpgrades, this.skillTrees)
+                : null;
+            this.player = new PlayerEntity(race, classType, this.permanentBuild || this.armoryRanks);
             this.runCombatStats = { sprintSeconds: 0, elevatedKills: 0, weapons: new Map() };
             const contractId = document.getElementById('weaponContract').value;
             this.weaponContract = weaponContractOptions().find(contract => contract.id === contractId) || null;
-            this.weaponInventory = FPS_WEAPONS.filter(weapon => FPS_STARTING_WEAPON_IDS.includes(weapon.id)).map(loadedWeapon);
+            const raceChoices = GameData.RaceStartingWeapons?.[race] || [];
+            const chosenStarterId = startingWeaponId && raceChoices.some(w => w.id === startingWeaponId) && this.isStartingWeaponUnlocked(race, startingWeaponId)
+                ? startingWeaponId
+                : this.getDefaultStartingWeaponId(race);
+            const starterDef = FPS_WEAPONS.find(weapon => weapon.id === chosenStarterId) || FPS_WEAPONS.find(weapon => FPS_STARTING_WEAPON_IDS.includes(weapon.id));
+            this.weaponInventory = starterDef ? [this.prepareRunWeapon(starterDef)] : [];
             const signatureKey = document.getElementById('bossArmoryWeapon').value;
             const bonus = this.favoriteWeapons.find(weapon => weapon.rollId === signatureKey) ||
                 (unlockedBossWeapons().includes(signatureKey) ? bossWeapon(signatureKey) : null);
-            if (bonus) this.weaponInventory.push(loadedWeapon(bonus));
-            this.grenades = 3;
+            if (bonus) this.weaponInventory.push(this.prepareRunWeapon(bonus));
+            this.maxGrenades = 5 + (this.permanentBuild?.maxGrenadesBonus || 0);
+            this.grenades = 3 + (this.permanentBuild?.startingGrenadesBonus || 0);
             this.clearWeaponTracers();
             this.activeWeaponIndex = 0;
             this.weaponCooldown = 0;
@@ -716,7 +775,7 @@
             this.companion?.dispose(this);
             const chassis = document.getElementById('companionChassis').value;
             this.companion = chassis === 'none' ? null
-                : new window.GraveGainCompanion(chassis, document.getElementById('companionSkin').value);
+                : new window.GraveGainCompanion(chassis, document.getElementById('companionSkin').value, this.permanentBuild);
             this.buildDungeonLayer();
 
             if (this.currentMission) {
@@ -773,10 +832,22 @@
             this.starterCache = null;
             this.mapMeshes.forEach(m => {
                 this.scene.remove(m);
-                if (m.geometry) m.geometry.dispose();
-                if (m.material) {
-                    if (Array.isArray(m.material)) m.material.forEach(mat => mat.dispose());
-                    else m.material.dispose();
+                if (m.traverse) {
+                    m.traverse(child => {
+                        if (child.isInstancedMesh) child.dispose();
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) {
+                            if (Array.isArray(child.material)) child.material.forEach(mat => mat.dispose());
+                            else child.material.dispose();
+                        }
+                    });
+                } else {
+                    if (m.isInstancedMesh) m.dispose();
+                    if (m.geometry) m.geometry.dispose();
+                    if (m.material) {
+                        if (Array.isArray(m.material)) m.material.forEach(mat => mat.dispose());
+                        else m.material.dispose();
+                    }
                 }
             });
             this.mapMeshes = [];
@@ -1011,7 +1082,7 @@
                 });
                 mesh.instanceMatrix.needsUpdate = true;
                 this.scene.add(mesh);
-                this.dungeonMeshes.push(mesh);
+                this.mapMeshes.push(mesh);
             };
 
             const stoneMat = new THREE.MeshStandardMaterial({ map: this.textures.wall, color: 0x6b7280, roughness: 0.88, metalness: 0.1 });
@@ -1183,7 +1254,7 @@
                             mesh.position.set(room.x * ts + 28, 0, room.y * ts + 28);
                             mesh.scale.setScalar(12);
                             this.scene.add(mesh);
-                            this.dungeonMeshes.push(mesh);
+                            this.mapMeshes.push(mesh);
                         }
                     } catch (_) {}
                 });
@@ -2116,6 +2187,7 @@
             }
             if (Math.hypot(player.x - (room.cx * 48 + 24), player.y - (room.cy * 48 + 24)) >= 45) return false;
             this.floorIndex++;
+            if (this.player) this.player.immortalUsedFloor = false;
             this.buildDungeonLayer();
             this.combatText.showBanner(`DESCENDED TO LAYER ${this.floorIndex}`);
             this.audio.playSfx('spell', 1.3);
@@ -2455,9 +2527,14 @@
             if (projectile.exploded) return;
             projectile.exploded = true;
             projectile.dead = true;
-            const radius = projectile.type === 'launcher' ? (projectile.blastRadius || 96) : 132;
+            const radiusScale = this.permanentBuild?.blastRadiusMult || 1;
+            const blastScale = this.permanentBuild?.blastDamageMult || 1;
+            const baseRadius = projectile.type === 'launcher' ? (projectile.blastRadius || 96) : 132;
+            const radius = baseRadius * radiusScale;
             this.vfx.spawnSparks(projectile.x, projectile.z, 0xff6b1a, projectile.type === 'launcher' ? 26 : 32, projectile.y);
             this.audio.playSfx('explode', 1.15);
+            const shrapnelRank = this.player?.hasPermanentPerk('d_shrapnel') || 0;
+            const concussRank = this.player?.hasPermanentPerk('t_concuss') || 0;
             this.enemies.forEach(enemy => {
                 if (enemy.hp <= 0) return;
                 const enemyHeight = enemy.yElevation + 24;
@@ -2466,8 +2543,16 @@
                 const falloff = 1 - distance / (radius * 1.5);
                 if (projectile.shotStats) projectile.shotStats.hit = true;
                 const hpBefore = enemy.hp;
-                this.applyHitToEnemy(enemy, Math.round(projectile.dmg * Math.max(0.35, falloff)), new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize(),
+                const rawBlastDmg = Math.round(projectile.dmg * blastScale * Math.max(0.35, falloff));
+                this.applyHitToEnemy(enemy, rawBlastDmg, new THREE.Vector3(enemy.x - projectile.x, 0, enemy.y - projectile.z).normalize(),
                     1, 0, null, { x: projectile.x, y: projectile.y, z: projectile.z }, 'blast', projectile.trait, projectile.charged, null, projectile.element, projectile.behavior);
+                if (shrapnelRank > 0) {
+                    enemy.burnTimer = Math.max(enemy.burnTimer || 0, 3);
+                    enemy.burnFxTimer = 0;
+                }
+                if (concussRank > 0) {
+                    enemy.chillTimer = Math.max(enemy.chillTimer || 0, 2.5);
+                }
                 if (projectile.shotStats) {
                     projectile.shotStats.healthDamage = (projectile.shotStats.healthDamage || 0) +
                         Math.max(0, Math.min(hpBefore, hpBefore - enemy.hp));
@@ -2719,6 +2804,77 @@
                 this.audio.playSfx('explode', 1.4);
                 this.triggerAlchemicalBurst(enemy);
             }
+            if (this.player.hasPermanentPerk('o_bloodthirst')) {
+                this.player.bloodthirstStacks = Math.min(3, (this.player.bloodthirstStacks || 0) + 1);
+                this.player.bloodthirstTimer = 5.0;
+            }
+            if (this.player.hasPermanentPerk('h_capstone_ace') && !this.player.grounded) {
+                this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + 18);
+                if (this.player.maxShield > 0) {
+                    this.player.shieldBubble = Math.min(this.player.maxShield, this.player.shieldBubble + 10);
+                }
+            }
+            if (enemy._lastHitWeapon === 'sidearm' && this.permanentBuild?.pistol?.perks?.has('pistol_executioner')) {
+                const sidearm = this.weaponInventory.find(w => w.id === 'sidearm');
+                if (sidearm && sidearm.reserveAmmo > 0 && sidearm.ammo < sidearm.magazine) {
+                    const add = Math.min(2, sidearm.magazine - sidearm.ammo, sidearm.reserveAmmo);
+                    sidearm.ammo += add;
+                    sidearm.reserveAmmo -= add;
+                    this.updateWeaponHUD();
+                }
+                this.player.stamina = Math.min(this.player.maxStamina, this.player.stamina + 12);
+            }
+            if (enemy._lastHitKind === 'melee' && this.player.hasPermanentPerk('w_capstone_tempest')) {
+                const w = this.weaponInventory[this.activeWeaponIndex];
+                if (w && w.reserveAmmo > 0 && w.ammo < w.magazine) {
+                    const add = Math.min(Math.ceil(w.magazine * 0.5), w.magazine - w.ammo, w.reserveAmmo);
+                    w.ammo += add;
+                    w.reserveAmmo -= add;
+                    this.updateWeaponHUD();
+                }
+            }
+            if (this.player.hasPermanentPerk('s_scavenger')) {
+                const rank = this.player.hasPermanentPerk('s_scavenger');
+                if (Math.random() < 0.25 * rank) {
+                    const w = this.weaponInventory[this.activeWeaponIndex];
+                    if (w && w.reserveAmmo < w.reserve) {
+                        const add = Math.min(Math.max(1, Math.ceil(w.reserve * 0.15)), w.reserve - w.reserveAmmo);
+                        w.reserveAmmo += add;
+                        this.combatText.spawnText(this.player.x, 22, this.player.y, `+${add} FABRICATED AMMO`, 'block');
+                        this.updateWeaponHUD();
+                    }
+                }
+            }
+            if (this.player.hasPermanentPerk('m_surge') && ((enemy.burnTimer || 0) > 0 || (enemy.chillTimer || 0) > 0)) {
+                const surgeDmg = 30 * this.player.hasPermanentPerk('m_surge') * (this.permanentBuild?.spellDamageMult || 1);
+                this.dealAoEDamage(enemy.x, enemy.y, 110, surgeDmg, 'nature');
+                this.vfx.spawnSparks(enemy.x, enemy.y, 0xff6548, 18);
+            }
+            if (this.player.hasPermanentPerk('s_capstone_swarm') && (enemy.poisonTimer || 0) > 0) {
+                this.dealAoEDamage(enemy.x, enemy.y, 125, 40 * (this.permanentBuild?.spellDamageMult || 1), 'nature');
+                this.enemies.forEach(t => {
+                    if (t !== enemy && t.hp > 0 && Math.hypot(t.x - enemy.x, t.y - enemy.y) <= 125) {
+                        t.poisonTimer = Math.max(t.poisonTimer || 0, 2.5);
+                    }
+                });
+            }
+            if (this.player.hasPermanentPerk('d_capstone_bombardier')) {
+                this.player.bombardierKills = (this.player.bombardierKills || 0) + 1;
+                if (this.player.bombardierKills >= 4 && this.grenades < (this.maxGrenades || 5)) {
+                    this.player.bombardierKills = 0;
+                    this.grenades++;
+                    this.combatText.spawnText(this.player.x, 24, this.player.y, '+1 GRENADE (BOMBARDIER)', 'block');
+                    this.updateWeaponHUD();
+                }
+                if (enemy._lastHitKind === 'blast') {
+                    this.player.hp = Math.min(this.player.maxHp, this.player.hp + Math.round(this.player.maxHp * 0.10));
+                    const w = this.weaponInventory[this.activeWeaponIndex];
+                    if (w) {
+                        w.reserveAmmo = Math.min(w.reserve, w.reserveAmmo + Math.ceil(w.reserve * 0.15));
+                        this.updateWeaponHUD();
+                    }
+                }
+            }
         }
 
         announceLegendaryDrop(enemy, weapon) {
@@ -2797,7 +2953,8 @@
         }
 
         spawnLoadedWeapon(x, y, weapon, elevation = 0) {
-            const loot = new LootItem(x, y, 'weapon', 1, loadedWeapon(weapon));
+            const prepared = this.prepareRunWeapon ? this.prepareRunWeapon(weapon) : loadedWeapon(weapon);
+            const loot = new LootItem(x, y, 'weapon', 1, prepared);
             loot.elevation = elevation;
             loot.group3d.position.y = elevation;
             this.scene.add(loot.group3d);
@@ -2813,11 +2970,13 @@
 
         collectLoot(loot) {
             if (loot.type === 'potion') {
-                this.player.potions = Math.min(5, this.player.potions + 1);
+                const maxPotions = this.player.maxPotions || 5;
+                this.player.potions = Math.min(maxPotions, this.player.potions + 1);
                 this.audio.playSfx('potion');
                 this.combatText.spawnText(this.player.x, 20, this.player.y, '+1 POTION', 'heal');
             } else if (loot.type === 'grenade') {
-                const gained = Math.min(loot.value, 5 - this.grenades);
+                const maxNades = this.maxGrenades || 5;
+                const gained = Math.min(loot.value, maxNades - this.grenades);
                 if (gained > 0) {
                     this.grenades += gained;
                     this.audio.playSfx('loot', 1.2);
@@ -3015,14 +3174,26 @@
             this.resetWeaponPresentation();
             const nextWeapon = this.weaponInventory[next];
             this.buildWeaponViewmodel(this.player?.classType, nextWeapon);
+            const hasQuickdraw = nextWeapon.id === 'sidearm' && this.permanentBuild?.pistol?.perks?.has('pistol_quickdraw');
+            if (hasQuickdraw && this.player) this.player.quickdrawShots = 2;
             this.weaponSwapTimer = this.controlMode === 'turnbased' ? 0
-                : this.weaponSwapDuration * (nextWeapon.trait === 'handling' ? 0.55 : 1);
+                : this.weaponSwapDuration * (nextWeapon.trait === 'handling' ? 0.55 : 1) * (hasQuickdraw ? 0.5 : 1);
             this.audio.playSfx('weapon_swap', nextWeapon.id === 'scattergun' ? 0.88 : 1.08);
             this.updateWeaponHUD();
         }
 
         cycleWeapon(direction = 1) {
             this.selectWeapon(this.activeWeaponIndex + direction);
+        }
+
+        getEffectiveReloadDuration(weapon) {
+            if (!weapon) return 1;
+            const base = weapon.continuousReload ? (weapon.shellReload || weapon.reload) : weapon.reload;
+            let reloadSpeed = this.permanentBuild?.reloadSpeedMult || 1;
+            if (this.player?.comboBuffTimer > 0) {
+                reloadSpeed *= 1 + 0.15 * (this.player.hasPermanentPerk('w_combo') || 1);
+            }
+            return Math.max(0.2, base / reloadSpeed);
         }
 
         reloadWeapon() {
@@ -3036,7 +3207,7 @@
                 return;
             }
             if (this.weaponReloadTimer > 0) return;
-            this.weaponReloadTimer = weapon.continuousReload ? (weapon.shellReload || weapon.reload) : weapon.reload;
+            this.weaponReloadTimer = this.getEffectiveReloadDuration(weapon);
             this.audio.playSfx('reload', 0.75);
             const readout = document.getElementById('hudWeaponStatus');
             if (readout) readout.textContent = canReloadPrimary
@@ -3059,6 +3230,7 @@
             const weapon = this.weaponInventory[this.activeWeaponIndex];
             if (moving && !this.ads && weapon?.trait === 'handling') baseSpread *= 0.62;
             return (baseSpread + bloom * (this.ads ? 0.55 : 1)) * (weapon?.spreadScale || 1) *
+                (this.permanentBuild?.spreadMult || 1) *
                 (this.activeAimProfile(weapon)?.spreadScale ?? 1);
         }
 
@@ -3099,7 +3271,7 @@
                 ammo.classList.toggle('empty', weapon.ammo <= 0);
             }
             const grenades = document.getElementById('hudGrenades');
-            if (grenades) grenades.textContent = `GRENADES ${this.grenades ?? 3}`;
+            if (grenades) grenades.textContent = `GRENADES ${this.grenades ?? 3}/${this.maxGrenades ?? 5}`;
             const mobileGrenades = document.getElementById('mobileGrenadeCount');
             if (mobileGrenades) mobileGrenades.textContent = this.grenades ?? 3;
             const hasLauncher = weapon.id === 'rifle' && this.controlMode !== 'turnbased';
@@ -3141,7 +3313,12 @@
             if (slots) {
                 const signature = this.weaponInventory.map((item, index) => `${item.rollId || item.id}:${item.ammo}:${item.reserveAmmo}:${item.secondaryAmmo || 0}:${item.secondaryReserveAmmo || 0}:${index === this.activeWeaponIndex}`).join('|');
                 if (slots.dataset.signature !== signature) {
-                    const shortNames = { rifle: 'RIFLE', sidearm: 'PISTOL', scattergun: 'SHOTGUN', sniper: 'SNIPER' };
+                    const shortNames = {
+                        rifle: 'RIFLE', sidearm: 'PISTOL', scattergun: 'SHOTGUN', sniper: 'SNIPER',
+                        double_barrel: 'DBL BARREL', swift_bow: 'SWIFT BOW', longbow: 'LONGBOW',
+                        steam_cannon: 'STEAM CANNON', flamethrower: 'FLAMER', crossbow: 'CROSSBOW',
+                        throwing_rock: 'ROCKS', throwing_cross: 'CROSSES', throwing_spear: 'SPEARS'
+                    };
                     slots.replaceChildren(...this.weaponInventory.map((item, index) => {
                         const slot = document.createElement('button');
                         slot.type = 'button';
@@ -3201,7 +3378,29 @@
             const aimed = this.activeAimProfile(weapon);
             if (momentumShot) this.player.momentumShotTimer = 0;
             weapon.ammo--;
-            const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
+            this.player.shotCounter = (this.player.shotCounter || 0) + 1;
+            const quickdrawBoost = weapon.id === 'sidearm' && this.player.quickdrawShots > 0;
+            if (quickdrawBoost) this.player.quickdrawShots--;
+            const guaranteedCrit = this.player.hasPermanentPerk('w_capstone_champion') && (this.player.shotCounter % 4 === 0);
+            const triggerChainArc = this.player.hasPermanentPerk('m_chain') && (this.player.shotCounter % 5 === 0);
+            const triggerArtilleryBlast = this.player.hasPermanentPerk('t_capstone_artillery') && (this.player.shotCounter % 6 === 0);
+
+            let attackSpeedMultiplier = (this.player.overclockTimer > 0 ? 1.4 : 1) * (this.permanentBuild?.attackRateMult || 1);
+            if (this.player.bloodthirstTimer > 0 && this.player.bloodthirstStacks > 0) {
+                attackSpeedMultiplier *= 1 + this.player.bloodthirstStacks * 0.10 * (this.player.hasPermanentPerk('o_bloodthirst') || 1);
+            }
+            if (this.player.comboBuffTimer > 0) {
+                attackSpeedMultiplier *= 1 + 0.18 * (this.player.hasPermanentPerk('w_combo') || 1);
+            }
+            if (this.player.stoneForm && this.player.hasPermanentPerk('d_capstone_colossus')) {
+                attackSpeedMultiplier *= 1.25;
+            }
+            if (!this.player.grounded && this.player.hasPermanentPerk('h_capstone_ace')) {
+                attackSpeedMultiplier *= 1.15;
+            }
+            if (this.player.hasPermanentPerk('o_capstone_juggernaut')) {
+                attackSpeedMultiplier *= 1 + Math.floor(this.player.rage / 10) * 0.03;
+            }
             this.weaponCooldown = weapon.fireRate * (aimed?.cooldownScale ?? 1) / attackSpeedMultiplier;
             if (weapon.trait === 'heat') {
                 const elapsed = this.weaponAnimTime - (weapon.heatShotAt ?? this.weaponAnimTime);
@@ -3237,15 +3436,17 @@
             const shotStats = { hit: false, weakPoint: false, healthDamage: 0, kills: 0 };
             const shooterElevation = this.player.yElevation;
             const tracerColor = momentumShot ? 0x67e8f9 : weapon.element === 'shock' ? 0xa9a2ff : weapon.element === 'fire' ? 0xff5a48 :
-                weapon.element === 'rot' ? 0xa2df58 : weapon.blastRadius ? 0xff6b1a : weapon.id === 'sniper' ? 0x7dd3fc :
-                    (weapon.id === 'scattergun' ? 0xff8a3d : (weapon.id === 'sidearm' ? 0x8be9fd : 0xffd166));
+                weapon.element === 'rot' ? 0xa2df58 : weapon.blastRadius ? 0xff6b1a : (weapon.id === 'sniper' || weapon.id === 'steam_cannon') ? 0x7dd3fc :
+                    (weapon.id === 'swift_bow' ? 0x4ade80 : weapon.id === 'longbow' ? 0xfef08a :
+                        (weapon.id === 'scattergun' || weapon.id === 'double_barrel' ? 0xff8a3d :
+                            (weapon.id === 'sidearm' || weapon.id === 'throwing_cross' ? 0x8be9fd : 0xffd166)));
             const targets = this.mapMeshes[0] ? [this.mapMeshes[0], ...this.arenaMeshes] : [];
             this.enemies.forEach(enemy => { if (enemy && enemy.hp > 0 && enemy.group3d) targets.push(enemy.group3d); });
             this.props.forEach(prop => { if (prop && !prop.broken && prop.group3d) targets.push(prop.group3d); });
             const pelletCount = aimed?.pellets ?? weapon.pellets;
             const adsSpreadMult = this.ads
-                ? ((weapon.id === 'scattergun' || weapon.id === 'c_shotgun') ? 0.42
-                    : (weapon.id === 'sniper' || weapon.id === 'vortex') ? 0.25
+                ? ((weapon.id === 'scattergun' || weapon.id === 'c_shotgun' || weapon.id === 'double_barrel') ? 0.42
+                    : (weapon.id === 'sniper' || weapon.id === 'vortex' || weapon.id === 'longbow') ? 0.25
                     : 0.5)
                 : 1;
             const effectiveSpread = spread * adsSpreadMult;
@@ -3303,14 +3504,21 @@
                     hit.pellets++;
                     hit.damageScale += this.getWeaponDamageScale(weapon, traveled + intersections[0].distance, aimed?.falloffStart) * (traveled ? 0.8 : 1);
                     let hitPart = intersections[0].object;
+                    let isHeadHit = false;
                     while (hitPart && hitPart !== enemy.group3d) {
                         if (hitPart === enemy.skull) {
-                            hit.headshots++;
-                            hit.impact = impact;
-                            hit.normal = normal;
+                            isHeadHit = true;
                             break;
                         }
                         hitPart = hitPart.parent;
+                    }
+                    if (!isHeadHit && !enemy.skull && enemy.sharedModel && impact && impact.y >= enemy.yElevation + 16 * enemy.scale) {
+                        isHeadHit = true;
+                    }
+                    if (isHeadHit) {
+                        hit.headshots++;
+                        hit.impact = impact;
+                        hit.normal = normal;
                     }
                     hits.set(enemy, hit);
                 } else if (prop) {
@@ -3323,15 +3531,17 @@
 
             const forward = new THREE.Vector3();
             this.camera3d.getWorldDirection(forward);
+            let artilleryDetonated = false;
             hits.forEach((hit, enemy) => {
                 shotStats.hit = true;
                 shotStats.weakPoint ||= hit.headshots > 0;
                 const wasAlive = enemy.hp > 0;
                 const hpBefore = enemy.hp;
                 if (momentumShot && hit.impact) this.vfx.spawnSparks(hit.impact.x, hit.impact.z, 0x67e8f9, 8, hit.impact.y);
+                const shotDamage = weapon.damage * classScale * hit.damageScale * (aimed?.damageScale ?? 1) * (quickdrawBoost ? 1.3 : 1);
                 this.applyHitToEnemy(
                     enemy,
-                    weapon.damage * classScale * hit.damageScale * (aimed?.damageScale ?? 1),
+                    shotDamage,
                     forward,
                     hit.pellets,
                     hit.headshots,
@@ -3342,8 +3552,23 @@
                     charged,
                     hit.normal,
                     weapon.element,
-                    weapon.behavior
+                    weapon.behavior,
+                    { forceCrit: guaranteedCrit }
                 );
+                if (triggerChainArc) {
+                    const arcRank = this.player.hasPermanentPerk('m_chain');
+                    const arcDmg = Math.round(22 * arcRank * (this.permanentBuild?.spellDamageMult || 1) *
+                        (this.player.hasPermanentPerk('m_capstone_archon') && (enemy.wardMax > 0 || enemy.armorMax > 0) ? 2 : 1));
+                    this.triggerChainLightning(enemy, arcDmg);
+                }
+                if (triggerArtilleryBlast && !artilleryDetonated && hit.impact) {
+                    artilleryDetonated = true;
+                    this.detonateGrenade({
+                        x: hit.impact.x, y: hit.impact.y, z: hit.impact.z,
+                        type: 'launcher', dmg: 45, blastRadius: 64,
+                        shotStats, shooterElevation
+                    });
+                }
                 shotStats.healthDamage += Math.max(0, Math.min(hpBefore, hpBefore - enemy.hp));
                 if (wasAlive && enemy.hp <= 0) shotStats.kills++;
                 if (wasAlive && enemy.hp <= 0 && shooterElevation - enemy.yElevation >= 24) this.runCombatStats.elevatedKills++;
@@ -3363,7 +3588,17 @@
             const recoilStep = recoilPattern[(this.weaponBurstCount - 1) % recoilPattern.length];
             const recoilScale = (this.ads && !hasAdsRecoil ? 0.62 : 1) * (moving ? 1.3 : 1);
             this.cameraController.applyPunch(recoilStep[1] * recoilScale, recoilStep[0] * recoilScale);
-            this.audio.playSfx('gunshot', weapon.id === 'sniper' ? 0.72 : (weapon.id === 'scattergun' ? 0.75 : (weapon.id === 'sidearm' ? 1.25 : 1)));
+            if (weapon.id === 'steam_cannon') {
+                this.vfx.spawnSparks(this.player.x + forward.x * 16, this.player.y + forward.z * 16, 0xe0f2fe, 10, this.player.yElevation + 16);
+                this.audio.playSfx('gunshot', 0.65);
+            } else if (weapon.id === 'flamethrower') {
+                this.vfx.spawnSparks(this.player.x + forward.x * 22, this.player.y + forward.z * 22, 0xff6b1a, 7, this.player.yElevation + 16);
+                this.audio.playSfx('spell', 0.65);
+            } else if (weapon.id === 'swift_bow' || weapon.id === 'longbow' || weapon.id === 'crossbow' || weapon.id.startsWith('throwing_')) {
+                this.audio.playSfx('swing', weapon.id === 'longbow' ? 1.1 : (weapon.id === 'throwing_rock' ? 0.72 : 1.55));
+            } else {
+                this.audio.playSfx('gunshot', (weapon.id === 'sniper') ? 0.72 : ((weapon.id === 'scattergun' || weapon.id === 'double_barrel') ? 0.75 : (weapon.id === 'sidearm' ? 1.25 : 1)));
+            }
             this.weaponRecoil = 0.7;
             this.updateWeaponHUD();
             if (weapon.ammo === 0 && weapon.reserveAmmo > 0 && this.controlMode !== 'turnbased') this.reloadWeapon();
@@ -3374,7 +3609,7 @@
             if ((!turnAction && this.swingTime > 0) || !this.player) return;
 
             const cData = ClassData[this.player.classType];
-            const attackSpeedMultiplier = this.player.overclockTimer > 0 ? 1.4 : 1;
+            const attackSpeedMultiplier = (this.player.overclockTimer > 0 ? 1.4 : 1) * (this.permanentBuild?.attackRateMult || 1);
             this.swingDuration = cData.attackSpeed / attackSpeedMultiplier;
             this.swingTime = this.swingDuration;
             this.swingCombo = (this.swingCombo + 1) % 3;
@@ -3396,7 +3631,7 @@
                     forward.x * speed,
                     forward.y * speed,
                     forward.z * speed,
-                    cData.baseDmg,
+                    cData.baseDmg * (this.permanentBuild?.spellDamageMult || 1),
                     true,
                     0xa855f7,
                     'magic'
@@ -3412,7 +3647,7 @@
                     forward.x * speed,
                     forward.y * speed,
                     forward.z * speed,
-                    cData.baseDmg,
+                    cData.baseDmg * (this.permanentBuild?.spellDamageMult || 1),
                     true,
                     0x22c55e,
                     'chem'
@@ -3436,7 +3671,10 @@
                         if (dot > 0.45 && this.hasBlastLineOfSight(
                             this.player.x, this.player.y, e.x, e.y, this.cameraEyeHeight, 20
                         )) { // Forward melee cone, blocked by dungeon walls
-                            this.applyHitToEnemy(e, cData.baseDmg, forward);
+                            const forceCrit = this.player.hasPermanentPerk('w_capstone_champion') && (((this.player.shotCounter = (this.player.shotCounter || 0) + 1) % 4) === 0);
+                            this.applyHitToEnemy(e, cData.baseDmg, forward, 1, 0, null, undefined, 'melee',
+                                this.player.hasPermanentPerk('t_concuss') ? 'impact' : undefined,
+                                !!this.player.hasPermanentPerk('t_concuss'), null, undefined, undefined, { forceCrit });
                             directHits.add(e);
                         }
                     }
@@ -3456,6 +3694,21 @@
                     }
                 });
             }
+            if (directHits.size > 0 && this.player.hasPermanentPerk('w_combo')) {
+                this.player.comboBuffTimer = 4.0;
+            }
+            if (this.player.hasPermanentPerk('w_capstone_tempest')) {
+                this.enemies.forEach(enemy => {
+                    if (enemy.hp <= 0 || directHits.has(enemy)) return;
+                    const dx = enemy.x - this.player.x;
+                    const dy = enemy.y - this.player.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 180 || dist < 1) return;
+                    const dot = (forward.x * dx + forward.z * dy) / dist;
+                    if (dot < 0.35) return;
+                    this.applyHitToEnemy(enemy, cData.baseDmg * 0.85, forward, 1, 0, null, undefined, 'melee');
+                });
+            }
             this.triggerShockwaveCleave(this.player, forward, directHits);
         }
 
@@ -3467,7 +3720,7 @@
             if (!this.player || this.player.isDead || this.weaponSwapTimer > 0 ||
                 (!turnAction && this.weaponMeleeCooldown > 0)) return false;
             if (!turnAction) {
-                this.weaponMeleeCooldown = 0.72;
+                this.weaponMeleeCooldown = 0.72 / (this.permanentBuild?.attackRateMult || 1);
                 if (this.weaponReloadTimer > 0) this.weaponReloadTimer = 0;
             }
             this.weaponBashTimer = 0.26;
@@ -3477,6 +3730,7 @@
             const horizontalLength = Math.hypot(forward.x, forward.z) || 1;
             const reach = 74;
             const directHits = new Set();
+            const momentumBashScale = 1 + 0.4 * (this.player.hasPermanentPerk('o_momentum') || 0);
             this.enemies.forEach(enemy => {
                 if (enemy.hp <= 0) return;
                 const dx = enemy.x - this.player.x;
@@ -3487,7 +3741,9 @@
                 const dot = (forward.x * dx + forward.z * dz) / (distance * horizontalLength);
                 if (dot < 0.38) return;
                 const weapon = this.weaponInventory[this.activeWeaponIndex];
-                this.applyHitToEnemy(enemy, weapon?.meleeDamage || 20, forward);
+                this.applyHitToEnemy(enemy, (weapon?.meleeDamage || 20) * momentumBashScale, forward, 1, 0, null, undefined, 'melee',
+                    this.player.hasPermanentPerk('t_concuss') ? 'impact' : undefined,
+                    !!this.player.hasPermanentPerk('t_concuss'));
                 directHits.add(enemy);
             });
 
@@ -3546,17 +3802,46 @@
             this.pendingWeaponEchoes = pending;
         }
 
-        applyHitToEnemy(enemy, baseDmg, dir, hitUnits = 1, headshotUnits = 0, sourceWeapon = null, impact, kind = sourceWeapon ? 'shot' : 'cut', trait, charged = false, normal = null, element, behavior) {
+        applyHitToEnemy(enemy, baseDmg, dir, hitUnits = 1, headshotUnits = 0, sourceWeapon = null, impact, kind = sourceWeapon ? 'shot' : 'cut', trait, charged = false, normal = null, element, behavior, extra = {}) {
             if (!enemy || enemy.hp <= 0) return false;
+            const perm = this.permanentBuild || {};
             let dmg = baseDmg;
             if (behavior === 'execution' && enemy.hp / Math.max(1, enemy.maxHp) <= 0.35) dmg *= 1.25;
             if (behavior === 'skyfall' && this.player.yElevation - enemy.yElevation >= 24) dmg *= 1.18;
-            const dmgBonus = this.armoryRanks.damage ? (1.0 + this.armoryRanks.damage * 0.15) : 1.0;
+            const isMelee = kind === 'melee' || kind === 'cut';
+            const isSpell = element != null || kind === 'magic' || kind === 'chem';
+            let dmgBonus = isMelee ? (perm.meleeDamageMult || 1) : (perm.damageMult || 1);
+            if (isSpell && perm.spellDamageMult) dmgBonus = Math.max(dmgBonus, perm.spellDamageMult);
+            if (element && perm.elementalBonusMult > 1) dmgBonus *= perm.elementalBonusMult;
+            if (sourceWeapon === 'rifle' && perm.rifleDamageBonus) dmgBonus *= (1 + perm.rifleDamageBonus);
+            if (this.ads && perm.adsDamageBonus) dmgBonus *= (1 + perm.adsDamageBonus);
+            if (!this.player.grounded && perm.airborneDamageBonus) dmgBonus *= (1 + perm.airborneDamageBonus);
+            if (this.player.riposteBuffTimer > 0 && kind === 'shot') {
+                dmgBonus *= 1.35;
+                this.player.riposteBuffTimer = 0;
+            }
+            if (this.player.stoneForm && this.player.hasPermanentPerk('d_capstone_colossus')) dmgBonus *= 1.35;
+            if (this.player.mana >= 40 && this.player.hasPermanentPerk('e_arcane_ammo')) {
+                dmgBonus *= 1 + 0.14 * this.player.hasPermanentPerk('e_arcane_ammo');
+            }
+            if ((enemy.chillTimer || 0) > 0 && this.player.hasPermanentPerk('m_frost')) {
+                dmgBonus *= 1 + 0.12 * this.player.hasPermanentPerk('m_frost');
+            }
+            if ((enemy.poisonTimer || 0) > 0 && this.player.hasPermanentPerk('s_toxin')) {
+                dmgBonus *= 1 + 0.15 * this.player.hasPermanentPerk('s_toxin');
+            }
+            if (enemy.hp / Math.max(1, enemy.maxHp) <= 0.45 && this.player.hasPermanentPerk('o_execute')) {
+                dmgBonus *= 1 + 0.22 * this.player.hasPermanentPerk('o_execute');
+            }
+            if ((enemy.elite || enemy.isBoss) && this.player.hasPermanentPerk('w_bleed')) {
+                dmgBonus *= 1 + 0.15 * this.player.hasPermanentPerk('w_bleed');
+            }
             dmg *= dmgBonus;
 
             const isHeadshot = headshotUnits > 0;
             if (isHeadshot && hitUnits > 0) {
-                dmg *= 1 + 0.65 * Math.min(1, headshotUnits / hitUnits);
+                const hsBonus = 0.65 + (perm.headshotMultBonus || 0) + (sourceWeapon === 'sidearm' ? (perm.pistol?.headshotBonus || 0) : 0);
+                dmg *= 1 + hsBonus * Math.min(1, headshotUnits / hitUnits);
             }
             if (isHeadshot && sourceWeapon === 'sniper' && this.player.hasPerk('deadeye')) dmg *= 1.35;
 
@@ -3564,18 +3849,27 @@
                 dmg *= (1.0 + (this.gold / 20) * 0.01);
             }
 
-            let isCrit = Math.random() < (ClassData[this.player.classType].critChance + (this.player.hasPerk('critfury') ? 0.20 : 0));
+            let critChance = ClassData[this.player.classType].critChance +
+                (this.player.hasPerk('critfury') ? 0.20 : 0) +
+                (perm.critChanceBonus || 0) +
+                (sourceWeapon === 'sidearm' ? (perm.pistol?.critBonus || 0) : 0) +
+                (this.player.dodgeCritTimer > 0 ? 0.15 * (this.player.hasPermanentPerk('e_feather') || 1) : 0) +
+                (!this.player.grounded && this.player.hasPermanentPerk('h_capstone_ace') ? 0.20 : 0) +
+                (kind === 'blast' && this.player.hasPermanentPerk('d_shrapnel') ? 0.15 * this.player.hasPermanentPerk('d_shrapnel') : 0);
+            let isCrit = !!extra.forceCrit || Math.random() < critChance;
             if (isCrit) {
-                const baseCritMultiplier = ClassData[this.player.classType].critMult;
+                const baseCritMultiplier = ClassData[this.player.classType].critMult + (perm.critDamageBonus || 0);
                 const critBonusMultiplier = this.player.hasPerk('critfury') ? 1.5 : 1;
                 dmg *= 1 + (baseCritMultiplier - 1) * critBonusMultiplier;
+                if (extra.forceCrit) dmg *= 1.5;
             }
 
             const wasAlive = enemy.hp > 0;
             const warded = enemy.wardHp > 0;
             let wardBroke = false;
             if (warded) {
-                const wardDrain = element === 'shock' || behavior === 'wardbreaker' ? 2 : 1;
+                const wardDrain = (element === 'shock' || behavior === 'wardbreaker' ? 2 : 1) *
+                    (perm.wardShredMult || 1) * (sourceWeapon === 'sidearm' ? (perm.pistol?.armorShredMult || 1) : 1);
                 const absorbed = Math.min(enemy.wardHp / wardDrain, dmg * 0.65);
                 enemy.wardHp = Math.max(0, enemy.wardHp - absorbed * wardDrain);
                 dmg -= absorbed;
@@ -3590,7 +3884,9 @@
             if (armored) {
                 const coveredDamage = dmg * (1 - headshotUnits / hitUnits);
                 dmg -= Math.min(enemy.armorHp, coveredDamage) * 0.2;
-                const armorWear = coveredDamage * (trait === 'impact' ? 1.6 : 1);
+                const shredMult = (trait === 'impact' ? 1.6 : 1) * (perm.armorShredMult || 1) *
+                    (sourceWeapon === 'sidearm' ? (perm.pistol?.armorShredMult || 1) : 1);
+                const armorWear = coveredDamage * shredMult;
                 enemy.armorHp = Math.max(0, enemy.armorHp - armorWear);
                 armorBroke = enemy.armorHp === 0;
                 if (enemy.armorPlate) {
@@ -3599,12 +3895,15 @@
                     enemy.armorPlate.material.roughness = 0.34 + 0.5 * (1 - enemy.armorHp / enemy.armorMax);
                 }
             }
+            enemy._lastHitWeapon = sourceWeapon;
+            enemy._lastHitKind = kind;
             enemy.hp -= dmg;
             window.GraveGainEnemyVoxels.fracture(enemy, this.scene, dmg, dir, kind, impact);
             const knockback = trait === 'impact' ? 290 : 160;
             enemy.kx = dir.x * knockback;
             enemy.ky = dir.z * knockback;
             enemy.hitReactTimer = enemy.hitReactDuration = isHeadshot || isCrit ? 0.2 : 0.15;
+            if (enemy.state === 'idle') enemy.state = 'chase';
             enemy.hitReactSide = Math.sign(-Math.sin(enemy.angle) * dir.x + Math.cos(enemy.angle) * dir.z);
             enemy.hitReactStrength = Math.min(1, 0.32 + dmg / 110 + (isHeadshot ? 0.28 : 0) + (isCrit ? 0.2 : 0));
             enemy.hitReactHeadshot = isHeadshot;
@@ -3639,6 +3938,31 @@
             if (this.player.hasPerk('vampiric')) {
                 const leech = Math.max(1, dmg * 0.15);
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + leech);
+            }
+            if ((this.permanentBuild?.lifestealPct || 0) > 0) {
+                const leech = Math.max(0.5, dmg * this.permanentBuild.lifestealPct);
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + leech);
+            }
+            if ((isCrit || isHeadshot) && this.player.hasPermanentPerk('e_capstone_phantom')) {
+                this.player.mana = Math.min(this.player.maxMana, this.player.mana + 12);
+                if (sourceWeapon && Math.random() < 0.35) {
+                    const active = this.weaponInventory[this.activeWeaponIndex];
+                    if (active && active.id === sourceWeapon && active.ammo < active.magazine) {
+                        active.ammo++;
+                        this.updateWeaponHUD();
+                    }
+                }
+            }
+            if (isCrit && this.player.hasPermanentPerk('w_bleed')) {
+                enemy.burnTimer = Math.max(enemy.burnTimer || 0, 2.5);
+                enemy.burnFxTimer = 0;
+            }
+            if (kind === 'shot' && this.player.hasPermanentPerk('m_frost') && Math.random() < 0.12 * this.player.hasPermanentPerk('m_frost')) {
+                enemy.chillTimer = Math.max(enemy.chillTimer || 0, 2.5);
+            }
+            if (kind === 'shot' && this.player.hasPermanentPerk('s_toxin') && Math.random() < 0.22 * this.player.hasPermanentPerk('s_toxin')) {
+                enemy.poisonTimer = Math.max(enemy.poisonTimer || 0, 3);
+                enemy.poisonFxTimer = 0;
             }
 
             if (this.player.hasPerk('lightning')) {
@@ -3772,18 +4096,22 @@
         }
 
         dealAoEDamage(x, y, radius, dmg, type) {
+            let totalDealt = 0;
             this.enemies.forEach(e => {
                 if (e.hp <= 0) return;
                 const dist = Math.hypot(e.x - x, e.y - y);
                 if (dist <= radius) {
+                    e._lastHitKind = 'blast';
                     e.hp -= dmg;
+                    totalDealt += dmg;
                     window.GraveGainEnemyVoxels.fracture(e, this.scene, dmg, null, 'blast', { x, y: 12, z: y });
                     e.kx = (e.x - x) * 1.5;
                     e.ky = (e.y - y) * 1.5;
                     this.combatText.spawnText(e.x, 20, e.y, `${Math.round(dmg)}`, 'crit');
-                    this.vfx.spawnSparks(e.x, e.y, type === 'nature' ? 0x4cff7f : 0xff4c4c, 15);
+                    this.vfx.spawnSparks(e.x, e.y, type === 'nature' ? 0x4cff7f : (type === 'shock' ? 0x38bdf8 : 0xff4c4c), 15);
                 }
             });
+            return totalDealt;
         }
 
         usePotion(fromTurnAction = false) {
@@ -3795,8 +4123,22 @@
             }
             if (this.player.potions > 0 && this.player.hp < this.player.maxHp) {
                 this.player.potions--;
-                const healAmt = Math.round(this.player.maxHp * 0.5);
+                const healAmt = Math.round(this.player.maxHp * 0.5 * (this.permanentBuild?.potionHealMult || 1));
                 this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmt);
+                if (this.player.hasPermanentPerk('s_medmist')) {
+                    const rank = this.player.hasPermanentPerk('s_medmist');
+                    this.player.shieldBubble = Math.min(Math.max(this.player.maxShield, this.player.shieldBubble + 20 * rank), this.player.shieldBubble + 20 * rank);
+                    this.player.medMistTimer = 5.0;
+                }
+                if (this.player.hasPermanentPerk('s_capstone_panacea')) {
+                    const w = this.weaponInventory[this.activeWeaponIndex];
+                    if (w && w.reserveAmmo > 0 && w.ammo < w.magazine) {
+                        const add = Math.min(Math.ceil(w.magazine * 0.25), w.magazine - w.ammo, w.reserveAmmo);
+                        w.ammo += add;
+                        w.reserveAmmo -= add;
+                        this.updateWeaponHUD();
+                    }
+                }
                 this.audio.playSfx('potion');
                 this.vfx.spawnSparks(this.player.x, this.player.y, 0x4ade80, 20);
                 this.combatText.spawnText(this.player.x, 20, this.player.y, `+${healAmt} HP`, 'heal');
@@ -4098,7 +4440,7 @@
                 this.projectiles.filter(p => p.dead).forEach(p => { this.scene.remove(p.mesh); p.dispose(); });
                 this.projectiles = this.projectiles.filter(p => !p.dead);
                 if (typeof this.updateLevelInteractables === 'function') {
-                    this.updateLevelInteractables(effectiveDt);
+                    this.updateLevelInteractables(0.35);
                 }
 
                 // Enemies take turn
@@ -4116,7 +4458,7 @@
                 // Clean dead enemies & drop loot
                 this.enemies.forEach(e => {
                     if (e.hp <= 0) {
-                        const greedMult = this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.25) : 1.0;
+                        const greedMult = this.permanentBuild?.greedMult || (this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.20) : 1.0);
                         const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
                         const perkDropMult = this.player.hasPerk('magnet') ? 1.4 : 1.0;
                         const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier * perkDropMult);
@@ -4281,7 +4623,7 @@
                             weapon.secondaryReserveAmmo -= secondaryAmount;
                         }
                         if (weapon.continuousReload && weapon.ammo < weapon.magazine && weapon.reserveAmmo > 0) {
-                            this.weaponReloadTimer = weapon.shellReload || weapon.reload;
+                            this.weaponReloadTimer = this.getEffectiveReloadDuration(weapon);
                         }
                         this.audio.playSfx('reload', weapon.continuousReload ? 0.55 : 0.75);
                     }
@@ -4322,7 +4664,7 @@
                 // Clean dead enemies & drop loot
                 this.enemies.forEach(e => {
                     if (e.hp <= 0) {
-                        const greedMult = this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.25) : 1.0;
+                        const greedMult = this.permanentBuild?.greedMult || (this.armoryRanks.greed ? (1.0 + this.armoryRanks.greed * 0.20) : 1.0);
                         const difficulty = DifficultyData[this.difficulty] || DifficultyData.normal;
                         const perkDropMult = this.player.hasPerk('magnet') ? 1.4 : 1.0;
                         const goldGain = Math.round((e.isBoss ? 150 : 15) * greedMult * difficulty.lootMultiplier * perkDropMult);
@@ -4375,7 +4717,7 @@
 
                 // Update Loot Pickups
                 const pickupBaseRange = parseFloat(document.getElementById('settingsPickupRange').value) * 24 || 120;
-                const pickupRange = pickupBaseRange * (this.player.hasPerk('magnet') ? 2 : 1);
+                const pickupRange = pickupBaseRange * (this.player.hasPerk('magnet') ? 2 : 1) * (this.permanentBuild?.pickupRangeMult || 1);
                 this.loot.forEach(l => {
                     const dist = Math.hypot(this.player.x - l.x, this.player.y - l.y);
                     const releaseRange = this.player.radius + l.radius + 55;
@@ -4428,9 +4770,7 @@
                     this.audio.playSfx('bolt_cycle', 0.95);
                     this.weaponBoltSoundPending = false;
                 }
-                const reloadDuration = activeWeapon?.continuousReload
-                    ? (activeWeapon.shellReload || activeWeapon.reload)
-                    : activeWeapon?.reload;
+                const reloadDuration = this.getEffectiveReloadDuration(activeWeapon);
                 const reloadProgress = this.weaponReloadTimer > 0 && reloadDuration
                     ? THREE.MathUtils.clamp(1 - this.weaponReloadTimer / reloadDuration, 0, 1)
                     : 0;
@@ -4460,6 +4800,10 @@
                     ? THREE.MathUtils.clamp(1 - this.weaponBashTimer / bashDuration, 0, 1)
                     : 0;
                 const bashArc = Math.sin(bashProgress * Math.PI);
+                if (this.weaponGroup.pistolSlide) {
+                    const slideKick = this.weaponReloadTimer > 0 ? 1.8 : Math.min(2.1, (this.weaponRecoil || 0) * 1.15);
+                    this.weaponGroup.pistolSlide.position.z = -7.2 + slideKick;
+                }
                 if (this.weaponBashTimer > 0 && firearm) {
                     this.weaponGroup.position.set(baseX + sway + bashArc * 1.6, baseY + idleBob - bashArc * 1.4, this.weaponRecoil - bashArc * 2.4);
                     this.weaponGroup.rotation.set(0, -bashArc * 0.28, reloadDip * 0.08 + bashArc * 0.16);
@@ -4725,7 +5069,10 @@
             }
 
             document.getElementById('hudHpBar').style.width = `${Math.max(0, (this.player.hp / this.player.maxHp) * 100)}%`;
-            document.getElementById('hudHpText').textContent = `${Math.round(this.player.hp)}/${this.player.maxHp}`;
+            const shieldSuffix = this.player.race !== Race.HUMAN && this.player.maxShield > 0
+                ? ` · 🛡️${Math.round(this.player.shieldBubble)}/${this.player.maxShield}`
+                : '';
+            document.getElementById('hudHpText').textContent = `${Math.round(this.player.hp)}/${this.player.maxHp}${shieldSuffix}`;
 
             document.getElementById('hudStaminaBar').style.width = `${(this.player.stamina / this.player.maxStamina) * 100}%`;
             document.getElementById('hudStaminaText').textContent = `${Math.round(this.player.stamina)}/${this.player.maxStamina}`;
@@ -4745,15 +5092,16 @@
             if (this.player.race === Race.ELF) {
                 resLabel.textContent = '🔮 Mana';
                 resBar.style.width = `${(this.player.mana / this.player.maxMana) * 100}%`;
-                resText.textContent = `${Math.round(this.player.mana)}/100`;
+                resText.textContent = `${Math.round(this.player.mana)}/${this.player.maxMana}`;
             } else if (this.player.race === Race.ORC) {
                 resLabel.textContent = '🔥 Rage';
                 resBar.style.width = `${this.player.rage}%`;
                 resText.textContent = `${Math.round(this.player.rage)}/100`;
             } else if (this.player.race === Race.HUMAN) {
+                const maxSh = Math.max(1, this.player.maxShield || 25);
                 resLabel.textContent = '🛡️ Shield';
-                resBar.style.width = `${(this.player.shieldBubble / 25) * 100}%`;
-                resText.textContent = `${Math.round(this.player.shieldBubble)}/25`;
+                resBar.style.width = `${Math.min(100, (this.player.shieldBubble / maxSh) * 100)}%`;
+                resText.textContent = `${Math.round(this.player.shieldBubble)}/${maxSh}`;
             } else {
                 resLabel.textContent = '💎 Stone';
                 resBar.style.width = this.player.stoneForm ? '100%' : '0%';
@@ -4832,10 +5180,15 @@
             document.getElementById('gameOverTitle').textContent = victory ? 'RUN COMPLETED' : 'RUN TERMINATED';
             document.getElementById('gameOverSub').textContent = victory ? 'Extraction beacon established' : 'Vitals flatlined';
 
+            const greedMult = this.permanentBuild?.greedMult || 1;
+            const uusdEarned = Math.round(((this.floorIndex * 20) + (this.kills * 3) + (victory ? 100 : 0)) * greedMult);
+            this.uusd += uusdEarned;
             document.getElementById('goRaceClass').textContent = `${this.player.race.toUpperCase()} ${this.player.classType.toUpperCase()}`;
             document.getElementById('goFloor').textContent = `Layer ${this.floorIndex}`;
             document.getElementById('goKills').textContent = this.kills;
             document.getElementById('goGold').textContent = this.gold;
+            const goUusd = document.getElementById('goUusd');
+            if (goUusd) goUusd.textContent = `+${uusdEarned} $UUSD (Total: ${this.uusd})`;
             document.getElementById('goXp').textContent = this.player.xp;
             document.getElementById('goSprintTime').textContent = `${this.runCombatStats.sprintSeconds.toFixed(1)}s`;
             document.getElementById('goElevatedKills').textContent = this.runCombatStats.elevatedKills;
@@ -4894,12 +5247,20 @@
             });
 
             document.getElementById('btnEnterHub').addEventListener('click', () => {
-                document.getElementById('mainMenuScreen').classList.add('hidden');
-                document.getElementById('hubScreen').classList.remove('hidden');
-                this.renderBotany();
-                this.renderArmory();
-                this.generateRepairMiniGame();
+                this.openHub('quarters', 'mainMenuScreen');
             });
+            const btnCharHub = document.getElementById('btnCharSelectHub');
+            if (btnCharHub) {
+                btnCharHub.addEventListener('click', () => {
+                    this.openHub('skills', 'charSelectScreen');
+                });
+            }
+            const btnGoHub = document.getElementById('btnGoToHub');
+            if (btnGoHub) {
+                btnGoHub.addEventListener('click', () => {
+                    this.openHub('skills', 'gameOverScreen');
+                });
+            }
 
             document.getElementById('btnOpenSettings').addEventListener('click', () => {
                 document.getElementById('settingsScreen').classList.remove('hidden');
@@ -4993,11 +5354,12 @@
             document.getElementById('btnCharSelectStart').addEventListener('click', () => {
                 const selRace = document.querySelector('.char-card.selected')?.dataset.race || 'human';
                 const selClass = document.querySelector('.class-btn.selected')?.dataset.class || 'warrior';
+                const selWeapon = document.querySelector('.starting-weapon-card.selected')?.dataset.weapon || null;
                 const selMode = document.querySelector('.char-mode-card.selected')?.dataset.mode || this.controlMode || 'realtime';
                 this.setControlMode(selMode);
                 document.getElementById('charSelectScreen').classList.add('hidden');
                 document.getElementById('gameMain').classList.remove('hidden');
-                this.initRun(selRace, selClass);
+                this.initRun(selRace, selClass, selWeapon);
             });
 
             // Control Mode Buttons
@@ -5099,7 +5461,10 @@
 
             document.getElementById('btnLeaveHub').addEventListener('click', () => {
                 document.getElementById('hubScreen').classList.add('hidden');
-                document.getElementById('mainMenuScreen').classList.remove('hidden');
+                const returnScreen = this._hubReturnScreen || 'mainMenuScreen';
+                this._hubReturnScreen = 'mainMenuScreen';
+                document.getElementById(returnScreen).classList.remove('hidden');
+                if (returnScreen === 'charSelectScreen') this.renderCharSelect();
                 this.saveSave();
             });
 
@@ -5107,22 +5472,8 @@
             const tabBtns = document.querySelectorAll('.hub-tab-btn');
             tabBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-
-                    const targetTab = e.target.dataset.tab;
-                    document.querySelectorAll('.hub-pane').forEach(p => p.classList.remove('active'));
-                    const activePane = document.getElementById(`tab-${targetTab}`);
-                    if (activePane) activePane.classList.add('active');
-
-                    if (targetTab === 'exchange') {
-                        document.getElementById('exchangeGoldBalance').textContent = `${this.gold} Gold`;
-                        document.getElementById('exchangeUusdBalance').textContent = `${this.uusd} $UUSD`;
-                    } else if (targetTab === 'lore') {
-                        this.renderLoreList();
-                    } else if (targetTab === 'armory') {
-                        this.renderArmory();
-                    }
+                    const targetTab = e.currentTarget.dataset.tab;
+                    this.activateHubTab(targetTab);
                 });
             });
 
@@ -5215,6 +5566,68 @@
 
         buyArmoryUpgrade(upgradeId) {
             if (this.hubController) return this.hubController.buyArmoryUpgrade(upgradeId);
+        }
+
+        renderPistolWorkshop() {
+            if (this.hubController) return this.hubController.renderPistolWorkshop();
+        }
+
+        buyPistolUpgrade(upgradeId) {
+            if (this.hubController) return this.hubController.buyPistolUpgrade(upgradeId);
+        }
+
+        buyPistolPerk(perkId) {
+            if (this.hubController) return this.hubController.buyPistolPerk(perkId);
+        }
+
+        renderSkillTrees() {
+            if (this.hubController) return this.hubController.renderSkillTrees();
+        }
+
+        selectSkillTree(treeId) {
+            if (this.hubController) return this.hubController.selectSkillTree(treeId);
+        }
+
+        buySkillTreeNode(treeId, nodeId) {
+            if (this.hubController) return this.hubController.buySkillTreeNode(treeId, nodeId);
+        }
+
+        respecSkillTree(treeId) {
+            if (this.hubController) return this.hubController.respecSkillTree(treeId);
+        }
+
+        openHub(tabName = 'quarters', returnScreen = 'mainMenuScreen') {
+            this._hubReturnScreen = returnScreen;
+            document.getElementById(returnScreen)?.classList.add('hidden');
+            document.getElementById('hubScreen').classList.remove('hidden');
+            this.renderBotany();
+            this.renderArmory();
+            this.renderPistolWorkshop();
+            this.renderSkillTrees();
+            this.generateRepairMiniGame();
+            this.activateHubTab(tabName);
+        }
+
+        activateHubTab(targetTab) {
+            document.querySelectorAll('.hub-tab-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.tab === targetTab);
+            });
+            document.querySelectorAll('.hub-pane').forEach(p => {
+                p.classList.toggle('active', p.id === `tab-${targetTab}`);
+            });
+            this.hubController?.updateHubBalances?.();
+            if (targetTab === 'exchange') {
+                document.getElementById('exchangeGoldBalance').textContent = `${this.gold} Gold`;
+                document.getElementById('exchangeUusdBalance').textContent = `${this.uusd} $UUSD`;
+            } else if (targetTab === 'lore') {
+                this.renderLoreList();
+            } else if (targetTab === 'armory') {
+                this.renderArmory();
+            } else if (targetTab === 'pistol') {
+                this.renderPistolWorkshop();
+            } else if (targetTab === 'skills') {
+                this.renderSkillTrees();
+            }
         }
 
         renderBotany() {

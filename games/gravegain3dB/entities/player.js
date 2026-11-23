@@ -25,21 +25,66 @@
             this.pitch = 0;
             this.lean = 0;
 
-            const bonusHp = permanentStats.health ? permanentStats.health * 25 : 0;
-            this.maxHp = rData.maxHp + bonusHp;
+            const isCompiledBuild = permanentStats && typeof permanentStats.bonusHp === 'number' && permanentStats.perks;
+            const perm = isCompiledBuild
+                ? permanentStats
+                : (window.GraveGainSkillTrees?.computePermanentBuild
+                    ? window.GraveGainSkillTrees.computePermanentBuild(race, classType, permanentStats)
+                    : {
+                        bonusHp: (permanentStats?.health || 0) * 25,
+                        hpRegenBonus: 0,
+                        maxShield: (permanentStats?.shields || 0) * 15,
+                        shieldRegenBonus: 0,
+                        shieldDelayMult: 1,
+                        moveSpeedMult: permanentStats?.speed ? (1.0 + permanentStats.speed * 0.1) : 1.0,
+                        sprintSpeedMult: 1,
+                        slideSpeedMult: 1,
+                        slideCooldownMult: 1,
+                        jumpMult: 1,
+                        extraDoubleJumps: 0,
+                        jetpackThrustMult: 1,
+                        jetpackDrainMult: 1,
+                        airGravityMult: 1,
+                        cooldownMult: 1,
+                        dodgeCooldownMult: 1,
+                        abilityDurationBonus: 0,
+                        damageReduction: 0,
+                        blockBonus: 0,
+                        manaMaxBonus: 0,
+                        manaRegenBonus: 0,
+                        rageGainMult: 1,
+                        startingPotionsBonus: permanentStats?.potions || 0,
+                        maxPotionsBonus: permanentStats?.potions || 0,
+                        perks: {}
+                    });
+            this.perm = perm;
+
+            this.maxHp = Math.round(rData.maxHp + (perm.bonusHp || 0));
             this.hp = this.maxHp;
-            this.hpRegen = rData.hpRegen;
+            this.hpRegen = rData.hpRegen + (perm.hpRegenBonus || 0);
             this.stamina = rData.stamina;
             this.maxStamina = rData.stamina;
 
-            const speedBonus = permanentStats.speed ? (1.0 + permanentStats.speed * 0.1) : 1.0;
-            this.speed = rData.speed * speedBonus;
+            this.speed = rData.speed * (perm.moveSpeedMult || 1.0);
+            this.sprintMult = perm.sprintSpeedMult || 1.0;
+            this.jumpMult = perm.jumpMult || 1.0;
+            this.extraDoubleJumps = perm.extraDoubleJumps || 0;
+            this.slideSpeedMult = perm.slideSpeedMult || 1.0;
+            this.slideCooldownMult = perm.slideCooldownMult || 1.0;
+            this.cooldownMult = perm.cooldownMult || 1.0;
+            this.dodgeCooldownMult = perm.dodgeCooldownMult || 1.0;
+            this.damageReduction = perm.damageReduction || 0;
+            this.blockBonus = perm.blockBonus || 0;
 
-            this.mana = race === Race.ELF ? 100 : 0;
-            this.maxMana = 100;
+            this.maxMana = 100 + (perm.manaMaxBonus || 0);
+            this.mana = race === Race.ELF ? this.maxMana : 0;
+            this.manaRegen = 3.0 + (perm.manaRegenBonus || 0);
             this.rage = 0;
-            this.shieldBubble = 0;
+            this.maxShield = (race === Race.HUMAN ? 25 : 0) + (perm.maxShield || 0);
+            this.shieldBubble = this.maxShield;
             this.shieldCooldown = 0;
+            this.shieldRegen = 2.5 + (perm.shieldRegenBonus || 0);
+            this.shieldDelayMult = perm.shieldDelayMult || 1.0;
             this.stoneForm = false;
             this.stoneDuration = 0;
 
@@ -59,12 +104,28 @@
             this.dodgeRequested = false;
             this.parryWindow = 0;
 
-            this.potions = 1 + (permanentStats.potions || 0);
+            this.maxPotions = 5 + (perm.maxPotionsBonus || 0);
+            this.potions = 1 + (perm.startingPotionsBonus || 0);
             this.perks = [];
+            this.bloodthirstStacks = 0;
+            this.bloodthirstTimer = 0;
+            this.riposteBuffTimer = 0;
+            this.comboBuffTimer = 0;
+            this.medMistTimer = 0;
+            this.dodgeCritTimer = 0;
+            this.quickdrawShots = 0;
+            this.shotCounter = 0;
+            this.immortalUsedFloor = false;
+            this.bombardierTimer = 0;
+            this.bombardierKills = 0;
 
             // Movement physics
             this.grounded = true;
             this.platVy = 0;
+            this.isWallRunning = false;
+            this.wallRunSide = 0;
+            this.wallRunTimer = 0;
+            this.wallRunCooldown = 0;
             this.doubleJumpsLeft = 0;
             this.jumpPressConsumed = false;
             this.jumpBuffer = 0;
@@ -94,12 +155,12 @@
 
             const directionX = this.vx / moveSpeed;
             const directionY = this.vy / moveSpeed;
-            const slideSpeed = Math.max(this.speed * 1.55, moveSpeed * 1.12);
+            const slideSpeed = Math.max(this.speed * 1.55, moveSpeed * 1.12) * (this.slideSpeedMult || 1);
             this.slideVx = directionX * slideSpeed;
             this.slideVy = directionY * slideSpeed;
             this.slideTimer = this.slideDuration;
             this.slideHopTimer = 0.32;
-            this.slideCooldown = 0.8;
+            this.slideCooldown = 0.8 * (this.slideCooldownMult || 1);
             this.isSliding = true;
             this.crouching = true;
             this.stamina = Math.max(0, this.stamina - 12);
@@ -114,12 +175,21 @@
             const GameData = window.GraveGainGameData || {};
             const Race = GameData.Race || { HUMAN: 'human', ELF: 'elf', DWARF: 'dwarf', ORC: 'orc' };
 
-            if (!this.stoneForm) this.hp = Math.min(this.maxHp, this.hp + this.hpRegen * dt);
-            if (this.race === Race.ELF) this.mana = Math.min(this.maxMana, this.mana + 3.0 * dt);
-            if (this.race === Race.ORC) this.rage = Math.max(0, this.rage - 3.0 * dt);
-            if (this.race === Race.HUMAN) {
+            if (!this.stoneForm) {
+                this.hp = Math.min(this.maxHp, this.hp + this.hpRegen * dt);
+            } else if (this.hasPermanentPerk('d_capstone_colossus')) {
+                this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.04 * dt);
+            }
+            if (this.race === Race.ELF) this.mana = Math.min(this.maxMana, this.mana + this.manaRegen * dt);
+            if (this.race === Race.ORC) {
+                const rageFloor = this.hasPermanentPerk('o_capstone_juggernaut') ? 25 : 0;
+                if (this.rage > rageFloor) this.rage = Math.max(rageFloor, this.rage - 3.0 * dt);
+            }
+            if (this.maxShield > 0) {
                 this.shieldCooldown = Math.max(0, this.shieldCooldown - dt);
-                if (this.shieldCooldown <= 0) this.shieldBubble = Math.min(25.0, this.shieldBubble + 2.5 * dt);
+                if (this.shieldCooldown <= 0) {
+                    this.shieldBubble = Math.min(this.maxShield, this.shieldBubble + this.shieldRegen * dt);
+                }
             }
 
             if (this.stoneForm) {
@@ -132,6 +202,26 @@
             this.parryWindow = Math.max(0, this.parryWindow - dt);
             this.abilityCooldown = Math.max(0, this.abilityCooldown - dt);
             this.overclockTimer = Math.max(0, this.overclockTimer - dt);
+            this.riposteBuffTimer = Math.max(0, this.riposteBuffTimer - dt);
+            this.comboBuffTimer = Math.max(0, this.comboBuffTimer - dt);
+            this.medMistTimer = Math.max(0, this.medMistTimer - dt);
+            this.dodgeCritTimer = Math.max(0, this.dodgeCritTimer - dt);
+            if (this.bloodthirstTimer > 0) {
+                this.bloodthirstTimer = Math.max(0, this.bloodthirstTimer - dt);
+                if (this.bloodthirstTimer === 0) this.bloodthirstStacks = 0;
+            }
+            if (this.hasPermanentPerk('d_capstone_bombardier')) {
+                const game = window.GraveGainGame;
+                if (game && game.grenades < (game.maxGrenades || 5)) {
+                    this.bombardierTimer += dt;
+                    if (this.bombardierTimer >= 18) {
+                        this.bombardierTimer = 0;
+                        game.grenades++;
+                        game.combatText?.spawnText(this.x, 24, this.y, '+1 GRENADE SYNTHESIZED', 'block');
+                        game.updateWeaponHUD?.();
+                    }
+                }
+            }
         }
 
         advanceTurn(dt = 0.35) {
@@ -205,6 +295,13 @@
             this.dodgeCooldown = Math.max(0, this.dodgeCooldown - dt);
             let currentSpeed = this.speed * 1.25;
             if (this.hasPerk('swift')) currentSpeed *= 1.25;
+            if (this.medMistTimer > 0) currentSpeed *= 1.15;
+            if (this.bloodthirstTimer > 0 && this.bloodthirstStacks > 0) {
+                currentSpeed *= 1 + this.bloodthirstStacks * 0.08 * (this.hasPermanentPerk('o_bloodthirst') || 1);
+            }
+            if (this.hasPermanentPerk('o_capstone_juggernaut')) {
+                currentSpeed *= 1 + Math.floor(this.rage / 10) * 0.02;
+            }
 
             this.crouching = this.isSliding || !!(input.keys['ControlLeft'] || input.keys['ControlRight'] || input.keys['KeyC']);
             if (this.overclockTimer > 0) currentSpeed *= 1.3;
@@ -220,11 +317,23 @@
             if ((dedicatedDodge || shiftDodge) &&
                 this.grounded && !this.crouching && !this.isBlocking && this.dodgeCooldown === 0) {
                 this.dodgeTimer = 0.16;
-                this.dodgeCooldown = 0.45;
+                this.dodgeCooldown = 0.45 * (this.dodgeCooldownMult || 1);
                 const dodgeSpeed = currentSpeed * 2.6;
                 const directionLength = Math.hypot(directionX, directionY);
                 this.dodgeVx = moveLen > 0.05 ? directionX * dodgeSpeed / directionLength : -sinYaw * dodgeSpeed;
                 this.dodgeVy = moveLen > 0.05 ? directionY * dodgeSpeed / directionLength : -cosYaw * dodgeSpeed;
+                if (this.hasPermanentPerk('e_feather')) {
+                    this.dodgeCritTimer = 2.0;
+                }
+                if (this.hasPermanentPerk('w_riposte')) {
+                    this.riposteBuffTimer = 4.0;
+                    const g = window.GraveGainGame;
+                    const rRank = this.hasPermanentPerk('w_riposte');
+                    if (g?.dealAoEDamage) {
+                        g.dealAoEDamage(this.x, this.y, 130, 30 * rRank, 'shock');
+                        g.vfx?.spawnSparks(this.x, this.y, 0x38bdf8, 14);
+                    }
+                }
             }
             this.shiftHeld = shiftHeld;
             const isRunning = !this.crouching && !this.isBlocking && shiftHeld &&
@@ -239,7 +348,7 @@
                 this.sprintBlend = Math.max(0, this.sprintBlend - dt * 6);
             }
             if (!this.crouching && !this.isBlocking && !aiming) {
-                currentSpeed *= 1 + 1.2 * Math.pow(this.sprintBlend, 0.8);
+                currentSpeed *= 1 + 1.2 * (this.sprintMult || 1) * Math.pow(this.sprintBlend, 0.8);
             }
             this.stamina = Math.min(this.maxStamina, this.stamina + 18 * dt);
 
@@ -280,6 +389,7 @@
             // Tactical peek lean inspired by DebateFPS.
             let targetLean = input.keys['KeyZ'] ? -1 : (input.keys['KeyX'] ? 1 : 0);
             if (this.isSliding || !this.grounded) targetLean = 0;
+            if (this.isWallRunning) targetLean = this.wallRunSide * 0.2;
             const leanDistance = 9;
             const leanX = this.x + Math.cos(this.yaw) * targetLean * leanDistance;
             const leanY = this.y - Math.sin(this.yaw) * targetLean * leanDistance;
@@ -331,11 +441,11 @@
                 this.slideTimer = 0;
                 this.isSliding = false;
                 this.dodgeTimer = 0;
-                this.platVy = 425;
+                this.platVy = 425 * (this.jumpMult || 1);
                 this.grounded = false;
                 this.vx = (pad.landingX - this.x) / 0.9;
                 this.vy = (pad.landingZ - this.y) / 0.9;
-                this.doubleJumpsLeft = this.race === Race.DWARF ? 1 : 0;
+                this.doubleJumpsLeft = (this.race === Race.DWARF ? 1 : 0) + (this.extraDoubleJumps || 0);
                 const game = window.GraveGainGame;
                 game?.audio?.playSfx('spell', 1.8);
                 game?.vfx?.spawnSparks(pad.x, pad.z, 0x7df5dd, 12, 3);
@@ -366,7 +476,7 @@
                     this.vx *= carry;
                     this.vy *= carry;
                     if (timedHop) {
-                        this.momentumShotTimer = 2.5;
+                        this.momentumShotTimer = this.hasPermanentPerk('h_airstrike') ? 4.0 : 2.5;
                         window.GraveGainGame?.combatText?.spawnText(this.x, 27, this.y, 'SLIDE HOP · FLOW SHOT READY', 'block');
                     }
                 }
@@ -374,18 +484,63 @@
                 this.slideTimer = 0;
                 this.isSliding = false;
                 // A high, floaty jump supports the expanded multi-level rooms.
-                this.platVy = 520;
+                this.platVy = 520 * (this.jumpMult || 1);
                 this.grounded = false;
-                this.doubleJumpsLeft = this.race === Race.DWARF ? 1 : 0;
+                this.doubleJumpsLeft = (this.race === Race.DWARF ? 1 : 0) + (this.extraDoubleJumps || 0);
                 if (window.GraveGainGame) window.GraveGainGame.audio.playSfx('swing', 1.4);
-            } else if (jumpPressed && !this.grounded && this.race === Race.DWARF && this.doubleJumpsLeft > 0) {
+            }
+
+            // Titanfall 2-style Wall Running
+            this.wallRunCooldown = Math.max(0, this.wallRunCooldown - dt);
+            if (this.grounded || this.isSliding || this.mantleMotion) {
+                this.isWallRunning = false;
+                this.wallRunSide = 0;
+                this.wallRunTimer = 0;
+            } else if (this.wallRunCooldown <= 0 && !this.crouching) {
+                const horizSpeed = Math.hypot(this.vx, this.vy);
+                const probeDist = this.radius + 10;
+                const rightX = -directionY;
+                const rightY = directionX;
+                const hitRight = !!(physics && tilemap && physics.isColliding(this.x + rightX * probeDist, this.y + rightY * probeDist, this.radius * 0.55, tilemap));
+                const hitLeft = !!(physics && tilemap && physics.isColliding(this.x - rightX * probeDist, this.y - rightY * probeDist, this.radius * 0.55, tilemap));
+                const wallSide = hitRight ? 1 : (hitLeft ? -1 : 0);
+                if (wallSide !== 0 && horizSpeed > 45 && this.wallRunTimer < 1.8) {
+                    if (!this.isWallRunning) {
+                        this.isWallRunning = true;
+                        this.wallRunSide = wallSide;
+                        this.platVy = Math.max(this.platVy, 40);
+                        window.GraveGainGame?.audio?.playSfx('footstep', 1.15);
+                    }
+                    this.wallRunTimer += dt;
+                    this.platVy = Math.max(this.platVy, -18);
+                    const boostSpeed = Math.max(horizSpeed, this.speed * 1.45);
+                    const dirLen = Math.hypot(this.vx, this.vy) || 1;
+                    this.vx = (this.vx / dirLen) * boostSpeed;
+                    this.vy = (this.vy / dirLen) * boostSpeed;
+                    if (jumpPressed) {
+                        this.jumpBuffer = 0;
+                        this.isWallRunning = false;
+                        this.wallRunCooldown = 0.25;
+                        this.platVy = 500 * (this.jumpMult || 1);
+                        this.vx -= rightX * wallSide * 260;
+                        this.vy -= rightY * wallSide * 260;
+                        window.GraveGainGame?.audio?.playSfx('swing', 1.45);
+                    }
+                } else {
+                    this.isWallRunning = false;
+                    this.wallRunSide = 0;
+                }
+            } else if (jumpPressed && !this.grounded && (this.race === Race.DWARF || this.extraDoubleJumps > 0) && this.doubleJumpsLeft > 0) {
                 this.jumpBuffer = 0;
-                this.platVy = 420;
+                this.platVy = 420 * (this.jumpMult || 1);
                 this.doubleJumpsLeft--;
                 if (window.GraveGainGame) window.GraveGainGame.audio.playSfx('swing', 1.7);
             } else if (input.keys['Space'] && !this.grounded && this.dropThroughTimer <= 0 && this.race === Race.HUMAN && this.stamina > 5) {
-                this.platVy = Math.min(180, this.platVy + 400 * dt);
-                this.stamina = Math.max(0, this.stamina - 30 * dt);
+                const thrust = 400 * (this.perm?.jetpackThrustMult || 1);
+                const maxHover = 180 * Math.min(1.5, this.perm?.jetpackThrustMult || 1);
+                const drain = 30 * (this.perm?.jetpackDrainMult || 1);
+                this.platVy = Math.min(maxHover, this.platVy + thrust * dt);
+                this.stamina = Math.max(0, this.stamina - drain * dt);
             }
 
             const surfaces = physics.arenaSurfacesAt(tilemap, this.x, this.y);
@@ -403,7 +558,7 @@
                     this.yElevation = mantle.elevation;
                     this.platVy = 0;
                     this.mantleMotion = null;
-                    this.momentumShotTimer = 2.5;
+                    this.momentumShotTimer = this.hasPermanentPerk('h_airstrike') ? 4.0 : 2.5;
                     window.GraveGainGame?.combatText?.spawnText(this.x, this.yElevation + 28, this.y, 'MANTLE · FLOW SHOT READY', 'block');
                 }
             } else if (!this.grounded || this.yElevation > floorHeight) {
@@ -416,7 +571,10 @@
                     this.vy = priorVy * (1 - steer) + directionY * speedLimit * steer;
                 }
                 this.grounded = false;
-                this.platVy -= 750 * dt;
+                const glideScale = (input.keys['Space'] && this.platVy < 0 && this.hasPermanentPerk('e_feather'))
+                    ? (this.perm?.airGravityMult || 0.72)
+                    : 1;
+                this.platVy -= 750 * glideScale * dt;
                 this.yElevation += this.platVy * dt;
                 const roomCeiling = physics.ceilingAt(tilemap, this.x, this.y);
                 const ceilingHeight = surfaces.reduce((ceiling, s) => s.bottom >= floorHeight + bodyHeight ? Math.min(ceiling, s.bottom) : ceiling, roomCeiling);
@@ -436,6 +594,12 @@
                         game.cameraController?.applyShake(impact * 1.2);
                         game.audio?.playSfx('footstep', 0.82 + impact * 0.28);
                         this.footstepTimer = Math.max(this.footstepTimer, 0.12 + impact * 0.12);
+                        if (impact >= 0.72 && this.hasPermanentPerk('d_slam') && typeof game.dealAoEDamage === 'function') {
+                            const slamDmg = 35 * this.hasPermanentPerk('d_slam');
+                            game.dealAoEDamage(this.x, this.y, 130, slamDmg, 'rage');
+                            game.vfx?.spawnSparks(this.x, this.y, 0xffcc4c, 18);
+                            game.combatText?.spawnText(this.x, this.yElevation + 26, this.y, 'ANVIL DROP!', 'crit');
+                        }
                     }
                 }
             }
@@ -467,66 +631,119 @@
             return this.perks.some(p => p.id === id);
         }
 
+        hasPermanentPerk(id) {
+            return Number(this.perm?.perks?.[id]) || 0;
+        }
+
         takeDamage(dmg, type = 'normal', source = null) {
             if (window.gameDebug?.godMode || this.stoneForm || this.isDead) return;
-            const companion = window.GraveGainGame?.companion;
+            const game = window.GraveGainGame;
+            const companion = game?.companion;
             if (companion && companion.time < companion.rescueUntil) return;
 
             const GameData = window.GraveGainGameData || {};
             const ClassType = GameData.ClassType || { TANK: 'tank' };
             const Race = GameData.Race || { ORC: 'orc' };
+            const rawIncoming = dmg;
 
             // Blocking logic
             if (this.isBlocking) {
                 if (this.parryWindow > 0) {
                     // Perfect Parry!
-                    if (window.GraveGainGame) {
-                        window.GraveGainGame.combatText.spawnText(this.x, 20, this.y, 'PARRIED!', 'block');
-                        window.GraveGainGame.audio.playSfx('block', 1.3);
-                        window.GraveGainGame.vfx.spawnSparks(this.x, this.y, 0x38bdf8, 20);
+                    if (game) {
+                        game.combatText.spawnText(this.x, 20, this.y, 'PARRIED!', 'block');
+                        game.audio.playSfx('block', 1.3);
+                        game.vfx.spawnSparks(this.x, this.y, 0x38bdf8, 20);
+                        if (this.hasPermanentPerk('w_riposte')) {
+                            this.riposteBuffTimer = 4.0;
+                            game.dealAoEDamage?.(this.x, this.y, 130, 30 * this.hasPermanentPerk('w_riposte'), 'shock');
+                        }
                     }
                     return;
                 }
-                const blockPercent = this.classType === ClassType.TANK ? 0.90 : 0.75;
+                const blockPercent = Math.min(0.95, (this.classType === ClassType.TANK ? 0.90 : 0.75) + (this.blockBonus || 0));
                 dmg *= (1.0 - blockPercent);
-                if (window.GraveGainGame) {
-                    window.GraveGainGame.combatText.spawnText(this.x, 20, this.y, 'BLOCKED!', 'block');
-                    window.GraveGainGame.audio.playSfx('block');
+                if (game) {
+                    game.combatText.spawnText(this.x, 20, this.y, 'BLOCKED!', 'block');
+                    game.audio.playSfx('block');
+                    if (this.hasPermanentPerk('h_capstone_bastion') && rawIncoming > dmg) {
+                        game.dealAoEDamage?.(this.x, this.y, 120, Math.round((rawIncoming - dmg) * 0.4), 'shock');
+                    }
                 }
             }
 
             if (this.hasPerk('ironclad')) {
                 dmg *= 0.80;
             }
-
-            if (this.race === Race.ORC) {
-                this.rage = Math.min(100, this.rage + dmg * 0.8);
+            if (this.damageReduction > 0) {
+                dmg *= Math.max(0.2, 1 - this.damageReduction);
+            }
+            if ((this.sprinting || this.isSliding) && this.hasPermanentPerk('o_momentum')) {
+                dmg *= Math.max(0.4, 1 - 0.14 * this.hasPermanentPerk('o_momentum'));
+            }
+            if (source && source.poisonTimer > 0 && this.hasPermanentPerk('s_capstone_swarm')) {
+                dmg *= 0.80;
             }
 
+            if (this.race === Race.ORC) {
+                this.rage = Math.min(100, this.rage + dmg * 0.8 * (this.perm?.rageGainMult || 1));
+            }
+
+            if (this.hasPermanentPerk('t_thorns') && game) {
+                const thornsRank = this.hasPermanentPerk('t_thorns');
+                this.stamina = Math.min(this.maxStamina, this.stamina + 6);
+                game.dealAoEDamage?.(this.x, this.y, 95, 25 * thornsRank, 'shock');
+            }
+
+            const shieldBefore = this.shieldBubble;
             if (this.shieldBubble > 0) {
                 const absorbed = Math.min(this.shieldBubble, dmg);
                 this.shieldBubble -= absorbed;
                 dmg -= absorbed;
-                this.shieldCooldown = 5.0;
+                this.shieldCooldown = 5.0 * (this.shieldDelayMult || 1);
+                if (absorbed > 0 && this.hasPermanentPerk('h_capstone_bastion') && game) {
+                    game.dealAoEDamage?.(this.x, this.y, 120, Math.round(absorbed * 0.4), 'shock');
+                }
+                if (shieldBefore > 0 && this.shieldBubble <= 0 && this.hasPermanentPerk('h_nova') && game) {
+                    const novaRank = this.hasPermanentPerk('h_nova');
+                    game.dealAoEDamage?.(this.x, this.y, 140, 40 * novaRank, 'shock');
+                    game.enemies?.forEach(e => {
+                        if (e.hp > 0 && Math.hypot(e.x - this.x, e.y - this.y) <= 140) {
+                            e.chillTimer = Math.max(e.chillTimer || 0, 2.5);
+                        }
+                    });
+                    game.vfx?.spawnSparks(this.x, this.y, 0x38bdf8, 24);
+                    game.combatText?.spawnText(this.x, 26, this.y, 'CAPACITOR DISCHARGE!', 'block');
+                }
             }
 
             this.hp = Math.max(0, this.hp - dmg);
 
-            if (window.GraveGainGame) {
-                window.GraveGainGame.showDamageFeedback(dmg);
-                if (source) window.GraveGainGame.showDamageDirection(source);
-                window.GraveGainGame.cameraController.applyShake(6);
-                window.GraveGainGame.audio.playSfx('hit', 0.8);
-                window.GraveGainGame.combatText.spawnText(this.x, 20, this.y, `-${Math.round(dmg)}`, 'player-dmg');
+            if (this.hp > 0 && this.hp / this.maxHp <= 0.25 && !this.immortalUsedFloor && this.hasPermanentPerk('t_capstone_immortal')) {
+                this.immortalUsedFloor = true;
+                this.hp = Math.min(this.maxHp, this.hp + Math.round(this.maxHp * 0.30));
+                this.shieldBubble = Math.max(this.shieldBubble, this.maxShield || 40);
+                if (game) {
+                    game.vfx?.spawnSparks(this.x, this.y, 0x38bdf8, 28);
+                    game.combatText?.showBanner('🏰 UNBREAKABLE CITADEL TRIGGERED!');
+                }
+            }
+
+            if (game) {
+                game.showDamageFeedback(dmg);
+                if (source) game.showDamageDirection(source);
+                game.cameraController.applyShake(6);
+                game.audio.playSfx('hit', 0.8);
+                game.combatText.spawnText(this.x, 20, this.y, `-${Math.round(dmg)}`, 'player-dmg');
             }
 
             if (this.hp <= 0 && !this.isDead) {
                 if (companion?.revive(this)) {
-                    window.GraveGainGame.combatText.showBanner(`${companion.name.toUpperCase()} REVIVED YOU`);
+                    game.combatText.showBanner(`${companion.name.toUpperCase()} REVIVED YOU`);
                     return;
                 }
                 this.isDead = true;
-                if (window.GraveGainGame) window.GraveGainGame.gameOver(false);
+                if (game) game.gameOver(false);
             }
         }
 
@@ -545,38 +762,89 @@
 
         triggerAbility() {
             if (this.abilityCooldown > 0) return;
-            this.abilityCooldown = 7.0;
+            const cdScale = (this.cooldownMult || 1) * (this.hasPermanentPerk('h_capstone_bastion') ? 0.7 : 1);
+            this.abilityCooldown = 7.0 * cdScale;
 
             const game = window.GraveGainGame;
             if (!game) return;
 
             const GameData = window.GraveGainGameData || {};
             const Race = GameData.Race || { HUMAN: 'human', ELF: 'elf', DWARF: 'dwarf', ORC: 'orc' };
+            const spellScale = this.perm?.spellDamageMult || 1;
 
             if (this.race === Race.HUMAN) {
-                this.shieldBubble = 35.0;
+                const wallAmount = 35.0 + (this.hasPermanentPerk('h_capstone_bastion') ? 50.0 : 0);
+                this.shieldBubble = Math.max(this.shieldBubble, Math.min(Math.max(this.maxShield, wallAmount), this.shieldBubble + wallAmount));
                 game.audio.playSfx('spell', 1.2);
                 game.vfx.spawnSparks(this.x, this.y, 0x00d2ff, 25);
                 game.combatText.spawnText(this.x, 20, this.y, 'SHIELD WALL!', 'heal');
             } else if (this.race === Race.ELF) {
+                const tempest = this.hasPermanentPerk('e_capstone_tempest');
+                const radius = tempest ? 160 * 1.45 : 160;
+                const dmg = Math.round(45 * spellScale);
                 game.audio.playSfx('spell', 1.5);
                 game.vfx.spawnSparks(this.x, this.y, 0x4cff7f, 35);
-                game.dealAoEDamage(this.x, this.y, 160, 45, 'nature');
+                const aliveBefore = (game.enemies || []).filter(e => e.hp > 0).length;
+                game.dealAoEDamage(this.x, this.y, radius, dmg, 'nature');
+                if (tempest && game.enemies) {
+                    let killed = 0;
+                    game.enemies.forEach(e => {
+                        if (Math.hypot(e.x - this.x, e.y - this.y) <= radius) {
+                            e.chillTimer = Math.max(e.chillTimer || 0, 3);
+                            e.burnTimer = Math.max(e.burnTimer || 0, 3);
+                        }
+                    });
+                    const aliveAfter = game.enemies.filter(e => e.hp > 0).length;
+                    killed = Math.max(0, aliveBefore - aliveAfter);
+                    if (killed > 0) this.abilityCooldown *= Math.max(0.25, 1 - 0.30 * killed);
+                }
                 game.combatText.spawnText(this.x, 20, this.y, 'NATURE BURST!', 'heal');
             } else if (this.race === Race.DWARF) {
                 this.stoneForm = true;
-                this.stoneDuration = 5.0;
+                this.stoneDuration = 5.0 + (this.perm?.abilityDurationBonus || 0);
                 game.audio.playSfx('block', 0.8);
                 game.vfx.spawnSparks(this.x, this.y, 0xffcc4c, 30);
                 game.combatText.spawnText(this.x, 20, this.y, 'STONE FORM!', 'block');
             } else if (this.race === Race.ORC) {
-                const burstDmg = 35 + this.rage * 0.75;
-                this.rage = 0;
+                const burstDmg = (35 + this.rage * 0.75) * spellScale;
+                this.rage = this.hasPermanentPerk('o_capstone_juggernaut') ? 25 : 0;
                 game.audio.playSfx('explode', 1.1);
                 game.cameraController.applyShake(10);
                 game.vfx.spawnSparks(this.x, this.y, 0xff4c4c, 40);
-                game.dealAoEDamage(this.x, this.y, 180, burstDmg, 'rage');
+                const totalDealt = game.dealAoEDamage(this.x, this.y, 180, burstDmg, 'rage') || 0;
+                if (this.hasPermanentPerk('o_capstone_undying')) {
+                    const heal = Math.max(10, Math.round(totalDealt * 0.25));
+                    this.hp = Math.min(this.maxHp, this.hp + heal);
+                    const w = game.weaponInventory?.[game.activeWeaponIndex];
+                    if (w && w.reserveAmmo > 0 && w.ammo < w.magazine) {
+                        const refill = Math.min(Math.ceil(w.magazine * 0.5), w.magazine - w.ammo, w.reserveAmmo);
+                        w.ammo += refill;
+                        w.reserveAmmo -= refill;
+                        game.updateWeaponHUD?.();
+                    }
+                    game.combatText.spawnText(this.x, 28, this.y, `UNDYING FURY +${heal} HP`, 'heal');
+                }
                 game.combatText.spawnText(this.x, 20, this.y, 'RAGE BURST!', 'crit');
+            }
+
+            if (this.hasPermanentPerk('s_medmist')) {
+                const rank = this.hasPermanentPerk('s_medmist');
+                this.shieldBubble = Math.min(Math.max(this.maxShield, this.shieldBubble + 20 * rank), this.shieldBubble + 20 * rank);
+                this.medMistTimer = 5.0;
+                game.combatText.spawnText(this.x, 28, this.y, 'BIO-BOOSTER MIST', 'heal');
+            }
+
+            if (this.hasPermanentPerk('m_capstone_chronos') && game.spawnProjectile && game.camera3d) {
+                this.dodgeCooldown = 0;
+                const forward = new THREE.Vector3();
+                game.camera3d.getWorldDirection(forward);
+                for (let i = -1; i <= 1; i++) {
+                    const spread = i * 0.14;
+                    const vx = (forward.x * Math.cos(spread) - forward.z * Math.sin(spread)) * 420;
+                    const vz = (forward.x * Math.sin(spread) + forward.z * Math.cos(spread)) * 420;
+                    game.spawnProjectile(this.x, this.yElevation + 18, this.y, vx, forward.y * 420, vz,
+                        Math.round(28 * spellScale), true, 0xa855f7, 'magic');
+                }
             }
         }
     }

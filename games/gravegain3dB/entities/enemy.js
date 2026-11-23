@@ -96,6 +96,7 @@
                     try {
                         const sharedMesh = entry.build(THREE);
                         if (sharedMesh) {
+                            this.sharedModel = sharedMesh;
                             sharedMesh.scale.setScalar(14);
                             this.group3d.add(sharedMesh);
                             return;
@@ -572,7 +573,15 @@
                 }
             }
 
-            if (this.leftLeg) {
+            if (this.sharedModel && typeof this.sharedModel.userData?.animate === 'function') {
+                this.animTime = (this.animTime || 0) + dt;
+                const anim = this.hitReactTimer > 0
+                    ? 'hurt'
+                    : (this.attackWindupTimer > 0
+                        ? ((this.pendingAttack === 'slam' || this.pendingAttack === 'charge') ? 'special' : 'attack')
+                        : (walkDistance > 0.05 ? 'move' : 'idle'));
+                this.sharedModel.userData.animate(this.animTime, anim);
+            } else if (this.leftLeg) {
                 this.walkPhase = ((this.walkPhase || 0) + walkDistance / 8) % (Math.PI * 2);
                 const stride = Math.sin(this.walkPhase) * Math.min(1, dt > 0 ? walkDistance / (80 * dt) : 0);
                 const blend = 1 - Math.exp(-18 * dt);

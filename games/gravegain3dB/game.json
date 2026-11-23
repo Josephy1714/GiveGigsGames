@@ -95,6 +95,7 @@
             "graphics/particle-system.js",
             "entities/projectile.js",
             "engine/game-data.js",
+            "engine/skill-trees.js",
             "entities/weapon-factory.js",
             "entities/player.js",
             "entities/enemy.js",

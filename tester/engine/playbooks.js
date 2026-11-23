@@ -265,6 +265,25 @@
       ],
       preferredKeys: ["d", "w", "s", "a", "p"]
     },
+    gravegain2dE: {
+      slug: "gravegain2dE",
+      controls:
+        "1P: WASD/Arrows move · W/Space jump · J/Z attack · K/X special · L/Shift shield/dodge · U smash · 2P: Arrows + Numpad 1/2/3 · Touch & Gamepad",
+      goal: "Knock rival MoonRock heroes past the blast zones in 2-4 fighter brawls or conquer the 5-stage Arcade Gauntlet.",
+      boot: [
+        "Pick one of the 16 Race x Class heroes from the 4x4 roster grid and choose a MoonRock stage.",
+        "Click MASH! START BRAWL (#deployBtn) to launch the match."
+      ],
+      autoplay: [
+        "Click #deployBtn to start a Brawl if on #menuScreen.",
+        "Move with A/D, jump with W, strike with J, fire directional specials with K, and shield with L."
+      ],
+      tips: [
+        "Press Down + Attack in mid-air for a Meteor Spike.",
+        "Break floating Ley Cores to charge your Race Ultimate Art, then press Special."
+      ],
+      preferredKeys: ["a", "d", "w", "s", "j", "k", "l", "u"]
+    },
     gravegain3dA: {
       slug: "gravegain3dA",
       controls:

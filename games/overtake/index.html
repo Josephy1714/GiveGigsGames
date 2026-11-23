@@ -16,7 +16,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://overtake-assets.vercel.app" crossorigin>
     <link data-optional-fonts="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="game.css">
     <script src="game.json" type="application/json" id="game-metadata"></script>
@@ -74,18 +73,55 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
         <div class="TEMPLATE-4weird-game-frame overtake-frame">
             <div class="overtake-shell" id="overtake-game-root">
                 <main id="app" data-mode="menu" data-menu="main" data-title-image="false">
+                    <canvas id="skyCanvas" width="1280" height="720"></canvas>
+                    <canvas id="babylonCanvas" width="1280" height="720"></canvas>
                     <canvas id="gameCanvas" width="1280" height="720"></canvas>
                     <canvas id="miniMapCanvas" width="168" height="168" aria-label="Race minimap" hidden></canvas>
 
+                    <div id="itemBoxHud" class="item-box-hud" aria-live="polite" hidden>
+                        <div class="item-slot-frame">
+                            <span id="itemIcon" class="item-icon">?</span>
+                        </div>
+                        <div class="item-meta">
+                            <strong id="itemName">NO ITEM</strong>
+                            <small id="itemHint">[E] / CLICK</small>
+                        </div>
+                    </div>
+
+                    <div id="coinBonusHud" class="coin-bonus-hud hud-item" aria-live="polite" hidden>
+                        <span>Coins <em id="hudCoinSpeedBonus" class="hud-mode-badge">+0% SPD</em></span>
+                        <strong id="hudRaceCoins">🪙 0 / 10</strong>
+                    </div>
+
+                    <div id="raceProgressBar" class="race-progress-bar" aria-hidden="true" hidden>
+                        <div class="race-progress-track">
+                            <i id="raceProgressFill"></i>
+                            <div id="raceProgressMarkers" class="race-progress-markers"></div>
+                        </div>
+                        <span id="raceProgressLabel" class="race-progress-label">0%</span>
+                    </div>
+
                     <div id="raceTimer" class="race-timer hud-item" aria-live="polite" hidden>
-                        <span>Time</span>
+                        <span>Time <em id="hudModeBadge" class="hud-mode-badge">RACE</em></span>
                         <strong id="hudTimer">0:00.0</strong>
+                        <small id="hudBestLap" class="hud-subline">Best --:--.-</small>
                     </div>
 
                     <div id="mapStats" class="map-stats" aria-live="polite" hidden>
                         <div class="hud-item"><span>Lap</span><strong id="hudLap">1 / 3</strong></div>
-                        <div class="hud-item"><span>Place</span><strong id="hudPlace">1 / 1</strong></div>
+                        <div class="hud-item"><span>Place <em id="hudPlaceDelta" class="place-delta"></em></span><strong id="hudPlace">1 / 1</strong></div>
                     </div>
+
+                    <div id="comboHud" class="combo-hud" aria-live="polite" hidden>
+                        <div class="combo-row">
+                            <strong id="comboMultiplier">x1</strong>
+                            <span id="comboLabel">OVERTAKE STREAK</span>
+                        </div>
+                        <div class="combo-bar"><i id="comboTimerFill"></i></div>
+                    </div>
+
+                    <div id="calloutStack" class="callout-stack" aria-live="polite"></div>
+                    <div id="incomingWarning" class="incoming-warning" role="alert" hidden>⚠ INCOMING AIRSTRIKE — SHIELD OR BRACE!</div>
 
                     <div id="driveHud" class="drive-hud" aria-live="polite" hidden>
                         <div class="hud-item">
@@ -94,9 +130,14 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                             <div id="nitroMeter" class="meter"><i id="hudNitroFill"></i><span class="nitro-threshold" aria-hidden="true"></span></div>
                         </div>
                         <div id="speedHud" class="hud-item speed-hud">
-                            <span>Speed</span>
-                            <strong id="hudSpeed">0</strong>
+                            <span>Speed <em id="hudSpeedUnit">KM/H</em></span>
+                            <div class="speed-gear-row">
+                                <strong id="hudSpeed">0</strong>
+                                <span id="hudGear" class="gear-badge">G1</span>
+                            </div>
+                            <div id="rpmMeter" class="meter rpm-meter"><i id="hudRpmFill"></i></div>
                         </div>
+                        <div id="buffsHud" class="buffs-hud" hidden></div>
                     </div>
 
                     <button id="pauseButton" class="pause-button" type="button" hidden>Pause</button>
@@ -109,6 +150,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                             <button id="touchRight" class="touch-button touch-button-steer" type="button" aria-label="Steer right">&#9654;</button>
                         </div>
                         <button id="touchNitro" class="touch-button touch-nitro-slam" type="button" aria-label="NITRO slam">NITRO</button>
+                        <button id="touchItem" class="touch-button touch-item-btn" type="button" aria-label="Use Item" hidden>ITEM</button>
                         <div class="touch-cluster touch-cluster-right" aria-label="Pedals">
                             <button id="touchGas" class="touch-button touch-button-pedal touch-gas" type="button" aria-label="Hold to accelerate">GAS</button>
                             <button id="touchBrake" class="touch-button touch-button-pedal touch-brake" type="button" aria-label="Hold to brake">BRK</button>
@@ -122,8 +164,14 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
                     <section id="menuPanel" class="panel">
                         <div class="panel-header">
-                            <h2 class="panel-title">Overtake</h2>
-                            <div id="panelStatus" class="panel-status">Ready</div>
+                            <div class="panel-title-wrap">
+                                <h2 class="panel-title">Overtake</h2>
+                                <span id="panelSubtitle" class="panel-subtitle">Arcade Horizon Racer</span>
+                            </div>
+                            <div class="panel-header-pills">
+                                <div id="panelChallenge" class="panel-challenge" hidden></div>
+                                <div id="panelStatus" class="panel-status">Ready</div>
+                            </div>
                         </div>
                         <div class="panel-body">
                             <div id="menuContent" class="menu-content"></div>
@@ -131,6 +179,22 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                                 <button id="backButton" class="secondary" type="button" hidden>Back</button>
                                 <button id="resumeButton" class="secondary" type="button" hidden>Resume</button>
                             </div>
+                        </div>
+                    </section>
+
+                    <section id="summaryModal" class="summary-modal" aria-live="polite" hidden>
+                        <div class="summary-card">
+                            <div class="summary-head">
+                                <div>
+                                    <span id="summaryEyebrow" class="summary-eyebrow">Race Complete</span>
+                                    <h3 id="summaryTitle" class="summary-title">1st Place</h3>
+                                </div>
+                                <div id="summaryMedal" class="summary-medal">🏆</div>
+                            </div>
+                            <div id="summaryStats" class="summary-stats"></div>
+                            <div id="summaryCoins" class="summary-coins"></div>
+                            <div id="summaryBadges" class="summary-badges" hidden></div>
+                            <div id="summaryActions" class="summary-actions"></div>
                         </div>
                     </section>
 
