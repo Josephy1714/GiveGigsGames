@@ -354,7 +354,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const vehicleThrowHeight=airborneImpact?Math.max(0,7.8*vehicleElapsed-6.6*vehicleElapsed*vehicleElapsed):0;
    const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:g.vehicleImpactType==="front"?2:2+(impactPulse*.18);
    jayRig.root.position.x=playerX+(airborneImpact?Math.sin(vehicleElapsed*7)*.48:0);
-   jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:(g.rampState?rampSurfaceY:jumpY-landingPulse*.045));
+   jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:(g.rampState?rampSurfaceY:jumpY-landingPulse*.045));mount.dataset.jayRampSurfaceHeight=rampSurfaceY.toFixed(3);mount.dataset.jayRampPhase=g.rampState?.phase||"inactive";mount.dataset.jayRampFeetAligned=String(!g.rampState||Math.abs(jayRig.root.position.y-(rigBaseY+rampSurfaceY))<.001);
    jayRig.root.position.z=vehicleThrowZ;
    jayRig.root.rotation.y=Math.PI+(airborneImpact?Math.sin(vehicleElapsed*5)*.42:0); // Face down the track, away from the follow camera.
    jayRig.root.rotation.z=airborneImpact?Math.sin(vehicleElapsed*8)*1.15:laneLean;

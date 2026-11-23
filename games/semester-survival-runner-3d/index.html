@@ -333,6 +333,28 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   Object.assign(g,saved);
   return result;
  },
+ probeRampVehicle:()=>{
+  if(!g||!g.on||!threeRenderer)return null;
+  const savedGame=g;
+  const lane=savedGame.lane;
+  g={...savedGame,d:0,speed:savedGame.baseSpeed,difficulty:getDifficultyProfile(0),spawn:999,obs:[{lane,z:.84,label:"RAMP LOADER",action:"ramp",ramp:true}],pick:[],bonus:[],energy:100,inv:999,hit:false,hitTimer:0,recoveryTimer:0,pendingFinish:null,jump:0,slide:0,slidePhase:null,rampState:null,bossAt:99999,bossActive:false,bossQueue:[]};
+  const snapshot=()=>({phase:g.rampState?.phase||"inactive",surfaceHeight:Number($("#three-world").dataset.jayRampSurfaceHeight),feetAligned:$("#three-world").dataset.jayRampFeetAligned==="true",animation:$("#three-world").dataset.activeAnimation,rampCount:Number($("#three-world").dataset.activeRampVehicles),rampActive:g.obs.some(o=>o.ramp&&o.rampActive),jump:g.jump});
+  tick(.016);render(g);
+  const boarding=snapshot();
+  for(let i=0;i<24;i++)tick(.02);
+  render(g);
+  const climbing=snapshot();
+  act("jump");tick(.016);render(g);
+  const jumpOff=snapshot();
+  for(let i=0;i<40;i++)tick(.02);
+  render(g);
+  const exited=snapshot();
+  for(let i=0;i<30;i++)tick(.04);
+  render(g);
+  const recycled=snapshot();
+  g=savedGame;render(g);
+  return {boarding,climbing,jumpOff,exited,recycled};
+ },
  probeLateBus:()=>{
   if(!g||!g.on||!threeRenderer)return null;
   const saved=g.obs;

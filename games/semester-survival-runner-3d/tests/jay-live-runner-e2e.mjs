@@ -9,14 +9,14 @@ try{
  const errors=[];
  page.on("pageerror",e=>errors.push(e.message));
  page.on("console",m=>{if(m.type()==="error")errors.push(m.text())});
- await page.route("**/games/semester-survival-runner-3d/index.html",async route=>{
+ await page.route("**/games/semester-survival-runner-3d/index.html*",async route=>{
   const response=await route.fetch();
   let body=await response.text();
   body=body.replace("https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","/games/semester-survival-runner-3d/.ci-test/node_modules/three/build/three.module.js");
   body=body.replace("https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/","/games/semester-survival-runner-3d/.ci-test/node_modules/three/examples/jsm/");
   await route.fulfill({response,body});
  });
- await page.goto("http://127.0.0.1:4174/games/semester-survival-runner-3d/index.html",{waitUntil:"networkidle",timeout:60000});
+ await page.goto("http://127.0.0.1:4174/games/semester-survival-runner-3d/index.html?smoke=1",{waitUntil:"networkidle",timeout:60000});
  const mount=page.locator("#three-world");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.rendererReady==="true",{timeout:60000});
  const initial=await mount.evaluate(el=>({...el.dataset,canvasCount:el.querySelectorAll("canvas").length,canvasWidth:el.querySelector("canvas")?.width,canvasHeight:el.querySelector("canvas")?.height}));
@@ -41,6 +41,19 @@ try{
  await page.keyboard.press("ArrowDown");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000}).catch(async error=>{const state=await mount.evaluate(el=>({...el.dataset}));throw new Error("Slide input did not activate. Live renderer telemetry: "+JSON.stringify(state)+"; browser errors: "+errors.join(" | ")+"; original: "+error.message)});
  await page.waitForTimeout(250);
+ const ramp=await page.evaluate(()=>window.__runnerSmoke.probeRampVehicle());
+ assert.ok(ramp,"Ramp vehicle browser probe should run.");
+ assert.equal(ramp.boarding.phase,"climbing","Jay should board the incoming ramp vehicle.");
+ assert.equal(ramp.boarding.rampCount,1,"The ramp vehicle must render as a real pooled 3D object.");
+ assert.ok(ramp.boarding.surfaceHeight>0.5,"Jay should be raised onto the traversable ramp surface.");
+ assert.equal(ramp.boarding.feetAligned,true,"Jay's feet must follow the ramp surface.");
+ assert.ok(ramp.climbing.surfaceHeight>=1.1,"Jay should reach the elevated deck.");
+ assert.equal(ramp.jumpOff.phase,"jumpingOff","Jump input should initiate a visible ramp dismount.");
+ assert.equal(ramp.jumpOff.animation,"jump","The existing jump clip should be reused for the dismount.");
+ assert.equal(ramp.jumpOff.feetAligned,true,"Jay's vertical trajectory should remain continuous during dismount.");
+ assert.equal(ramp.exited.phase,"inactive","The ramp state should clear after landing.");
+ assert.equal(ramp.exited.rampActive,false,"The ramp vehicle should resume normal movement after Jay exits.");
+ assert.equal(ramp.recycled.rampCount,0,"The ramp vehicle should recycle only after passing behind the camera.");
  const final=await mount.evaluate(el=>({...el.dataset}));
  assert.equal(final.rendererReady,"true");
  assert.equal(final.activeAnimation,"slide");
