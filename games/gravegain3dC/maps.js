@@ -329,8 +329,8 @@ export const MAPS = {
             { x: -3, y: 1.1, z: 2, w: 2.4, h: 2.2, d: 2.4, style: 'platform' }
         ],
         jumpPads: [
-            { x: -20, y: 0, z: 9, vx: 6, vy: 19, vz: 0, radius: 2.2 },
-            { x: 20, y: 0, z: -9, vx: -6, vy: 19, vz: 0, radius: 2.2 }
+            { x: -16, y: 0, z: 8, vx: 0, vy: 23, vz: 0, radius: 2.4 },
+            { x: 16, y: 0, z: -8, vx: 0, vy: 23, vz: 0, radius: 2.4 }
         ],
         hazards: [],
         playerSpawn: [0, 0, -17],
