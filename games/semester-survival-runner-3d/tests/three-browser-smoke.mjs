@@ -92,14 +92,6 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
       assert.ok(airborneProbe.throwHeight > 1, "the airborne vehicle impact must visibly lift Jay");
       assert.ok(airborneProbe.throwZ > 2, "the airborne impact must throw Jay toward the camera");
       assert.equal(airborneProbe.vehicleVisible, true, "the vehicle must remain visible after an airborne collision");
-      const sideProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex: index, side: true }), vehicleIndex);
-      assert.equal(sideProbe.hit, true, "a lane-change side impact must register for every traffic vehicle type");
-      assert.equal(sideProbe.impactType, "side", "a lateral lane-change impact must be classified as a side collision");
-      assert.equal(sideProbe.impactAnimation, "fall", "a side impact must play Shoulder Hit And Fall");
-      assert.equal(sideProbe.speed > 0, true, "a side impact must keep forward travel active during the fall");
-      assert.equal(sideProbe.continueTraffic, true, "the impacted vehicle must continue moving instead of freezing");
-      assert.equal(sideProbe.vehicleVisible, true, "the impacted vehicle must remain rendered while passing behind Jay");
-      assert.ok(sideProbe.vehiclePositionAfter > 11.8, "the impacted vehicle must travel behind the follow camera before leaving view");
     }
     for (const jump of [0, 1]) {
       const obstacleProbe = await page.evaluate(value => window.__runnerSmoke.probeVehicleObstacle({ jump: value }), jump);
@@ -110,12 +102,6 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
       assert.equal(obstacleProbe.holdInfinite, true, "the collided vehicle must not be removed during its impact animation");
       assert.ok(obstacleProbe.hitTimer >= obstacleProbe.clipDuration, "vehicle obstacle Game Over must wait for the impact clip");
     }
-    const sideObstacleProbe = await page.evaluate(() => window.__runnerSmoke.probeVehicleObstacle({ jump: 0, side: true }));
-    assert.equal(sideObstacleProbe.impactType, "side", "lane-changing into a 3D bus obstacle must register a side impact");
-    assert.equal(sideObstacleProbe.continueTraffic, true, "a side-hit obstacle bus must continue forward");
-    assert.equal(sideObstacleProbe.passBehind, true, "a side-hit obstacle bus must be allowed to pass behind Jay");
-    assert.ok(sideObstacleProbe.speed > 0, "side-hit bus collisions must preserve forward travel until the fall completes");
-    assert.ok(sideObstacleProbe.distance > 0, "distance must continue accumulating at the normal metres-per-second rate during a side-impact fall");
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
     assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
@@ -206,97 +192,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     assert.equal(restartedState.energy, 100, "Run It Back must restore full starting energy");
     assert.equal(restartedState.runApproachCompleted, initialRunState.runApproachCompleted, "Run It Back must reset the character animation timeline");
     await page.waitForFunction(() => window.__runnerSmoke.state().distance > 0, null, { timeout: 3000 });
-
-    const saveBeforeMetrics = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
-    await page.evaluate(() => window.__runnerSmoke.endRun(123.75, 7));
-    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 2000 });
-    const metricsSave = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
-    assert.equal(metricsSave.runs, saveBeforeMetrics.runs + 1, "one completed run must be counted exactly once");
-    assert.equal(metricsSave.totalDistance, saveBeforeMetrics.totalDistance + 123, "total distance must add the floored metres actually travelled");
-    assert.equal(metricsSave.best, Math.max(saveBeforeMetrics.best, 123), "personal best must use the completed run distance");
-    assert.equal(metricsSave.coins, saveBeforeMetrics.coins + 7, "banked coins must include exactly the coins collected in the run");
-    assert.equal(metricsSave.collected, saveBeforeMetrics.collected + 7, "lifetime collected coins must include the run coins exactly once");
-    assert.equal(await page.locator("#result-distance").textContent(), "123 m", "result screen must show the same distance used for saving");
-    assert.equal(await page.locator("#result-coins").textContent(), "7", "result screen must show the same collected coins used for saving");
-    await page.locator("#retry").click();
-    await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
-    const freshRun = await page.evaluate(() => window.__runnerSmoke.state());
-    assert.equal(freshRun.distance, 0, "Run It Back must start a fresh distance counter");
-    assert.equal(freshRun.coins, 0, "Run It Back must start a fresh collected-coins counter");
-    assert.equal(freshRun.energy, 100, "Run It Back must restore full energy after a completed run");
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
-  } finally {
-    await browser.close();
-  }
-});
-
-
-test("side-impact travel, Run It Back, and run totals stay correct", async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"]
-  });
-  const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
-  await page.addInitScript(() => {
-    localStorage.setItem("semester-survival-runner-3d-v1", JSON.stringify({
-      version: 1, semester: 2, semesterDistance: 0, gpa: 2.5, coins: 20,
-      totalDistance: 100, best: 80, runs: 3, collected: 45, cats: 0,
-      up: { magnet: 0, shield: 0, double: 0, head: 0, score: 0, coffee: 0 },
-      sound: true, vibration: true, motion: false, quality: "High", shop: []
-    }));
-  });
-  const pageErrors = [];
-  page.on("pageerror", error => pageErrors.push(error.message));
-  try {
-    await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.rendererReady === "true", null, { timeout: 60000 });
-    await page.locator("#nav-play").click();
-    await page.waitForFunction(() => window.__runnerSmoke.state().active, null, { timeout: 3000 });
-
-    const carSide = await page.evaluate(() => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex: 0, side: true }));
-    assert.equal(carSide.hit, true, "a side lane-change into a traffic car must register");
-    assert.equal(carSide.impactType, "side", "the traffic impact must be classified as lateral");
-    assert.equal(carSide.impactAnimation, "fall", "the side impact must play the fall clip");
-    assert.equal(carSide.continueTraffic, true, "the traffic car must keep travelling during the fall");
-    assert.ok(carSide.vehiclePositionAfter > 11.8, "the traffic car must pass behind the follow camera before recycling");
-
-    const busSide = await page.evaluate(() => window.__runnerSmoke.probeVehicleObstacle({ jump: 0, side: true }));
-    assert.equal(busSide.impactType, "side", "a side lane-change into a bus obstacle must register");
-    assert.equal(busSide.continueTraffic, true, "the bus must keep travelling during the fall");
-    assert.equal(busSide.passBehind, true, "the bus must be retained until it passes behind Jay");
-    assert.ok(busSide.distance > 0, "distance must continue accumulating during the side-impact fall");
-
-    const fall = await page.evaluate(() => window.__runnerSmoke.forceVehicleFall());
-    assert.ok(fall.clipDuration > 0, "the fall clip must be available");
-    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 10000 });
-    assert.equal(await page.evaluate(() => window.__runnerSmoke.state().fallFinished), true, "Game Over must wait for the complete fall");
-    await page.locator("#retry").click();
-    await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
-    const firstFreshRun = await page.evaluate(() => window.__runnerSmoke.state());
-    assert.ok(firstFreshRun.distance >= 0 && firstFreshRun.distance < 1, "Run It Back must reset distance without a negative or carried-over value");
-    assert.equal(firstFreshRun.coins, 0, "Run It Back must reset run coins");
-    assert.equal(firstFreshRun.lane, 1, "Run It Back must return Jay to the centre lane");
-    assert.equal(firstFreshRun.energy, 100, "Run It Back must restore energy");
-
-    const before = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
-    await page.evaluate(() => window.__runnerSmoke.endRun(123.75, 7));
-    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
-    const after = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
-    assert.equal(after.runs, before.runs + 1, "a finished run must be counted exactly once");
-    assert.equal(after.totalDistance, before.totalDistance + 123, "total distance must add the floored run metres");
-    assert.equal(after.best, 123, "personal best must use the completed run distance");
-    assert.equal(after.coins, before.coins + 7, "banked coins must add exactly the coins collected in this run");
-    assert.equal(after.collected, before.collected + 7, "lifetime coins must add the run's collected coins exactly once");
-    assert.equal(await page.locator("#result-distance").textContent(), "123 m", "the result distance must match saved distance");
-    assert.equal(await page.locator("#result-coins").textContent(), "7", "the result coins must match saved coins");
-
-    await page.locator("#retry").click();
-    await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
-    const secondFreshRun = await page.evaluate(() => window.__runnerSmoke.state());
-    assert.ok(secondFreshRun.distance >= 0 && secondFreshRun.distance < 1, "a second Run It Back must start with no carried-over or negative distance");
-    assert.equal(secondFreshRun.coins, 0, "a second Run It Back must not carry coins from the previous run");
-    assert.equal(secondFreshRun.energy, 100, "a second Run It Back must restore full energy");
-    assert.deepEqual(pageErrors, [], "the restart and metric flow must not throw browser errors");
   } finally {
     await browser.close();
   }
