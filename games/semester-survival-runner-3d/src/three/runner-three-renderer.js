@@ -321,7 +321,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
  }
- return {render,resize,setQuality:applyQuality,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},probeImpactCamera(g){
+ return {render,resize,setQuality:applyQuality,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},get runApproachCompleted(){return jayRig.runApproachCompleted;},probeImpactCamera(g){
   if(!g)return null;
   const base=cameraBaseX,scale=Number.isFinite(Number(g.impactShakeScale))?Number(g.impactShakeScale):1;
   const sample=(hitTimer,time)=>{const impact=clamp(hitTimer/.62,0,1)*scale;const shakeX=Math.sin(time*48)*impact*.035,shakeY=Math.sin(time*36)*impact*.025;return {base,world:base+shakeX,shakeX,shakeY};};
