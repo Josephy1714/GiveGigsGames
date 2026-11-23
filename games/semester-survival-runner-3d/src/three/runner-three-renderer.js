@@ -232,6 +232,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    // Stop the vehicle at the first safe contact plane; never let its geometry pass through Jay.
    vehicle.position.z=contactBoundary;vehicle.userData.previousCollisionZ=contactBoundary;
    g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.vehicleImpactType=airborne?"airborne":"front";
+   g.vehicleImpactClip=airborne?"jump":"fall";
    g.vehicleImpactStartHeight=airborne?Math.sin((1-Number(g.jump))*Math.PI)*1.12:0;
    g.impactTrafficIndex=vehicle.userData.trafficIndex;g.impactPlayerX=playerX;g.impactShakeScale=airborne?.78:.34;g.speed=0;g.inv=999;
    g.pendingFinish="TRAFFIC COLLISION";g.vehicleImpactDuration=Math.max(1.18,jayRig.getClipDuration(airborne?"jump":"fall")+.1);g.hitTimer=g.vehicleImpactDuration;g.recoveryTimer=0;
@@ -335,7 +336,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  },probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
   const vehicle=traffic[vehicleIndex]||traffic[0],savedPositions=traffic.map(item=>item.position.clone()),savedPlayerX=playerX;
-  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactPlayerX","impactShakeScale","vehicleImpactDuration","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
+  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","vehicleImpactClip","impactTrafficIndex","impactPlayerX","impactShakeScale","vehicleImpactDuration","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
   const saved={};for(const key of keys)saved[key]=g[key];
   const internal={lastGameT,wasHit,impactPulse,landingPulse,previousJump,cameraBaseX};
   traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.speed=367;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactTrafficIndex=null;g.impactPlayerX=playerX;g.impactShakeScale=1;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
