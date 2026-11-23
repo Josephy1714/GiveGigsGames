@@ -1,52 +1,63 @@
 {
-    "title": "The Speed Portal",
-    "slug": "the-speed-portal",
-    "description": "Race through three tunnel sectors with patterned barriers and speed rings.",
-    "genre": "Tunnel Racer",
-    "tags": ["HTML5", "Action", "Three.js", "Racing"],
-    "maker": {
-        "name": "Madi AI Creative Team",
-        "bio": "Building the future of autonomous revenue engines.",
-        "url": "https://madi.ai",
-        "urlLabel": "Website"
-    },
-    "credits": [
-        {
-            "name": "Madi AI Team",
-            "role": "Game Creators",
-            "avatar": "⚡",
-            "primary": true,
-            "url": "https://madi.ai",
-            "urlLabel": "Website"
-        }
-    ],
-    "controls": {
-        "keyboard": {
-            "A / D or Arrow Keys": "Steer Left / Right (Rotate inside tunnel)",
-            "P / Esc": "Pause"
-        },
-        "touch": true,
-        "mouse": true
-    },
-    "instructions": "Steer around red barriers and collect green speed rings. Clear all three sectors to reach the 810m finish.",
-    "technical": {
-        "canvasSize": {"width": 800, "height": 600},
-        "targetFPS": 60,
-        "mobileOptimized": true
-    },
-    "assets": {
-        "external": [
-            {
-                "type": "script",
-                "url": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
-                "description": "Three.js Library"
-            }
-        ],
-        "local": ["game.js", "game.css"]
-    },
-    "meta": {
-        "version": "1.0.0",
-        "created": "2026-06-16",
-        "license": "Private"
+  "title": "The Speed Portal",
+  "slug": "the-speed-portal",
+  "description": "Race endlessly through 4 3D tunnel distance zones (Warmup, Overclock, Hyperdrive, Singularity), dodging barriers and laser spokes while threading speed rings.",
+  "genre": "Tunnel Racer",
+  "tags": [
+    "HTML5",
+    "Action",
+    "Three.js",
+    "Racing"
+  ],
+  "maker": {
+    "name": "Madi AI Creative Team",
+    "bio": "Building the future of autonomous revenue engines.",
+    "url": "https://madi.ai",
+    "urlLabel": "Website"
+  },
+  "credits": [
+    {
+      "name": "Madi AI Team",
+      "role": "Game Creators",
+      "avatar": "⚡",
+      "primary": true,
+      "url": "https://madi.ai",
+      "urlLabel": "Website"
     }
+  ],
+  "controls": {
+    "keyboard": {
+      "A / D or Arrow Keys": "Steer Left / Right (Rotate inside tunnel)",
+      "P / Esc": "Pause"
+    },
+    "touch": true,
+    "mouse": true
+  },
+  "instructions": "Rotate around the tunnel interior with A/D or Left/Right to dodge red barriers and laser spokes. Thread emerald speed rings for boosts and to recharge your Energy Shield every 3 rings.",
+  "technical": {
+    "canvasSize": {
+      "width": 800,
+      "height": 600
+    },
+    "targetFPS": 60,
+    "mobileOptimized": true
+  },
+  "assets": {
+    "external": [
+      {
+        "type": "script",
+        "url": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+        "description": "Three.js Library"
+      }
+    ],
+    "local": [
+      "game.js",
+      "game.css"
+    ]
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-06-16",
+    "license": "Private"
+  }
 }

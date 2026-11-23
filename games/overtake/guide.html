@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Overtake — Walkthrough</title>
+  <style>
+    :root { color-scheme: dark; --accent: #38bdf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #07111d; color: #e2e8f0; line-height: 1.65; padding: clamp(14px, 3vw, 24px); }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 14px; color: var(--accent); letter-spacing: -0.02em; }
+    h2 { font-size: 18px; margin: 0 0 10px; color: var(--accent); }
+    section { background: #0d1b29; border: 1px solid #24364a; border-radius: 14px; padding: 16px 20px; margin-bottom: 14px; }
+    p { margin: 0 0 10px; color: #cbd5e1; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin: 0; color: #cbd5e1; }
+    li + li { margin-top: 6px; }
+    strong { color: #f8fafc; }
+    code { background: #060e18; padding: 2px 6px; border-radius: 4px; color: #fde68a; font-size: 0.92em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 8px; }
+    .card { background: #122437; border: 1px solid #2b4258; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #cbd5e1; }
+    .card strong { display: block; margin-bottom: 4px; color: #f8fafc; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🏁 Overtake — Walkthrough</h1>
+  <section>
+    <h2>Objective & Modes</h2>
+    <p>Chain clean overtakes, slipstream boosts, and tight corner drifts across 6 routes in this Babylon.js + canvas hybrid 3D racer.</p><ul>
+      <li><strong>4 Modes:</strong> <em>Race</em>, <em>Time Trial</em>, <em>Knockout</em>, and <em>Endless</em>, each playable in <strong>Forward</strong> or <strong>Reverse</strong> across <strong>Rookie</strong>, <strong>Pro</strong>, and <strong>Ace</strong>.</li>
+      <li><strong>6 Routes:</strong> <em>Desert Run</em>, <em>Urban Sprint</em>, <em>Neon Night</em>, <em>Alpine Summit</em>, <em>Cyber Coast</em>, and <em>Stadium Circuit</em>.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Controls</h2>
+    <ul>
+      <li><strong>Keyboard:</strong> <code>←</code>/<code>→</code> or <code>A</code>/<code>D</code> steer; <code>↑</code>/<code>W</code> throttle; <code>↓</code>/<code>S</code> brake/drift; <code>Space</code>/<code>Shift</code>/<code>N</code> nitro; <code>E</code>/<code>Q</code>/<code>F</code>/<code>Enter</code> use held Kart item; <code>R</code> restart race; <code>P</code>/<code>Esc</code> pause.</li>
+      <li><strong>Touch:</strong> On-screen Steer Left/Right, Gas/Brake pedals, Nitro slam, Item trigger, and optional Gyro Tilt toggle.</li>
+      <li><strong>Gamepad:</strong> Native controller support — Left Stick steer, RT/A throttle, LT/B brake, X/RB nitro, Y/LB item, Start pause.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Garage, Pickups & Items</h2>
+    <ul>
+      <li><strong>6 Cars & Upgrades:</strong> Unlock <em>Comet 90</em> ($0), <em>Veloce S</em> (700), <em>Strada GT</em> (1,700), <em>NX Prototype</em> (3,400), <em>Apex V12</em> (5,200), and <em>Hyperion X</em> (7,800), plus Engine, Nitro, Tires, and Paint tuning.</li>
+      <li><strong>Powerups & Kart Items:</strong> Grab 6 powerups (<em>Nitro</em>, <em>Shield</em>, <em>Airstrike</em>, <em>EMP</em>, <em>Magnet</em>, <em>Overdrive</em>) and 12 active Kart items (<em>Rocket</em>, <em>Missile</em>, <em>Oil Slick</em>, <em>Bubble</em>, <em>All-Star</em>, <em>Ice Beam</em>, <em>EMP Storm</em>, etc.) while dodging oil, water, and sand.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Strategy & Saves</h2>
+    <ul>
+      <li><strong>Tips:</strong> Draft directly behind traffic to build slipstream speed, tap steering lightly at top speed, and save Nitro for straightaways after corners. Complete the 10 Career Achievements for 150–600 coin payouts.</li>
+      <li><strong>Saves:</strong> Stored in <code>localStorage</code> under <code>pseudo3d-racer-save</code>.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

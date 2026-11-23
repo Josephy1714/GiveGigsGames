@@ -1,42 +1,45 @@
 {
-    "title": "GraveGain3DC",
-    "slug": "gravegain3dC",
-    "description": "A fast-paced Xonotic-inspired 3D arena FPS built with Babylon.js across 3 arenas (Neon Courtyard, Void Spires, Magma Foundry) and 3 modes (Player Control, Auto-Battler Roguelite, RTS Squad). Features strafe-jumping, bunny-hopping, rocket jumping, dash mobility, jump pads, and a mix of melee and ranged AI opponents. In Player Control, command two tactical companions and collect scrap to upgrade them in the field.",
-    "genre": "FPS",
-    "tags": [
-        "HTML5",
-        "Action",
-        "FPS",
-        "Shooter",
-        "Arena",
-        "Babylon.js",
-        "WebGL",
-        "3D"
-    ],
-    "maker": {
-        "name": "Antigravity Dev",
-        "bio": "Specializing in high-fidelity HTML5 game experiences with immersive systems and rich game-feel.",
-        "url": "https://4weird.com",
-        "urlLabel": "4weird"
+  "title": "GraveGain3DC",
+  "slug": "gravegain3dC",
+  "description": "A fast-paced Xonotic-inspired 3D arena FPS built with Babylon.js across 4 arenas (Neon Courtyard, Void Spires, Magma Foundry, Cargo Shipment) and 3 modes (Player Control, Auto-Battler Roguelite, RTS Squad). Features strafe-jumping, bunny-hopping, rocket jumping, dash mobility, jump pads, and AI opponents.",
+  "genre": "FPS",
+  "tags": [
+    "HTML5",
+    "Action",
+    "FPS",
+    "Shooter",
+    "Arena",
+    "Babylon.js",
+    "WebGL",
+    "3D"
+  ],
+  "maker": {
+    "name": "Antigravity Dev",
+    "bio": "Specializing in high-fidelity HTML5 game experiences with immersive systems and rich game-feel.",
+    "url": "https://4weird.com",
+    "urlLabel": "4weird"
+  },
+  "controls": {
+    "keyboard": {
+      "WASD": "Move / Strafe",
+      "Mouse": "Look (Pointer Lock)",
+      "Space": "Jump / Bunny-hop",
+      "Shift": "Dash / Sprint",
+      "Left-Click": "Fire Weapon",
+      "Q": "Order both companions to hold here or follow",
+      "E": "Upgrade the nearby companion you are aiming at",
+      "1-4": "Switch Weapons (Rocket, Railgun, Shotgun, Plasma)",
+      "Escape": "Release Pointer"
     },
-    "controls": {
-        "keyboard": {
-            "WASD": "Move / Strafe",
-            "Mouse": "Look (Pointer Lock)",
-            "Space": "Jump / Bunny-hop",
-            "Shift": "Dash / Sprint",
-            "Left-Click": "Fire Weapon",
-            "Q": "Order both companions to hold here or follow",
-            "E": "Upgrade the nearby companion you are aiming at",
-            "1-4": "Switch Weapons (Rocket, Railgun, Shotgun, Plasma)",
-            "Escape": "Release Pointer"
-        },
-        "touch": true,
-        "mouse": true
+    "touch": true,
+    "mouse": true
+  },
+  "technical": {
+    "canvasSize": {
+      "width": 1280,
+      "height": 720
     },
-    "technical": {
-        "canvasSize": { "width": 1280, "height": 720 },
-        "targetFPS": 120,
-        "mobileOptimized": true
-    }
+    "targetFPS": 120,
+    "mobileOptimized": true
+  }
 }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Template Demo — Walkthrough</title>
+  <style>
+    :root { color-scheme: dark; --accent: #82f2c3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #07111d; color: #e2e8f0; line-height: 1.65; padding: clamp(14px, 3vw, 24px); }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 14px; color: var(--accent); letter-spacing: -0.02em; }
+    h2 { font-size: 18px; margin: 0 0 10px; color: var(--accent); }
+    section { background: #0d1b29; border: 1px solid #24364a; border-radius: 14px; padding: 16px 20px; margin-bottom: 14px; }
+    p { margin: 0 0 10px; color: #cbd5e1; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin: 0; color: #cbd5e1; }
+    li + li { margin-top: 6px; }
+    strong { color: #f8fafc; }
+    code { background: #060e18; padding: 2px 6px; border-radius: 4px; color: #fde68a; font-size: 0.92em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 8px; }
+    .card { background: #122437; border: 1px solid #2b4258; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #cbd5e1; }
+    .card strong { display: block; margin-bottom: 4px; color: #f8fafc; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🎮 Template Demo — Walkthrough</h1>
+  <section>
+    <h2>Overview</h2>
+    <p>A playable demonstration of the standard 4weird HTML5 canvas game shell, showing movement bounds, color cycling, pause/restart overlays, and <code>localStorage</code> high-score persistence.</p><ul>
+      <li><strong>Scoring:</strong> Earn +1 point every 60 frames alive and +10 points each time you cycle the orb through its 5 neon colors.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Controls & Saves</h2>
+    <ul>
+      <li><strong>Keyboard & Touch:</strong> <code>Arrow Keys</code> or <code>WASD</code> (or touch drag) move the orb; <code>Space</code> (or tap) cycles colors; <code>P</code>/<code>Esc</code> pause.</li>
+      <li><strong>Saves:</strong> Best score saves to <code>localStorage</code> under <code>template-demo_highScore</code>.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

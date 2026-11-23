@@ -1,325 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0a0a0f">
-    <style>
-        /* Guide touch pass: 44px targets, no horizontal overflow on phones */
-        .toc-link, .read-more-btn { min-height: 44px; touch-action: manipulation; }
-        table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        body { overscroll-behavior-y: none; }
-        @media (max-width: 700px) {
-            .container { padding: 12px; }
-            .entity-grid { grid-template-columns: 1fr; }
-        }
-    </style>
-    <title>Fridge Simulator - Game Guide</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --theme-bg: linear-gradient(135deg, #0a0a0f 0%, #111827 50%, #061f1d 100%);
-            --theme-primary: #10b981;
-            --theme-primary-light: #34d399;
-            --theme-primary-rgb: 16, 185, 129;
-            --theme-glow: rgba(16, 185, 129, 0.3);
-            --theme-card-bg: rgba(31, 41, 55, 0.95);
-            --theme-section-bg: rgba(17, 24, 39, 0.85);
-        }
-    </style>
-  <script>
-    if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-      var vercelAnalyticsScript = document.createElement("script");
-      vercelAnalyticsScript.defer = true;
-      vercelAnalyticsScript.src = "/_vercel/insights/script.js";
-      document.head.appendChild(vercelAnalyticsScript);
-    }
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fridge Simulator — Walkthrough</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #071316; color: #e5e7eb; line-height: 1.65; padding: 24px; }
+    main { max-width: 860px; margin: 0 auto; }
+    h1, h2, h3 { color: #34d399; margin-top: 0; }
+    section { background: #111827; border: 1px solid #10b98144; border-radius: 14px; padding: 18px 22px; margin-bottom: 16px; }
+    ul { padding-left: 20px; margin: 8px 0 0; }
+    li + li { margin-top: 6px; }
+    code { background: #071316; padding: 2px 6px; border-radius: 4px; color: #6ee7b7; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+    .card { background: #1f2937; border: 1px solid #10b98133; border-radius: 10px; padding: 12px 14px; }
+    .card strong { color: #f9fafb; display: block; margin-bottom: 4px; }
+    .tip { padding: 12px 14px; border-left: 3px solid #10b981; background: #064e3b44; border-radius: 0 8px 8px 0; margin-top: 12px; }
+  </style>
 </head>
-<body data-game-title="FRIDGE SIMULATOR" data-game-emoji="🍳" data-game-tagline="Official Game Guide & Resource Almanac">
-    <div class="container">
-
-        <div class="toc">
-            <h3>📋 Quick Navigation</h3>
-            <div class="toc-links">
-                <a href="#countries" class="toc-link">🌍 Managed Countries (5 Types)</a>
-                <a href="#shops" class="toc-link">🛒 Food Suppliers (5 Types)</a>
-                <a href="#nutrition" class="toc-link">🍏 Food &amp; Nutrition</a>
-                <a href="#almanac" class="toc-link">📖 Food Almanac (34 Foods)</a>
-                <a href="#upgrades" class="toc-link">❄️ Fridge Upgrades</a>
-                <a href="#events" class="toc-link">📰 Daily Events &amp; Strategy</a>
-                <a href="#cloud-saves" class="toc-link">☁️ Cloud Saves</a>
-            </div>
-        </div>
-
-        <!-- COUNTRIES SECTION -->
-        <section class="section" id="countries">
-            <h2>🌍 MANAGED COUNTRIES</h2>
-            <p style="margin-bottom: 30px; color: #9ca3af;">Each country has distinct population sizes, budget contributions, and food preferences. Unlock them as the days progress.</p>
-            <div class="entity-grid">
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🇺🇸</div>
-                        <div>
-                            <div class="entity-name">USA</div>
-                            <div class="entity-type">Unlocked: Day 1</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Large family with a substantial budget but unhealthy preferences.</div>
-                    <div class="entity-details">
-                        <p>The USA has a family size of 4. They pay up to $300 in taxes each day when all members are alive. Their dietary preferences are fast food items: burgers, pizzas, hotdogs, fries, and donuts. Fulfilling their requests yields high financial returns.</p>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat"><div class="stat-label">Size</div><div class="stat-value">4 Members</div></div>
-                        <div class="stat"><div class="stat-label">Max Tax</div><div class="stat-value">$300</div></div>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🇯🇵</div>
-                        <div>
-                            <div class="entity-name">Japan</div>
-                            <div class="entity-type">Unlocked: Day 3</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Smaller family, moderate budget, prefers fish and rice.</div>
-                    <div class="entity-details">
-                        <p>Japan unlocks on Day 3 with a family size of 3 and a tax budget of $250. They prefer traditional Japanese items like sushi, ramen, rice, and dango. Balancing their diet is easier due to high base nutrition preferences.</p>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat"><div class="stat-label">Size</div><div class="stat-value">3 Members</div></div>
-                        <div class="stat"><div class="stat-label">Max Tax</div><div class="stat-value">$250</div></div>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🇮🇳</div>
-                        <div>
-                            <div class="entity-name">India</div>
-                            <div class="entity-type">Unlocked: Day 5</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Very large family, tight budget, prefers vegetarian curries and tea.</div>
-                    <div class="entity-details">
-                        <p>India unlocks on Day 5 with a massive family size of 5 and a lower tax budget of $200. They prefer curry, flatbreads, dumplings, and tea. Feeding them requires high volume, making cheap wholesale buying essential.</p>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat"><div class="stat-label">Size</div><div class="stat-value">5 Members</div></div>
-                        <div class="stat"><div class="stat-label">Max Tax</div><div class="stat-value">$200</div></div>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- SHOPS SECTION -->
-        <section class="section" id="shops">
-            <h2>🛒 FOOD SUPPLIERS</h2>
-            <p style="margin-bottom: 30px; color: #9ca3af;">Procure ingredients from various suppliers. Balancing price, stock types, and quality is key to efficiency.</p>
-            <div class="entity-grid">
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🏪</div>
-                        <div>
-                            <div class="entity-name">Grocery Store</div>
-                            <div class="entity-type">Reliable Standard</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Always fully stocked at standard prices. Perfect reliability.</div>
-                    <div class="entity-details">
-                        <p>The standard Grocery Store has a 1.0x price multiplier and holds all catalog items. Freshness is always 100%. Use it when you need specific items to fulfill family requests or plug severe nutritional gaps.</p>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat"><div class="stat-label">Price</div><div class="stat-value">1.0x</div></div>
-                        <div class="stat"><div class="stat-label">Stock</div><div class="stat-value">Full</div></div>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🗑️</div>
-                        <div>
-                            <div class="entity-name">Dumpster</div>
-                            <div class="entity-type">Risky Freebie</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Free food! However, stock is random and freshness starts at 50%.</div>
-                    <div class="entity-details">
-                        <p>Dumpster diving costs $0. However, the items are completely random, and they spawn partially spoiled (50% freshness). Food will rot quickly, and rotten food (0%) increases sickness. Use only in financial emergencies.</p>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat"><div class="stat-label">Price</div><div class="stat-value">Free</div></div>
-                        <div class="stat"><div class="stat-label">Freshness</div><div class="stat-value">50%</div></div>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- NUTRITION SECTION -->
-        <section class="section" id="nutrition">
-            <h2>🍏 FOOD &amp; NUTRITION</h2>
-            <p style="margin-bottom: 30px; color: #9ca3af;">Each day, families consume food from their local fridge. Food belongs to one of five nutritional groups, which prevents malnutrition.</p>
-            <div class="entity-grid">
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🍗</div>
-                        <div>
-                            <div class="entity-name">Proteins</div>
-                            <div class="entity-type">Group 1</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Includes meats, fish, eggs, and cheese. Critical for baseline stamina.</div>
-                    <div class="entity-details">
-                        <p>Proteins prevent rapid health degradation. Keep the Protein bar filled to avoid severe starvation penalties. USA and Japan families consume high amounts of proteins.</p>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- FOOD ALMANAC SECTION -->
-        <section class="section" id="almanac">
-            <h2>📖 FOOD ALMANAC</h2>
-            <p style="margin-bottom: 20px; color: #9ca3af;">Every stockable food in the catalog (34 items), with the exact hunger restore and Pro / Carb / Vit nutrition the game applies when a family member eats it. In-game bars: <span style="color:#ef4444">Pro</span> / <span style="color:#f59e0b">Carb</span> / <span style="color:#10b981">Vit</span>.</p>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🥬 Produce</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr style="color: #9ca3af; text-align: left;"><th style="padding: 6px;">Food</th><th style="padding: 6px;">Item</th><th style="padding: 6px;">Hunger</th><th style="padding: 6px;">Pro</th><th style="padding: 6px;">Carb</th><th style="padding: 6px;">Vit</th></tr>
-                <tr><td>🍎</td><td>Apple</td><td>+20</td><td>0</td><td>10</td><td>40</td></tr>
-                <tr><td>🍌</td><td>Banana</td><td>+30</td><td>0</td><td>20</td><td>40</td></tr>
-                <tr><td>🍇</td><td>Grapes</td><td>+20</td><td>0</td><td>10</td><td>40</td></tr>
-                <tr><td>🍓</td><td>Strawberry</td><td>+15</td><td>0</td><td>5</td><td>40</td></tr>
-                <tr><td>🍊</td><td>Orange</td><td>+20</td><td>0</td><td>5</td><td>45</td></tr>
-                <tr><td>🍉</td><td>Watermelon</td><td>+25</td><td>0</td><td>5</td><td>30</td></tr>
-                <tr><td>🍑</td><td>Peach</td><td>+20</td><td>0</td><td>10</td><td>40</td></tr>
-                <tr><td>🥦</td><td>Broccoli</td><td>+20</td><td>10</td><td>0</td><td>45</td></tr>
-                <tr><td>🥕</td><td>Carrot</td><td>+15</td><td>0</td><td>10</td><td>40</td></tr>
-                <tr><td>🥬</td><td>Lettuce</td><td>+10</td><td>0</td><td>0</td><td>30</td></tr>
-                <tr><td>🍅</td><td>Tomato</td><td>+15</td><td>0</td><td>5</td><td>35</td></tr>
-                <tr><td>🥒</td><td>Cucumber</td><td>+10</td><td>0</td><td>0</td><td>30</td></tr>
-                <tr><td>🧅</td><td>Onion</td><td>+10</td><td>0</td><td>5</td><td>25</td></tr>
-                <tr><td>🧄</td><td>Garlic</td><td>+5</td><td>0</td><td>0</td><td>20</td></tr>
-            </table>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🧀 Dairy &amp; Fats</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr style="color: #9ca3af; text-align: left;"><th style="padding: 6px;">Food</th><th style="padding: 6px;">Item</th><th style="padding: 6px;">Hunger</th><th style="padding: 6px;">Pro</th><th style="padding: 6px;">Carb</th><th style="padding: 6px;">Vit</th></tr>
-                <tr><td>🥛</td><td>Milk</td><td>+25</td><td>20</td><td>0</td><td>30</td></tr>
-                <tr><td>🧈</td><td>Butter</td><td>+20</td><td>15</td><td>0</td><td>15</td></tr>
-                <tr><td>🧀</td><td>Cheese</td><td>+35</td><td>40</td><td>0</td><td>0</td></tr>
-                <tr><td>🥥</td><td>Coconut</td><td>+30</td><td>10</td><td>10</td><td>30</td></tr>
-                <tr><td>🫒</td><td>Olive</td><td>+15</td><td>0</td><td>0</td><td>30</td></tr>
-                <tr><td>🥑</td><td>Avocado</td><td>+25</td><td>10</td><td>0</td><td>40</td></tr>
-            </table>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🍞 Bakery</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr style="color: #9ca3af; text-align: left;"><th style="padding: 6px;">Food</th><th style="padding: 6px;">Item</th><th style="padding: 6px;">Hunger</th><th style="padding: 6px;">Pro</th><th style="padding: 6px;">Carb</th><th style="padding: 6px;">Vit</th></tr>
-                <tr><td>🍞</td><td>Bread</td><td>+40</td><td>10</td><td>50</td><td>0</td></tr>
-                <tr><td>🥖</td><td>Baguette</td><td>+45</td><td>10</td><td>50</td><td>0</td></tr>
-                <tr><td>🥯</td><td>Bagel</td><td>+40</td><td>10</td><td>50</td><td>0</td></tr>
-            </table>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🍽️ Meals &amp; Staples</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr style="color: #9ca3af; text-align: left;"><th style="padding: 6px;">Food</th><th style="padding: 6px;">Item</th><th style="padding: 6px;">Hunger</th><th style="padding: 6px;">Pro</th><th style="padding: 6px;">Carb</th><th style="padding: 6px;">Vit</th></tr>
-                <tr><td>🍗</td><td>Chicken</td><td>+50</td><td>50</td><td>0</td><td>0</td></tr>
-                <tr><td>🥩</td><td>Steak</td><td>+70</td><td>60</td><td>0</td><td>0</td></tr>
-                <tr><td>🍖</td><td>Ribs</td><td>+60</td><td>50</td><td>0</td><td>0</td></tr>
-                <tr><td>🥚</td><td>Egg</td><td>+30</td><td>30</td><td>0</td><td>0</td></tr>
-                <tr><td>🫘</td><td>Beans</td><td>+40</td><td>30</td><td>20</td><td>0</td></tr>
-                <tr><td>🥜</td><td>Peanuts</td><td>+25</td><td>25</td><td>10</td><td>0</td></tr>
-                <tr><td>🍝</td><td>Pasta</td><td>+55</td><td>10</td><td>60</td><td>0</td></tr>
-                <tr><td>🍚</td><td>Rice</td><td>+35</td><td>0</td><td>50</td><td>0</td></tr>
-                <tr><td>🥔</td><td>Potato</td><td>+40</td><td>0</td><td>30</td><td>15</td></tr>
-                <tr><td>🌽</td><td>Corn</td><td>+30</td><td>0</td><td>30</td><td>15</td></tr>
-            </table>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🐟 Seafood</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <tr style="color: #9ca3af; text-align: left;"><th style="padding: 6px;">Food</th><th style="padding: 6px;">Item</th><th style="padding: 6px;">Hunger</th><th style="padding: 6px;">Pro</th><th style="padding: 6px;">Carb</th><th style="padding: 6px;">Vit</th></tr>
-                <tr><td>🐟</td><td>Fish</td><td>+45</td><td>50</td><td>0</td><td>0</td></tr>
-            </table>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🍰 Desserts</h3>
-            <p style="color: #9ca3af;">No dedicated dessert items are stocked in the current catalog — satisfy sweet demand with fruit from Produce (🍓 Strawberry and 🍑 Peach are the most Vit-dense treats).</p>
-            <h3 style="color: #34d399; margin: 24px 0 12px;">🥤 Drinks</h3>
-            <p style="color: #9ca3af;">No dedicated drink items are stocked in the current catalog — the closest thing to a drink is 🥛 Milk (Dairy &amp; Fats, hunger +25, Pro 20 / Vit 30).</p>
-        </section>
-
-        <!-- UPGRADES SECTION -->
-        <section class="section" id="upgrades">
-            <h2>❄️ FRIDGE UPGRADES</h2>
-            <p style="margin-bottom: 30px; color: #9ca3af;">Upgrade your storage system to optimize logistics and prevent food waste.</p>
-            <div class="entity-grid">
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">❄️</div>
-                        <div>
-                            <div class="entity-name">Deep Freezer</div>
-                            <div class="entity-type">Anti-Spoilage</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Slows food spoilage rate in all fridges by 50%.</div>
-                    <div class="entity-details">
-                        <p>Purchase the Deep Freezer upgrade to halve the speed at which food items decay. Highly recommended when stocking up via wholesale buying or when holding surplus dumpster food.</p>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- EVENTS & STRATEGY SECTION -->
-        <section class="section" id="events">
-            <h2>📰 DAILY EVENTS &amp; STRATEGY TIPS</h2>
-            <div class="tip-box">
-                <strong>💡 Quick Tip:</strong> Always pay attention to the daily news events. A supply chain event can make certain food groups extremely expensive. Plan ahead by stockpiling food items during discount events!
-            </div>
-        </section>
-
-        <!-- CLOUD SAVES SECTION -->
-        <section class="section" id="cloud-saves">
-            <h2>☁️ CLOUD SAVES</h2>
-            <p style="margin-bottom: 20px; color: #9ca3af;">Your run is backed by 4 account-bound cloud slots (0–3). Cloud saves need sign-in — sign in once and the same slots follow you between mobile and desktop in the same session — start stocking fridges on your phone, keep going on your PC. Slot 0 is the auto-start cheat-free slot every game loads first; slots 1–3 are optional alternates.</p>
-            <div class="entity-grid">
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🔄</div>
-                        <div>
-                            <div class="entity-name">Slots 0–3, shared everywhere</div>
-                            <div class="entity-type">Mobile ↔ Desktop</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Read a slot from any device with <code>/api/saves?game=fridgesimulator&amp;slot=N</code> while signed in.</div>
-                    <div class="entity-details">
-                        <p>Reads: <code>GET /api/saves?game=fridgesimulator</code> lists your saves; add <code>&amp;slot=N</code> (0–3) to fetch one slot. Writes: <code>PUT /api/saves</code> with <code>{ "game_slug": "fridgesimulator", "slot": N, "schema_version": 1, "data": {…} }</code>. Saves are keyed to your account, so slot 2 on mobile is slot 2 on desktop. You must be signed in (signed-out reads get a 401).</p>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-
-                <div class="entity-card">
-                    <div class="entity-header">
-                        <div class="entity-emoji">🛡️</div>
-                        <div>
-                            <div class="entity-name">Slot 0 is the auto-start cheat-free slot</div>
-                            <div class="entity-type">Auto-start · Cheat-proof · Every game</div>
-                        </div>
-                    </div>
-                    <div class="entity-short">Every game auto-starts from slot 0 — keep your legit best run there; the server strips cheat markers from it.</div>
-                    <div class="entity-details">
-                        <p>Slot 0 is the auto-start cheat-free slot across every game and can never be marked cheat-moded: any cheat marker sent with a slot-0 save is stripped server-side (enforced again by a database trigger for non-API writes). Slots 1–3 are optional alternates. Cheat marks on slots 1–3 are irreversible — a later save cannot erase them. Cloud saves need sign-in and cannot be deleted or reset from the client, so a cheated slot stays visibly cheated.</p>
-                    </div>
-                    <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
-                </div>
-            </div>
-        </section>
-
+<body>
+<main>
+  <h1>🥶 Fridge Simulator — Walkthrough</h1>
+  <section>
+    <h2>Objective &amp; Controls</h2>
+    <p>Survive <strong>30 days</strong> as a global food coordinator starting with <strong>$1,000</strong>. Keep unlocking household countries fed by buying from 5 suppliers, stocking 12-slot fridges, and balancing <strong>Protein (Pro)</strong>, <strong>Carbohydrates (Carb)</strong>, and <strong>Vitamins (Vit)</strong>.</p>
+    <ul>
+      <li><strong>Mouse &amp; Touch:</strong> Browse supplier tabs, buy food into your central pantry/inventory, click an item then click an empty <code>+</code> fridge slot (or use <strong>Auto-Stock</strong>), and switch mobile tabs (<em>Shop</em>, <em>Fridges</em>, <em>Ledger</em>, <em>Plan</em>).</li>
+      <li><strong>Keyboard:</strong> <code>Space</code> or <code>N</code> advance to Next Day; <code>P</code> or <code>Esc</code> pause/resume; <code>M</code> mute; <code>F</code> fullscreen.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>The 5 Unlocking Countries</h2>
+    <div class="grid">
+      <div class="card"><strong>🇺🇸 USA (Day 1)</strong>4 family members · $300 max tax budget. Prefers burgers, pizza, hotdogs, fries, donuts.</div>
+      <div class="card"><strong>🇯🇵 Japan (Day 3)</strong>3 family members · $250 max tax budget. Prefers sushi, ramen, rice, dango.</div>
+      <div class="card"><strong>🇮🇳 India (Day 5)</strong>5 family members · $200 max tax budget. Prefers curry, flatbreads, dumplings, tea.</div>
+      <div class="card"><strong>🇲🇽 Mexico (Day 7)</strong>4 family members · $280 max tax budget. Prefers tacos, burritos, beans, avocado, corn.</div>
+      <div class="card"><strong>🇮🇹 Italy (Day 9)</strong>3 family members · $320 max tax budget. Prefers pasta, pizza, cheese, olive, bread.</div>
     </div>
-
-    <script src="../../../guide-layout.js"></script>
+  </section>
+  <section>
+    <h2>5 Food Suppliers &amp; Catalog</h2>
+    <ul>
+      <li><strong>Grocery Store (1.0×):</strong> Full reliable catalog (~133 foods across Produce, Dairy &amp; Fats, Bakery, Meals &amp; Staples, Seafood, Desserts, and Drinks).</li>
+      <li><strong>Wholesale (0.7×):</strong> Bulk discounts on high-volume staples—great once India and Mexico unlock.</li>
+      <li><strong>Food Pantry (0.5×):</strong> Half-price staples when budgets tighten.</li>
+      <li><strong>Charity &amp; Dumpster:</strong> Intended as low/zero-cost emergency sources (in the current build, both apply a 0.5× multiplier in <code>economy.js</code>, so compare prices against Wholesale and Pantry).</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Nutrition, Streaks &amp; Survival Math</h2>
+    <ul>
+      <li><strong>Daily Drain:</strong> Each day, families lose <code>-15</code> from each of the 3 nutrient bars (<code>Pro</code>, <code>Carb</code>, <code>Vit</code>). When a fridge has matching preferred food, eating it restores hunger and builds your <code>feedStreak</code> (2+ preferred feeds award <code>+$2 × preferredFeeds</code> bonus).</li>
+      <li><strong>Starvation Penalty:</strong> If no food is stocked, family members lose <code>20 + 5 × depletedNutrients</code> hunger and die (💀) at 0. Surviving members generate daily tax income proportional to alive headcount.</li>
+      <li><strong>Win &amp; Scoring:</strong> Reach Day 30 with at least 1 survivor. Score = <code>(day − 1)×100 + alive×10 − deaths×25 + feedStreak×15 + maxCombo×10</code>.</li>
+    </ul>
+    <div class="tip"><strong>💡 Tip:</strong> Check the <strong>Tomorrow's Plan</strong> panel before advancing each day, and prioritize high-Protein + high-Carb staples alongside Vitamin-rich produce so none of the 3 nutrient bars hit zero.</div>
+  </section>
+  <section>
+    <h2>Saves</h2>
+    <p>Progress is stored locally in <code>localStorage</code> under <code>fridge-sim-save</code> (and optional GiveGigs cloud slots when connected).</p>
+  </section>
+</main>
 </body>
 </html>

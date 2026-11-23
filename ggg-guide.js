@@ -20,7 +20,7 @@
     "info-link": `/ggg/info/${encodeURIComponent(game.slug)}`,
     "play-link": `/ggg/play/${encodeURIComponent(game.slug)}`,
     "test-link": `/ggg/test/${encodeURIComponent(game.slug)}`,
-    "play-action": `/ggg/play/${encodeURIComponent(game.slug)}`,
+    "play-action": game.runtimeType === "external" ? game.externalUrl : `/ggg/play/${encodeURIComponent(game.slug)}`,
     "test-action": `/ggg/test/${encodeURIComponent(game.slug)}`,
     "roadmap-link": `/ggg/roadmap/${encodeURIComponent(game.slug)}`
   };
@@ -34,6 +34,21 @@
     frame.src = `/games/${authored.split("/").map(encodeURIComponent).join("/")}`;
     document.getElementById("authored-guide").append(frame);
     document.getElementById("authored-guide").hidden = false;
+    return;
+  }
+
+  if (game.slug.toLowerCase() === "ecosystemic-evolver") {
+    document.getElementById("orient").textContent =
+      "Ecosystemic Evolver is an externally hosted 3D WebGL simulation (https://mattyjacks.com/games/ecosystemic-evolver). Launch it from the Play button (requires an active internet connection). Move across the terrain with WASD and interact with creatures, biome prompts, tutorials, and economy panels using your mouse or touch screen.";
+    document.getElementById("systems").textContent =
+      "Choose between playing as wild animals or human roles across five living biomes. Each biome models interacting food webs—producers, prey, predators—alongside human resource and economic decisions. Ten built-in interactive tutorials walk step-by-step through movement, foraging/hunting, population balance, and economic loops.";
+    document.getElementById("strategy").textContent =
+      "Work through the 10 interactive tutorials first so you see how each species or human role depends on the biome's food web. Avoid collapsing prey populations early; watch energy/resource bars and balance short-term harvest against long-term ecosystem stability across biomes.";
+    document.getElementById("practice").textContent =
+      "Try a biome first as an animal role to learn predator-prey spacing and resource hotspots, then revisit the same biome in a human role to see how economic choices reshape the food web.";
+    document.getElementById("troubleshooting").textContent =
+      "Because Ecosystemic Evolver runs on mattyjacks.com rather than inside the local static arcade package, it requires an active internet connection and WebGL enabled in your browser. If embedded previews are restricted in the Tester Studio, open it directly via Play or use Screen/Window Capture mode.";
+    document.getElementById("starter-guide").hidden = false;
     return;
   }
 

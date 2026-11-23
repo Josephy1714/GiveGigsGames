@@ -1,53 +1,64 @@
 {
-    "title": "The Pipeline Mountain",
-    "slug": "the-pipeline-mountain",
-    "description": "Climb through moving platforms, spring jumps, and checkpoints to reach the summit.",
-    "genre": "3D Platformer / Climber",
-    "tags": ["HTML5", "Action", "Three.js", "Jump"],
-    "maker": {
-        "name": "Madi AI Creative Team",
-        "bio": "Building the future of autonomous revenue engines.",
-        "url": "https://madi.ai",
-        "urlLabel": "Website"
-    },
-    "credits": [
-        {
-            "name": "Madi AI Team",
-            "role": "Game Creators",
-            "avatar": "🏔️",
-            "primary": true,
-            "url": "https://madi.ai",
-            "urlLabel": "Website"
-        }
-    ],
-    "controls": {
-        "keyboard": {
-            "A / D or Arrow Keys": "Steer Left / Right",
-            "Space": "Jump",
-            "P / Esc": "Pause"
-        },
-        "touch": true,
-        "mouse": true
-    },
-    "instructions": "Steer with A/D, arrows, or touch. Bounce off green springs, time purple platforms, and land on gold checkpoints. Reach the white summit platform to win.",
-    "technical": {
-        "canvasSize": {"width": 800, "height": 600},
-        "targetFPS": 60,
-        "mobileOptimized": true
-    },
-    "assets": {
-        "external": [
-            {
-                "type": "script",
-                "url": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
-                "description": "Three.js Library"
-            }
-        ],
-        "local": ["game.js", "game.css"]
-    },
-    "meta": {
-        "version": "1.0.0",
-        "created": "2026-06-16",
-        "license": "Private"
+  "title": "The Pipeline Mountain",
+  "slug": "the-pipeline-mountain",
+  "description": "Climb through moving platforms, spring jumps, and checkpoints to reach the summit.",
+  "genre": "3D Platformer / Climber",
+  "tags": [
+    "HTML5",
+    "Action",
+    "Three.js",
+    "Jump"
+  ],
+  "maker": {
+    "name": "Madi AI Creative Team",
+    "bio": "Building the future of autonomous revenue engines.",
+    "url": "https://madi.ai",
+    "urlLabel": "Website"
+  },
+  "credits": [
+    {
+      "name": "Madi AI Team",
+      "role": "Game Creators",
+      "avatar": "🏔️",
+      "primary": true,
+      "url": "https://madi.ai",
+      "urlLabel": "Website"
     }
+  ],
+  "controls": {
+    "keyboard": {
+      "A / D or Arrow Keys": "Steer Left / Right (with screen wrap)",
+      "P / Esc": "Pause",
+      "F": "Fullscreen"
+    },
+    "touch": true,
+    "mouse": true
+  },
+  "instructions": "Steer with A/D, arrows, or touch controls. Jumping is automatic on platform landing. Bounce off green springs, time cyan moving platforms, grab gold medals and jetpacks, and stomp purple Bug Drones from above.",
+  "technical": {
+    "canvasSize": {
+      "width": 800,
+      "height": 600
+    },
+    "targetFPS": 60,
+    "mobileOptimized": true
+  },
+  "assets": {
+    "external": [
+      {
+        "type": "script",
+        "url": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+        "description": "Three.js Library"
+      }
+    ],
+    "local": [
+      "game.js",
+      "game.css"
+    ]
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-06-16",
+    "license": "Private"
+  }
 }

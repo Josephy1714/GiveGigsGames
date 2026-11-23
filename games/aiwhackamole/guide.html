@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI-whack-a-mole — Walkthrough</title>
+  <style>
+    :root { color-scheme: dark; --accent: #f43f5e; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #07111d; color: #e2e8f0; line-height: 1.65; padding: clamp(14px, 3vw, 24px); }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 14px; color: var(--accent); letter-spacing: -0.02em; }
+    h2 { font-size: 18px; margin: 0 0 10px; color: var(--accent); }
+    section { background: #0d1b29; border: 1px solid #24364a; border-radius: 14px; padding: 16px 20px; margin-bottom: 14px; }
+    p { margin: 0 0 10px; color: #cbd5e1; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin: 0; color: #cbd5e1; }
+    li + li { margin-top: 6px; }
+    strong { color: #f8fafc; }
+    code { background: #060e18; padding: 2px 6px; border-radius: 4px; color: #fde68a; font-size: 0.92em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 8px; }
+    .card { background: #122437; border: 1px solid #2b4258; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #cbd5e1; }
+    .card strong { display: block; margin-bottom: 4px; color: #f8fafc; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🤖 AI-whack-a-mole — Walkthrough</h1>
+  <section>
+    <h2>Objective & Scoring</h2>
+    <p>Survive a fast <strong>60-second</strong> 3D Three.js arcade shift across 9 terminal holes. Read each AI's chat bubble before swinging: whack <strong>misaligned/dangerous AIs</strong> and spare helpful ones.</p><ul>
+      <li><strong>Bad AI Whack:</strong> <code>+100 × min(5, 1 + floor(combo/2))</code> points (combo window 2.5s).</li>
+      <li><strong>Penalties:</strong> Whacking a Good AI resets combo, deducts <code>-200</code> points, and costs <code>-10</code> System Integrity. Letting a Bad AI escape resets combo and costs <code>-8</code> Integrity.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Controls</h2>
+    <ul>
+      <li><strong>Mouse & Touch:</strong> Click or tap directly on 3D popping AIs—or click/tap their top alignment chat-bubble cards.</li>
+      <li><strong>Keyboard:</strong> <code>Enter</code>/<code>Space</code> activates a focused alignment bubble card; <code>P</code>/<code>Esc</code> pause; <code>F</code> fullscreen.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Strategy & Saves</h2>
+    <ul>
+      <li><strong>Tips:</strong> At most 2 moles appear at once (1 on narrow mobile screens), drawn 50/50 from 100 helpful and 100 misaligned quotes. Confirm intent before tapping so you keep your <code>5×</code> multiplier intact.</li>
+      <li><strong>Saves:</strong> High score saves to <code>localStorage</code> under <code>ai_whack_a_mole_highscore</code>.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

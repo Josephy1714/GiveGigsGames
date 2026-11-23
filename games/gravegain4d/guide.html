@@ -23,6 +23,34 @@
         .controls-table th { color: var(--theme-primary-light); font-family: 'Orbitron', sans-serif; font-size: 0.85rem; letter-spacing: 0.05em; }
         .controls-table td { color: #d1d5db; }
         kbd { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(74, 222, 128, 0.4); border-radius: 6px; padding: 2px 8px; font-family: 'Orbitron', monospace; font-size: 0.85rem; color: #4ade80; white-space: nowrap; }
+    
+* { box-sizing: border-box; }
+html { color-scheme: dark; scroll-behavior: smooth; scroll-padding-top: 24px; }
+body { margin: 0; background: var(--theme-bg); background-attachment: fixed; color: #e5e7eb; font: 16px/1.65 Inter, system-ui, sans-serif; }
+.container { width: min(1200px, 100%); margin: auto; padding: clamp(16px, 4vw, 48px); }
+h1, h2, h3, .entity-name { line-height: 1.35; color: #f0fdf4; }
+h1, h2 { font-family: Orbitron, system-ui, sans-serif; overflow-wrap: anywhere; }
+h1 { font-size: clamp(24px, 4vw, 40px); margin: 8px 0; }
+h2 { font-size: clamp(20px, 3vw, 26px); margin: 0 0 20px; }
+p { margin: 0 0 16px; }
+a { color: #4ade80; text-underline-offset: 4px; }
+a:hover { color: #fff; }
+.toc, .section { padding: clamp(16px, 3vw, 28px); border: 1px solid #ffffff1f; border-radius: 18px; background: var(--theme-section-bg); margin-bottom: 28px; }
+.toc-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr)); gap: 10px; }
+.toc-link { display: flex; align-items: center; min-height: 44px; padding: 10px 14px; background: #22c55e14; border: 1px solid #4ade8033; border-radius: 10px; text-decoration: none; }
+.toc-link:hover { background: #22c55e33; border-color: #4ade80; }
+.entity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; align-items: start; }
+.entity-card { min-width: 0; overflow-wrap: anywhere; padding: 20px; border-radius: 14px; border: 1px solid #4ade8033; background: var(--theme-card-bg); box-shadow: 0 8px 24px #0002; }
+.entity-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.entity-emoji { font-size: 36px; flex-shrink: 0; line-height: 1.2; }
+.entity-name { font-size: 19px; font-weight: 700; }
+.entity-type { font-size: 13px; color: #86efac; margin-top: 4px; }
+.entity-short { color: #d1d5db; font-size: 14px; }
+.entity-details { color: #bfc4d4; font-size: 14px; margin-top: 16px; }
+.entity-details[hidden] { display: none; }
+.read-more-btn { width: 100%; min-height: 44px; margin-top: 16px; padding: 10px 16px; border: 1px solid #4ade8066; border-radius: 8px; background: #22c55e26; color: #bbf7d0; font: inherit; font-size: 14px; cursor: pointer; }
+.read-more-btn:hover { background: #22c55e4d; }
+
     </style>
   <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
@@ -103,7 +131,7 @@
                     </div>
                     <div class="entity-short">Ana and kata are the two ends of the fourth direction — like left/right, but sideways from all of 3D at once.</div>
                     <div class="entity-details">
-                        <p>Your ball lives in 4D (x, y, z, w). The <kbd>Q</kbd> / <kbd>E</kbd> keys slide the world along W: one way is ana, the other is kata. A putt with a little W-curl leaves our slice and re-enters further along — in 3D it looks like the ball folds through itself. Dream it as turning the page the green is printed on.</p>
+                        <p>Your ball lives in 4D (x, y, z, w). The <kbd>R</kbd> / <kbd>E</kbd> keys slide the world along W: one way is ana, the other is kata. A putt with a little W-curl leaves our slice and re-enters further along — in 3D it looks like the ball folds through itself. Dream it as turning the page the green is printed on.</p>
                     </div>
                     <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
                 </div>
@@ -149,10 +177,10 @@
                     <tr><th>Input</th><th>Action</th><th>Notes</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>W-shift along the 4th axis (Ana / Kata)</td><td>Slides the 3D slice through W; folds XW / YW / ZW per hole lens</td></tr>
-                    <tr><td><kbd>T</kbd></td><td>Rewind time</td><td>Spends chrono-sand; history is kept, the present branches — one rewind per descent is the budget</td></tr>
-                    <tr><td><kbd>B</kbd></td><td>Breach brane (Light / Gloom)</td><td>Swaps the active 3D slice where the rift permits</td></tr>
-                    <tr><td><kbd>Space</kbd></td><td>Jump</td><td>Hops the caddie on the projected slice; useful for hazard lips</td></tr>
+                    <tr><td><kbd>R</kbd> / <kbd>E</kbd></td><td>W-shift along the 4th axis (Ana / Kata)</td><td>Slides the 3D slice through W; folds XW / YW / ZW per hole lens</td></tr>
+                    <tr><td><kbd>T</kbd></td><td>Rewind time (hold)</td><td>Drains Chrono-Sand (25/sec from 100 max = up to 4s rewind across 60Hz history)</td></tr>
+                    <tr><td><kbd>B</kbd></td><td>Breach brane (Light / Gloom)</td><td>Swaps the active 3D slice when standing near a rift portal; <kbd>G</kbd> opens Giggles Help</td></tr>
+                    <tr><td><kbd>Space</kbd></td><td>Jump / Putt</td><td>Hops the caddie and charges/releases a putt; use <kbd>Left-Click</kbd> hold for mouse-only putting</td></tr>
                     <tr><td><kbd>Click</kbd></td><td>Putt (hold to charge, release to strike)</td><td>Aim with the mouse; longer hold = more power</td></tr>
                 </tbody>
             </table>
@@ -195,7 +223,7 @@
                             <div class="entity-type">Golden Rule</div>
                         </div>
                     </div>
-                    <div class="entity-short">One rewind per descent — spend it late, when the fold turns against you, not on the first stumble.</div>
+                    <div class="entity-short">Conserve Chrono-Sand (100 max, up to 4s rewind) for difficult folds and back-nine siege holes.</div>
                     <div class="entity-details">
                         <p>Fold Cartographer Vex's rule. Early holes (1–3) are for learning the echo; save chrono-sand for par-5 grinds (holes 4, 8, 9, 10) where one bad fold costs a full stroke budget. Expand chrono-sand capacity at the hub before the back nine.</p>
                     </div>
@@ -212,7 +240,7 @@
                     </div>
                     <div class="entity-short">Rotate the fold until the boss's echo overlaps its body — then strike the overlap to hit every fork at once.</div>
                     <div class="entity-details">
-                        <p>Each mission has a fold lens (XW, YW, ZW, or the full tesseract on hole 10). Work the <kbd>Q</kbd> / <kbd>E</kbd> shift first and watch the echo converge; only charge the putt (click-hold) once echo and body agree. This is the orbital-strike trick from Mission 8 and the only way to corner Hades in Mission 10.</p>
+                        <p>Each mission has a fold lens (XW, YW, ZW, or the full tesseract on hole 10). Work the <kbd>R</kbd> / <kbd>E</kbd> shift first and watch the echo converge; only charge the putt (click-hold) once echo and body agree. This is the orbital-strike trick from Mission 8 and the only way to corner Hades in Mission 10.</p>
                     </div>
                     <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
                 </div>
@@ -563,7 +591,7 @@
                     </div>
                     <div class="entity-short">The W-slice drifts — your ghost echo shows where the fold goes if you commit.</div>
                     <div class="entity-details">
-                        <p>Shift <kbd>Q</kbd> / <kbd>E</kbd> first, watch the echo, then charge the putt. The dungeon punishes the careless and rewards the patient.</p>
+                        <p>Shift <kbd>R</kbd> / <kbd>E</kbd> first, watch the echo, then charge the putt. The dungeon punishes the careless and rewards the patient.</p>
                     </div>
                     <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
                 </div>
@@ -578,7 +606,7 @@
                     </div>
                     <div class="entity-short">The fold doubles every dead end — scout both branes before spending sand.</div>
                     <div class="entity-details">
-                        <p>Breach (<kbd>B</kbd>) is free; rewinds (<kbd>T</kbd>) are not. Map the hole on both slices, then commit the stroke budget.</p>
+                        <p>Breach (<kbd>B</kbd>) near rift portals is free; rewinds (<kbd>T</kbd>) spend Chrono-Sand. Map the hole on both slices, then commit the stroke budget.</p>
                     </div>
                     <button class="read-more-btn" onclick="toggleDetails(this)">Read More</button>
                 </div>
@@ -602,6 +630,22 @@
 
     </div>
 
-    <script src="../../../guide-layout.js"></script>
+    <script>
+document.querySelectorAll('.read-more-btn').forEach((button, index) => {
+  const details = button.closest('.entity-card')?.querySelector('.entity-details');
+  if (!details) return;
+  details.id = 'guide-details-' + index;
+  details.hidden = true;
+  button.setAttribute('aria-controls', details.id);
+  button.setAttribute('aria-expanded', 'false');
+});
+function toggleDetails(button) {
+  const details = button.closest('.entity-card')?.querySelector('.entity-details');
+  if (!details) return;
+  details.hidden = !details.hidden;
+  button.setAttribute('aria-expanded', String(!details.hidden));
+  button.textContent = details.hidden ? 'Read More' : 'Read Less';
+}
+</script>
 </body>
 </html>

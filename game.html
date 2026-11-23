@@ -5,7 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Game details · GiveGigsGames</title>
     <link rel="stylesheet" href="/index.css">
+    <style>
+      .details-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 14px 0 22px;
+      }
+      .details-tag {
+        padding: 5px 10px;
+        border: 1px solid #344b5d;
+        border-radius: 999px;
+        background: #0d1b29;
+        color: #b8cad8;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .details-tag.is-accent {
+        border-color: #82f2c34a;
+        background: #12352d;
+        color: #aaffd5;
+      }
+      .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+        margin: 22px 0;
+      }
+      .details-card {
+        padding: 18px;
+        border: 1px solid #263b4f;
+        border-radius: 14px;
+        background: linear-gradient(145deg, #122437, #0b1723);
+      }
+      .details-card h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #82f2c3;
+      }
+      .details-card p {
+        margin: 0;
+        color: #c7d6e4;
+        font-size: 13px;
+        line-height: 1.65;
+      }
+      .details-card p + p {
+        margin-top: 10px;
+      }
+    </style>
     <script src="/games/catalog-data.js" defer></script>
+    <script src="/game-details-data.js" defer></script>
     <script src="/game-route.js" defer></script>
     <script src="/game-details.js" defer></script>
   </head>
@@ -15,7 +66,27 @@
       <h1 id="title">Game details</h1>
       <p id="description" role="status"></p>
       <p id="requirements"></p>
-      <p id="controls"></p>
+      <div id="tags" class="details-tags" hidden></div>
+      <div class="details-grid">
+        <section class="details-card" aria-labelledby="controls-heading">
+          <h2 id="controls-heading">Controls</h2>
+          <p id="controls"></p>
+        </section>
+        <section id="details-objective-card" class="details-card" aria-labelledby="objective-heading" hidden>
+          <h2 id="objective-heading">Objective &amp; Modes</h2>
+          <p id="details-objective"></p>
+          <p id="details-modes"></p>
+        </section>
+        <section id="details-systems-card" class="details-card" aria-labelledby="systems-heading" hidden>
+          <h2 id="systems-heading">Core Systems</h2>
+          <p id="details-systems"></p>
+        </section>
+        <section id="details-saves-card" class="details-card" aria-labelledby="saves-heading" hidden>
+          <h2 id="saves-heading">Saves &amp; Build</h2>
+          <p id="details-saves"></p>
+          <p id="details-platform"></p>
+        </section>
+      </div>
       <div id="actions" hidden>
         <div class="hero-actions">
         <a id="play" class="button primary">Play</a>
@@ -26,6 +97,6 @@
       </div>
       <section id="screenshots" class="featured-screenshots" aria-label="Featured screenshots" hidden></section>
     </main>
-    <script src="games/_shared/gamepad-adapter.js" defer></script>
+    <script src="/games/_shared/gamepad-adapter.js" defer></script>
   </body>
 </html>

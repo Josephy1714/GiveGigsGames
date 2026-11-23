@@ -896,8 +896,9 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         if (!babylonCanvas) {
             return null;
         }
+        let engine;
         try {
-            const engine = new BABYLON.Engine(babylonCanvas, true, {
+            engine = new BABYLON.Engine(babylonCanvas, true, {
                 alpha: true,
                 premultipliedAlpha: false,
                 preserveDrawingBuffer: false,
@@ -1230,6 +1231,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             };
         }
         catch {
+            engine?.dispose();
             return null;
         }
     }
@@ -5806,10 +5808,20 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             cameraRoll += (0 - cameraRoll) * Math.min(1, dt * 5);
         }
         if (babylonState) {
-            if (skyCtx) {
-                drawVectorSky(skyCtx, map, time);
+            try {
+                if (skyCtx) {
+                    drawVectorSky(skyCtx, map, time);
+                }
+                renderBabylonScene(map, time);
             }
-            renderBabylonScene(map, time);
+            catch (error) {
+                console.warn("Overtake switched to the 2D renderer after a 3D rendering error.", error);
+                const failedEngine = babylonState.engine;
+                babylonState = null;
+                failedEngine.dispose();
+            }
+        }
+        if (babylonState) {
             let hasParticles = false;
             for (let i = 0; i < particles.length; i += 1) {
                 if (particles[i].active) {

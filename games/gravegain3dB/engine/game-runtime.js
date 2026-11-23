@@ -584,6 +584,7 @@
                     }
                     if (this.renderer && typeof this.renderer.setSize === 'function') this.renderer.setSize(w, h, false);
                     if (this.graphics && typeof this.graphics.resize === 'function') this.graphics.resize();
+                    if (this.isPaused && this.player && this.container.clientWidth) this.render();
                 } catch (_) { /* pre-init resize must not throw */ }
             };
             window.addEventListener('resize', onResize);
@@ -669,6 +670,8 @@
         }
 
         initRun(race, classType, startingWeaponId = null) {
+            this.isPaused = false;
+            this.container.classList.remove('paused');
             const SkillTrees = window.GraveGainSkillTrees;
             this.permanentBuild = SkillTrees
                 ? SkillTrees.computePermanentBuild(race, classType, this.armoryRanks, this.pistolUpgrades, this.skillTrees)
@@ -822,6 +825,9 @@
                 this.combatText.showBanner(`LAYER 1 - DEPLOYED`);
             }
             this.audio.playSfx('spell', 1.0);
+            this.updateCamera(0, 0, 0);
+            this.drawMinimap();
+            this.render();
         }
 
         clearDungeon() {
@@ -4887,6 +4893,17 @@
 
             // Camera orientation & follow
             const cameraAnimDt = this.controlMode === 'turnbased' ? dt : effectiveDt;
+            this.updateCamera(dt, cameraAnimDt, shakeIntensity);
+            this.updateAimTargetHUD(dt);
+
+            this.vfx.update(effectiveDt > 0 ? effectiveDt : dt * 0.1);
+            this.updateWeaponTracers(dt);
+            this.updateHUD();
+            this.updateWeaponHUD();
+            this.drawMinimap();
+        }
+
+        updateCamera(dt, cameraAnimDt, shakeIntensity) {
             this.cameraController.update(cameraAnimDt);
             this.camera3d.rotation.order = 'YXZ';
             this.camera3d.rotation.y = this.player.yaw + this.cameraController.punchX;
@@ -4928,7 +4945,6 @@
                 this.player.y - Math.sin(this.player.yaw) * (leanOffset + this.cameraBobX)
             ).add(shakeOffset);
             this.camera3d.updateMatrixWorld(true);
-            this.updateAimTargetHUD(dt);
 
             // Synchronize player lantern and flashlight
             this.playerLantern.position.copy(this.camera3d.position);
@@ -4937,12 +4953,6 @@
             const forward = new THREE.Vector3();
             this.camera3d.getWorldDirection(forward);
             this.flashlightTarget.position.copy(this.camera3d.position).add(forward.multiplyScalar(100));
-
-            this.vfx.update(effectiveDt > 0 ? effectiveDt : dt * 0.1);
-            this.updateWeaponTracers(dt);
-            this.updateHUD();
-            this.updateWeaponHUD();
-            this.drawMinimap();
         }
 
         relativeElevation(elevation = 0) {

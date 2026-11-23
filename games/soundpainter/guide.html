@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sound Painter — Walkthrough</title>
+  <style>
+    :root { color-scheme: dark; --accent: #f472b6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #07111d; color: #e2e8f0; line-height: 1.65; padding: clamp(14px, 3vw, 24px); }
+    main { max-width: 820px; margin: 0 auto; }
+    h1 { font-size: clamp(24px, 4vw, 34px); margin: 0 0 14px; color: var(--accent); letter-spacing: -0.02em; }
+    h2 { font-size: 18px; margin: 0 0 10px; color: var(--accent); }
+    section { background: #0d1b29; border: 1px solid #24364a; border-radius: 14px; padding: 16px 20px; margin-bottom: 14px; }
+    p { margin: 0 0 10px; color: #cbd5e1; }
+    p:last-child { margin-bottom: 0; }
+    ul { padding-left: 20px; margin: 0; color: #cbd5e1; }
+    li + li { margin-top: 6px; }
+    strong { color: #f8fafc; }
+    code { background: #060e18; padding: 2px 6px; border-radius: 4px; color: #fde68a; font-size: 0.92em; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 8px; }
+    .card { background: #122437; border: 1px solid #2b4258; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: #cbd5e1; }
+    .card strong { display: block; margin-bottom: 4px; color: #f8fafc; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🎨 Sound Painter — Walkthrough</h1>
+  <section>
+    <h2>Overview</h2>
+    <p>Paint colorful music onto an interactive <strong>8×6</strong> canvas grid. Every column maps to a C4–C5 diatonic note, and each of the 6 rows pairs a distinct color with a synthesizer voice.</p><ul>
+      <li><strong>Tabs:</strong> Switch between <strong>🎨 Paint</strong> and <strong>🎛 Instruments</strong>, or use the bottom thumb palette to pick <em>Free</em> or lock a specific instrument row.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Controls</h2>
+    <ul>
+      <li><strong>Mouse & Touch:</strong> Click or drag across tiles to paint/erase notes; multi-touch adds an octave-higher shimmer! Hold <strong>Play Pattern</strong> to loop every 800ms, or tap <strong>Undo</strong> / <strong>Redo</strong>.</li>
+      <li><strong>Keyboard:</strong> <code>Space</code> Play All once (100ms per column); <code>R</code> reset grid; <code>Ctrl/Cmd+Z</code> Undo (<code>+Shift</code> Redo); <code>P</code>/<code>Esc</code> pause. When canvas is focused, use <code>Arrow Keys</code> + <code>Enter</code>/<code>Space</code> to paint.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Tips & Saves</h2>
+    <ul>
+      <li><strong>Tip:</strong> Build a rhythmic anchor on the bottom rows first, then drag diagonal melodies across the upper rows.</li>
+      <li><strong>Saves:</strong> Active tile count record is stored in <code>localStorage</code> (<code>soundpainter_tilesCount</code>).</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
