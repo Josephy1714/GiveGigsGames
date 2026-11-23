@@ -320,10 +320,17 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
  }
- return {render,resize,setQuality:applyQuality,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),resetRun(){
+ return {render,resize,setQuality:applyQuality,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},probeImpactCamera(g){
+  if(!g)return null;
+  const base=cameraBaseX,scale=Number.isFinite(Number(g.impactShakeScale))?Number(g.impactShakeScale):1;
+  const sample=(hitTimer,time)=>{const impact=clamp(hitTimer/.62,0,1)*scale;const shakeX=Math.sin(time*48)*impact*.035,shakeY=Math.sin(time*36)*impact*.025;return {base,world:base+shakeX,shakeX,shakeY};};
+  let impactTime=g.t+.001,best=-1;
+  for(let i=0;i<24;i++){const candidate=g.t+.001+i*.035;const score=Math.abs(Math.sin(candidate*48))+.7*Math.abs(Math.sin(candidate*36));if(score>best){best=score;impactTime=candidate;}}
+  return {impact:sample(.62,impactTime),recovered:sample(0,impactTime+.031)};
+ },resetRun(){
   lastGameT=0;worldTravel=0;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
   traffic.forEach((vehicle,index)=>{vehicle.position.set(laneX[vehicle.userData.baseLane],0,-36-index*43);vehicle.userData.previousCollisionZ=vehicle.position.z;for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});
-  jayRig.root.position.set(0,rigBaseY,2);jayRig.root.rotation.set(0,Math.PI,0);jayRig.root.scale.set(rigBaseScaleX,rigBaseScaleY,rigBaseScaleZ);jayRig.play("run",{fadeSeconds:0});
+  jayRig.reset();jayRig.root.position.set(0,rigBaseY,2);jayRig.root.rotation.set(0,Math.PI,0);jayRig.root.scale.set(rigBaseScaleX,rigBaseScaleY,rigBaseScaleZ);jayRig.play("run",{fadeSeconds:0});
   camera.position.set(0,4.9,11.8);camera.fov=57;camera.updateProjectionMatrix();camera.lookAt(0,1.8,-9.5);impactRing.visible=false;impactRing.material.opacity=0;mount.dataset.trafficCollision="false";
  },probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
