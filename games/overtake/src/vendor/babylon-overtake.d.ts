@@ -155,6 +155,7 @@ export declare class TransformNode {
   metadata: Record<string, unknown>;
   constructor(name: string, scene?: Scene);
   setEnabled(value: boolean): void;
+  isEnabled(checkAncestors?: boolean): boolean;
   getChildMeshes(directDescendantsOnly?: boolean): Mesh[];
   dispose(): void;
 }

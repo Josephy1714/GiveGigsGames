@@ -76,7 +76,7 @@ body{display:block!important}
    Collapse to a single full-bleed column and let the frame fill the iframe
    height instead of letterboxing. Dark scrollbars so overlay scrolling never
    flashes a light native scrollbar inside the dark game window. */
-[class*="game-main"]{display:grid!important;grid-template-columns:1fr!important;gap:0!important;width:100%!important}
+[class*="game-main"]:not(.hidden){display:flex!important;flex-direction:column!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;box-sizing:border-box!important}
 [class*="game-frame"]{aspect-ratio:auto!important;height:100%!important;min-height:100%!important}
 /* Stripped-bundle fallback for the v1 TEMPLATE-4weird layout: styles.css is
    removed above, but kouzi/orbitaldrift-style bundles rely on it for frame
@@ -874,7 +874,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                         g.camera3d.aspect = w / h;
                         if (typeof g.camera3d.updateProjectionMatrix === 'function') g.camera3d.updateProjectionMatrix();
                     }
-                    if (g && g.renderer && typeof g.renderer.setSize === 'function') g.renderer.setSize(w, h);
+                    if (g && g.renderer && typeof g.renderer.setSize === 'function') g.renderer.setSize(w, h, false);
                 } catch (e) {}
             };
             document.addEventListener('fullscreenchange', gg3dRefit);

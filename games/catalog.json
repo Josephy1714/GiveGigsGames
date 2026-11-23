@@ -32,6 +32,7 @@
     {
       "slug": "gravegain2dE",
       "title": "GraveGain2DE: Smash Slash Bash Mash",
+      "capsule": "images/capsules/gravegain2dE.webp",
       "description": "A MoonRock platform arena brawler featuring 16 pickable heroes across all four GraveGain races and classes, five arenas, directional specials, Ley Core ultimates, Arcade Gauntlet, and 2-4 player brawls.",
       "genre": "Action",
       "tags": [

@@ -32,7 +32,7 @@
 .aaa-objective.complete .aaa-obj-title { color: #4ade80; animation: aaa-obj-flash 1.2s ease 2; }
 
 .aaa-toast {
-    position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); z-index: 57;
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 57;
     background: rgba(8,5,18,0.92); border: 1px solid rgba(56,189,248,0.5); border-radius: 10px;
     padding: 10px 18px; font-size: 0.85rem; color: #e2e8f0; white-space: nowrap;
     box-shadow: 0 0 20px rgba(56,189,248,0.25); pointer-events: none;
@@ -89,6 +89,6 @@
     .aaa-titlecard .aaa-title { font-size: 1.8rem; }
     .aaa-announcer .aaa-announce-main { font-size: 1.4rem; }
     .aaa-boss-intro .aaa-boss-name { font-size: 1.6rem; text-align: center; }
-    .aaa-objective { max-width: 180px; font-size: 0.68rem; top: auto; bottom: 220px; right: 10px; }
-    .aaa-toast { bottom: 250px; max-width: 92vw; white-space: normal; text-align: center; }
+    .aaa-objective { max-width: 175px; font-size: 0.68rem; top: 140px; left: 8px; bottom: auto; right: auto; }
+    .aaa-toast { bottom: 205px; max-width: 88vw; white-space: normal; text-align: center; }
 }

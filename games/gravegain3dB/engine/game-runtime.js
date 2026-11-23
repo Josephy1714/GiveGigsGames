@@ -1504,10 +1504,10 @@
             });
 
             if (this.dungeon.arena) {
-                const colors = [0x678d9a, 0xbd8a54];
+                const colors = [0x678d9a, 0xbd8a54, 0x8b6f9e];
                 for (const surface of this.dungeon.arena.surfaces) {
                     const geometry = new THREE.BoxGeometry(surface.maxX - surface.minX, surface.top - surface.bottom, surface.maxZ - surface.minZ);
-                    const color = colors[surface.level - 1];
+                    const color = colors[Math.max(0, (surface.level || 1) - 1) % colors.length];
                     const material = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.17, roughness: 0.72 });
                     const mesh = new THREE.Mesh(geometry, material);
                     mesh.position.set((surface.minX + surface.maxX) / 2, (surface.top + surface.bottom) / 2, (surface.minZ + surface.maxZ) / 2);
@@ -5042,8 +5042,10 @@
 
             ctx.restore();
             ctx.fillStyle = '#d0deec';
-            ctx.font = '10px sans-serif';
-            ctx.fillText('▲ Above · ▼ Below', 7, h - 7);
+            ctx.font = 'bold 9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('▲ Above · ▼ Below', w / 2, 16);
+            ctx.textAlign = 'left';
         }
 
         updateHUD() {
