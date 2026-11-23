@@ -477,7 +477,20 @@ export const MAPS = {
             { x: -35, y: 0, z: -35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
             { x: 35, y: 0, z: -35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
             { x: -35, y: 0, z: 35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
-            { x: 35, y: 0, z: 35, vx: 0, vy: 27, vz: 0, radius: 2.8 }
+            { x: 35, y: 0, z: 35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            // Outer-corridor & flank shortcut pads
+            { x: -160, y: 0, z: -135, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: 160, y: 0, z: -135, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: -160, y: 0, z: 135, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: 160, y: 0, z: 135, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: -110, y: 0, z: 0, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 110, y: 0, z: 0, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 0, y: 0, z: -110, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 0, y: 0, z: 110, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: -60, y: 0, z: -160, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: 60, y: 0, z: -160, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: -60, y: 0, z: 160, vx: 0, vy: 28, vz: 0, radius: 2.8 },
+            { x: 60, y: 0, z: 160, vx: 0, vy: 28, vz: 0, radius: 2.8 }
         ],
         hazards: [],
         playerSpawn: [0, 0, -188],

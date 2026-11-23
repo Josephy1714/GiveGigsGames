@@ -16,10 +16,10 @@ const BOT_RADIUS = 0.55;
 const BOT_HEIGHT = 2.2;
 
 const WEAPONS = [
-    { name: 'DEVASTATOR', speed: 52, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
-    { name: 'VORTEX', speed: 165, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
-    { name: 'SHOTGUN', speed: 90, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, sound: [105, .12, "square"], hudColor: "#ffdb59" },
-    { name: 'ELECTRO', speed: 68, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
+    { name: 'DEVASTATOR', speed: 39, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, heatPerShot: 0.34, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
+    { name: 'VORTEX', speed: 123.75, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, heatPerShot: 0.45, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
+    { name: 'SHOTGUN', speed: 67.5, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, heatPerShot: 0.28, sound: [105, .12, "square"], hudColor: "#ffdb59" },
+    { name: 'ELECTRO', speed: 51, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, heatPerShot: 0.11, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
 ];
 
 // Lightweight Web Audio synth for Xonotic-style SFX
@@ -216,6 +216,8 @@ function createScene() {
         hp: 100,
         score: 0,
         weaponIdx: 0,
+        weaponHeat: WEAPONS.map(() => 0),
+        weaponOverheated: WEAPONS.map(() => false),
         fireTimer: 0,
         dashTimer: 0
     };
@@ -770,10 +772,21 @@ function createScene() {
 
     function firePlayerWeapon() {
         if (player.fireTimer > 0) return;
-        const weapon = WEAPONS[player.weaponIdx];
+        const idx = player.weaponIdx;
+        if (player.weaponOverheated[idx]) {
+            player.fireTimer = 0.18;
+            playSfx(95, 0.05, 'square', 0.025);
+            return;
+        }
+        const weapon = WEAPONS[idx];
         player.fireTimer = weapon.cooldown;
         player.fireCycle = weapon.cooldown;
-        weaponView.fire(player.weaponIdx);
+        player.weaponHeat[idx] = Math.min(1, player.weaponHeat[idx] + weapon.heatPerShot);
+        if (player.weaponHeat[idx] >= 1) {
+            player.weaponOverheated[idx] = true;
+            playSfx(180, 0.22, 'sawtooth', 0.06);
+        }
+        weaponView.fire(idx);
         const forward = camera.getDirection(BABYLON.Axis.Z).normalize();
         const origin = camera.position.add(forward.scale(1.2));
         if (player.weaponIdx === 2) {
@@ -1280,6 +1293,13 @@ function createScene() {
 
         player.fireTimer = Math.max(0, player.fireTimer - dt);
         player.dashTimer = Math.max(0, player.dashTimer - dt);
+        for (let i = 0; i < WEAPONS.length; i++) {
+            if (player.weaponHeat[i] > 0) {
+                const coolRate = player.weaponOverheated[i] ? 0.25 : 0.28;
+                player.weaponHeat[i] = Math.max(0, player.weaponHeat[i] - dt * coolRate);
+                if (player.weaponHeat[i] <= 0) player.weaponOverheated[i] = false;
+            }
+        }
 
         if (mode === 'player') {
             const forward = new BABYLON.Vector3(Math.sin(camera.rotation.y), 0, Math.cos(camera.rotation.y));
@@ -1297,7 +1317,7 @@ function createScene() {
                 player.dashTimer = 1.2;
             }
 
-            const maxSpd = 17;
+            const maxSpd = 15.3;
             if (player.grounded) {
                 const spd = Math.hypot(player.vel.x, player.vel.z);
                 if (spd > 0.01) {
@@ -1529,12 +1549,16 @@ function createScene() {
         const fpsText = `${Math.round(engine.getFps())} FPS`;
         if (fpsText !== lastFpsText) { fpsEl.textContent = fpsText; lastFpsText = fpsText; }
         if (mode === 'player') {
-            const weapon = WEAPONS[player.weaponIdx];
-            if (weaponEl.textContent !== weapon.name) {
-                weaponEl.textContent = weapon.name;
-                weaponSwitch.style.setProperty('--weapon-color', weapon.hudColor);
+            const idx = player.weaponIdx;
+            const weapon = WEAPONS[idx];
+            const isOverheated = player.weaponOverheated[idx];
+            const label = isOverheated ? `${weapon.name} (OVERHEAT)` : weapon.name;
+            if (weaponEl.textContent !== label) {
+                weaponEl.textContent = label;
+                weaponSwitch.style.setProperty('--weapon-color', isOverheated ? '#ff3d5a' : weapon.hudColor);
+                weaponSwitch.classList.toggle('overheated', isOverheated);
             }
-            weaponCharge.value = 1 - player.fireTimer / (player.fireCycle || 1);
+            weaponCharge.value = isOverheated ? 0 : Math.max(0, 1 - player.weaponHeat[idx]);
             updateScrap(dt);
             updateSquadHud();
         }
