@@ -432,14 +432,52 @@ export const MAPS = {
             { x: -18, y: 5, z: -18, w: 6, h: 10, d: 6, style: 'trim' },
             { x: 18, y: 5, z: -18, w: 6, h: 10, d: 6, style: 'trim' },
             { x: -18, y: 5, z: 18, w: 6, h: 10, d: 6, style: 'trim' },
-            { x: 18, y: 5, z: 18, w: 6, h: 10, d: 6, style: 'trim' }
+            { x: 18, y: 5, z: 18, w: 6, h: 10, d: 6, style: 'trim' },
+
+            // Extra Quadrant Maze Chicanes & Corridor Dividers
+            { x: -135, y: 5, z: -135, w: 36, h: 10, d: 4, style: 'platform' },
+            { x: 135, y: 5, z: -135, w: 36, h: 10, d: 4, style: 'platform' },
+            { x: -135, y: 5, z: 135, w: 36, h: 10, d: 4, style: 'platform' },
+            { x: 135, y: 5, z: 135, w: 36, h: 10, d: 4, style: 'platform' },
+            { x: -184, y: 5, z: -60, w: 40, h: 10, d: 4, style: 'primary' },
+            { x: -184, y: 5, z: 60, w: 40, h: 10, d: 4, style: 'primary' },
+            { x: 184, y: 5, z: -60, w: 40, h: 10, d: 4, style: 'primary' },
+            { x: 184, y: 5, z: 60, w: 40, h: 10, d: 4, style: 'primary' },
+            { x: -60, y: 5, z: -184, w: 4, h: 10, d: 40, style: 'primary' },
+            { x: 60, y: 5, z: -184, w: 4, h: 10, d: 40, style: 'primary' },
+            { x: -60, y: 5, z: 184, w: 4, h: 10, d: 40, style: 'primary' },
+            { x: 60, y: 5, z: 184, w: 4, h: 10, d: 40, style: 'primary' },
+            { x: -35, y: 5, z: -85, w: 30, h: 10, d: 4, style: 'trim' },
+            { x: 35, y: 5, z: -85, w: 30, h: 10, d: 4, style: 'trim' },
+            { x: -35, y: 5, z: 85, w: 30, h: 10, d: 4, style: 'trim' },
+            { x: 35, y: 5, z: 85, w: 30, h: 10, d: 4, style: 'trim' },
+            { x: -85, y: 5, z: -35, w: 4, h: 10, d: 30, style: 'trim' },
+            { x: -85, y: 5, z: 35, w: 4, h: 10, d: 30, style: 'trim' },
+            { x: 85, y: 5, z: -35, w: 4, h: 10, d: 30, style: 'trim' },
+            { x: 85, y: 5, z: 35, w: 4, h: 10, d: 30, style: 'trim' }
         ],
         jumpPads: [
+            // Cardinal & Center pads
             { x: 0, y: 0, z: -180, vx: 0, vy: 28, vz: 0, radius: 3.0 },
             { x: 0, y: 0, z: 180, vx: 0, vy: 28, vz: 0, radius: 3.0 },
             { x: -180, y: 0, z: 0, vx: 0, vy: 28, vz: 0, radius: 3.0 },
             { x: 180, y: 0, z: 0, vx: 0, vy: 28, vz: 0, radius: 3.0 },
-            { x: 0, y: 0, z: 0, vx: 0, vy: 30, vz: 0, radius: 3.2 }
+            { x: 0, y: 0, z: 0, vx: 0, vy: 30, vz: 0, radius: 3.2 },
+            // Outer corner shortcut pads
+            { x: -185, y: 0, z: -185, vx: 0, vy: 29, vz: 0, radius: 3.0 },
+            { x: 185, y: 0, z: -185, vx: 0, vy: 29, vz: 0, radius: 3.0 },
+            { x: -185, y: 0, z: 185, vx: 0, vy: 29, vz: 0, radius: 3.0 },
+            { x: 185, y: 0, z: 185, vx: 0, vy: 29, vz: 0, radius: 3.0 },
+            // Mid-ring shortcut pads
+            { x: -135, y: 0, z: -115, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 135, y: 0, z: -115, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: -135, y: 0, z: 115, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 135, y: 0, z: 115, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            // Inner-ring shortcut pads
+            { x: -35, y: 0, z: -35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 35, y: 0, z: -35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: -35, y: 0, z: 35, vx: 0, vy: 27, vz: 0, radius: 2.8 },
+            { x: 35, y: 0, z: 35, vx: 0, vy: 27, vz: 0, radius: 2.8 }
         ],
         hazards: [],
         playerSpawn: [0, 0, -188],
