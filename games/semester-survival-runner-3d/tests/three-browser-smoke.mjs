@@ -177,6 +177,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     assert.equal(await page.locator("#semester-grid .semester-card").count(), 8, "the journey must display all eight semesters");
     assert.equal(await page.locator("#semester-grid .semester-card:not(.locked)").count(), 8, "all semesters must remain cleared after reload");
     await page.locator("#nav-play").click();
+    const initialRunState = await page.evaluate(() => window.__runnerSmoke.state());
     const fallInfo = await page.evaluate(() => window.__runnerSmoke.forceVehicleFall());
     assert.ok(fallInfo.clipDuration > 0, "the authored fall clip must have a measurable duration");
     await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 10000 });
@@ -184,6 +185,11 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.locator("#retry").click();
     await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
     await page.waitForFunction(() => window.__runnerSmoke.state().animationClip === "run", null, { timeout: 3000 });
+    const restartedState = await page.evaluate(() => window.__runnerSmoke.state());
+    assert.ok(restartedState.distance < 1, "Run It Back must reset distance to the beginning");
+    assert.equal(restartedState.lane, 1, "Run It Back must reset Jay to the centre lane");
+    assert.equal(restartedState.energy, 100, "Run It Back must restore full starting energy");
+    assert.equal(restartedState.runApproachCompleted, initialRunState.runApproachCompleted, "Run It Back must reset the character animation timeline");
     await page.waitForFunction(() => window.__runnerSmoke.state().distance > 0, null, { timeout: 3000 });
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
   } finally {
