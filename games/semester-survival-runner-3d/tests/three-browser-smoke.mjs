@@ -115,6 +115,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     assert.equal(sideObstacleProbe.continueTraffic, true, "a side-hit obstacle bus must continue forward");
     assert.equal(sideObstacleProbe.passBehind, true, "a side-hit obstacle bus must be allowed to pass behind Jay");
     assert.ok(sideObstacleProbe.speed > 0, "side-hit bus collisions must preserve forward travel until the fall completes");
+    assert.ok(sideObstacleProbe.distance > 0, "distance must continue accumulating at the normal metres-per-second rate during a side-impact fall");
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
     assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
@@ -205,6 +206,24 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     assert.equal(restartedState.energy, 100, "Run It Back must restore full starting energy");
     assert.equal(restartedState.runApproachCompleted, initialRunState.runApproachCompleted, "Run It Back must reset the character animation timeline");
     await page.waitForFunction(() => window.__runnerSmoke.state().distance > 0, null, { timeout: 3000 });
+
+    const saveBeforeMetrics = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
+    await page.evaluate(() => window.__runnerSmoke.endRun(123.75, 7));
+    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 2000 });
+    const metricsSave = await page.evaluate(() => JSON.parse(localStorage.getItem("semester-survival-runner-3d-v1")));
+    assert.equal(metricsSave.runs, saveBeforeMetrics.runs + 1, "one completed run must be counted exactly once");
+    assert.equal(metricsSave.totalDistance, saveBeforeMetrics.totalDistance + 123, "total distance must add the floored metres actually travelled");
+    assert.equal(metricsSave.best, Math.max(saveBeforeMetrics.best, 123), "personal best must use the completed run distance");
+    assert.equal(metricsSave.coins, saveBeforeMetrics.coins + 7, "banked coins must include exactly the coins collected in the run");
+    assert.equal(metricsSave.collected, saveBeforeMetrics.collected + 7, "lifetime collected coins must include the run coins exactly once");
+    assert.equal(await page.locator("#result-distance").textContent(), "123 m", "result screen must show the same distance used for saving");
+    assert.equal(await page.locator("#result-coins").textContent(), "7", "result screen must show the same collected coins used for saving");
+    await page.locator("#retry").click();
+    await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
+    const freshRun = await page.evaluate(() => window.__runnerSmoke.state());
+    assert.equal(freshRun.distance, 0, "Run It Back must start a fresh distance counter");
+    assert.equal(freshRun.coins, 0, "Run It Back must start a fresh collected-coins counter");
+    assert.equal(freshRun.energy, 100, "Run It Back must restore full energy after a completed run");
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
   } finally {
     await browser.close();
