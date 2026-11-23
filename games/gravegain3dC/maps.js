@@ -14,10 +14,10 @@ export const MAPS = {
         dirColor: [0.85, 0.95, 1.0],
         dirIntensity: 0.75,
         hasFloor: true,
-        floorSize: 90,
+        floorSize: 130,
         floorColor: [0.11, 0.14, 0.21],
         floorEmissive: [0.02, 0.03, 0.06],
-        halfBound: 42,
+        halfBound: 62,
         voidY: null,
         palette: {
             primary: [0.17, 0.22, 0.34],
@@ -31,10 +31,10 @@ export const MAPS = {
         },
         blocks: [
             // Perimeter boundary trim walls
-            { x: 0, y: 2, z: -43.5, w: 89, h: 4, d: 2, style: 'primary' },
-            { x: 0, y: 2, z: 43.5, w: 89, h: 4, d: 2, style: 'primary' },
-            { x: -43.5, y: 2, z: 0, w: 2, h: 4, d: 85, style: 'primary' },
-            { x: 43.5, y: 2, z: 0, w: 2, h: 4, d: 85, style: 'primary' },
+            { x: 0, y: 2, z: -63.5, w: 129, h: 4, d: 2, style: 'primary' },
+            { x: 0, y: 2, z: 63.5, w: 129, h: 4, d: 2, style: 'primary' },
+            { x: -63.5, y: 2, z: 0, w: 2, h: 4, d: 125, style: 'primary' },
+            { x: 63.5, y: 2, z: 0, w: 2, h: 4, d: 125, style: 'primary' },
 
             // Central elevated deck (topY = 4) + 4 support columns
             { x: 0, y: 3.5, z: 0, w: 18, h: 1, d: 18, style: 'platform' },
@@ -241,8 +241,8 @@ export const MAPS = {
             { x: 0, y: 0, z: 12, vx: 0, vy: 22, vz: 0, radius: 2.5 }
         ],
         hazards: [
-            { x: -14, z: 0, w: 6, d: 60, maxY: 0.45, dps: 28, bounceVy: 16 },
-            { x: 14, z: 0, w: 6, d: 60, maxY: 0.45, dps: 28, bounceVy: 16 }
+            { x: -14, z: 0, w: 6, d: 96, maxY: 0.45, dps: 28, bounceVy: 16 },
+            { x: 14, z: 0, w: 6, d: 96, maxY: 0.45, dps: 28, bounceVy: 16 }
         ],
         playerSpawn: [0, 0, -34],
         friendlySpawns: [
