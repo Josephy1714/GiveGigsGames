@@ -16,10 +16,10 @@ const BOT_RADIUS = 0.55;
 const BOT_HEIGHT = 2.2;
 
 const WEAPONS = [
-    { name: 'DEVASTATOR', speed: 39, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, heatPerShot: 0.34, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
-    { name: 'VORTEX', speed: 123.75, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, heatPerShot: 0.45, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
-    { name: 'SHOTGUN', speed: 67.5, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, heatPerShot: 0.28, sound: [105, .12, "square"], hudColor: "#ffdb59" },
-    { name: 'ELECTRO', speed: 51, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, heatPerShot: 0.11, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
+    { name: 'DEVASTATOR', speed: 39, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, heatPerShot: 0.34, coolRate: 0.24, overheatCoolRate: 0.16, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
+    { name: 'VORTEX', speed: 123.75, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, heatPerShot: 0.45, coolRate: 0.22, overheatCoolRate: 0.14, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
+    { name: 'SHOTGUN', speed: 67.5, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, heatPerShot: 0.26, coolRate: 0.32, overheatCoolRate: 0.24, sound: [105, .12, "square"], hudColor: "#ffdb59" },
+    { name: 'ELECTRO', speed: 51, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, heatPerShot: 0.10, coolRate: 0.38, overheatCoolRate: 0.30, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
 ];
 
 // Lightweight Web Audio synth for Xonotic-style SFX
@@ -1295,7 +1295,7 @@ function createScene() {
         player.dashTimer = Math.max(0, player.dashTimer - dt);
         for (let i = 0; i < WEAPONS.length; i++) {
             if (player.weaponHeat[i] > 0) {
-                const coolRate = player.weaponOverheated[i] ? 0.25 : 0.28;
+                const coolRate = player.weaponOverheated[i] ? WEAPONS[i].overheatCoolRate : WEAPONS[i].coolRate;
                 player.weaponHeat[i] = Math.max(0, player.weaponHeat[i] - dt * coolRate);
                 if (player.weaponHeat[i] <= 0) player.weaponOverheated[i] = false;
             }
