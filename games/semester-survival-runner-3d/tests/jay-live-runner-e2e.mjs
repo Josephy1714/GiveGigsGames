@@ -80,7 +80,7 @@ try{
  assert.equal(carry.recycled.visible,false,"The vehicle should recycle only after leaving the camera.");
  const carryRestarts=await page.evaluate(()=>window.__runnerSmoke.probeCarryRestart());
  assert.equal(carryRestarts.length,7);
- assert.ok(carryRestarts.every(result=>result.reset&&result.hidden),"Restart must clear and hide the carry vehicle from every event state.");
+ assert.ok(carryRestarts.every(result=>result.wasVisible&&result.reset&&result.hidden),"Restart must clear and hide the carry vehicle from every event state.");
  const final=await mount.evaluate(el=>({...el.dataset}));
  assert.equal(final.rendererReady,"true");
  assert.equal(final.activeAnimation,"slide");

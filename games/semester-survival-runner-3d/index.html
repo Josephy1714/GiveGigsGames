@@ -381,33 +381,40 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const snapshot=()=>({phase:g.carryState?.phase||"inactive",rideElapsed:Number(g.carryState?.rideElapsed)||0,height:Number(getCarryPlayerHeight(g.carryState).toFixed(3)),speed:Number(g.speed.toFixed(3)),lane:g.lane,vehicleLane:Number(mount.dataset.carryVehicleLane),visible:mount.dataset.carryVehicleVisible==="true",trafficTravel:Number(mount.dataset.trafficTravel),worldTravel:Number(mount.dataset.worldTravel),distance:g.d,vehicleZ:Number(g.carryState?.vehicleZ)});
   tick(.016);render(g);
   const approach=snapshot();
-  for(let i=0;i<100&&g.carryState?.phase==="approaching";i++){tick(.04);render(g);}
-  for(let i=0;i<4&&g.carryState?.phase==="boarding";i++){tick(.04);render(g);}
+  for(let i=0;i<100&&g.carryState?.phase==="approaching";i++){tick(.04);if(i%8===7)render(g);}
+  render(g);
+  for(let i=0;i<4&&g.carryState?.phase==="boarding";i++)tick(.04);
+  render(g);
   const boarding=snapshot();
-  for(let i=0;i<30&&g.carryState?.phase==="boarding";i++){tick(.04);render(g);}
+  for(let i=0;i<30&&g.carryState?.phase==="boarding";i++){tick(.04);if(i%4===3)render(g);}
+  render(g);
   const riding=snapshot();
   const rideDistanceStart=g.d;
-  for(let i=0;i<25;i++){tick(.04);render(g);}
+  for(let i=0;i<25;i++){tick(.04);if(i%5===4)render(g);}
+  render(g);
   const rideDistance=g.d-rideDistanceStart;
   g.carryState.rideElapsed=CARRY_VEHICLE.rideDurationSeconds-.04;
   tick(.04);render(g);
   const afterRide=snapshot();
-  for(let i=0;i<25&&g.carryState?.phase==="slowing_down";i++){tick(.04);render(g);}
+  for(let i=0;i<25&&g.carryState?.phase==="slowing_down";i++){tick(.04);if(i%5===4)render(g);}
+  render(g);
   const slowing=snapshot();
-  for(let i=0;i<25&&g.carryState?.phase==="slowing_down";i++){tick(.04);render(g);}
+  for(let i=0;i<25&&g.carryState?.phase==="slowing_down";i++){tick(.04);if(i%5===4)render(g);}
   tick(.04);render(g);
   const stopped=snapshot();
   const trafficBefore=stopped.trafficTravel,worldBefore=stopped.worldTravel;
   for(let i=0;i<5;i++){tick(.04);render(g);}
   const stoppedTraffic=snapshot();
   const trafficContinues=stoppedTraffic.trafficTravel>trafficBefore+.01&&Math.abs(stoppedTraffic.worldTravel-worldBefore)<.01;
-  for(let i=0;i<10&&g.carryState?.phase==="stopped";i++){tick(.04);render(g);}
+  for(let i=0;i<10&&g.carryState?.phase==="stopped";i++){tick(.04);if(i%2===1)render(g);}
+  render(g);
   const dismounting=snapshot();
-  for(let i=0;i<18&&g.carryState?.phase==="dismounting";i++){tick(.04);render(g);}
+  for(let i=0;i<18&&g.carryState?.phase==="dismounting";i++){tick(.04);if(i%3===2)render(g);}
   tick(.04);render(g);
   const completed=snapshot();
   const beforeLane=g.lane;lane(beforeLane===2?-1:1);const controlsRestored=g.lane!==beforeLane;render(g);
-  for(let i=0;i<80&&g.carryState;i++){tick(.04);render(g);}
+  for(let i=0;i<80&&g.carryState;i++){tick(.04);if(i%8===7)render(g);}
+  render(g);
   const recycled=snapshot();
   g=savedGame;render(g);
   return {approach,boarding,riding,rideDistance,afterRide,slowing,stopped,stoppedTraffic,trafficContinues,dismounting,completed,controlsRestored,recycled,baseSpeed};
@@ -419,8 +426,9 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const results=[];
   for(const phase of phases){
    g={...savedGame,carryState:{phase,lane:savedGame.lane,vehicleZ:-3.2,elapsed:0,rideElapsed:0,nextLaneCheck:0,speedScale:1}};
+   render(g);const wasVisible=$("#three-world").dataset.carryVehicleVisible==="true";
    start();render(g);
-   results.push({phase,reset:!g.carryState,hidden:$("#three-world").dataset.carryVehicleVisible==="false"});
+   results.push({phase,wasVisible,reset:!g.carryState,hidden:$("#three-world").dataset.carryVehicleVisible==="false"});
   }
   g=savedGame;render(g);
   return results;
