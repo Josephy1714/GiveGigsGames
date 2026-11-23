@@ -313,6 +313,11 @@ const sfx = new SoundFX();
 
 // Game State Variables
 let scene, camera, renderer, container;
+const cameraViews = ['solar', 'chase', 'forward'];
+const cameraLabels = { solar: 'Solar View', chase: 'Third Person', forward: 'Forward' };
+let cameraView = cameraViews.indexOf(store.get('orbitaldrift_cam', 'solar'));
+if (cameraView < 0) cameraView = 0;
+let cameraPosition, cameraFocus, cameraTarget, focusTarget;
 
 let planet, planetUniforms, atmoMat, rings, satellite, forcefield, magnetRing, orbits = [];
 
@@ -593,6 +598,9 @@ function initUI() {
 
     const muteBtn = $('TEMPLATE-4weird-mute-btn');
     const pauseBtn = $('TEMPLATE-4weird-pause-btn');
+    const cameraBtn = $('od-camera-btn');
+    cameraBtn.textContent = cameraLabels[cameraViews[cameraView]];
+    cameraBtn.addEventListener('click', cycleCameraView);
     if (muteBtn) muteBtn.addEventListener('click', (e) => { e.stopPropagation(); sfx.init(); const m = sfx.toggleMute(); applyMuteUI(); });
     if (pauseBtn) pauseBtn.addEventListener('click', (e) => { e.stopPropagation(); if (gameActive) togglePause(); });
 
@@ -777,6 +785,10 @@ function initThree() {
     camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 1500);
     camera.position.set(0, -230, 220);
     camera.lookAt(0, 0, 0);
+    cameraPosition = camera.position.clone();
+    cameraFocus = new THREE.Vector3();
+    cameraTarget = new THREE.Vector3();
+    focusTarget = new THREE.Vector3();
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     const isMobile = window.matchMedia && matchMedia('(pointer: coarse)').matches;
@@ -989,7 +1001,8 @@ function fitToContainer() {
 
 function handleKeyDown(e) {
     if (e.target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
-    if (e.repeat && ['KeyP', 'Escape', 'KeyM', 'KeyH'].includes(e.code)) return;
+    if (e.repeat && ['KeyP', 'Escape', 'KeyM', 'KeyH', 'KeyV', 'KeyC'].includes(e.code)) return;
+    if (e.code === 'KeyV' || e.code === 'KeyC') cycleCameraView();
     if (e.code === 'Space') {
         e.preventDefault();
         if (gameActive && !isPaused) { sfx.init(); setThrust(true); }
@@ -1629,6 +1642,43 @@ function spawnShockwave(pos) {
 
 
 // Main Game Frame Logic
+function cycleCameraView() {
+    cameraView = (cameraView + 1) % cameraViews.length;
+    const view = cameraViews[cameraView];
+    store.set('orbitaldrift_cam', view);
+    $('od-camera-btn').textContent = cameraLabels[view];
+}
+
+function updateCameraView(dt60) {
+    if (!satellite) return;
+    const { x, y } = satellite.position;
+    const radialX = Math.cos(satelliteAngle);
+    const radialY = Math.sin(satelliteAngle);
+    const tangentX = -radialY;
+    const tangentY = radialX;
+
+    switch (cameraViews[cameraView]) {
+        case 'chase':
+            cameraTarget.set(x - tangentX * 34 + radialX * 12, y - tangentY * 34 + radialY * 12, 18);
+            focusTarget.set(x + tangentX * 22, y + tangentY * 22, 0);
+            break;
+        case 'forward':
+            cameraTarget.set(x - tangentX * 4, y - tangentY * 4, 7.5);
+            focusTarget.set(x + tangentX * 70, y + tangentY * 70, -2);
+            break;
+        default:
+            cameraTarget.set(0, -230, 220);
+            focusTarget.set(0, 0, 0);
+    }
+
+    const blend = 1 - Math.pow(0.84, dt60);
+    cameraPosition.lerp(cameraTarget, blend);
+    camera.position.copy(cameraPosition);
+    cameraFocus.lerp(focusTarget, blend);
+    camera.up.set(0, 0, 1);
+    camera.lookAt(cameraFocus);
+}
+
 function animate(currentTime = performance.now()) {
     requestAnimationFrame(animate);
     if (!renderer || !scene) return;
@@ -2016,14 +2066,12 @@ function animate(currentTime = performance.now()) {
         }
     }
 
+    updateCameraView(dt60);
     if (shakeEnabled && screenShake > 0) {
-        camera.position.x = (Math.random() - 0.5) * screenShake;
-        camera.position.y = -230 + (Math.random() - 0.5) * screenShake;
+        camera.position.x += (Math.random() - 0.5) * screenShake;
+        camera.position.y += (Math.random() - 0.5) * screenShake;
         screenShake *= Math.pow(0.88, dt60);
         if (screenShake < 0.1) screenShake = 0;
-    } else {
-        camera.position.x = 0;
-        camera.position.y = -230;
     }
 
     for (let i = particles.length - 1; i >= 0; i--) {

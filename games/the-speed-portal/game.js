@@ -11,6 +11,13 @@ let particles = [];
 
 let playerAngle = -Math.PI / 2;
 const tunnelRadius = 4.0;
+const gravity = 22;
+const jumpHoldTime = 0.43;
+const maxJumpHeight = tunnelRadius - 0.5;
+let jumpHeight = 0;
+let jumpVelocity = 0;
+let jumpHoldRemaining = 0;
+let waveCount = 0;
 let baseSpeed = 26.0;
 let boostTimer = 0;
 let invulnTimer = 0;
@@ -54,6 +61,7 @@ window.game = window.gameState;
 
 let arcGeo, spokeGeo, speedRingGeo, sparkGeo;
 let arcMat, spokeMat, ringMat;
+const trackFeatures = {};
 
 let audioCtx = null;
 function initAudio() {
@@ -172,6 +180,24 @@ function init() {
     arcMat = new THREE.MeshPhongMaterial({ color: 0xef4444, emissive: 0x991b1b, shininess: 90 });
     spokeMat = new THREE.MeshPhongMaterial({ color: 0xf43f5e, emissive: 0x881337, shininess: 100 });
     ringMat = new THREE.MeshPhongMaterial({ color: 0x10b981, emissive: 0x065f46, shininess: 110 });
+    trackFeatures.ramp = {
+        geometry: new THREE.BoxGeometry(0.18, 2.1, 6),
+        material: new THREE.MeshBasicMaterial({ color: 0x22d3ee }),
+        radius: 3.65,
+        halfDepth: 3
+    };
+    trackFeatures.bumper = {
+        geometry: new THREE.BoxGeometry(0.9, 2.1, 1.8),
+        material: arcMat,
+        radius: 3.85,
+        halfDepth: 0.9
+    };
+    trackFeatures.mine = {
+        geometry: new THREE.OctahedronGeometry(0.72),
+        material: new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true }),
+        radius: 1.55,
+        halfDepth: 0.72
+    };
 
     buildTunnel();
     buildWarpStars();
@@ -187,6 +213,15 @@ function init() {
 
     const btnLeft = document.getElementById('btn-left');
     const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
+    btnJump.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        btnJump.setPointerCapture(e.pointerId);
+        startJump();
+    });
+    btnJump.addEventListener('lostpointercapture', releaseJump);
+    btnJump.addEventListener('pointerup', releaseJump);
+    btnJump.addEventListener('pointercancel', releaseJump);
     const setLeft = function (e) { e.preventDefault(); rotateDir = -1; };
     const setRight = function (e) { e.preventDefault(); rotateDir = 1; };
     const clearMove = function (e) { e.preventDefault(); rotateDir = 0; };
@@ -279,9 +314,41 @@ function createPlayerShip() {
     updatePlayerPosition(0);
 }
 
+function startJump() {
+    if (!gameActive || jumpHeight > 0 || jumpVelocity > 0) return;
+    jumpVelocity = 5.6;
+    jumpHoldRemaining = jumpHoldTime;
+}
+
+function releaseJump() {
+    jumpHoldRemaining = 0;
+}
+
+function updateJump(dt) {
+    const heldTime = Math.min(dt, jumpHoldRemaining);
+    // Holding Space sustains the inward push. Gravity pulls toward the
+    // currently steered wall direction, including while airborne.
+    jumpHeight += jumpVelocity * heldTime + 0.5 * heldTime ** 2;
+    jumpVelocity += heldTime;
+    jumpHoldRemaining -= heldTime;
+    const fallTime = dt - heldTime;
+    jumpHeight += jumpVelocity * fallTime - 0.5 * gravity * fallTime ** 2;
+    jumpVelocity -= gravity * fallTime;
+    if (jumpHeight >= maxJumpHeight) {
+        jumpHeight = maxJumpHeight;
+        jumpVelocity = Math.min(0, jumpVelocity);
+        releaseJump();
+    } else if (jumpHeight <= 0) {
+        jumpHeight = 0;
+        jumpVelocity = 0;
+        releaseJump();
+    }
+}
+
 function updatePlayerPosition(effDir) {
-    const x = Math.cos(playerAngle) * tunnelRadius;
-    const y = Math.sin(playerAngle) * tunnelRadius;
+    const radius = tunnelRadius - jumpHeight;
+    const x = Math.cos(playerAngle) * radius;
+    const y = Math.sin(playerAngle) * radius;
     player.position.set(x, y, 0);
     player.rotation.z = playerAngle - Math.PI / 2 - effDir * 0.28;
     shieldMesh.visible = hasShield;
@@ -296,12 +363,29 @@ function clearDynamic() {
     particles = [];
 }
 
+function spawnTrackFeature(kind, angle, z) {
+    const feature = trackFeatures[kind];
+    const mesh = new THREE.Mesh(feature.geometry, feature.material);
+    mesh.position.set(Math.cos(angle) * feature.radius, Math.sin(angle) * feature.radius, z);
+    mesh.rotation.z = angle;
+    if (kind === 'ramp') mesh.rotateY(0.12);
+    scene.add(mesh);
+    obstacles.push({ mesh, kind, angle, halfDepth: feature.halfDepth, grazed: false });
+}
+
 function spawnWaveHazard() {
     const angle = Math.random() * Math.PI * 2;
     const zStart = -135;
     const zone = getZoneName(distance);
 
-    if ((zone === 'Hyperdrive' || zone === 'Singularity' || distance >= 250) && Math.random() < 0.25) {
+    const wave = waveCount++ % 8;
+    if (wave === 0) {
+        spawnTrackFeature('ramp', angle, zStart + 11);
+        spawnTrackFeature('bumper', angle, zStart);
+    } else if (wave === 4) {
+        spawnTrackFeature('bumper', angle, zStart);
+        spawnTrackFeature('mine', angle + Math.PI / 3, zStart);
+    } else if ((zone === 'Hyperdrive' || zone === 'Singularity' || distance >= 250) && Math.random() < 0.25) {
         // Rotating laser spoke across tunnel diameter
         const mesh = new THREE.Mesh(spokeGeo, spokeMat);
         mesh.position.set(0, 0, zStart);
@@ -386,6 +470,7 @@ function startGame() {
 function pauseGame() {
     if (!gameActive) return;
     gameActive = false;
+    releaseJump();
     pauseScreen.classList.remove('hidden');
 }
 
@@ -399,6 +484,10 @@ function resumeGame() {
 function resetGame() {
     clearDynamic();
     playerAngle = -Math.PI / 2;
+    jumpHeight = 0;
+    jumpVelocity = 0;
+    releaseJump();
+    waveCount = 0;
     rotateDir = 0;
     window.rotateDir = 0;
     distance = 0;
@@ -413,7 +502,7 @@ function resetGame() {
     camera.fov = 70;
     camera.updateProjectionMatrix();
     updatePlayerPosition(0);
-    feedEl.textContent = 'Thread emerald rings for boosts & shield recharge · Graze barriers for +25m!';
+    feedEl.textContent = 'Tap Space to hop · Hold to dive · Ride cyan ramps to launch';
     updateHUD();
     startGame();
 }
@@ -433,7 +522,9 @@ function onKeyDown(e) {
     if (e.target && e.target.matches && e.target.matches('input, textarea, select, [contenteditable="true"]')) return;
     if (e.repeat && ['Escape', 'KeyP'].includes(e.code)) return;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') rotateDir = -1;
+    if (e.code === 'Space') {
+        if (!e.repeat) startJump();
+    } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') rotateDir = -1;
     else if (e.code === 'ArrowRight' || e.code === 'KeyD') rotateDir = 1;
     else if (e.code === 'KeyP' || e.code === 'Escape') {
         if (gameActive) pauseGame();
@@ -442,6 +533,7 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
+    if (e.code === 'Space') releaseJump();
     if ((e.code === 'ArrowLeft' || e.code === 'KeyA') && rotateDir === -1) rotateDir = 0;
     if ((e.code === 'ArrowRight' || e.code === 'KeyD') && rotateDir === 1) rotateDir = 0;
 }
@@ -468,6 +560,7 @@ function animate() {
     if (gameActive) {
         const effDir = rotateDir || window.rotateDir || 0;
         playerAngle += effDir * rotationSpeed * dt;
+        updateJump(dt);
         updatePlayerPosition(effDir);
 
         if (boostTimer > 0) boostTimer = Math.max(0, boostTimer - dt);
@@ -507,16 +600,47 @@ function animate() {
         // Obstacles
         for (let i = obstacles.length - 1; i >= 0; i--) {
             const obs = obstacles[i];
+            const previousZ = obs.mesh.position.z;
             obs.mesh.position.z += effSpeed * dt;
             if (obs.rotSpeed) {
                 obs.angle += obs.rotSpeed * dt;
                 obs.mesh.rotation.z = obs.angle;
             }
 
-            if (Math.abs(obs.mesh.position.z) < 0.9) {
-                const hit = obs.kind === 'spoke'
-                    ? Math.min(angularDist(obs.angle, playerAngle), angularDist(obs.angle + Math.PI, playerAngle)) < 0.22
-                    : angularDist(obs.angle, playerAngle) < 0.44;
+            const depth = obs.halfDepth ?? 0.9;
+            if (previousZ < depth && obs.mesh.position.z >= -depth) {
+                const diff = angularDist(obs.angle, playerAngle);
+                if (obs.kind === 'ramp') {
+                    if (obs.mesh.position.z >= 0 && !obs.launched && jumpHeight < 0.15 && diff < 0.29) {
+                        obs.launched = true;
+                        jumpVelocity = 11.8;
+                        releaseJump();
+                        spawnBurst(player.position, 0x22d3ee, 10);
+                        feedEl.textContent = 'RAMP LAUNCH!';
+                    }
+                    continue;
+                }
+                let hit;
+                let nearMiss = false;
+                switch (obs.kind) {
+                    case 'spoke': {
+                        const radius = tunnelRadius - jumpHeight;
+                        const spokeDistance = radius * Math.abs(Math.sin(diff));
+                        hit = spokeDistance < 0.35 + radius * 0.125;
+                        nearMiss = Math.min(diff, Math.PI - diff) < 0.82;
+                        break;
+                    }
+                    case 'mine':
+                        hit = Math.hypot(player.position.x - obs.mesh.position.x,
+                            player.position.y - obs.mesh.position.y) < 0.9;
+                        break;
+                    case 'bumper':
+                        hit = diff < 0.31 && jumpHeight < 0.57;
+                        break;
+                    default:
+                        hit = diff < 0.44 && jumpHeight < 0.57;
+                        nearMiss = diff < 0.82 && jumpHeight < 0.95;
+                }
                 if (hit && invulnTimer <= 0) {
                     if (hasShield) {
                         hasShield = false;
@@ -532,17 +656,12 @@ function animate() {
                         endGame();
                         return;
                     }
-                } else if (!hit && !obs.grazed) {
-                    const diff = obs.kind === 'spoke'
-                        ? Math.min(angularDist(obs.angle, playerAngle), angularDist(obs.angle + Math.PI, playerAngle))
-                        : angularDist(obs.angle, playerAngle);
-                    if (diff < 0.82) {
-                        obs.grazed = true;
-                        distance += 25;
-                        playSfx('graze');
-                        spawnBurst(player.position, 0x38bdf8, 5);
-                        feedEl.textContent = 'NEAR MISS! +25m Warp Bonus!';
-                    }
+                } else if (!hit && nearMiss && !obs.grazed) {
+                    obs.grazed = true;
+                    distance += 25;
+                    playSfx('graze');
+                    spawnBurst(player.position, 0x38bdf8, 5);
+                    feedEl.textContent = 'NEAR MISS! +25m Warp Bonus!';
                 }
             }
 
@@ -555,10 +674,12 @@ function animate() {
         // Speed rings
         for (let i = items.length - 1; i >= 0; i--) {
             const it = items[i];
+            const previousZ = it.mesh.position.z;
             it.mesh.position.z += effSpeed * dt;
             it.mesh.rotation.z += dt * 3.5;
 
-            if (Math.abs(it.mesh.position.z) < 1.1 && angularDist(it.angle, playerAngle) < 0.56) {
+            if (previousZ < 1.1 && it.mesh.position.z >= -1.1 &&
+                jumpHeight < 0.78 && angularDist(it.angle, playerAngle) < 0.56) {
                 boosts++;
                 ringCombo++;
                 boostTimer = 1.6;
