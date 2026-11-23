@@ -9,6 +9,7 @@ try{
  const errors=[];
  page.on("pageerror",e=>errors.push(e.message));
  page.on("console",m=>{if(m.type()==="error")errors.push(m.text())});
+ page.on("requestfailed",request=>errors.push(`requestfailed ${request.url()}: ${request.failure()?.errorText||"unknown"}`));
  await page.route("**/games/semester-survival-runner-3d/index.html*",async route=>{
   const response=await route.fetch();
   let body=await response.text();
@@ -18,7 +19,7 @@ try{
  });
  await page.goto("http://127.0.0.1:4174/games/semester-survival-runner-3d/index.html?smoke=1",{waitUntil:"networkidle",timeout:60000});
  const mount=page.locator("#three-world");
- await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.rendererReady==="true",{timeout:60000});
+ try{await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.rendererReady==="true",{timeout:60000});}catch(error){throw new Error(`${error.message}; browser errors: ${errors.join(" | ")||"none"}`)}
  const initial=await mount.evaluate(el=>({...el.dataset,canvasCount:el.querySelectorAll("canvas").length,canvasWidth:el.querySelector("canvas")?.width,canvasHeight:el.querySelector("canvas")?.height}));
  assert.ok(initial.canvasCount>0,"Three.js renderer did not create a canvas.");
  assert.ok(Number(initial.jayClipCount)>=5,"Unified Jay gameplay clips were not loaded.");
