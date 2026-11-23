@@ -59,9 +59,9 @@ export function getDifficultyProfile(distance, config = DEFAULT_DIFFICULTY_CONFI
 }
 
 export function getTrafficSpawnLayout(profile = {}) {
-  const distance = Math.max(0, Number(profile.distance) || 0);
+  const progress = clamp(Number(profile.progress) || 0, 0, 1);
   const frequency = clamp(Number(profile.trafficFrequencyMultiplier) || 1, 1, 1.12);
   const density = clamp(Number(profile.trafficDensityMultiplier) || 1, 1, 1.12);
-  const activeVehicleCount = 6 + Number(distance >= 1500) + Number(distance >= 3000);
+  const activeVehicleCount = 6 + Number(progress >= 0.4) + Number(progress >= 0.7);
   return Object.freeze({ activeVehicleCount, spacing: 43 / (frequency * density) });
 }

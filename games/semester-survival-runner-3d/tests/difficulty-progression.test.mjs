@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DIFFICULTY_MILESTONES, getDifficultyProfile, getTrafficSpawnLayout } from "../src/difficulty/difficulty-progression.js";
+import { DEFAULT_DIFFICULTY_CONFIG, DIFFICULTY_MILESTONES, getDifficultyProfile, getTrafficSpawnLayout } from "../src/difficulty/difficulty-progression.js";
 
 test("difficulty milestones map to the intended distance bands", () => {
   assert.deepEqual(DIFFICULTY_MILESTONES.map(item => item.distance), [0, 500, 1500, 3000, 5000]);
@@ -82,4 +82,6 @@ test("traffic frequency and density increase without spawning vehicles on top of
   assert.equal(master.activeVehicleCount, 8);
   assert.ok(master.spacing < expert.spacing && expert.spacing < advanced.spacing && advanced.spacing < beginner.spacing);
   assert.ok(master.spacing > 30, "Traffic spacing must retain a safe minimum at the Master cap.");
+  const custom = getDifficultyProfile(1000, { ...DEFAULT_DIFFICULTY_CONFIG, milestones: [{ distance: 0, progress: 0, band: "Start" }, { distance: 1000, progress: 1, band: "Peak" }] });
+  assert.equal(getTrafficSpawnLayout(custom).activeVehicleCount, 8, "Traffic density should follow configurable progression milestones.");
 });
