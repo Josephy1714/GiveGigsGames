@@ -110,6 +110,11 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
       assert.equal(obstacleProbe.holdInfinite, true, "the collided vehicle must not be removed during its impact animation");
       assert.ok(obstacleProbe.hitTimer >= obstacleProbe.clipDuration, "vehicle obstacle Game Over must wait for the impact clip");
     }
+    const sideObstacleProbe = await page.evaluate(() => window.__runnerSmoke.probeVehicleObstacle({ jump: 0, side: true }));
+    assert.equal(sideObstacleProbe.impactType, "side", "lane-changing into a 3D bus obstacle must register a side impact");
+    assert.equal(sideObstacleProbe.continueTraffic, true, "a side-hit obstacle bus must continue forward");
+    assert.equal(sideObstacleProbe.passBehind, true, "a side-hit obstacle bus must be allowed to pass behind Jay");
+    assert.ok(sideObstacleProbe.speed > 0, "side-hit bus collisions must preserve forward travel until the fall completes");
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
     assert.equal(bossProbe.label, "FINAL EXAMS", "semester eight must select the final-exams boss");
