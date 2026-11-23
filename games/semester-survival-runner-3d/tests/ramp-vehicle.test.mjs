@@ -1,12 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RAMP_VEHICLE, advanceRampEvent, beginRampDismount, canBoardRamp, rampSurfaceHeightAtLocalZ, rampSurfaceHeightAtProgress, rampVehicleWorldZ } from "../src/three/ramp-vehicle.js";
+import { RAMP_VEHICLE, advanceRampEvent, beginRampDismount, canBoardRamp, chooseRampLane, rampSurfaceHeightAtLocalZ, rampSurfaceHeightAtProgress, rampVehicleWorldZ } from "../src/three/ramp-vehicle.js";
 
 test("ramp surface joins the road and raised deck without floating gaps", () => {
   assert.equal(rampSurfaceHeightAtLocalZ(RAMP_VEHICLE.roadEdgeLocalZ), 0);
   assert.equal(rampSurfaceHeightAtLocalZ(RAMP_VEHICLE.deckEdgeLocalZ), RAMP_VEHICLE.deckHeight);
   assert.equal(rampSurfaceHeightAtLocalZ(99), 0);
   assert.equal(rampSurfaceHeightAtLocalZ(-99), RAMP_VEHICLE.deckHeight);
+});
+
+test("ramp approach lane is always reachable with one lane change", () => {
+  assert.equal(chooseRampLane(0), 1);
+  assert.equal(chooseRampLane(2), 1);
+  assert.equal(chooseRampLane(1, () => 0), 0);
+  assert.equal(chooseRampLane(1, () => 0.99), 2);
 });
 
 test("ramp boarding only activates in its approach window and matching lane", () => {

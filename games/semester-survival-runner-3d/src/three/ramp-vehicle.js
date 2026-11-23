@@ -24,6 +24,12 @@ export function rampSurfaceHeightAtProgress(progress, playerWorldZ = 2) {
   return rampSurfaceHeightAtLocalZ(playerWorldZ - rampVehicleWorldZ(progress));
 }
 
+export function chooseRampLane(playerLane, random = Math.random) {
+  const lane = clamp(Math.floor(Number(playerLane) || 0), 0, 2);
+  if (lane !== 1) return 1;
+  return random() < 0.5 ? 0 : 2;
+}
+
 export function canBoardRamp({ progress, playerLane, vehicleLane, active = false }) {
   return !active && playerLane === vehicleLane && progress >= RAMP_VEHICLE.boardingStartProgress && progress <= RAMP_VEHICLE.boardingEndProgress;
 }
