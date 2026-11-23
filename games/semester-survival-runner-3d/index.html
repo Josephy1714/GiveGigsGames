@@ -579,11 +579,13 @@ let audioPreviousCollision=null;
 const audioOriginalTick=tick;
 tick=function(dt){
  const beforeJump=g?.jump||0,beforeCoins=g?.coins||0,beforePowerups=g?.runPowerups||0;
+ const passingVehicles=g?.obs?.filter(item=>item.vehicle&&!item.collided&&item.z>=1.08&&item.z<1.12)||[];
  audioOriginalTick(dt);
  if(!g)return;
  if(beforeJump>0&&g.jump<=0)audioManager.play("landing");
  if(g.coins>beforeCoins)audioManager.play("coin");
  if((g.runPowerups||0)>beforePowerups)audioManager.play("powerup");
+ if(passingVehicles.some(item=>item.z>=1.12&&!g.obs.includes(item)))audioManager.play("passby",{priority:1});
  const collision=g.lastCollision;
  if(collision&&collision!==audioPreviousCollision){
   audioPreviousCollision=collision;

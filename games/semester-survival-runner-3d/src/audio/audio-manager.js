@@ -112,6 +112,7 @@ export function createAudioManager({musicUrl,legacySfxEnabled=()=>true}={}){
   collision:()=>{noiseBurst(0,.34,.16,"lowpass",760);tone(78,0,.28,"sine",.19,-38);tone(48,.035,.2,"triangle",.08,-15)},
   coin:()=>{tone(880,0,.09,"sine",.07,220);tone(1320,.075,.14,"sine",.055,160)},
   powerup:()=>{tone(420,0,.24,"sine",.075,620);tone(630,.09,.25,"triangle",.055,560)},
+  passby:()=>{noiseBurst(0,.3,.02,"bandpass",850);tone(280,0,.28,"sine",.012,-180)},
   gameover:()=>{tone(310,0,.25,"triangle",.08,-120);tone(190,.18,.42,"sine",.055,-75)},
   ui:()=>{tone(720,0,.045,"sine",.035,-90)}
  };
