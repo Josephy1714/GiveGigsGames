@@ -20,6 +20,7 @@ test("speed and traffic pressure increase monotonically with distance", () => {
     assert.ok(profiles[index].trafficFrequencyMultiplier >= profiles[index - 1].trafficFrequencyMultiplier);
     assert.ok(profiles[index].obstacleChance >= profiles[index - 1].obstacleChance);
     assert.ok(profiles[index].multiLanePatternChance >= profiles[index - 1].multiLanePatternChance);
+    assert.ok(profiles[index].rampVehicleChance >= profiles[index - 1].rampVehicleChance);
     assert.ok(profiles[index].spawnIntervalSeconds <= profiles[index - 1].spawnIntervalSeconds);
   }
 });

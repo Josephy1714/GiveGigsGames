@@ -15,7 +15,8 @@ export const DEFAULT_DIFFICULTY_CONFIG = Object.freeze({
   spawnIntervalSeconds: Object.freeze([3.1, 2.35]),
   obstacleChance: Object.freeze([0.14, 0.42]),
   vehicleChance: Object.freeze([0.14, 0.22]),
-  multiLanePatternChance: Object.freeze([0, 0.12])
+  multiLanePatternChance: Object.freeze([0, 0.12]),
+  rampVehicleChance: Object.freeze([0.015, 0.06])
 });
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -52,6 +53,7 @@ export function getDifficultyProfile(distance, config = DEFAULT_DIFFICULTY_CONFI
     spawnIntervalSeconds: interpolate(config.spawnIntervalSeconds, progress),
     obstacleChance: interpolate(config.obstacleChance, progress),
     vehicleChance: interpolate(config.vehicleChance, progress),
-    multiLanePatternChance: interpolate(config.multiLanePatternChance, progress)
+    multiLanePatternChance: interpolate(config.multiLanePatternChance, progress),
+    rampVehicleChance: interpolate(config.rampVehicleChance, progress)
   });
 }
