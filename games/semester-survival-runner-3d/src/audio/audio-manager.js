@@ -43,10 +43,13 @@ export function createAudioManager({musicUrl,legacySfxEnabled=()=>true}={}){
   if(music||!musicUrl)return;
   try{
    music=new Audio(musicUrl);music.preload="auto";music.loop=true;music.playsInline=true;
-   const ctx=ensureContext();
-   if(ctx){musicSource=ctx.createMediaElementSource(music);musicGain=ctx.createGain();musicSource.connect(musicGain);musicGain.connect(ctx.destination)}
    music.addEventListener("error",()=>music.pause());
    music.addEventListener("ended",()=>{if(runActive&&!runPaused&&!tabSuspended){try{music.currentTime=0;music.play().catch(()=>{})}catch{}}});
+   const ctx=ensureContext();
+   if(ctx){
+    try{musicSource=ctx.createMediaElementSource(music);musicGain=ctx.createGain();musicSource.connect(musicGain);musicGain.connect(ctx.destination)}
+    catch{musicSource=null;musicGain=null;music.volume=effective("music")}
+   }
    applyVolumes();
   }catch{music=null;musicGain=null;musicSource=null}
  }
