@@ -59,6 +59,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.locator("#nav-play").click();
     await page.waitForFunction(() => ["run", "idle"].includes(document.querySelector("#three-world")?.dataset.activeAnimation), null, { timeout: 5000 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.jayRunPhase === "loop", null, { timeout: 12000 });
+    assert.equal(await page.evaluate(() => window.__runnerSmoke.holdSafeRun()), true, "the smoke test must hold random spawns while checking controls");
     const earlyLateBusModels = await page.evaluate(() => window.__runnerSmoke.probeLateBus());
     assert.equal(earlyLateBusModels, 1, "a late bus obstacle must render as a real 3D vehicle");
     const coinProbe = await page.evaluate(() => window.__runnerSmoke.probeCoin());
