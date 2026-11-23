@@ -248,6 +248,7 @@
 .game-grid.grid-view .card-head.has-capsule {
   position: relative;
   display: block;
+  overflow: hidden;
   padding: 0;
 }
 

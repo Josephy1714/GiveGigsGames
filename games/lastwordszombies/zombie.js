@@ -16,6 +16,7 @@ class Zombie {
 
     // --- AWESOME: zombie archetypes (backwards compatible: default walker) ---
     const opt = options || {};
+    this.fantasy = opt.fantasy === true;
     this.ztype = opt.type || 'walker'; // walker | runner | brute | ghost | boss
     this.scoreValue = opt.scoreValue || 100;
     this.coinValue = opt.coinValue != null ? opt.coinValue : 1;
@@ -38,9 +39,9 @@ class Zombie {
     this.fontTheme = fontTheme;
 
     // Decaying green flesh tones
-    const fleshColors = [0x3e6648, 0x2f4d36, 0x4a7353, 0x3a5942];
+    const fleshColors = this.fantasy ? [0x91a755, 0x758c49, 0xa1ae61] : [0x3e6648, 0x2f4d36, 0x4a7353, 0x3a5942];
     // Dirty, ragged shirt colors
-    const shirtColors = [0x8f4c4c, 0x4c6a8f, 0x7c8f4c, 0x3d3d3d, 0xbf8f4c];
+    const shirtColors = this.fantasy ? [0x643c69, 0x753d57, 0x514573, 0x84534a] : [0x8f4c4c, 0x4c6a8f, 0x7c8f4c, 0x3d3d3d, 0xbf8f4c];
     // Dirty, ragged pants colors
     const pantsColors = [0x2b2b36, 0x3b3323, 0x223022, 0x1d1e26];
     
@@ -73,6 +74,9 @@ class Zombie {
       this.eyeIntensity = 4.5;
     }
 
+    if (this.fantasy && (this.ztype === 'walker' || this.ztype === 'ghost')) {
+      this.eyeColor = this.ztype === 'ghost' ? 0xffd273 : 0xffed9b;
+    }
     this.createModel();
     this.createLabel();
   }
@@ -90,7 +94,7 @@ class Zombie {
     this.group.add(this.torso);
     
     // A faceted head, jaw, and exposed neck give the zombies a stronger silhouette.
-    const headGeo = new THREE.IcosahedronGeometry(0.31, 1);
+    const headGeo = this.fantasy ? new THREE.BoxGeometry(0.53, 0.49, 0.43) : new THREE.IcosahedronGeometry(0.31, 1);
     const headMat = new THREE.MeshStandardMaterial({ color: this.fleshColor, roughness: 0.78, metalness: 0.04 });
     this.head = new THREE.Mesh(headGeo, headMat);
     this.head.position.set(0, 1.25, 0);
@@ -100,13 +104,13 @@ class Zombie {
     neck.position.set(0, 0.98, 0);
     this.group.add(neck);
     const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.28), new THREE.MeshStandardMaterial({ color: 0x233c2b, roughness: 1 }));
-    jaw.position.set(0, 1.08, 0.14);
+    jaw.position.set(0, this.fantasy ? 1.043 : 1.08, this.fantasy ? 0.112 : 0.14);
     jaw.rotation.x = -0.14;
     this.group.add(jaw);
     
     // 2b. Two separate glowing eyes (color varies by archetype)
     const eyeMat = new THREE.MeshStandardMaterial({ color: this.eyeColor, emissive: this.eyeColor, emissiveIntensity: this.eyeIntensity, roughness: 0.25 });
-    const eyeGeo = new THREE.SphereGeometry(0.045, 8, 6);
+    const eyeGeo = this.fantasy ? new THREE.BoxGeometry(0.094, 0.071, 0.025) : new THREE.SphereGeometry(0.045, 8, 6);
     
     this.eyeL = new THREE.Mesh(eyeGeo, eyeMat);
     this.eyeL.position.set(-0.12, 1.3, 0.26);
@@ -116,17 +120,37 @@ class Zombie {
     this.eyeR.position.set(0.12, 1.3, 0.26);
     this.group.add(this.eyeR);
 
-    // Torn shirt panel and a faint bio-luminescent wound keep the model legible in dark levels.
-    const wound = new THREE.Mesh(
-      new THREE.CircleGeometry(0.11, 8),
-      new THREE.MeshBasicMaterial({ color: 0x78ff8a, transparent: true, opacity: 0.8 })
-    );
-    wound.position.set(0.13, 0.57, 0.205);
-    this.group.add(wound);
-    
+    if (this.fantasy) {
+      const shadow = new THREE.MeshStandardMaterial({ color: 0x27222b, roughness: 0.9 });
+      const teeth = new THREE.MeshStandardMaterial({ color: 0xc5b686, roughness: 0.87 });
+      const detail = (geometry, material, x, y, z) => {
+        const part = new THREE.Mesh(geometry, material);
+        part.position.set(x, y, z);
+        this.group.add(part);
+        return part;
+      };
+      detail(new THREE.BoxGeometry(0.27, 0.113, 0.035), shadow, 0, 1.143, 0.251).rotation.z = -0.07;
+      const tooth = new THREE.BoxGeometry(0.043, 0.029, 0.018);
+      for (let i = 0; i < 5; i++) detail(tooth, teeth, (i - 2) * 0.049, 1.173 - i * 0.003, 0.276);
+      const hood = detail(new THREE.DodecahedronGeometry(0.31, 0), torsoMat.clone(), 0, 1.47, -0.048);
+      hood.scale.set(1.12, 0.55, 0.91);
+      const brow = new THREE.BoxGeometry(0.13, 0.035, 0.035);
+      detail(brow, shadow, -0.12, 1.348, 0.254).rotation.z = -0.28;
+      detail(brow, shadow, 0.12, 1.348, 0.254).rotation.z = 0.28;
+    }
+
+    if (!this.fantasy) {
+      const wound = new THREE.Mesh(
+        new THREE.CircleGeometry(0.11, 8),
+        new THREE.MeshBasicMaterial({ color: 0x78ff8a, transparent: true, opacity: 0.8 })
+      );
+      wound.position.set(0.13, 0.57, 0.205);
+      this.group.add(wound);
+    }
+
     // 3. Arms (Low-poly sleeves and flesh hands stretching forward)
     const sleeveGeo = new THREE.BoxGeometry(0.14, 0.14, 0.45);
-    const handGeo = new THREE.BoxGeometry(0.12, 0.12, 0.2);
+    const handGeo = this.fantasy ? new THREE.BoxGeometry(0.17, 0.13, 0.22) : new THREE.BoxGeometry(0.12, 0.12, 0.2);
     const sleeveMat = new THREE.MeshStandardMaterial({ color: this.shirtColor, roughness: 0.9 });
     const handMat = new THREE.MeshStandardMaterial({ color: this.fleshColor, roughness: 0.9 });
     
@@ -233,7 +257,7 @@ class Zombie {
       });
       const halo = new THREE.Mesh(
         new THREE.TorusGeometry(0.45, 0.02, 8, 24),
-        new THREE.MeshBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: this.fantasy ? 0xffce68 : 0x00f2fe, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       halo.position.set(0, 0.15, 0);
       halo.rotation.x = Math.PI / 2;
@@ -487,7 +511,7 @@ class Zombie {
     if (this.isTargeted !== targeted) {
       this.isTargeted = targeted;
       if (targeted) {
-        const hl = this.ztype === 'boss' ? 0xffd700 : 0xff0055;
+        const hl = this.fantasy || this.ztype === 'boss' ? 0xffbc52 : 0xff0055;
         this.torso.material.color.setHex(hl);
         this.head.material.color.setHex(hl);
       } else {

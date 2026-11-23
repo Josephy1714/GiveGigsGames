@@ -1965,3 +1965,52 @@ input[type="checkbox"]:focus-visible {
   color: #fff;
   pointer-events: none;
 }
+
+/* The Fantasy setup uses the live graveyard as its backdrop. */
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] #TEMPLATE-4weird-start-screen {
+  background: radial-gradient(ellipse at center, #090d22e8 16%, #0a153fc4 54%, #0b193e58 100%);
+}
+
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] #start-overlay-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.8rem, 5vw, 3.3rem);
+  font-weight: 900;
+  line-height: 0.91;
+  letter-spacing: -0.025em;
+  text-transform: none;
+  color: #fff0b2;
+  text-shadow: 0 2px #7d3a1b, 0 4px #160f24, 0 0 18px #ffa43d9c;
+}
+
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] #start-overlay-title span {
+  display: block;
+  color: #d3f279;
+  text-shadow: 0 2px #4c6c1f, 0 4px #101625, 0 0 16px #9de15a66;
+}
+
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] .btn-level.active,
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] #TEMPLATE-4weird-start-btn {
+  border-color: #ffcf77;
+  background: linear-gradient(135deg, #ffe4a3, #ed9e49);
+  color: #211329;
+  box-shadow: 0 0 14px #e4a74755;
+}
+
+.TEMPLATE-4weird-game-page:has([data-map="fantasy"])::before {
+  opacity: 0;
+}
+
+.TEMPLATE-4weird-game-frame[data-map="fantasy"] {
+  --neon-cyan: #ffdb87;
+  --neon-purple: #9884ba;
+  --glow-cyan: 0 0 12px #ffb34c72;
+  --border-cyber: 1px solid #d0a06057;
+}
+
+@media (pointer: fine) and (min-width: 800px) {
+  .TEMPLATE-4weird-game-frame #powerup-bar {
+    left: auto;
+    right: 16px;
+    transform: none;
+  }
+}
