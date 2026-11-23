@@ -28,6 +28,7 @@ try{
  await page.screenshot({path:"/tmp/jay-live-runner-home.png",fullPage:false});
  await page.locator("#play").click();
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:10000});
+ assert.equal(await page.evaluate(()=>window.__runnerSmoke.holdSafeRun()),true,"The browser test should isolate animation and event checks from random traffic collisions.");
  await page.waitForTimeout(900);
  const running=await mount.evaluate(el=>({...el.dataset}));
  assert.equal(running.activeAnimation,"run");
