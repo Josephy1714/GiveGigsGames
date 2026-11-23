@@ -430,7 +430,6 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
    start();render(g);
    results.push({phase,wasVisible,reset:!g.carryState,hidden:$("#three-world").dataset.carryVehicleVisible==="false"});
   }
-  g=savedGame;render(g);
   return results;
  },
  probeLateBus:()=>{
