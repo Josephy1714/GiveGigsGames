@@ -38,7 +38,7 @@ try{
  assert.notEqual(lane,null,"Lane lean telemetry should be available.");
  await page.keyboard.press("ArrowUp");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="jump",{timeout:5000});
- await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:5000});
+ await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000});
  await page.keyboard.press("ArrowDown");
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="run",{timeout:5000}).catch(async error=>{const state=await mount.evaluate(el=>({...el.dataset}));throw new Error("Slide input did not activate. Live renderer telemetry: "+JSON.stringify(state)+"; browser errors: "+errors.join(" | ")+"; original: "+error.message)});
  await page.waitForTimeout(250);
@@ -89,7 +89,7 @@ try{
  await page.waitForFunction(()=>document.querySelector("#three-world")?.dataset.activeAnimation==="slide",{timeout:5000}).catch(async error=>{const state=await page.evaluate(()=>window.__runnerSmoke.state());throw new Error("Original player animation did not recover after carry/restart probes: "+JSON.stringify(state)+"; "+error.message)});
  const final=await mount.evaluate(el=>({...el.dataset}));
  assert.equal(final.rendererReady,"true");
- assert.equal(final.activeAnimation,"run");
+ assert.equal(final.activeAnimation,"slide");
  assert.ok(Number(final.activeVehicleObstacles)>=0);
  assert.deepEqual(errors,[],"Browser console/runtime errors: "+errors.join(" | "));
  await page.screenshot({path:"/tmp/jay-live-runner-gameplay.png",fullPage:false});

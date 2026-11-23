@@ -440,9 +440,10 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   for(const phase of phases){
    g={...savedGame,carryState:{phase,lane:savedGame.lane,vehicleZ:-3.2,elapsed:0,rideElapsed:0,nextLaneCheck:0,speedScale:1}};
    render(g);const wasVisible=$("#three-world").dataset.carryVehicleVisible==="true";
-   start();window.__runnerSmoke.holdSafeRun();render(g);
+   start();render(g);
    results.push({phase,wasVisible,reset:!g.carryState,hidden:$("#three-world").dataset.carryVehicleVisible==="false"});
   }
+  g=savedGame;render(g);
   return results;
  },
  probeLateBus:()=>{
