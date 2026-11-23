@@ -49,6 +49,8 @@
             this.isDead = false;
             this.isBlocking = false;
             this.parryWindow = 0;
+            this.wasBlocking = false;
+            this.elfJumpHeld = false;
 
             this.potions = 1 + (permanentStats.potions || 0);
             this.perks = [];
@@ -86,7 +88,10 @@
                 if (this.stoneDuration <= 0) this.stoneForm = false;
             }
 
-            if (this.parryWindow > 0) this.parryWindow -= dt;
+            if (!this.isBlocking) this.parryWindow = 0;
+            else if (!this.wasBlocking) this.parryWindow = 0.16;
+            else this.parryWindow = Math.max(0, this.parryWindow - dt);
+            this.wasBlocking = this.isBlocking;
             if (this.abilityCooldown > 0) this.abilityCooldown -= dt;
 
             // Movement vector relative to look yaw
@@ -150,11 +155,13 @@
             }
 
             // Jump & Vertical physics
-            if (input.keys['Space'] && this.grounded) {
+            const jumpHeld = !!input.keys['Space'];
+            const isElf = this.race === Race.ELF;
+            if (jumpHeld && this.grounded && (!isElf || !this.elfJumpHeld)) {
                 this.platVy = 280;
                 this.grounded = false;
                 this.doubleJumpsLeft = this.race === Race.DWARF ? 1 : 0;
-                input.keys['Space'] = false;
+                if (!isElf) input.keys['Space'] = false;
                 if (window.GraveGainGame) window.GraveGainGame.audio.playSfx('swing', 1.4);
             } else if (input.keys['Space'] && !this.grounded && this.race === Race.DWARF && this.doubleJumpsLeft > 0) {
                 this.platVy = 230;
@@ -166,8 +173,11 @@
                 this.stamina = Math.max(0, this.stamina - 30 * dt);
             }
 
+            if (isElf) this.elfJumpHeld = jumpHeld;
             if (!this.grounded) {
-                this.platVy -= 750 * dt;
+                const gliding = isElf && jumpHeld && this.platVy <= 0;
+                this.platVy -= (gliding ? 240 : 750) * dt;
+                if (gliding) this.platVy = Math.max(-88, this.platVy);
                 this.yElevation += this.platVy * dt;
                 if (this.yElevation <= 0) {
                     this.yElevation = 0;
@@ -193,6 +203,7 @@
             // Blocking logic
             if (this.isBlocking) {
                 if (this.parryWindow > 0) {
+                    this.parryWindow = 0;
                     // Perfect Parry!
                     if (window.GraveGainGame) {
                         window.GraveGainGame.combatText.spawnText(this.x, 20, this.y, 'PARRIED!', 'block');

@@ -1,5 +1,5 @@
 // GraveGain 3D & 2D Playable Race Models — High-Detail Edition (Human, Elf, Dwarf, Orc)
-// Requires /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
+// Requires /games/_shared/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
 // Every model returns outer `root` wrapping inner `rig` so animations never break normalizeModel() centering.
 
 (function () {
@@ -7,6 +7,7 @@
 
   const K = window.GGG_GRAVEGAIN_KIT;
   if (!K) return;
+  const loadouts = new WeakMap();
 
   // Shared helper to construct articulated base leg + boot
   function buildLeg(THREE, rig, x, hipY, thighLen, shinLen, mats, opts) {
@@ -82,7 +83,7 @@
       game: 'GraveGain 3D / 2D',
       category: 'Characters',
       tags: ['human', 'player', 'race', 'astronaut', 'eva', 'jetpack', 'shield', 'animated'],
-      description: 'Highly detailed sealed MoonRock EVA Vanguard with HUD visor, dual oxygen hoses, Shield-Wall core, deployable hex shield, pulse carbine, and dual-thruster jetpack (12 animations).',
+      description: 'Highly detailed sealed MoonRock EVA Vanguard with HUD visor, dual oxygen hoses, Shield-Wall core, deployable hex shield, pulse carbine, and dual-thruster jetpack (23 animations).',
       build: function createHumanVanguard(THREE) {
         const root = new THREE.Group();
         const rig = K.joint(THREE, root, 0, 0, 0);
@@ -223,8 +224,10 @@
           leftLeg: leftLeg.leg, leftShin: leftLeg.shin, leftFoot: leftLeg.foot,
           rightLeg: rightLeg.leg, rightShin: rightLeg.shin, rightFoot: rightLeg.foot
         };
+        loadouts.set(root, { right: right.hand, left: left.hand, original: [gun] });
         root.userData.animations = K.RACE_ANIMATIONS;
         root.userData.animate = K.createHumanoidAnimator(parts, {
+          race: 'human',
           jetpackFlames,
           shieldDome,
           auraRings: [coreRing]
@@ -242,7 +245,7 @@
       game: 'GraveGain 3D / 2D',
       category: 'Characters',
       tags: ['elf', 'player', 'race', 'mage', 'bioluminescent', 'light-spirits', 'animated'],
-      description: 'Tall bioluminescent Northern Grove Spellblade with glowing BrightEyes, braided silver-jade hair, 3 orbiting Light Spirits, filigree battle-skirt, and Moonstone Staff-Glaive (12 animations).',
+      description: 'Tall bioluminescent Northern Grove Spellblade with glowing BrightEyes, braided silver-jade hair, 3 orbiting Light Spirits, filigree battle-skirt, and Moonstone Staff-Glaive (23 animations).',
       build: function createElvenSpellblade(THREE) {
         const root = new THREE.Group();
         const rig = K.joint(THREE, root, 0, 0, 0);
@@ -374,8 +377,10 @@
           leftLeg: leftLeg.leg, leftShin: leftLeg.shin, leftFoot: leftLeg.foot,
           rightLeg: rightLeg.leg, rightShin: rightLeg.shin, rightFoot: rightLeg.foot
         };
+        loadouts.set(root, { right: right.hand, left: left.hand, original: [staff] });
         root.userData.animations = K.RACE_ANIMATIONS;
         root.userData.animate = K.createHumanoidAnimator(parts, {
+          race: 'elf',
           armSwing: 0.85,
           legSwing: 0.78,
           tassets,
@@ -396,7 +401,7 @@
       game: 'GraveGain 3D / 2D',
       category: 'Characters',
       tags: ['dwarf', 'player', 'race', 'tank', 'hammer', 'shield', 'sparkite', 'animated'],
-      description: 'Stout Central Highlands Ironbreaker in horned runic plate with braided ringed beard, glowing Sparkite chest furnace, alchemical brew flasks, steam tanks, tower shield, and Warhammer (12 animations).',
+      description: 'Stout Central Highlands Ironbreaker in horned runic plate with braided ringed beard, glowing Sparkite chest furnace, alchemical brew flasks, steam tanks, tower shield, and Warhammer (23 animations).',
       build: function createDwarvenIronbreaker(THREE) {
         const root = new THREE.Group();
         const rig = K.joint(THREE, root, 0, 0, 0);
@@ -522,8 +527,10 @@
           leftLeg: leftLeg.leg, leftShin: leftLeg.shin, leftFoot: leftLeg.foot,
           rightLeg: rightLeg.leg, rightShin: rightLeg.shin, rightFoot: rightLeg.foot
         };
+        loadouts.set(root, { right: right.hand, left: left.hand, original: [hammer, shield] });
         root.userData.animations = K.RACE_ANIMATIONS;
         root.userData.animate = K.createHumanoidAnimator(parts, {
+          race: 'dwarf',
           armSwing: 0.58,
           legSwing: 0.52,
           heavyLean: 0.34,
@@ -543,7 +550,7 @@
       game: 'GraveGain 3D / 2D',
       category: 'Characters',
       tags: ['orc', 'player', 'race', 'warrior', 'berserker', 'cleaver', 'tusks', 'animated'],
-      description: 'Towering Southern Wastes Orc Warchief with curved ivory tusks, war-mohawk, trophy-skull spiked pauldron, glowing Rage runes, fist-buckler, and serrated Cleaver (12 animations).',
+      description: 'Towering Southern Wastes Orc Warchief with curved ivory tusks, war-mohawk, trophy-skull spiked pauldron, glowing Rage runes, fist-buckler, and serrated Cleaver (23 animations).',
       build: function createOrcishWarchief(THREE) {
         const root = new THREE.Group();
         const rig = K.joint(THREE, root, 0, 0, 0);
@@ -661,8 +668,10 @@
           leftLeg: leftLeg.leg, leftShin: leftLeg.shin, leftFoot: leftLeg.foot,
           rightLeg: rightLeg.leg, rightShin: rightLeg.shin, rightFoot: rightLeg.foot
         };
+        loadouts.set(root, { right: right.hand, left: left.hand, original: [cleaver] });
         root.userData.animations = K.RACE_ANIMATIONS;
         root.userData.animate = K.createHumanoidAnimator(parts, {
+          race: 'orc',
           armSwing: 0.78,
           legSwing: 0.68,
           heavyLean: 0.36,
@@ -673,4 +682,73 @@
       }
     }
   );
+  const races = ['human', 'elf', 'dwarf', 'orc'];
+  const classes = ['warrior', 'tank', 'support', 'mage'];
+  const originalClass = { human: 'warrior', elf: 'mage', dwarf: 'tank', orc: 'warrior' };
+  const raceColors = { human: 0x58bbff, elf: 0x68ffd0, dwarf: 0xffb84d, orc: 0xff694e };
+  const classColors = { warrior: 0xef804d, tank: 0x53baff, support: 0x80f0a2, mage: 0xc390ff };
+  const catalog = window.GGG_MODEL_CATALOG;
+  const fighters = {};
+
+  function equipClass(THREE, root, race, cls) {
+    const { right, left, original } = loadouts.get(root);
+    original.forEach(item => { item.visible = false; });
+    const metal = K.mat(THREE, { color: raceColors[race], metalness: 0.55, roughness: 0.36 });
+    const dark = K.mat(THREE, { color: 0x263449, metalness: 0.35, roughness: 0.55 });
+    const glow = K.mat(THREE, { color: classColors[cls], emissive: classColors[cls], emissiveIntensity: 0.55 });
+    const weapon = K.joint(THREE, right, 0, 0, 0.04);
+    weapon.rotation.x = 0.3;
+    K.add(THREE, weapon, new THREE.CylinderGeometry(0.032, 0.035, 0.38, 8), dark, [0, 0.08, 0]);
+    if (cls === 'warrior') {
+      const blade = K.extrude(THREE, [[-0.07, 0.24], [0.07, 0.24], [0.11, 0.74], [0, 0.91], [-0.11, 0.74]], 0.045, 0.015, metal);
+      weapon.add(blade);
+      K.add(THREE, weapon, new THREE.BoxGeometry(0.29, 0.055, 0.1), glow, [0, 0.24, 0]);
+    } else if (cls === 'tank') {
+      K.add(THREE, weapon, new THREE.BoxGeometry(0.25, 0.18, 0.21), metal, [0, 0.28, 0]);
+      const shield = K.joint(THREE, left, 0, 0.1, 0.13);
+      const plate = K.extrude(THREE, [[0, -0.32], [-0.29, -0.06], [-0.29, 0.24], [0, 0.34], [0.29, 0.24], [0.29, -0.06]], 0.06, 0.015, metal);
+      shield.add(plate);
+      K.add(THREE, shield, new THREE.OctahedronGeometry(0.12), glow, [0, 0.04, 0.08]);
+    } else if (cls === 'support') {
+      K.add(THREE, weapon, new THREE.CylinderGeometry(0.065, 0.07, 0.34, 8), metal, [0, 0.27, 0]);
+      K.add(THREE, weapon, new THREE.BoxGeometry(0.23, 0.07, 0.10), glow, [0, 0.45, 0]);
+      K.add(THREE, weapon, new THREE.BoxGeometry(0.07, 0.22, 0.10), glow, [0, 0.45, 0]);
+      K.add(THREE, left, new THREE.IcosahedronGeometry(0.105, 1), glow, [0, -0.10, 0.13]);
+    } else {
+      K.add(THREE, weapon, new THREE.CylinderGeometry(0.026, 0.04, 0.87, 8), metal, [0, 0.30, 0]);
+      K.add(THREE, weapon, new THREE.TorusGeometry(0.16, 0.022, 8, 16), dark, [0, 0.77, 0]);
+      K.add(THREE, weapon, new THREE.OctahedronGeometry(0.12), glow, [0, 0.77, 0]);
+    }
+  }
+
+  for (const race of races) {
+    const base = catalog.find(entry => entry.id === 'gg-race-' + race);
+    for (const cls of classes) {
+      const id = race + '-' + cls;
+      if (originalClass[race] === cls) {
+        base.fighterId = id;
+        fighters[id] = base;
+        continue;
+      }
+      const title = id.replace(/(^|-)([a-z])/g, (_, prefix, letter) => (prefix ? ' ' : '') + letter.toUpperCase());
+      const entry = {
+        id: 'gg-fighter-' + id,
+        fighterId: id,
+        name: title,
+        game: 'GraveGain 2D',
+        category: 'Characters',
+        tags: [race, cls, 'fighter', 'animated'],
+        description: title + ' with class equipment and the articulated GraveGain race rig.',
+        build(THREE) {
+          const root = base.build(THREE);
+          equipClass(THREE, root, race, cls);
+          return root;
+        }
+      };
+      fighters[id] = entry;
+      catalog.push(entry);
+    }
+  }
+
+  window.GGG_GRAVEGAIN_FIGHTERS = Object.freeze(fighters);
 })();

@@ -53,6 +53,10 @@
         return d;
     }
 
+    function formatSlice(w) {
+        return (w < 0 ? '−' : '+') + Math.abs(w).toFixed(2).replace(/\.?0+$/, '');
+    }
+
     function setWidth(bar, frac) {
         try {
             frac = Math.max(0, Math.min(1, Number(frac) || 0));
@@ -64,7 +68,8 @@
         opts = opts || {};
         this.root = null;
         this.hpFill = null; this.stFill = null; this.sandFill = null;
-        this.wNeedle = null; this.goldEl = null; this.kcEl = null;
+        this.wNeedle = null; this.wMeter = null; this.wValue = null;
+        this.wAna = null; this.wKata = null; this.goldEl = null; this.kcEl = null;
         this.strokeEl = null; this.braneEl = null; this.bossWrap = null;
         this.bossFill = null; this.bossName = null; this.popLayer = null;
         this.bannerEl = null; this.missionEl = null; this.missionBody = null;
@@ -92,10 +97,13 @@
             this.goldEl = el('span', '', row); this.kcEl = el('span', '', row);
             this.strokeEl = el('span', '', row);
             var wlbl = el('div', 'gg4d-wlbl', tl);
-            wlbl.appendChild(doc.createTextNode('ana'));
-            wlbl.appendChild(doc.createTextNode('W-slice'));
-            wlbl.appendChild(doc.createTextNode('kata'));
-            var w = el('div', 'gg4d-w', tl); this.wNeedle = el('i', '', w);
+            this.wAna = el('span', '', wlbl);
+            this.wValue = el('strong', '', wlbl);
+            this.wKata = el('span', '', wlbl);
+            this.wMeter = el('div', 'gg4d-w', tl);
+            this.wMeter.setAttribute('role', 'meter');
+            this.wMeter.setAttribute('aria-label', 'W slice');
+            this.wNeedle = el('i', '', this.wMeter);
             var sand = el('div', 'gg4d-sand', tl); this.sandFill = el('i', '', sand);
             this.braneEl = el('span', 'gg4d-brane', tl);
             var boss = el('div', 'gg4d-boss', root);
@@ -128,8 +136,14 @@
             if (this.strokeEl) this.strokeEl.textContent = '⛳ ' + (s.strokes | 0 || 0) + '/' + (s.par !== undefined ? s.par : '–');
             if (this.wNeedle) {
                 var lo = (s.wMin !== undefined ? s.wMin : 0), hi = (s.wMax !== undefined ? s.wMax : 3);
-                var wv = (s.w !== undefined ? s.w : (lo + hi) / 2);
+                var wv = Math.max(lo, Math.min(hi, s.w !== undefined ? s.w : lo));
                 var f = hi > lo ? (wv - lo) / (hi - lo) : 0.5;
+                this.wAna.textContent = 'Ana ' + formatSlice(lo);
+                this.wValue.textContent = 'W' + formatSlice(wv);
+                this.wKata.textContent = 'Kata ' + formatSlice(hi);
+                this.wMeter.setAttribute('aria-valuemin', lo);
+                this.wMeter.setAttribute('aria-valuemax', hi);
+                this.wMeter.setAttribute('aria-valuenow', wv);
                 f = Math.max(0, Math.min(1, f));
                 this.wNeedle.style.left = (f * 100).toFixed(1) + '%';
             }

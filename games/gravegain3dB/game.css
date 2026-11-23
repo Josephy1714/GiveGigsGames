@@ -2851,6 +2851,7 @@ body.touch-enabled .mobile-joystick-container:active {
     z-index: 51;
 }
 .weapon-comparison span:nth-child(2) { color: #b8c8d9; }
+#weaponComparisonDelta { color: #a5f3fc; font-weight: 700; }
 .starter-weapon-cache:not([hidden]) {
     display: grid;
     gap: 0.3rem;

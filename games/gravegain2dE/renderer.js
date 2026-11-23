@@ -265,7 +265,67 @@
 
     ctx.scale(f.face * scaleX, scaleY);
 
+    if (!window.GG2DE_FIGHTER_MODELS?.draw(ctx, f, time)) drawCanvasFighter(ctx, f, time);
+
+    // Active attack slash arc
+    if (f.activeHitbox && f.attackTimer > 0) {
+      ctx.save();
+      ctx.strokeStyle = pal.glow;
+      ctx.lineWidth = f.activeHitbox.smash ? 5 : 3;
+      ctx.globalAlpha = 0.72;
+      ctx.beginPath();
+      ctx.arc(14, -24, Math.max(16, (f.activeHitbox.r || 26) * 0.78), -0.9, 0.9);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    // Bubble Shield
+    if (f.shielding) {
+      const ratio = Math.max(0.25, f.shieldHp / 100);
+      ctx.save();
+      ctx.fillStyle = f.color + '33';
+      ctx.strokeStyle = f.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y - 24, 31 * ratio, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Dizzy shield-break stars
+    if (f.dizzyTimer > 0) {
+      ctx.save();
+      ctx.fillStyle = '#fde047';
+      for (let i = 0; i < 3; i++) {
+        const a = time * 6 + (i * Math.PI * 2) / 3;
+        ctx.fillText('★', f.x + Math.cos(a) * 16 - 4, f.y - 62 + Math.sin(a) * 5);
+      }
+      ctx.restore();
+    }
+
+    // Overhead P1 / P2 / CPU tag
+    ctx.save();
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.tag, f.x, f.y - 66);
+    ctx.beginPath();
+    ctx.moveTo(f.x - 5, f.y - 62);
+    ctx.lineTo(f.x + 5, f.y - 62);
+    ctx.lineTo(f.x, f.y - 56);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawCanvasFighter(ctx, f, time) {
     // Squash & stretch during jump/land/crouch
+    ctx.save();
+    const { palette: pal, race } = f.def;
+    const def = f.def;
     const crouchY = f.crouching ? 0.76 : 1;
     ctx.scale(1 / Math.sqrt(crouchY), crouchY);
 
@@ -411,57 +471,6 @@
     drawWeapon(ctx, def.weapon, pal, attackPhase);
     ctx.restore();
 
-    // Active attack slash arc
-    if (f.activeHitbox && f.attackTimer > 0) {
-      ctx.save();
-      ctx.strokeStyle = pal.glow;
-      ctx.lineWidth = f.activeHitbox.smash ? 5 : 3;
-      ctx.globalAlpha = 0.72;
-      ctx.beginPath();
-      ctx.arc(14, -24, Math.max(16, (f.activeHitbox.r || 26) * 0.78), -0.9, 0.9);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.restore();
-
-    // Bubble Shield
-    if (f.shielding) {
-      const ratio = Math.max(0.25, f.shieldHp / 100);
-      ctx.save();
-      ctx.fillStyle = f.color + '33';
-      ctx.strokeStyle = f.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(f.x, f.y - 24, 31 * ratio, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Dizzy shield-break stars
-    if (f.dizzyTimer > 0) {
-      ctx.save();
-      ctx.fillStyle = '#fde047';
-      for (let i = 0; i < 3; i++) {
-        const a = time * 6 + (i * Math.PI * 2) / 3;
-        ctx.fillText('★', f.x + Math.cos(a) * 16 - 4, f.y - 62 + Math.sin(a) * 5);
-      }
-      ctx.restore();
-    }
-
-    // Overhead P1 / P2 / CPU tag
-    ctx.save();
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = f.color;
-    ctx.fillText(f.tag, f.x, f.y - 66);
-    ctx.beginPath();
-    ctx.moveTo(f.x - 5, f.y - 62);
-    ctx.lineTo(f.x + 5, f.y - 62);
-    ctx.lineTo(f.x, f.y - 56);
-    ctx.closePath();
-    ctx.fill();
     ctx.restore();
   }
 
@@ -593,6 +602,48 @@
     }
   }
 
+  function drawTrainingOverlay(ctx, match) {
+    const { FIGHTER_HURT_RADIUS, FIGHTER_HURT_OFFSET } = window.GG2DE_ENGINE;
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'center';
+    function ring(x, y, radius, color) {
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    for (const f of match.fighters) {
+      if (f.eliminated || f.respawnTimer > 0) continue;
+      const guarding = f.invuln > 0 ? ' · INVULN ' + Math.ceil(f.invuln * 1000) + 'ms' : '';
+      ring(f.x, f.y - FIGHTER_HURT_OFFSET, FIGHTER_HURT_RADIUS, guarding ? '#fde047' : '#67e8f9');
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText(Math.round(f.pct) + '%' + guarding, f.x, f.y + 14);
+      const hit = f.activeHitbox;
+      if (!hit) continue;
+      const x = f.x + hit.ox;
+      const y = f.y + hit.oy;
+      ring(x, y, hit.r, '#fb7185');
+      const angle = hit.angle * Math.PI / 180;
+      const direction = hit.dir ?? f.face;
+      const vx = Math.cos(angle) * direction, vy = -Math.sin(angle);
+      const length = Math.max(22, Math.min(56, hit.kb * 0.10));
+      const tx = x + vx * length, ty = y + vy * length;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(tx, ty);
+      ctx.moveTo(tx - 8 * vx + 4 * vy, ty - 8 * vy - 4 * vx);
+      ctx.lineTo(tx, ty);
+      ctx.lineTo(tx - 8 * vx - 4 * vy, ty - 8 * vy + 4 * vx);
+      ctx.stroke();
+      ctx.fillStyle = '#fecdd3';
+      ctx.fillText(Math.ceil(f.attackTimer * 1000) + 'ms', x, y - hit.r - 4);
+    }
+    for (const p of match.projectiles) ring(p.x, p.y, p.r, '#fb7185');
+    ctx.restore();
+  }
+
   window.GG2DE_RENDER = {
     drawStageBackground,
     drawStageGeometry,
@@ -601,6 +652,7 @@
     drawLeyCore,
     drawItem,
     drawTurret,
-    drawOffscreenIndicators
+    drawOffscreenIndicators,
+    drawTrainingOverlay
   };
 })();

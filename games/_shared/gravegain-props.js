@@ -1,5 +1,5 @@
 // GraveGain 3D & 2D Detailed Dungeon, Biome, Hub & Loot Prop Models (12 Props)
-// Requires /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
+// Requires /games/_shared/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
 // Every model uses outer `root` + inner `rig` and exposes 3+ procedural animations.
 
 (function () {

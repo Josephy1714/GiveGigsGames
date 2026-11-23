@@ -35,7 +35,7 @@ class InputManager {
             if (!e.repeat && (e.code === 'KeyP' || e.code === 'Escape')) {
                 if (window.GraveGainGame) window.GraveGainGame.togglePause();
             }
-            if (e.code === 'KeyQ') {
+            if (e.code === 'KeyQ' && !e.repeat) {
                 if (window.GraveGainGame) window.GraveGainGame.usePotion();
             }
         });

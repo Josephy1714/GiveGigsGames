@@ -3900,6 +3900,7 @@
         var bag = document.getElementById('drawerBag');
         var craft = document.getElementById('drawerCraft');
         if (!bag || !craft) return;
+        var showMissing = !!bag.querySelector('.weapon-discovery')?.open;
         var p = this.player;
         bag.innerHTML = '<div class="drawer-row"><span>❤️ HP ' + (p ? Math.round(p.hp) + '/' + p.maxHp : '—') + '</span><span>⚔️ ' + this.runKills + ' kills</span></div>' +
             '<div class="drawer-row"><span>🪙 ' + this.gold + ' · 💵 ' + this.uusd + '</span><span>Layer ' + this.floorIndex + '</span></div>';
@@ -3908,11 +3909,21 @@
         var activeWeapon = state.player ? state.player.weaponId : 'relic-bolt';
         var catalog = window.GraveGainStubs && window.GraveGainStubs.weaponsCatalog;
         if (catalog) {
-            bag.innerHTML += '<strong class="drawer-section-title">🔫 RUN ARMORY · ' + weaponCollection.length + '/20</strong>' + weaponCollection.map(function (id) {
+            var allWeapons = catalog.listWeapons();
+            bag.innerHTML += '<strong class="drawer-section-title">🔫 RUN ARMORY · ' + weaponCollection.length + '/' + allWeapons.length + '</strong>' + weaponCollection.map(function (id) {
                 var weapon = catalog.getWeapon(id);
                 return '<div class="drawer-row weapon-drawer-row"><span>' + weapon.icon + ' ' + weapon.name + '<small>' + weapon.rarity + ' · ' + weapon.damage + ' damage</small></span>' +
                     (id === activeWeapon ? '<strong class="weapon-equipped">EQUIPPED</strong>' : '<button type="button" class="btn-game" data-equip-weapon="' + id + '">Equip</button>') + '</div>';
             }).join('');
+            var missing = allWeapons.filter(function (weapon) { return weaponCollection.indexOf(weapon.id) < 0; });
+            if (missing.length) {
+                bag.innerHTML += '<details class="weapon-discovery"' + (showMissing ? ' open' : '') +
+                    '><summary>Find the remaining ' + missing.length + ' weapons</summary>' + missing.map(function (weapon) {
+                        var hint = weapon.id === 'relic-bolt' ? 'Starting weapon' : 'Weapon and secret caches · Layer ' + weapon.minFloor + '+';
+                        return '<div class="drawer-row weapon-drawer-row"><span>' + weapon.icon + ' ' + weapon.name +
+                            '<small>' + weapon.rarity + ' · ' + hint + '</small><small>' + weapon.description + '</small></span></div>';
+                    }).join('') + '</details>';
+            }
             bag.querySelectorAll('[data-equip-weapon]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     self.engine.setWeapon(button.dataset.equipWeapon);

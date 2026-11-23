@@ -1092,15 +1092,14 @@
                 applyDamage({ attacker: null, target: p, rawDamage: pHaz.damage, damageType: pHaz.hazard });
             }
 
-            // Action hotkeys: E interact, F climb/drop platform, G explosive lob, K shove knockback, LMB fire
+            // Action hotkeys: E interact, C climb/drop platform, G explosive lob, K shove knockback, LMB fire
             if (inputState.interactPressed || keys['KeyE']) {
                 inputState.interactPressed = false;
                 keys['KeyE'] = false;
                 interactNearest();
             }
-            if (inputState.climbPressed || keys['KeyF'] || keys['KeyC']) {
+            if (inputState.climbPressed || keys['KeyC']) {
                 inputState.climbPressed = false;
-                keys['KeyF'] = false;
                 keys['KeyC'] = false;
                 climbOrDropPlatform();
             }
@@ -1111,7 +1110,7 @@
                 orc:   { vy: 12.2, gravity: 25.0 }
             };
             var rJump = RACE_JUMP[p.race] || RACE_JUMP.human;
-            var jumpHeld = !!(keys['Space'] || keys['KeyJ']);
+            var jumpHeld = !!keys['KeyJ'];
             var jumpTrigger = !!(inputState.jumpPressed || (jumpHeld && !p._jumpWasHeld));
             p._jumpWasHeld = jumpHeld;
 
@@ -1134,15 +1133,14 @@
                 }
             }
 
-            // Orc Ground Pound: press F or C while airborne to slam down
-            if (!p.grounded && p.race === 'orc' && !p.groundPounding && (keys['KeyF'] || keys['KeyC'])) {
+            // Orc Ground Pound: press F while airborne to slam down
+            if (!p.grounded && p.race === 'orc' && !p.groundPounding && keys['KeyF']) {
                 keys['KeyF'] = false;
-                keys['KeyC'] = false;
                 p.groundPounding = true;
                 p.vy = -26.0;
             }
 
-            // Human Jetpack: hold Space/J in mid-air
+            // Human Jetpack: hold J in mid-air
             if (!p.grounded && p.race === 'human' && jumpHeld && p.stamina > 2) {
                 p.vy = Math.min(8.5, p.vy + 42.0 * dt);
                 p.stamina = Math.max(0, p.stamina - 28 * dt);
@@ -1155,7 +1153,7 @@
             var pGroundY = terrain.getWorldHeightAt(p.x, p.z);
             if (p.y > pGroundY || p.vy > 0) {
                 var effGrav = rJump.gravity;
-                // Elf Hover: hold Space/J while descending
+                // Elf Hover: hold J while descending
                 if (p.race === 'elf' && jumpHeld && p.vy < 0) {
                     effGrav = 4.0;
                     p.vy = Math.max(-1.2, p.vy);

@@ -31,6 +31,7 @@
 
   let wallGrip = null;
   let wallJumpLock = 0;
+  let wallGrabGrace = 0;
   let doubleJumpReady = false;
   let dropTimer = 0;
   let stride = 0;
@@ -39,6 +40,10 @@
   let sliding = false;
   let jumpBuffer = 0;
   let coyote = 0;
+  let launchCoyote = false;
+  let parkourMomentum = 0;
+  const JUMP_BUFFER_SECONDS = 0.17;
+  const COYOTE_SECONDS = 0.12;
   let cameraLift = 0;
   let jumpHeld = false;
   let jumpCutApplied = false;
@@ -246,9 +251,12 @@
     paused = false;
     wallGrip = null;
     wallJumpLock = 0;
+    wallGrabGrace = 0;
     doubleJumpReady = false;
     dropTimer = 0;
     jumpBuffer = coyote = cameraLift = 0;
+    launchCoyote = false;
+    parkourMomentum = 0;
     jumpHeld = false;
     jumpCutApplied = false;
     launchBoost = false;
@@ -334,7 +342,7 @@
     tapStartY = e.clientY;
     tapDirection = -0.8;
     canvas.setPointerCapture(tapPointer);
-    jumpBuffer = 0.16;
+    jumpBuffer = JUMP_BUFFER_SECONDS;
   });
   canvas.addEventListener('pointermove', e => {
     if (e.pointerId !== tapPointer) return;
@@ -396,7 +404,7 @@
     event.preventDefault();
     const action = controls.get(event.code);
     if (action === 'up' && !event.repeat && running && !paused && draftPanel.hidden) {
-      jumpBuffer = 0.16;
+      jumpBuffer = JUMP_BUFFER_SECONDS;
     }
     heldKeys.add(event.code);
     if (pointer === null && tapPointer === null) applyKeyboard();
@@ -946,7 +954,8 @@
     launchBoost = true;
     jumpCutApplied = false;
     jumpBuffer = coyote = 0;
-    player.speed = Math.min(player.speed + 65, 420 + (build.sprint || 0));
+    parkourMomentum = Math.max(parkourMomentum, 72);
+    player.speed = Math.min(player.speed + 48, 435 + (build.sprint || 0));
     if (build.capstones?.vault && fireballs.length > 0) {
       for (const ball of fireballs) emit(ball.x, ball.y, '#9ef7d7', 10, true);
       fireballs = [];
@@ -979,6 +988,7 @@
     $combo.hidden = true;
     hearts--;
     player.invuln = 1.3 + (build.grace || 0);
+    parkourMomentum = 0;
     player.speed *= 0.72;
     shake = 0.25;
     if (!reducedMotion.matches) hitstop = 0.065;
@@ -1215,11 +1225,14 @@
       wardenFade = Math.max(0, wardenFade - dt * 2.5);
     }
 
-    const targetSpeed = input.x > 0 ? 220 + (135 + (build.sprint || 0)) * input.x : 220 + 95 * input.x;
+    parkourMomentum = Math.max(0, parkourMomentum - dt * (input.x < -0.2 ? 390 : 160));
+    const cruiseSpeed = input.x > 0 ? 220 + (135 + (build.sprint || 0)) * input.x : 220 + 95 * input.x;
+    const targetSpeed = cruiseSpeed + parkourMomentum;
     player.speed += (targetSpeed - player.speed) * (1 - Math.exp(-dt * (13 + (build.brake || 0))));
     if (wallGrip && !obstacles.includes(wallGrip)) wallGrip = null;
     const velocity = wallGrip ? 0 : player.speed;
     wallJumpLock = Math.max(0, wallJumpLock - dt);
+    wallGrabGrace = Math.max(0, wallGrabGrace - dt);
     distance += dt * velocity * 0.38 * combo;
     stride += dt * (5 + velocity * 0.048);
     if (!player.jump && !wallGrip && Math.floor(stride / 3) !== lastStepStride) {
@@ -1233,9 +1246,12 @@
 
     const vertical = tapPointer === null ? input.y : tapDirection;
     const wantsJump = vertical < -0.33;
-    if (wantsJump && !jumpHeld) jumpBuffer = 0.16;
+    if (wantsJump && !jumpHeld) jumpBuffer = JUMP_BUFFER_SECONDS;
     jumpHeld = wantsJump;
-    if (!player.jump && player.y <= ground) coyote = 0.105;
+    if (!player.jump && player.y <= ground) {
+      coyote = COYOTE_SECONDS;
+      launchCoyote = run.onLaunchLedge;
+    }
 
     if (wallGrip && vertical > 0.45) {
       wallGrip.dropped = true;
@@ -1244,10 +1260,11 @@
       player.vy = 180;
     }
 
+    const vaultReach = 34 + velocity * 0.06;
     const vaultTarget = (!wallGrip && player.vault <= 0 && player.y >= ground - 28 && (jumpBuffer > 0 || vertical < -0.25))
       ? obstacles.find(o =>
           o.type === 'stump' && !o.vaulted &&
-          o.x - (player.x + 36) <= 44 &&
+          o.x - (player.x + 36) <= vaultReach &&
           o.x + o.w - (player.x + 12) >= -6
         )
       : null;
@@ -1258,6 +1275,7 @@
       wallGrip = null;
       wallJumpLock = 0.62;
       player.vy = -755 - (build.wall || 0);
+      parkourMomentum = Math.max(parkourMomentum, 63);
       run.leavePlatform();
       player.jump = true;
       doubleJumpReady = Boolean(build.capstones?.wall);
@@ -1268,11 +1286,12 @@
       emit(player.x + 28, player.y - 24, '#9ef7d7', 9);
       GraveGainAudio?.sfx.wallJump();
     } else if (jumpBuffer > 0 && coyote > 0 && !wallGrip) {
-      const isLaunch = run.onLaunchLedge;
+      const isLaunch = launchCoyote;
       player.vy = -(isLaunch ? 830 : 575) - (build.jump || 0);
       run.leavePlatform();
       player.jump = true;
       launchBoost = isLaunch;
+      if (sliding && isLaunch) parkourMomentum = Math.max(parkourMomentum, 55);
       jumpCutApplied = false;
       jumpBuffer = coyote = 0;
       if (isLaunch) {
@@ -1301,6 +1320,7 @@
       run.leavePlatform();
       dropTimer = 0.16;
       coyote = 0;
+      launchCoyote = false;
       player.y += 1;
       player.jump = true;
       player.vy = 180;
@@ -1309,16 +1329,23 @@
     jumpBuffer = Math.max(0, jumpBuffer - dt);
     coyote = Math.max(0, coyote - dt);
     const previousY = player.y;
-    if (vertical > 0.36 && player.jump && player.vault === 0) player.vy = Math.max(player.vy, 380);
+    if (vertical > 0.36 && player.jump && !wallGrip && player.vault === 0) {
+      player.vy = Math.max(player.vy, 380);
+    }
     player.vy += (player.vy < 0 ? 1130 : 1350) * dt;
     if (wallGrip) player.vy = Math.min(105, Math.max(0, player.vy));
     player.y += player.vy * dt;
 
     if (wallGrip) {
       if (player.y >= ground - 2) {
-        wallGrip.dropped = true;
-        wallGrip = null;
-        wallJumpLock = 0.35;
+        if (wallGrabGrace > 0) {
+          player.y = ground - 3;
+          player.vy = 0;
+        } else {
+          wallGrip.dropped = true;
+          wallGrip = null;
+          wallJumpLock = 0.35;
+        }
       } else if (player.y <= ground - wallGrip.h + 4) {
         player.y = ground - wallGrip.h;
         player.vy = 0;
@@ -1343,8 +1370,12 @@
       player.jump = true;
     }
 
-    const wallTop = obstacles.find(o => o.type === 'climbwall' && feetX >= o.x &&
-      feetX <= o.x + o.w && previousY <= ground - o.h && player.y >= ground - o.h);
+    const wallTop = obstacles.find(o => {
+      const left = o.x - velocity * dt;
+      const top = ground - o.h;
+      return o.type === 'climbwall' && feetX >= left && feetX <= left + o.w &&
+        previousY <= top && player.y >= top;
+    });
     if (wallTop && floor.y > ground - wallTop.h) floor.y = ground - wallTop.h;
 
     if (player.y >= floor.y && player.vy >= 0) {
@@ -1376,7 +1407,8 @@
     sliding = vertical > 0.36 && !player.jump;
     if (sliding && !wasSliding) {
       GraveGainAudio?.sfx.slide?.();
-      player.speed = Math.min(player.speed + 22, 390 + (build.sprint || 0));
+      parkourMomentum = Math.max(parkourMomentum, 38);
+      player.speed = Math.min(player.speed + 22, 415 + (build.sprint || 0));
     }
     if (sliding && Math.random() < 0.4) {
       emit(player.x + 6, player.y - 2, '#9aa37c', 1);
@@ -1418,9 +1450,10 @@
       }
     }
 
-    if (!wallGrip && wallJumpLock === 0) {
+    if (!wallGrip && wallJumpLock === 0 && vertical <= 0.45) {
       wallGrip = obstacles.find(o => o.type === 'climbwall' && !o.dropped && player.y > ground - o.h + 3 &&
         player.x + 38 >= o.x && player.x + 12 < o.x + o.w) || null;
+      if (wallGrip && player.y >= ground - 12) wallGrabGrace = 0.19;
     }
     if (wallGrip) {
       player.x = wallGrip.x - 37;
@@ -1452,6 +1485,8 @@
             o.hitAt = time;
             player.vy = -440;
             player.jump = true;
+            launchBoost = true;
+            parkourMomentum = Math.max(parkourMomentum, 56);
             if (!reducedMotion.matches) hitstop = 0.045;
             emit(o.x + o.w / 2, ground - o.h, enemy.color, 10);
             GraveGainAudio?.sfx.stomp();

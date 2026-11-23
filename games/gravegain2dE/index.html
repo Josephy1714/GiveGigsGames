@@ -29,6 +29,7 @@
           <label>Rule <select id="ruleTypeSelect"><option value="stock">Stock</option><option value="timed">Timed (2m)</option></select></label>
           <label>Stocks <select id="stocksSelect"><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option></select></label>
           <label><input type="checkbox" id="itemsToggle" checked> Items &amp; Ley Cores</label>
+          <label><input type="checkbox" id="teamsToggle"> Team Battle</label>
         </div>
       </div>
 
@@ -66,6 +67,7 @@
         <span class="hud-pill" id="hudTimer">Compact Spire</span>
         <div class="hud-btns">
           <button type="button" id="muteBtn" aria-label="Toggle audio">🔊</button>
+          <button type="button" id="trainingOverlayBtn" aria-pressed="false" hidden>Hitboxes</button>
           <button type="button" id="pauseBtn" aria-label="Pause match">⏸</button>
         </div>
       </div>
@@ -80,6 +82,7 @@
           <button type="button" data-tact="special">SPEC</button>
           <button type="button" data-tact="jump">JUMP</button>
           <button type="button" data-tact="shield">SHLD</button>
+          <button type="button" data-tact="smash" aria-label="Charge smash">SMASH</button>
         </div>
       </div>
 
@@ -112,6 +115,10 @@
   <script src="./roster.js"></script>
   <script src="./stages.js"></script>
   <script src="./audio.js"></script>
+  <script src="../html/vendor/three-r128.min.js"></script>
+  <script src="../_shared/gravegain-kit.js"></script>
+  <script src="../_shared/gravegain-races.js"></script>
+  <script src="./fighter-models.js"></script>
   <script src="./renderer.js"></script>
   <script src="./engine.js"></script>
   <script src="./game.js"></script>

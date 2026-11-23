@@ -4,19 +4,19 @@ A dependency-light Out Run/Horizon Chase style canvas racer built for the 4weird
 
 ## Run
 
-Run a static server from `website/v1`, then open the game route:
+Run a static server from the repository root, then open the game route:
 
 ```bash
-cd ../../..
 python3 -m http.server 4173
 ```
 
-Open `http://localhost:4173/games/html/overtake/index.html`.
+Open `http://localhost:4173/games/overtake/index.html`.
 
 ## Files
 
 - `src/main.ts` contains the game source.
 - `game.js` is the browser-ready build checked in for immediate play.
+- `models.js` builds the six Three.js car bodies and adapts the shared GraveGain drivers to the race renderer.
 - `game.css` contains the frame-scoped game UI styles.
 - `game.json` contains 4weird metadata, credits, controls, and asset notes.
 - Runtime image and audio assets are hosted at `https://overtake-assets.vercel.app/`.
@@ -24,6 +24,7 @@ Open `http://localhost:4173/games/html/overtake/index.html`.
 ## Controls
 
 - Arrow keys or WASD steer, accelerate, and brake.
+- C or Ctrl applies the handbrake. Release it on the pavement after a sustained corner drift to earn a mini-turbo.
 - Space, Shift, or N uses nitro while the bar has charge.
 - P or Escape pauses/resumes the race.
 - R restarts the current route.
@@ -31,11 +32,11 @@ Open `http://localhost:4173/games/html/overtake/index.html`.
 
 ## Progression
 
-- The first screen has Start, Cars, and Options.
+- The first screen has Start, Garage, Drivers, Career, and Options.
 - Start opens level selection.
 - Cars opens the garage, where coins buy and equip faster cars.
-- Only Desert Run is unlocked at first. Completing Desert Run unlocks Urban Sprint, and completing Urban Sprint unlocks Neon Night.
-- Opponent race pace comes from their assigned car tier only.
+- All six routes and both directions are available from the start.
+- The Drivers menu offers all 16 GraveGain race and class combinations. Each combines race and class modifiers for acceleration, cornering grip, braking force, and nitro duration.
 
 ## Build
 

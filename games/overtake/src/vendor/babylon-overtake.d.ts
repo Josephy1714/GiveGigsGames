@@ -157,7 +157,7 @@ export declare class TransformNode {
   setEnabled(value: boolean): void;
   isEnabled(checkAncestors?: boolean): boolean;
   getChildMeshes(directDescendantsOnly?: boolean): Mesh[];
-  dispose(): void;
+  dispose(doNotRecurse?: boolean, disposeMaterialAndTextures?: boolean): void;
 }
 
 export declare class Mesh extends TransformNode {

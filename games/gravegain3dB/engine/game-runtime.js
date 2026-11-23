@@ -3087,19 +3087,29 @@
             const equipped = this.weaponInventory[this.activeWeaponIndex];
             card.hidden = !loot || !equipped;
             if (card.hidden) return;
-            const describe = weapon => {
+            const metrics = weapon => {
                 const shot = weapon.damage * weapon.pellets;
                 const burst = shot / weapon.fireRate;
                 const reload = weapon.continuousReload ? weapon.shellReload * weapon.magazine : weapon.reload;
                 const sustained = shot * weapon.magazine / ((weapon.magazine - 1) * weapon.fireRate + Math.max(reload, weapon.fireRate));
+                return { burst, reload, sustained };
+            };
+            const describe = (weapon, { burst, sustained }) => {
+                const rarity = weapon.rarityName || weapon.rarity || 'Common';
                 const alternate = weapon.aimedProfile ? ` · Aim: ${weapon.aimedProfile.label}` : '';
                 const budget = `Budget ${Math.round((weapon.rollBudget || 1) * 100)}%`;
                 const behavior = weapon.behaviorLabel ? ` · ${weapon.behaviorLabel}` : '';
                 const element = weapon.element ? ` · ${weapon.element.toUpperCase()}` : '';
-                return `${weapon.name}${weapon.traitLabel ? ` · ${weapon.traitLabel}` : ''}${element}${behavior}${alternate} | ${Math.round(burst)} burst / ${Math.round(sustained)} sustained DPS | ${weapon.magazine} mag · ${weapon.spreadScale.toFixed(2)} spread · ${budget}`;
+                return `${weapon.name} [${rarity}]${weapon.traitLabel ? ` · ${weapon.traitLabel}` : ''}${element}${behavior}${alternate} | ${Math.round(burst)} burst / ${Math.round(sustained)} sustained DPS | ${weapon.magazine} mag · ${weapon.spreadScale.toFixed(2)} spread · ${budget}`;
             };
-            const incoming = `Drop: ${describe(loot.weaponData)}`;
-            const current = `Equipped: ${describe(equipped)}`;
+            const incomingStats = metrics(loot.weaponData);
+            const equippedStats = metrics(equipped);
+            const incoming = `Drop: ${describe(loot.weaponData, incomingStats)}`;
+            const current = `Equipped: ${describe(equipped, equippedStats)}`;
+            const dpsChange = Math.round(incomingStats.sustained - equippedStats.sustained);
+            const reloadChange = Math.round((incomingStats.reload - equippedStats.reload) * 100) / 100;
+            const delta = `${dpsChange > 0 ? '+' : ''}${dpsChange} sustained DPS · ${reloadChange === 0 ? 'Same full reload' : Math.abs(reloadChange).toFixed(2) + 's ' + (reloadChange < 0 ? 'faster' : 'slower') + ' full reload'}`;
+            if (card.children[2].textContent !== delta) card.children[2].textContent = delta;
             if (card.children[0].textContent !== incoming) card.children[0].textContent = incoming;
             if (card.children[1].textContent !== current) card.children[1].textContent = current;
             card.children[0].title = [loot.weaponData.element && `${loot.weaponData.element.toUpperCase()} element`, loot.weaponData.behaviorDescription, loot.weaponData.traitLabel].filter(Boolean).join(' · ');

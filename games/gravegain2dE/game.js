@@ -40,6 +40,8 @@
   let selectedStageId = STAGES[0].id;
   let activeSlotIndex = 0;
 
+  let teamBattle = false;
+  let trainingOverlay = false;
   let slots = [
     { enabled: true, isCpu: false, playerNum: 1, charId: 'human-warrior', cpuLevel: 'veteran', team: 0 },
     { enabled: true, isCpu: true,  playerNum: 2, charId: 'orc-warrior',   cpuLevel: 'veteran', team: 1 },
@@ -98,7 +100,12 @@
   function updateStartLabel() {
     const btn = $('#deployBtn');
     if (!btn) return;
-    if (gameMode === 'arcade') btn.textContent = '⚔️ START ARCADE GAUNTLET';
+    const teamMode = gameMode === 'brawl' && teamBattle;
+    const teamCount = new Set(slots.filter(slot => slot.enabled).map(slot => slot.team)).size;
+    btn.disabled = teamMode && teamCount < 2;
+    if (btn.disabled) btn.textContent = 'ASSIGN TWO OPPOSING TEAMS';
+    else if (teamMode) btn.textContent = 'START TEAM BATTLE';
+    else if (gameMode === 'arcade') btn.textContent = '⚔️ START ARCADE GAUNTLET';
     else if (gameMode === 'training') btn.textContent = '🎯 ENTER TRAINING ARENA';
     else btn.textContent = '💥 MASH! START BRAWL';
   }
@@ -161,7 +168,7 @@
     slots.forEach((s, idx) => {
       const card = document.createElement('div');
       card.className = 'slot-card' + (idx === activeSlotIndex ? ' is-focused' : '') + (!s.enabled ? ' is-off' : '');
-      card.style.setProperty('--slot-col', Engine.TEAM_COLORS[idx]);
+      card.style.setProperty('--slot-col', Engine.TEAM_COLORS[gameMode === 'brawl' && teamBattle ? s.team : idx]);
 
       const head = document.createElement('div');
       head.className = 'slot-head';
@@ -169,7 +176,7 @@
       const roleBtn = document.createElement('button');
       roleBtn.type = 'button';
       roleBtn.className = 'slot-role';
-      roleBtn.textContent = !s.enabled ? `+ JOIN SLOT ${idx + 1}` : (s.isCpu ? `🤖 CPU ${idx + 1} (${s.cpuLevel})` : `🎮 P${s.playerNum} HUMAN`);
+      roleBtn.textContent = !s.enabled ? `+ JOIN SLOT ${idx + 1}` : (s.isCpu ? `🤖 CPU ${idx + 1} (${s.cpuLevel})` : `🎮 P${s.playerNum} ${idx > 1 ? "GAMEPAD" : "HUMAN"}`);
       roleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         Audio.unlock();
@@ -181,12 +188,11 @@
           s.enabled = true;
           s.isCpu = true;
           activeSlotIndex = idx;
-        } else if (s.isCpu && idx === 1) {
-          // Allow P2 local human on slot 2!
-          s.isCpu = false;
-          s.playerNum = 2;
         } else if (s.isCpu) {
+          s.isCpu = false;
+        } else if (idx > 1) {
           s.enabled = false;
+          s.isCpu = true;
           if (activeSlotIndex === idx) activeSlotIndex = 0;
         } else {
           s.isCpu = true;
@@ -220,6 +226,20 @@
       body.textContent = s.enabled ? `${ch.emoji} ${ch.fullName}` : 'Tap to add fighter';
 
       card.append(head, body);
+      if (s.enabled && gameMode === 'brawl' && teamBattle) {
+        const team = document.createElement('select');
+        team.className = 'slot-team';
+        team.setAttribute('aria-label', `Team for fighter slot ${idx + 1}`);
+        Engine.TEAM_COLORS.forEach((_, index) => team.add(new Option(`Team ${index + 1}`, index)));
+        team.value = String(s.team);
+        team.addEventListener('click', e => e.stopPropagation());
+        team.addEventListener('change', () => {
+          s.team = Number(team.value);
+          card.style.setProperty('--slot-col', Engine.TEAM_COLORS[s.team]);
+          updateStartLabel();
+        });
+        card.append(team);
+      }
       card.addEventListener('click', () => {
         Audio.unlock();
         if (!s.enabled) s.enabled = true;
@@ -230,6 +250,7 @@
       });
       slotsRowEl.append(card);
     });
+    updateStartLabel();
   }
 
   function renderStageRow() {
@@ -331,11 +352,11 @@
     return {
       x: ax || (dl + dr),
       y: ay || (du + dd),
-      jump: !!(pad.buttons[2]?.pressed || pad.buttons[3]?.pressed || pad.buttons[12]?.pressed),
+      jump: !!(pad.buttons[2]?.pressed || pad.buttons[12]?.pressed),
       attack: !!pad.buttons[0]?.pressed,
       special: !!pad.buttons[1]?.pressed,
       shield: !!(pad.buttons[4]?.pressed || pad.buttons[5]?.pressed || pad.buttons[6]?.pressed || pad.buttons[7]?.pressed),
-      smash: false
+      smash: !!pad.buttons[3]?.pressed
     };
   }
 
@@ -383,6 +404,7 @@
       p1.attack = p1.attack || gp1.attack;
       p1.special = p1.special || gp1.special;
       p1.shield = p1.shield || gp1.shield;
+      p1.smash = p1.smash || gp1.smash;
     }
     p1.x = Math.max(-1, Math.min(1, p1.x));
     p1.y = Math.max(-1, Math.min(1, p1.y));
@@ -407,8 +429,15 @@
         p2.attack = p2.attack || gp2.attack;
         p2.special = p2.special || gp2.special;
         p2.shield = p2.shield || gp2.shield;
+        p2.smash = p2.smash || gp2.smash;
       }
       out[2] = p2;
+    }
+
+    for (const fighter of match.fighters) {
+      if (fighter.isCpu || fighter.playerNum < 3) continue;
+      const pad = readGamepad(fighter.playerNum);
+      if (pad) out[fighter.playerNum] = pad;
     }
 
     return out;
@@ -416,6 +445,7 @@
 
   // --- Match Start & Loop ---
   function startMatch() {
+    if ($('#deployBtn').disabled) return;
     Audio.unlock();
     Audio.play('start');
     cancelAnimationFrame(rafId);
@@ -458,12 +488,14 @@
         stocks: stocksCount,
         timeLimit: timeLimitSec,
         itemsEnabled,
-        slots: activeSlots.map((s, idx) => ({ ...s, team: idx }))
+        teamBattle,
+        slots: activeSlots.map((s, idx) => ({ ...s, team: teamBattle ? s.team : idx }))
       };
-      hudModeEl.textContent = matchRule === 'stock' ? `${stocksCount} STOCK` : 'TIMED';
+      hudModeEl.textContent = (teamBattle ? 'TEAM · ' : '') + (matchRule === 'stock' ? `${stocksCount} STOCK` : 'TIMED');
     }
 
     match = Engine.createMatch(config);
+    $('#trainingOverlayBtn').hidden = config.mode !== 'training';
     running = true;
     paused = false;
     menuEl.hidden = true;
@@ -526,7 +558,7 @@
 
   function showResults() {
     const p1 = match.fighters[0];
-    const p1Won = match.winner && match.winner.index === 0;
+    const p1Won = match.winner && match.winner.team === p1.team;
 
     career.kos += p1.kos;
     if (p1Won) {
@@ -554,8 +586,10 @@
     } else {
       if (gameMode === 'arcade') arcadeRound = 0;
       saveStats(career);
-      $('#resultsTitle').textContent = `${match.winner ? match.winner.tag : 'DRAW'} VICTORY!`;
-      $('#resultsSummary').textContent = match.winner ? `${match.winner.def.emoji} ${match.winner.def.fullName} takes the match!` : 'Match complete.';
+      const winner = match.winner;
+      const victor = winner && (match.teamBattle ? `TEAM ${winner.team + 1}` : winner.tag);
+      $('#resultsTitle').textContent = victor ? `${victor} VICTORY!` : 'DRAW';
+      $('#resultsSummary').textContent = winner && match.teamBattle ? match.fighters.filter(f => f.team === winner.team).map(f => f.def.title).join(' · ') : match.winner ? `${match.winner.def.emoji} ${match.winner.def.fullName} takes the match!` : 'Match complete.';
       $('#nextRoundBtn').hidden = true;
       $('#rematchBtn').hidden = false;
     }
@@ -564,7 +598,7 @@
     table.replaceChildren();
     match.fighters.forEach((f) => {
       const row = document.createElement('div');
-      row.className = 'res-row' + (match.winner && match.winner.index === f.index ? ' is-win' : '');
+      row.className = 'res-row' + (match.winner && match.winner.team === f.team ? ' is-win' : '');
       row.innerHTML = `<span style="color:${f.color}">${f.tag} · ${f.def.emoji} ${f.def.fullName}</span><span>${f.kos} KOs · ${f.falls} Falls · ${Math.round(f.damageDealt)}% Dmg</span>`;
       table.append(row);
     });
@@ -599,6 +633,8 @@
     }
 
     for (const p of m.projectiles) Render.drawProjectile(ctx, p, m.time);
+
+    if (m.mode === 'training' && trainingOverlay) Render.drawTrainingOverlay(ctx, m);
 
     // Particles
     for (const pt of m.particles) {
@@ -781,14 +817,23 @@
       gameMode = btn.dataset.gmode;
       if (gameMode === 'arcade') arcadeRound = 0;
       renderModeTabs();
+      renderSlots();
     });
   });
 
   $('#ruleTypeSelect')?.addEventListener('change', (e) => { matchRule = e.target.value; });
   $('#stocksSelect')?.addEventListener('change', (e) => { stocksCount = Number(e.target.value) || 3; });
+  $('#teamsToggle')?.addEventListener('change', (e) => {
+    teamBattle = e.target.checked;
+    renderSlots();
+  });
   $('#itemsToggle')?.addEventListener('change', (e) => { itemsEnabled = e.target.checked; });
 
   $('#deployBtn')?.addEventListener('click', startMatch);
+  $('#trainingOverlayBtn')?.addEventListener('click', (e) => {
+    trainingOverlay = !trainingOverlay;
+    e.currentTarget.setAttribute('aria-pressed', String(trainingOverlay));
+  });
   $('#pauseBtn')?.addEventListener('click', togglePause);
   $('#resumeBtn')?.addEventListener('click', togglePause);
   $('#quitMatchBtn')?.addEventListener('click', exitToMenu);

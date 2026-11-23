@@ -202,15 +202,18 @@
                 if (e.key === '1') this.switchWeaponSlot(0);
                 else if (e.key === '2') this.switchWeaponSlot(1);
                 else if (e.key === '3') this.switchWeaponSlot(2);
-                else if (e.key === 'q' || e.key === 'Q') {
-                    const next = (this.activeWeaponSlot + 1) % 3;
-                    if (this.weaponSlots[next]) this.switchWeaponSlot(next);
-                    else this.switchWeaponSlot(0);
+                else if (e.code === 'KeyZ' && !e.repeat) {
+                    for (let offset = 1; offset < this.weaponSlots.length; offset++) {
+                        const next = (this.activeWeaponSlot + offset) % this.weaponSlots.length;
+                        if (!this.weaponSlots[next]) continue;
+                        this.switchWeaponSlot(next);
+                        break;
+                    }
                 } else if ((e.key === 'e' || e.key === 'E') && this.weaponLoot && this.weaponLoot.nearbyDrop) {
                     this.weaponLoot.pickupNearby(this);
                 } else if (e.key === 'i' || e.key === 'I') {
                     this.inventory?.toggle();
-                } else if (e.key === 'f' || e.key === 'F') {
+                } else if (e.code === 'KeyH' && !e.repeat) {
                     this.inventory?.quickEatBest(this);
                 } else if (e.key === 'v' || e.key === 'V') {
                     this.toggleAiSpectator();
@@ -257,6 +260,7 @@
 
             // Minimap setup
             this.minimapCanvas = document.getElementById('hudMinimap');
+            this.minimapLabel = document.getElementById('hudMinimapLabel');
             this.minimapCtx = this.minimapCanvas ? this.minimapCanvas.getContext('2d') : null;
 
             this.setupUI();
@@ -2205,17 +2209,6 @@
                 }
             }
 
-            // Draw portal
-            const safespace = this.dungeon.rooms.find(r => r.type === 'safespace' || r.type === 'boss');
-            if (safespace) {
-                const sx = (safespace.cx * 48 + 24 - this.player.x) * scale;
-                const sy = (safespace.cy * 48 + 24 - this.player.y) * scale;
-                ctx.fillStyle = '#38bdf8';
-                ctx.beginPath();
-                ctx.arc(sx, sy, 5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
             // Draw enemies
             ctx.fillStyle = '#ef4444';
             this.enemies.forEach(e => {
@@ -2225,6 +2218,32 @@
                 ctx.arc(ex, ey, e.isBoss ? 6 : 3, 0, Math.PI * 2);
                 ctx.fill();
             });
+
+            const boss = this.activeBoss && this.activeBoss.hp > 0 ? this.activeBoss : null;
+            const exitRoom = this.dungeon.rooms.find(room => room.type === 'safespace' || room.type === 'boss');
+            const objective = boss || (exitRoom && { x: exitRoom.cx * 48 + 24, y: exitRoom.cy * 48 + 24 });
+            const label = boss ? 'BOSS · EXIT LOCKED' : objective ? 'DESCENT OPEN' : 'RADAR SCAN';
+            if (this.minimapLabel && this.minimapLabel.textContent !== label) this.minimapLabel.textContent = label;
+
+            if (objective) {
+                const x = (objective.x - this.player.x) * scale;
+                const y = (objective.y - this.player.y) * scale;
+                const clampToMap = Math.max(1, Math.abs(x) / (cx - 11), Math.abs(y) / (cy - 22));
+                const mx = x / clampToMap;
+                const my = y / clampToMap;
+                ctx.fillStyle = boss ? '#fb923c' : '#38bdf8';
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(mx, my, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 12px system-ui';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(boss ? '!' : '↓', mx, my);
+            }
 
             // Draw player arrow in center
             ctx.restore();

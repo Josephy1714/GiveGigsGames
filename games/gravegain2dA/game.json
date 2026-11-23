@@ -26,7 +26,9 @@
             "Space": "Dodge roll / wait a turn in Turn-Based mode",
             "Left-Click": "Melee attack",
             "Right-Click": "Timed block",
-            "F": "Use your race ability",
+            "F": "Use your race ability (Orc ground pound while airborne)",
+            "J": "Jump / hold for racial air movement",
+            "C": "Climb onto or drop from a platform",
             "Shift": "Sprint while moving; use race ability while standing still",
             "1 / 2 / 3": "Select Realtime, Chrono-Lock, or Turn-Based play from the game interface",
             "Escape / P": "Pause Game"

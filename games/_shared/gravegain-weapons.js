@@ -1,5 +1,5 @@
 // GraveGain 3D / 3DB / 3DC High-Detail Weapons & Firearms Pack (32 Models)
-// Requires /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
+// Requires /games/_shared/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
 // Upserts 23 existing GraveGain 3D weapons in-place and adds 9 detailed guns from 3DB, 3DC, and Support Chem-Gun.
 
 (function () {

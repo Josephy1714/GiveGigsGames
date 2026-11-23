@@ -3,6 +3,8 @@
   'use strict';
 
   const TEAM_COLORS = ['#38bdf8', '#f43f5e', '#facc15', '#a855f7'];
+  const FIGHTER_HURT_RADIUS = 18;
+  const FIGHTER_HURT_OFFSET = 24;
   const GRAVITY = 1550;
   const FAST_FALL_MULT = 1.48;
   const MAX_FALL = 880;
@@ -26,7 +28,7 @@
         cpuLevel: slot.cpuLevel || 'veteran',
         playerNum: slot.playerNum || (idx + 1),
         team: slot.team !== undefined ? slot.team : idx,
-        color: TEAM_COLORS[idx % TEAM_COLORS.length],
+        color: TEAM_COLORS[(config.teamBattle ? slot.team : idx) % TEAM_COLORS.length],
         def,
         x: sp[0],
         y: sp[1],
@@ -58,6 +60,8 @@
         tumbleAngle: 0,
         attackTimer: 0,
         attackDur: 0,
+        specialPose: null,
+        landTimer: 0,
         activeHitbox: null,
         hitTargets: new Set(),
         chargeTime: 0,
@@ -89,6 +93,7 @@
       mode,
       itemsEnabled: config.itemsEnabled !== false,
       time: 0,
+      teamBattle: !!config.teamBattle,
       countdown: mode === 'training' ? 0 : 2.1,
       lastCountNum: 4,
       matchTimeLeft: timeLimit,
@@ -146,6 +151,7 @@
       addPopup(m, 'COUNTER!', target.x, target.y - 68, '#fde047');
       spawnParticles(m, target.x, target.y - 24, '#fde047', 16, 260, 0.4);
       target.face = attacker.x >= target.x ? 1 : -1;
+      target.specialPose = 'attack_heavy';
       target.attackDur = 0.24;
       target.attackTimer = 0.24;
       target.hitTargets.clear();
@@ -419,6 +425,13 @@
     if ((mv.kind === 'proj' || mv.kind === 'toss') && f.specialCd > 0) return;
     if ((mv.kind === 'heal' || mv.kind === 'turret') && f.healCd > 0) return;
 
+    const poses = {
+      recover: 'special_rise', dash: 'special_dash', proj: 'attack_ranged',
+      toss: 'attack_up', burst: 'attack_heavy', counter: 'block', reflect: 'block',
+      heal: 'cast_spell', turret: 'cast_spell'
+    };
+    f.specialPose = poses[mv.kind];
+    if (mv.kind === 'proj' && f.def.cls === 'mage') f.specialPose = 'cast_spell';
     f.onLedge = null;
     const pwr = f.def.stats.power;
 
@@ -667,7 +680,7 @@
         m.over = true;
         const alive = m.fighters.filter((f) => !f.eliminated);
         m.winner = alive[0] || m.fighters[0];
-        m.bannerText = `${m.winner.tag} WINS!`;
+        m.bannerText = m.teamBattle ? `TEAM ${m.winner.team + 1} WINS!` : `${m.winner.tag} WINS!`;
         m.bannerTimer = 4.0;
         window.GG2DE_AUDIO?.play('win');
       }
@@ -689,6 +702,7 @@
     f.counterTimer = Math.max(0, f.counterTimer - dt);
     f.reflectTimer = Math.max(0, f.reflectTimer - dt);
     f.ultTimer = Math.max(0, f.ultTimer - dt);
+    f.landTimer = Math.max(0, f.landTimer - dt);
 
     if (f.dizzyTimer > 0) {
       f.dizzyTimer -= dt;
@@ -727,6 +741,7 @@
       f.attackTimer = Math.max(0, f.attackTimer - dt);
       if (f.attackTimer <= 0) {
         f.activeHitbox = null;
+        f.specialPose = null;
         f.superArmor = false;
       }
     }
@@ -916,6 +931,7 @@
       if (!p.solid && (f.dropTimer > 0 || holdingDown)) continue;
 
       if (withinX && f.vy >= 0 && pyBefore <= p.y + 8 && f.y >= p.y) {
+        if (f.vy > 245) f.landTimer = 0.15;
         f.y = p.y;
         f.vy = 0;
         f.onGround = true;
@@ -990,16 +1006,19 @@
       m.matchTimeLeft -= dt;
       if (m.matchTimeLeft <= 0) {
         m.matchTimeLeft = 0;
-        const ranked = [...m.fighters].sort((a, b) => (b.kos - b.falls) - (a.kos - a.falls));
-        const topScore = ranked[0].kos - ranked[0].falls;
-        const tied = ranked.filter((x) => (x.kos - x.falls) === topScore);
+        const scores = new Map();
+        for (const fighter of m.fighters) {
+          scores.set(fighter.team, (scores.get(fighter.team) || 0) + fighter.kos - fighter.falls);
+        }
+        const ranked = [...scores].sort((a, b) => b[1] - a[1]);
+        const tied = ranked.filter(([, score]) => score === ranked[0][1]).map(([team]) => team);
         if (tied.length > 1) {
           m.suddenDeath = true;
           m.bannerText = 'SUDDEN DEATH! 300%';
           m.bannerTimer = 2.0;
           window.GG2DE_AUDIO?.play('ultimate');
           for (const f of m.fighters) {
-            if (tied.includes(f)) {
+            if (tied.includes(f.team)) {
               f.pct = 300;
               f.stocks = 1;
               const sp = m.stage.spawns[f.index % m.stage.spawns.length];
@@ -1011,8 +1030,8 @@
           m.mode = 'stock';
         } else {
           m.over = true;
-          m.winner = ranked[0];
-          m.bannerText = `${m.winner.tag} WINS!`;
+          m.winner = m.fighters.find(fighter => fighter.team === ranked[0][0]);
+          m.bannerText = m.teamBattle ? `TEAM ${m.winner.team + 1} WINS!` : `${m.winner.tag} WINS!`;
           m.bannerTimer = 4.0;
           window.GG2DE_AUDIO?.play('win');
         }
@@ -1035,7 +1054,7 @@
       for (const t of m.fighters) {
         if (t.index === f.index || t.team === f.team || f.hitTargets.has(t.index)) continue;
         if (t.eliminated || t.respawnTimer > 0) continue;
-        if (Math.hypot(t.x - hx, (t.y - 24) - hy) <= hb.r + 18) {
+        if (Math.hypot(t.x - hx, (t.y - FIGHTER_HURT_OFFSET) - hy) <= hb.r + FIGHTER_HURT_RADIUS) {
           f.hitTargets.add(t.index);
           applyHit(m, f, t, hb, hx, hy);
         }
@@ -1074,7 +1093,7 @@
       let hit = false;
       for (const t of m.fighters) {
         if (t.team === p.team || t.eliminated || t.respawnTimer > 0) continue;
-        if (Math.hypot(t.x - p.x, (t.y - 24) - p.y) <= p.r + 18) {
+        if (Math.hypot(t.x - p.x, (t.y - FIGHTER_HURT_OFFSET) - p.y) <= p.r + FIGHTER_HURT_RADIUS) {
           if (t.reflectTimer > 0) {
             p.team = t.team;
             p.owner = t.index;
@@ -1255,6 +1274,8 @@
   window.GG2DE_ENGINE = {
     createMatch,
     stepMatch,
-    TEAM_COLORS
+    TEAM_COLORS,
+    FIGHTER_HURT_RADIUS,
+    FIGHTER_HURT_OFFSET
   };
 })();

@@ -542,7 +542,7 @@
                 var mode = { Digit1: 'realtime', Digit2: 'chrono', Digit3: 'turnbased' }[e.code];
                 self.game.setControlMode(mode);
             }
-            if (e.code === 'Space' && self.game.player && !self.game.loop.isPaused) {
+            if (!e.repeat && e.code === 'Space' && self.game.player && !self.game.loop.isPaused && self.game.controlMode !== 'turnbased') {
                 var ep = engine.getState().player;
                 if (ep && ep.dodgeTime <= 0 && ep.stamina >= 25) {
                     ep.dodgeTime = 0.35;
@@ -1064,7 +1064,8 @@
             return;
         }
 
-        if (this.input.keys['KeyF']) {
+        var airborneOrc = st.player && st.player.race === 'orc' && st.player.grounded === false;
+        if (this.input.keys['KeyF'] && !airborneOrc) {
             this.input.keys['KeyF'] = false;
             this.player.triggerAbility();
         }

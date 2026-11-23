@@ -15,7 +15,18 @@
     'block',
     'dodge',
     'hurt',
-    'victory'
+    'victory',
+    'fall',
+    'land',
+    'crouch',
+    'ledge',
+    'charge',
+    'attack_up',
+    'attack_down',
+    'attack_back',
+    'special_dash',
+    'special_rise',
+    'ultimate'
   ];
 
   const ENEMY_ANIMATIONS = [
@@ -505,6 +516,73 @@
     obj.scale.copy(obj.userData._defScale);
   }
 
+  // Angles are local to the race rig, in radians. The middle poses line up
+  // with the swing, and the last pose recovers to guard.
+  const actionPoses = {
+    attack_melee:  [[0.10, -0.50, 0.55, -0.85, -0.54, 0.17, -0.18, 0], [0.25, 0.65, -1.8, -0.16, -0.85, -0.48, 0.35, -0.08]],
+    attack_heavy:  [[-0.19, -0.76, -2.35, -0.82, -1.7, 0.43, -0.42, -0.10], [0.55, 0.79, -0.52, -0.28, -0.49, -0.58, 0.42, -0.15]],
+    attack_up:     [[0.34, -0.22, 0.60, -0.90, -0.54, 0.25, -0.30, -0.10], [-0.22, 0.25, -2.79, -0.19, -0.33, -0.36, 0.25, 0.04]],
+    attack_down:   [[-0.18, -0.32, -2.43, -0.82, -1.65, -0.18, 0.24, 0.06], [0.64, 0.55, -0.53, -0.10, -0.75, -0.32, 0.26, -0.18]],
+    attack_back:   [[0.12, 0.52, -0.68, -0.72, -0.52, -0.30, 0.18, 0], [0.18, -1.15, -1.72, -0.12, -0.64, 0.28, -0.60, -0.03]],
+    attack_ranged: [[0.06, -0.25, -1.41, -0.57, -1.20, -0.17, 0.18, 0], [-0.16, -0.12, -1.78, -0.22, -1.43, -0.26, 0.28, -0.03]],
+    cast_spell:    [[0.18, -0.16, -0.72, -1.25, -0.86, 0.16, -0.18, -0.08], [-0.16, 0.33, -2.15, -0.18, -1.98, -0.35, 0.36, 0.06]],
+    special_dash:  [[0.36, -0.25, -0.61, -0.95, -0.98, -0.56, 0.40, -0.11], [0.52, 0.18, -1.43, -0.36, 0.45, -0.75, 0.61, -0.04]],
+    special_rise:  [[0.26, -0.24, -0.67, -1.0, -0.71, -0.53, 0.36, -0.08], [-0.22, 0.28, -2.83, -0.10, 0.38, -0.54, 0.80, 0.14]],
+    ultimate:      [[-0.26, -0.12, -2.60, -0.85, -2.50, 0.15, 0.08, 0.12], [0.46, 0.48, -1.41, -0.13, -1.29, -0.52, 0.32, -0.15]]
+  };
+
+  // Orbital target lock, spirit release, forge slam, and berserkonin stomp.
+  const racialUltimates = {
+    human: [[-0.18, -0.14, -1.37, -0.72, -1.57, -0.24, 0.26, -0.03],
+            [0.16, 0.31, -1.72, -0.08, -0.65, -0.42, 0.29, -0.05]],
+    elf:   [[-0.21, -0.50, -2.08, -0.51, -1.98, -0.22, 0.19, 0.16],
+            [-0.29, 0.56, -2.62, -0.20, -2.39, 0.12, -0.20, 0.27]],
+    dwarf: [[-0.42, -0.29, -2.77, -0.86, -1.19, -0.31, 0.32, 0.02],
+            [0.74, 0.30, -0.52, -0.11, -0.43, -0.52, 0.43, -0.23]],
+    orc:   [[-0.37, -0.44, -2.39, -0.70, -2.01, -1.06, 0.26, 0.19],
+            [0.64, 0.62, -0.53, -0.12, -0.61, -0.21, 0.32, -0.17]]
+  };
+
+  const classForm = {
+    warrior: { twist: 1.26, stride: 1.13, brace: 0.04, flare: 0.18 },
+    tank: { twist: 0.67, stride: 0.78, brace: 0.48, flare: 0.03 },
+    support: { twist: 0.91, stride: 0.91, brace: 0.21, flare: 0.34 },
+    mage: { twist: 0.82, stride: 0.73, brace: 0.31, flare: 0.50 }
+  };
+
+  function poseAction(parts, poses, phase, cls) {
+    const guard = [0.06, -0.10, -0.30, -0.32, -0.42, -0.09, 0.12, 0];
+    const frames = [guard, poses[0], poses[1], poses[1], guard];
+    const times = [0, 0.17, 0.32, 0.49, 1];
+    const segment = phase < times[1] ? 0 : phase < times[2] ? 1 : phase < times[3] ? 2 : 3;
+    const amount = (phase - times[segment]) / (times[segment + 1] - times[segment]);
+    const eased = amount * amount * (3 - 2 * amount);
+    const pose = frames[segment].map((value, i) => value + (frames[segment + 1][i] - value) * eased);
+    const [lean, twist, strike, elbow, offhand, leadLeg, rearLeg, height] = pose;
+    const form = classForm[cls];
+    const accent = Math.sin(Math.PI * phase);
+    const turn = twist * (form?.twist ?? 1);
+    const stance = form?.stride ?? 1;
+    parts.rig.position.y += height - (cls === 'tank' ? 0.08 * accent : 0);
+    parts.torso.rotation.x += lean;
+    parts.torso.rotation.y += turn;
+    parts.head.rotation.y -= turn * 0.40;
+    parts.rightArm.rotation.x += strike;
+    parts.rightArm.rotation.z -= (form?.flare ?? 0) * accent;
+    parts.rightForearm.rotation.x += elbow;
+    parts.leftArm.rotation.x += offhand - (form?.brace ?? 0);
+    parts.leftArm.rotation.z += (form?.flare ?? 0) * accent;
+    parts.leftForearm.rotation.x -= cls === 'mage' ? 0.45 : 0.18;
+    parts.leftLeg.rotation.x += leadLeg * stance;
+    parts.rightLeg.rotation.x += rearLeg * stance;
+    parts.leftShin.rotation.x += Math.max(0, -leadLeg * stance * 0.75);
+    parts.rightShin.rotation.x += Math.max(0, -rearLeg * stance * 0.75);
+    if (poses === actionPoses.cast_spell) {
+      parts.leftForearm.rotation.y += accent * (cls === 'support' ? 0.78 : 0.35);
+      parts.rightForearm.rotation.y -= accent * (cls === 'mage' ? 0.65 : 0.22);
+    }
+  }
+
   function createHumanoidAnimator(parts, opts) {
     const o = Object.assign({
       armSwing: 0.72,
@@ -539,7 +617,11 @@
       tracked.forEach(restoreDefaults);
     }
 
-    return function animate(t, animName) {
+    const blendJoints = tracked.filter(Boolean).map(joint => ({
+      joint, position: joint.position.clone(), rotation: joint.quaternion.clone(), scale: joint.scale.clone()
+    }));
+
+    function sample(t, animName, state) {
       resetAll();
       const s = Math.sin(t * 2.4);
       const c = Math.cos(t * 2.4);
@@ -568,7 +650,47 @@
         });
       }
 
+      if (actionPoses[animName] && (state || !['attack_melee', 'attack_heavy', 'attack_ranged', 'cast_spell'].includes(animName))) {
+        const phase = Math.max(0, Math.min(1, state?.phase ?? (t * 1.35) % 1));
+        const ultimate = animName === 'ultimate' ? racialUltimates[state?.race ?? o.race] : null;
+        poseAction(parts, ultimate || actionPoses[animName], phase, state?.cls);
+        if (animName === 'special_rise') o.jetpackFlames?.forEach(flame => flame.scale.y *= 3);
+        return;
+      }
+
       switch (animName) {
+        case 'fall':
+          torso.rotation.x = -0.14;
+          parts.leftArm.rotation.z += 0.58;
+          parts.rightArm.rotation.z -= 0.55;
+          parts.leftLeg.rotation.x = -0.48;
+          parts.rightLeg.rotation.x = 0.32;
+          parts.leftShin.rotation.x = 0.72;
+          break;
+        case 'land':
+        case 'crouch': {
+          const depth = animName === 'land' ? Math.sin(Math.PI * (state?.phase ?? (t * 1.6) % 1)) : 1;
+          rig.position.y -= 0.25 * depth;
+          torso.rotation.x = 0.44 * depth;
+          parts.leftLeg.rotation.x = parts.rightLeg.rotation.x = -0.62 * depth;
+          parts.leftShin.rotation.x = parts.rightShin.rotation.x = 1.07 * depth;
+          parts.leftArm.rotation.x -= 0.48 * depth;
+          parts.rightArm.rotation.x -= 0.32 * depth;
+          break;
+        }
+        case 'ledge':
+          torso.rotation.x = 0.22;
+          parts.leftArm.rotation.x = -2.66;
+          parts.rightArm.rotation.x = -2.74;
+          parts.leftForearm.rotation.x = -0.39;
+          parts.rightForearm.rotation.x = -0.32;
+          parts.leftLeg.rotation.x = -0.36 + s * 0.08;
+          parts.rightLeg.rotation.x = 0.21;
+          parts.leftShin.rotation.x = 0.51;
+          break;
+        case 'charge':
+          poseAction(parts, actionPoses[state?.direction === 'up' ? 'attack_up' : state?.direction === 'down' ? 'attack_down' : 'attack_heavy'], 0.16 + s * 0.008, state?.cls);
+          break;
         case 'walk': {
           const w = t * 5.8;
           rig.position.y += Math.abs(Math.sin(w)) * 0.045;
@@ -737,6 +859,13 @@
           rig.position.y += s * 0.018;
           torso.rotation.x = s * 0.032;
           if (head) head.rotation.y = c * 0.065;
+          if (state?.cls) {
+            const guard = state.cls === 'tank' ? 0.68 : state.cls === 'support' ? 0.36 : 0.47;
+            parts.leftForearm.rotation.x -= guard;
+            parts.rightForearm.rotation.x -= state.cls === 'mage' ? 0.72 : 0.45;
+            parts.leftLeg.rotation.x -= 0.12;
+            parts.rightLeg.rotation.x += 0.10;
+          }
           parts.leftArm.rotation.x = s * 0.055;
           parts.rightArm.rotation.x = -s * 0.055;
           if (o.cape) o.cape.rotation.x = 0.08 + s * 0.04;
@@ -745,6 +874,27 @@
           if (Array.isArray(o.tassets)) o.tassets.forEach((ta, i) => { ta.rotation.x += s * 0.04 * (i % 2 === 0 ? 1 : -1); });
           break;
         }
+      }
+    }
+
+    return function animate(t, animName, state) {
+      const blend = state?.blend;
+      if (!blend) {
+        sample(t, animName, state);
+        return;
+      }
+
+      sample(blend.time, blend.name, blend.state);
+      for (const { joint, position, rotation, scale } of blendJoints) {
+        position.copy(joint.position);
+        rotation.copy(joint.quaternion);
+        scale.copy(joint.scale);
+      }
+      sample(t, animName, state);
+      for (const { joint, position, rotation, scale } of blendJoints) {
+        joint.position.lerp(position, blend.weight);
+        joint.quaternion.slerp(rotation, blend.weight);
+        joint.scale.lerp(scale, blend.weight);
       }
     };
   }

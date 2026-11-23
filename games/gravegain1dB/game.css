@@ -113,7 +113,7 @@ html, body {
     #gg1dRitualRow2 button { min-height: 60px; }
     #gg1dMenu h1 { font-size: 1.35rem; }
     .gg1dChoices button { min-width: 44vw; flex: 1 1 44vw; min-height: 56px; font-size: 0.92rem; }
-    #gg1dGoBtn { width: 100%; min-height: 60px; font-size: 1.1rem; }
+    #gg1dGoBtn, #gg1dDriftBtn { width: 100%; min-height: 60px; font-size: 1.1rem; }
     #gg1dBannerCard { max-width: 92vw; padding: 14px 14px; }
     #gg1dBannerText { font-size: 0.95rem; }
 }
@@ -137,7 +137,7 @@ html, body {
 }
 .gg1dChoices button small { display: block; color: var(--gg1d-dim); font-size: 0.75rem; margin-top: 4px; }
 .gg1dChoices button.sel { outline: 2px solid var(--gg1d-gold); background: rgba(60, 30, 100, 0.95); }
-#gg1dGoBtn {
+#gg1dGoBtn, #gg1dDriftBtn {
     margin-top: 8px; padding: 12px 42px; font-size: 1rem; font-weight: 800; cursor: pointer;
     background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: 1px solid #c084fc;
     border-radius: 10px; font-family: Orbitron, sans-serif; letter-spacing: 0.08em;

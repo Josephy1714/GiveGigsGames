@@ -26,6 +26,11 @@ html, body {
     background: rgba(10, 8, 24, 0.9); border: 1px solid rgba(34, 211, 238, 0.4);
     border-radius: 10px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.85rem;
 }
+#gg5dCollapseWarning {
+    padding: 3px 8px; border: 1px solid #f5c568; border-radius: 6px;
+    color: #ffdf97; background: #332311; font-weight: 700;
+}
+#gg5dCollapseWarning.urgent { color: #fff1ec; background: #661d25; border-color: #f98b78; }
 #gg5dHud .bar { position: relative; width: 150px; height: 12px; background: #1e1b2e; border-radius: 6px; overflow: hidden; }
 #gg5dHud .bar > div { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
 #gg5dHpFill { background: linear-gradient(90deg, #ef4444, #f97316); }
@@ -69,6 +74,12 @@ html, body {
 }
 .gg5dChoices button small { display: block; color: var(--gg5d-dim); font-size: 0.75rem; margin-top: 4px; }
 .gg5dChoices button.sel { outline: 2px solid var(--gg5d-cyan); background: rgba(20, 40, 80, 0.95); }
+#gg5dRacePick {
+    max-width: 100%; min-height: 44px; margin: 0 8px; padding: 6px 10px;
+    background: #1a1734; color: #fff; border: 1px solid var(--gg5d-purple);
+    border-radius: 8px; font: inherit; color-scheme: dark;
+}
+#gg5dRacePick:focus-visible { outline: 3px solid var(--gg5d-gold); outline-offset: 2px; }
 #gg5dGoBtn {
     margin-top: 8px; padding: 12px 42px; font-size: 1rem; font-weight: 800; cursor: pointer;
     background: linear-gradient(135deg, #22d3ee, #a855f7); color: #fff; border: 1px solid #67e8f9;

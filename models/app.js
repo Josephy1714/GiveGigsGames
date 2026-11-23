@@ -103,9 +103,18 @@
   }
 
   function formatStandaloneCode(model) {
+    if (model.fighterId) {
+      return [
+        `// ${model.name} (${model.game})`,
+        '// Load /games/_shared/gravegain-kit.js and /games/_shared/gravegain-races.js first.',
+        `const mesh = window.GGG_GRAVEGAIN_FIGHTERS[${JSON.stringify(model.fighterId)}].build(THREE);`,
+        'scene.add(mesh);',
+        "// In your animation loop: mesh.userData.animate(timeSeconds, 'idle');"
+      ].join('\n');
+    }
     const fnStr = model.build.toString();
     const usesKit = fnStr.includes('K.');
-    const deps = usesKit ? '// Requires: /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)\n' : '';
+    const deps = usesKit ? '// Requires: /games/_shared/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)\n' : '';
     const sample = cardEntries.has(model.id) ? cardEntries.get(model.id).rawGroup : null;
     const anims = sample && sample.userData && sample.userData.animations;
     const animHint = Array.isArray(anims) && anims.length

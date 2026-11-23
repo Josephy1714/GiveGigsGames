@@ -3,7 +3,18 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 (() => {
   type MapId = "desert" | "urban" | "night" | "alpine" | "coast" | "test";
   type GameMode = "menu" | "countdown" | "race" | "paused" | "finished";
-  type MenuView = "main" | "levels" | "garage" | "career" | "options";
+  type MenuView = "main" | "levels" | "garage" | "drivers" | "career" | "options";
+  type DriverRace = "human" | "elf" | "dwarf" | "orc";
+  type DriverClass = "warrior" | "tank" | "support" | "mage";
+  type DriverId = `${DriverRace}-${DriverClass}`;
+  type ModelMesh = { positions: number[]; normals: number[] };
+  type CarModel = { body: ModelMesh; cabin: ModelMesh; width: number; wing: number };
+  type ModelLibrary = {
+    car(id: CarId): CarModel;
+    driver(id: DriverId): (ModelMesh & { color: string })[];
+    previewDriver(canvas: HTMLCanvasElement, id: DriverId): (() => void) | undefined;
+    previewCar(canvas: HTMLCanvasElement, id: CarId, color: string): (() => void) | undefined;
+  };
   type RaceMode = "race" | "timetrial" | "knockout" | "endless";
   type Difficulty = "rookie" | "pro" | "ace";
   type SpeedUnit = "kmh" | "mph";
@@ -185,6 +196,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     coins: number;
     ownedCars: CarId[];
     equippedCar: CarId;
+    driver: DriverId;
     carPaints: Partial<Record<CarId, string>>;
     carUpgrades: Partial<Record<CarId, CarUpgrades>>;
     fullScreen: boolean;
@@ -239,6 +251,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     collisionCooldown: number;
     steerInput: number;
     drifting: boolean;
+    lateralSpeed: number;
     driftDir: number;
     driftCharge: number;
     slipstream: number;
@@ -410,6 +423,22 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   };
 
   const ROAD_WIDTH = 2000;
+  const modelLibrary = (window as Window & { OVERTAKE_MODELS?: ModelLibrary }).OVERTAKE_MODELS;
+  const DRIVER_RACES = ["human", "elf", "dwarf", "orc"] as const;
+  const DRIVER_CLASSES = ["warrior", "tank", "support", "mage"] as const;
+  const RACE_DRIVER_STATS = {
+    human: { acceleration: 1.02, grip: 1, brakes: 1, nitro: 1 },
+    elf: { acceleration: 0.97, grip: 1.12, brakes: 1.02, nitro: 0.97 },
+    dwarf: { acceleration: 0.96, grip: 1.04, brakes: 1.13, nitro: 0.98 },
+    orc: { acceleration: 1.13, grip: 0.93, brakes: 0.96, nitro: 1.03 },
+  };
+  const CLASS_DRIVER_STATS = {
+    warrior: { acceleration: 1.07, grip: 1.02, brakes: 1, nitro: 0.96 },
+    tank: { acceleration: 0.96, grip: 1, brakes: 1.1, nitro: 0.94 },
+    support: { acceleration: 1, grip: 1.06, brakes: 1.03, nitro: 1.05 },
+    mage: { acceleration: 0.98, grip: 0.98, brakes: 0.99, nitro: 1.24 },
+  };
+  const DRIVER_IDS = DRIVER_RACES.flatMap((race) => DRIVER_CLASSES.map((driverClass): DriverId => `${race}-${driverClass}`));
   const SEGMENT_LENGTH = 200;
   const RUMBLE_LENGTH = 3;
   const LANES = 3;
@@ -426,7 +455,15 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   const FIFTH_LEVEL_ID: MapId = "coast";
   const TEST_LEVEL_ID: MapId = "test";
   const SHOW_TITLE_IMAGE_IN_MENUS = false;
-  const LEVEL_ORDER: readonly MapId[] = [FIRST_LEVEL_ID, SECOND_LEVEL_ID, THIRD_LEVEL_ID, FOURTH_LEVEL_ID, FIFTH_LEVEL_ID];
+  const LEVEL_ORDER: readonly MapId[] = [FIRST_LEVEL_ID, SECOND_LEVEL_ID, THIRD_LEVEL_ID, FOURTH_LEVEL_ID, FIFTH_LEVEL_ID, TEST_LEVEL_ID];
+  const ROUTE_THEMES: Record<MapId, { sky: string; horizon: string; colors: [string, string, string] }> = {
+    desert: { sky: "#56256c", horizon: "#ffbf88", colors: ["#ff7194", "#ffcc67", "#fff1ba"] },
+    urban: { sky: "#397bbb", horizon: "#bdf7ef", colors: ["#fa729e", "#ffd56b", "#9676e8"] },
+    night: { sky: "#120d3c", horizon: "#6f4094", colors: ["#73fbea", "#ff83df", "#ffe58d"] },
+    alpine: { sky: "#385787", horizon: "#cfedff", colors: ["#bceeff", "#dc9cff", "#fff5e1"] },
+    coast: { sky: "#3e4792", horizon: "#ffc6ab", colors: ["#ff9474", "#aaf3ce", "#c8a7ff"] },
+    test: { sky: "#544997", horizon: "#ffb8d4", colors: ["#ff71ad", "#fff074", "#88f7df"] },
+  };
   const COUNTDOWN_LABELS = ["3", "2", "1", "GO!"] as const;
   const COUNTDOWN_STEP_SECONDS = 0.6;
   const COUNTDOWN_TOTAL_SECONDS = COUNTDOWN_LABELS.length * COUNTDOWN_STEP_SECONDS;
@@ -441,13 +478,11 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   const PLAYER_VISUAL_LATERAL_SMOOTHING = 18;
   const BASE_MAX_SPEED = 7200;
   const ACCEL = 5800;
-  const BRAKE = 9000;
+  const BRAKE = 7800;
   const DECEL = 3200;
   const OFFROAD_DECEL = 5200;
-  const OFFROAD_MAX_SPEED_RATIO = 0.54;
-  const TURN_DECEL = 2000;
-  const TURN_THROTTLE_FACTOR = 0.2;
   const STEERING = 2.55;
+  const RACE_STEP = 1 / 60;
   const CAR_ASSET_WIDTH = 352;
   const CAR_ASSET_HEIGHT = 184;
   const CAR_SIZE_SCALE = 1.1;
@@ -460,9 +495,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   const OPPONENT_ROAD_WIDTH = 0.44 * CAR_SIZE_SCALE;
   const COLLISION_DEPTH = 154 * CAR_SIZE_SCALE;
   const COLLISION_SEPARATION = COLLISION_DEPTH + 2;
-  const PLAYER_REAR_END_SPEED_LOSS = 0.28;
-  const OPPONENT_REAR_END_SPEED_LOSS = 0.68;
-  const OPPONENT_REAR_END_STUN = 0.45;
   const PLAYER_COLLISION_COOLDOWN = 0.34;
   const OPPONENT_LOOKAHEAD_DISTANCE = 760;
   const OPPONENT_PASS_COMMIT_DISTANCE = 420;
@@ -476,9 +508,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   const OPPONENT_MAX_SCREEN_WIDTH_RATIO = 0.3 * CAR_SIZE_SCALE;
   const OPPONENT_MAX_SCREEN_WIDTH = 390 * CAR_SIZE_SCALE;
   const OPPONENT_MAX_PLAYER_WIDTH_RATIO = 0.92;
-  const ROAD_CURVE_TURN_FACTOR = 0.42;
-  const MAX_TURN_SPEED_REDUCTION = 0.08;
-  const PLAYER_REAR_HIT_SPEED_RETENTION = 0.96;
   const FIRST_LEVEL_OPPONENT_MAX_SPEED_RATIO = 0.8;
   const FIRST_LEVEL_AHEAD_OPPONENT_SPEED_RATIO = 0.75;
   const SECOND_LEVEL_OPPONENT_MAX_SPEED_RATIO = 0.9;
@@ -707,7 +736,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "desert",
       name: "Desert Run",
-      label: "Canyon Cup",
+      label: "Sherbet Canyon",
       sky: "desert_map/sky_desert_sunset.png",
       seed: 101,
       curvePull: 0.54,
@@ -762,7 +791,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "urban",
       name: "Urban Sprint",
-      label: "Metro Cup",
+      label: "Balloon Borough",
       sky: "urban_map/sky_urban_day.png",
       seed: 202,
       curvePull: 0.68,
@@ -820,7 +849,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "night",
       name: "Neon Night",
-      label: "Starlight Cup",
+      label: "Constellation Carnival",
       sky: "night_map/sky_neon_night.png",
       seed: 303,
       curvePull: 0.82,
@@ -879,7 +908,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "alpine",
       name: "Alpine Summit",
-      label: "Glacier Cup",
+      label: "Crystal Crown",
       sky: "urban_map/sky_urban_day.png",
       seed: 505,
       curvePull: 0.86,
@@ -933,7 +962,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "coast",
       name: "Cyber Coast",
-      label: "Rainbow Cup",
+      label: "Bubblegum Bay",
       sky: "desert_map/sky_desert_sunset.png",
       seed: 606,
       curvePull: 0.88,
@@ -984,7 +1013,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     {
       id: "test",
       name: "Stadium Circuit",
-      label: "Apex Circuit",
+      label: "Confetti Coliseum",
       sky: "training_map/sky_urban_day.png",
       seed: 404,
       curvePull: 0.72,
@@ -1162,12 +1191,14 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   let selectedRaceDirection: RaceDirection = "forward";
   let mode: GameMode = "menu";
   let menuView: MenuView = "main";
+  let disposeModelPreview: (() => void) | undefined;
   let menuPageIndex = 0;
   let segments: Segment[] = [];
   let miniMapPoints: MiniMapPoint[] = [];
   let trackLength = 1;
   let maxSpeed = BASE_MAX_SPEED;
   let lastFrame = performance.now();
+  let raceStepTime = 0;
   let nitroZoomVisual = 0;
   let visualPlayerX = 0;
   let cameraPitch = 0;
@@ -1262,6 +1293,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     collisionCooldown: 0,
     steerInput: 0,
     drifting: false,
+    lateralSpeed: 0,
     driftDir: 0,
     driftCharge: 0,
     slipstream: 0,
@@ -1302,6 +1334,16 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     flameL: BABYLON.Mesh;
     flameR: BABYLON.Mesh;
     wheels: BABYLON.Mesh[];
+    modelId?: CarId;
+    chassis: BABYLON.Mesh;
+    nose: BABYLON.Mesh;
+    cabin: BABYLON.Mesh;
+    helmet: BABYLON.Mesh;
+    wing: BABYLON.Mesh;
+    struts: BABYLON.Mesh[];
+    tailLights: BABYLON.Mesh[];
+    driverId?: DriverId;
+    driverModel?: BABYLON.TransformNode;
   };
 
   type ItemBoxRig = {
@@ -1743,6 +1785,9 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 
       // 3D Landmark / Prop Pools
       const propPool: Record<string, BABYLON.TransformNode[]> = {
+        ...Object.fromEntries(MAPS.map(({ id }) => [
+          id, Array.from({ length: 12 }, (_, i) => hideNode(createThemedProp(scene, id, i))),
+        ])),
         cactus: Array.from({ length: 24 }, (_, i) => hideNode(create3DCactus(scene, i))),
         palm: Array.from({ length: 24 }, (_, i) => hideNode(create3DPalm(scene, false, i))),
         neonPalm: Array.from({ length: 24 }, (_, i) => hideNode(create3DPalm(scene, true, i))),
@@ -1803,6 +1848,42 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   function hideNode(node: BABYLON.TransformNode): BABYLON.TransformNode {
     node.setEnabled(false);
     return node;
+  }
+
+  function createThemedProp(scene: BABYLON.Scene, mapId: MapId, index: number): BABYLON.TransformNode {
+    const tag = `${mapId}_${index}`;
+    const root = new BABYLON.TransformNode(tag, scene);
+    const { colors } = ROUTE_THEMES[mapId];
+    const material = new BABYLON.StandardMaterial(tag, scene);
+    material.diffuseColor = BABYLON.Color3.FromHexString(colors[index % colors.length]);
+    const accent = new BABYLON.StandardMaterial(`${tag}_accent`, scene);
+    accent.diffuseColor = BABYLON.Color3.FromHexString(colors[(index + 1) % colors.length]);
+    const base = BABYLON.MeshBuilder.CreateCylinder(`${tag}_base`, { diameterTop: 70, diameterBottom: 175, height: 720, tessellation: 8 }, scene);
+    base.position.y = 360;
+    base.material = accent;
+    base.parent = root;
+
+    let top: BABYLON.Mesh;
+    if (mapId === "desert" || mapId === "coast") {
+      top = BABYLON.MeshBuilder.CreateTorus(`${tag}_ring`, { diameter: 660, thickness: mapId === "desert" ? 170 : 80, tessellation: 18 }, scene);
+      top.rotation.x = Math.PI / 2;
+    } else if (mapId === "alpine" || mapId === "night") {
+      top = BABYLON.MeshBuilder.CreateCylinder(`${tag}_gem`, { diameterTop: 0, diameterBottom: 480, height: 780, tessellation: 5 }, scene);
+      top.rotation.z = (index % 3 - 1) * 0.35;
+      if (mapId === "night") material.emissiveColor = material.diffuseColor;
+    } else if (mapId === "test") {
+      top = BABYLON.MeshBuilder.CreateCylinder(`${tag}_cup`, { diameterTop: 580, diameterBottom: 150, height: 500, tessellation: 8 }, scene);
+    } else {
+      top = BABYLON.MeshBuilder.CreateSphere(`${tag}_balloon`, { diameter: 660, segments: 10 }, scene);
+      top.scaling.set(0.83, 1.22, 0.83);
+    }
+    top.position.y = 980;
+    top.material = material;
+    top.parent = root;
+    root.rotation.y = (index % 5 - 2) * 0.14;
+    const scale = 0.9 + (index % 4) * 0.22;
+    root.scaling.set(scale, scale, scale);
+    return root;
   }
 
   function createBabylonKartNode(scene: BABYLON.Scene, colorHex: string, isPlayer: boolean, tag: string): KartRig {
@@ -1918,7 +1999,65 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       wheels.push(w);
     }
 
-    return { root, bodyMat, tailMat, flameMat, flameL, flameR, wheels };
+    return { root, bodyMat, tailMat, flameMat, flameL, flameR, wheels, chassis, nose, cabin, helmet, wing, struts: [strutL, strutR], tailLights: [tailL, tailR] };
+  }
+
+  function applyModelMesh(mesh: BABYLON.Mesh, data: ModelMesh): void {
+    mesh.setVerticesData(BABYLON.VertexBuffer.PositionKind, data.positions);
+    mesh.setVerticesData("normal", data.normals);
+    mesh.setIndices(Array.from({ length: data.positions.length / 3 }, (_, index) => index));
+  }
+
+  function updateCarModel(rig: KartRig, id: CarId, openCockpit = false): void {
+    if (!modelLibrary || rig.modelId === id) return;
+    const { body, cabin, width, wing } = modelLibrary.car(id);
+    applyModelMesh(rig.chassis, body);
+    applyModelMesh(rig.cabin, cabin);
+    rig.chassis.position.y = 0;
+    rig.cabin.position.set(0, 0, 0);
+    if (openCockpit) {
+      rig.cabin.position.set(0, 35, -100);
+      rig.cabin.scaling.set(1, 0.68, 0.48);
+    }
+    rig.nose.isVisible = false;
+    rig.wing.isVisible = wing > 0;
+    rig.wing.position.y = wing;
+    rig.wing.scaling.x = width / 285;
+    rig.wheels.forEach((wheel, index) => {
+      wheel.position.x = (index % 2 ? 1 : -1) * (width / 2 + 26);
+    });
+    rig.struts.forEach((strut) => {
+      strut.isVisible = wing > 0;
+      strut.position.y = (wing + 112) / 2;
+      strut.scaling.y = Math.max(0, wing - 112) / 70;
+    });
+    rig.tailLights.forEach((light, index) => {
+      light.position.x = (index === 0 ? -1 : 1) * width * 0.32;
+      light.position.z = id === "hyper" || id === "apex" ? 285 : 272;
+      light.scaling.x = id === "hyper" || id === "prototype" ? 1.35 : id === "starter" ? 0.7 : 1;
+      light.scaling.y = id === "hyper" || id === "prototype" ? 0.45 : 0.8;
+    });
+    rig.modelId = id;
+  }
+
+  function updateDriverModel(rig: KartRig, id: DriverId, scene: BABYLON.Scene): void {
+    if (!modelLibrary || rig.driverId === id) return;
+    rig.driverModel?.dispose(false, true);
+    const driver = new BABYLON.TransformNode("driver", scene);
+    driver.parent = rig.root;
+    driver.scaling.set(100, 100, 100);
+    driver.position.set(0, 64, 40);
+    for (const data of modelLibrary.driver(id)) {
+      const mesh = new BABYLON.Mesh("driverPart", scene);
+      applyModelMesh(mesh, data);
+      const material = new BABYLON.StandardMaterial("driverPaint", scene);
+      material.diffuseColor = BABYLON.Color3.FromHexString(data.color);
+      mesh.material = material;
+      mesh.parent = driver;
+    }
+    rig.helmet.isVisible = false;
+    rig.driverModel = driver;
+    rig.driverId = id;
   }
 
   function create3DCactus(scene: BABYLON.Scene, id: number): BABYLON.TransformNode {
@@ -2300,6 +2439,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
           else if (spr.asset.includes("neon")) poolKey = "neonTower";
           else if (spr.asset.includes("tree")) poolKey = map.skyline === "alpine" ? "pine" : "palm";
 
+          if (seg.index % 3 !== 0) poolKey = map.id;
           const list = st.propPool[poolKey];
           const cursor = propCursors[poolKey] ?? 0;
           if (list && cursor < list.length) {
@@ -2345,6 +2485,8 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     // Position Player 3D Kart
     if (mode !== "menu") {
       st.playerKart.root.setEnabled(true);
+      updateCarModel(st.playerKart, player.carId, true);
+      updateDriverModel(st.playerKart, save.driver, st.scene);
       const paint = getPlayerPaint();
       const baseColor = paint.color || getPlayerCar().color;
       if (player.starTime > 0) {
@@ -2391,6 +2533,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         const p3 = trackTo3D(opp.position, opp.offset);
         if (!p3 || p3.z > -40) continue;
         const k = st.opponentKarts[kIdx++];
+        updateCarModel(k, opp.carId);
         k.root.setEnabled(true);
         k.bodyMat.diffuseColor.copyFrom(hexToBabylonColor3(opp.paintColor, st.paintColorCache));
         const sc = opp.shrunkTime > 0 ? 0.56 : 1;
@@ -2576,7 +2719,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     const nitroTopSpeed = 1 + (NITRO_TOP_SPEED - 1) * car.nitro;
     const overdriveBonus = player.overdriveTime > 0 ? 1.3 : 1;
     const starBonus = player.starTime > 0 ? 1.28 : 1;
-    const shroomBonus = player.mushroomTime > 0 || player.miniTurboTime > 0 ? 1.24 : 1;
+    const shroomBonus = player.mushroomTime > 0 ? 1.24 : player.miniTurboTime > 0 ? 1.08 : 1;
     const slipstreamBonus = 1 + player.slipstream * 0.12;
     const boostMult = Math.max(
       player.nitroActive ? nitroTopSpeed : 1,
@@ -2592,7 +2735,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     const nitroTopSpeed = 1 + (NITRO_TOP_SPEED - 1) * car.nitro;
     const overdriveBonus = player.overdriveTime > 0 ? 1.3 : 1;
     const starBonus = player.starTime > 0 ? 1.28 : 1;
-    const shroomBonus = player.mushroomTime > 0 || player.miniTurboTime > 0 ? 1.24 : 1;
+    const shroomBonus = player.mushroomTime > 0 ? 1.24 : player.miniTurboTime > 0 ? 1.08 : 1;
     const slipstreamBonus = 1 + player.slipstream * 0.12;
     const boostMult = Math.max(
       player.nitroActive ? nitroTopSpeed : 1,
@@ -3077,6 +3220,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       coins: 0,
       ownedCars: ["starter"],
       equippedCar: "starter",
+      driver: "human-warrior",
       carPaints: {},
       carUpgrades: {},
       fullScreen: false,
@@ -3146,6 +3290,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         coins: Math.max(0, Math.floor(Number(parsed.coins) || 0)),
         ownedCars,
         equippedCar,
+        driver: parsed.driver && DRIVER_IDS.includes(parsed.driver) ? parsed.driver : fallback.driver,
         carPaints: parsed.carPaints && typeof parsed.carPaints === "object" ? parsed.carPaints : {},
         carUpgrades: parsed.carUpgrades && typeof parsed.carUpgrades === "object" ? parsed.carUpgrades : {},
         fullScreen: parsed.fullScreen === true,
@@ -3217,45 +3362,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       return 3;
     }
     return getMapConfig(selectedMapId).laps;
-  }
-
-  function hasCompletedLevel(id: MapId): boolean {
-    const place = save.bestPlaces[id];
-    const lapTime = save.bestLapTimes[id];
-    const raceTimeVal = save.bestRaceTimes[id];
-    return (typeof place === "number" && place > 0) ||
-      (typeof lapTime === "number" && lapTime > 0) ||
-      (typeof raceTimeVal === "number" && raceTimeVal > 0);
-  }
-
-  function isLevelUnlocked(id: MapId): boolean {
-    if (shouldShowDebugMode()) {
-      return true;
-    }
-
-    if (id === TEST_LEVEL_ID) {
-      return true;
-    }
-
-    const index = LEVEL_ORDER.indexOf(id);
-    if (index === 0) {
-      return true;
-    }
-
-    if (index < 0) {
-      return false;
-    }
-
-    return hasCompletedLevel(LEVEL_ORDER[index - 1]);
-  }
-
-  function getPreviousLevelName(id: MapId): string {
-    const index = LEVEL_ORDER.indexOf(id);
-    if (index <= 0) {
-      return "";
-    }
-
-    return getMapConfig(LEVEL_ORDER[index - 1]).name;
   }
 
   function getSegmentColor(index: number, palette: RoadPalette, tunnel: boolean): SegmentColor {
@@ -3727,6 +3833,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     player.collisionCooldown = 0;
     player.steerInput = 0;
     player.drifting = false;
+    player.lateralSpeed = 0;
     player.driftDir = 0;
     player.driftCharge = 0;
     player.slipstream = 0;
@@ -4209,14 +4316,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   // ---- Race Lifecycle ----
 
   function startRace(mapId = selectedMapId, direction: RaceDirection = selectedRaceDirection): void {
-    if (!isLevelUnlocked(mapId)) {
-      menuView = "levels";
-      menuPanel.hidden = false;
-      panelStatus.textContent = "Locked";
-      renderMenu();
-      return;
-    }
-
     selectedMapId = mapId;
     selectedRaceDirection = direction;
     resetRace();
@@ -4269,12 +4368,10 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     mode = "race";
     countdownOverlay.hidden = true;
     panelStatus.textContent = "Racing";
-    const throttleHeld = keys.has("arrowup") || keys.has("w") || keys.has("n") || keys.has(" ") || gamepadThrottle || save.autoAccelerate;
+    const throttleHeld = keys.has("arrowup") || keys.has("w") || gamepadThrottle;
     if (throttleHeld) {
-      player.speed = maxSpeed * 0.55;
-      player.mushroomTime = 0.9;
+      player.miniTurboTime = 0.9;
       player.nitro = Math.min(NITRO_MAX, player.nitro + 18);
-      cameraShake = Math.max(cameraShake, 6);
       pushCallout("ROCKET START! 🚀", "cyan");
       playNitroIgnition();
     }
@@ -4353,7 +4450,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     unlockedAchievements: AchievementDef[];
     newBestLap: boolean;
     newBestRace: boolean;
-    unlockedNextMapName?: string;
   };
 
   function awardRaceRewards(place: number): RewardBreakdown {
@@ -4367,10 +4463,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     }
 
     const map = getMapConfig(selectedMapId);
-    const currentIdx = LEVEL_ORDER.indexOf(map.id);
-    const nextMapId = currentIdx >= 0 && currentIdx + 1 < LEVEL_ORDER.length ? LEVEL_ORDER[currentIdx + 1] : undefined;
-    const wasNextUnlocked = nextMapId ? isLevelUnlocked(nextMapId) : true;
-
     const diff = getDifficultySettings();
     const multipliers = [1, 0.58, 0.32, 0.18];
     const basePlaceCoins = save.raceMode === "timetrial"
@@ -4472,10 +4564,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     raceRewardPaid = true;
     saveProgress();
 
-    const unlockedNextMapName = nextMapId && !wasNextUnlocked && isLevelUnlocked(nextMapId)
-      ? getMapConfig(nextMapId).name
-      : undefined;
-
     return {
       placeCoins: basePlaceCoins,
       overtakeCoins,
@@ -4487,7 +4575,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       unlockedAchievements,
       newBestLap,
       newBestRace,
-      unlockedNextMapName,
     };
   }
 
@@ -4551,14 +4638,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     summaryCoins.append(totalLine);
 
     summaryBadges.replaceChildren();
-    if (breakdown.unlockedNextMapName) {
-      const p = document.createElement("span");
-      p.className = "pill";
-      p.style.borderColor = "#78ffaa";
-      p.style.color = "#78ffaa";
-      p.textContent = `🔓 Unlocked: ${breakdown.unlockedNextMapName}!`;
-      summaryBadges.append(p);
-    }
     if (breakdown.newBestLap) {
       const p = document.createElement("span");
       p.className = "pill";
@@ -4588,7 +4667,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 
     const currentLevelIdx = LEVEL_ORDER.indexOf(selectedMapId);
     const nextLevelId = currentLevelIdx >= 0 && currentLevelIdx + 1 < LEVEL_ORDER.length ? LEVEL_ORDER[currentLevelIdx + 1] : undefined;
-    if (nextLevelId && isLevelUnlocked(nextLevelId)) {
+    if (nextLevelId) {
       const nextBtn = document.createElement("button");
       nextBtn.type = "button";
       nextBtn.className = "primary";
@@ -4623,6 +4702,8 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   // ---- Menus ----
 
   function renderMenu(): void {
+    disposeModelPreview?.();
+    disposeModelPreview = undefined;
     syncFullScreenPreference();
     confirmResetSave = false;
     menuContent.replaceChildren();
@@ -4641,6 +4722,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       main: "Overtake",
       levels: "Choose a route",
       garage: "Your garage",
+      drivers: "Choose a driver",
       career: "Career & Awards",
       options: "Race settings",
     };
@@ -4657,6 +4739,8 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       renderLevelMenu();
     } else if (menuView === "garage") {
       renderGarageMenu();
+    } else if (menuView === "drivers") {
+      renderDriverMenu();
     } else if (menuView === "career") {
       renderCareerMenu();
     } else {
@@ -4689,7 +4773,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     });
     const hint = document.createElement("div");
     hint.className = "pause-controls-hint";
-    hint.textContent = "Steer: A/D or ◀/▶ · Drift/Brake: S/▼ · Nitro: Space/Shift/N · Use Item: E/Click · Restart: R";
+    hint.textContent = "Steer: A/D or ◀/▶ · Brake: S/▼ · Handbrake: C · Nitro: Space/Shift/N · Use Item: E · Restart: R";
     menuContent.append(soundRow, unitRow, hint);
   }
 
@@ -4725,6 +4809,10 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       menuPageIndex = CAR_ORDER.indexOf(save.equippedCar);
       renderMenu();
     });
+    const drivers = createMenuButton("Drivers", driverName(save.driver), () => {
+      menuView = "drivers";
+      renderMenu();
+    });
     const career = createMenuButton("Career", `${save.achievements.length}/${ACHIEVEMENTS.length} Awards`, () => {
       menuView = "career";
       menuPageIndex = 0;
@@ -4736,7 +4824,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       renderMenu();
     });
 
-    grid.append(start, cars, career, options);
+    grid.append(start, cars, drivers, career, options);
     menuContent.append(grid);
 
     const quickStrip = document.createElement("div");
@@ -4748,6 +4836,85 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     quickBtn.addEventListener("click", () => startRace(selectedMapId, selectedRaceDirection));
     quickStrip.append(quickBtn);
     menuContent.append(quickStrip);
+  }
+
+  function driverName(id: string): string {
+    return id.split("-").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
+  }
+
+  function getDriverStats(id: DriverId) {
+    const [race, driverClass] = id.split("-") as [DriverRace, DriverClass];
+    const base = RACE_DRIVER_STATS[race];
+    const role = CLASS_DRIVER_STATS[driverClass];
+    return {
+      acceleration: base.acceleration * role.acceleration,
+      grip: base.grip * role.grip,
+      brakes: base.brakes * role.brakes,
+      nitro: base.nitro * role.nitro,
+    };
+  }
+
+  function renderDriverMenu(): void {
+    const layout = document.createElement("div");
+    layout.className = "driver-selection";
+    const canvas = document.createElement("canvas");
+    canvas.width = 320;
+    canvas.height = 280;
+    canvas.setAttribute("role", "img");
+    const controls = document.createElement("div");
+    controls.className = "driver-controls";
+    const stats = document.createElement("dl");
+    stats.className = "driver-stats";
+    stats.setAttribute("aria-live", "polite");
+    const status = document.createElement("p");
+    status.className = "driver-status";
+
+    const [race, driverClass] = save.driver.split("-");
+    const createPicker = (labelText: string, values: readonly string[], value: string): HTMLSelectElement => {
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      const picker = document.createElement("select");
+      picker.setAttribute("aria-label", labelText);
+      for (const option of values) picker.add(new Option(driverName(option), option));
+      picker.value = value;
+      label.append(picker);
+      controls.append(label);
+      return picker;
+    };
+    const racePicker = createPicker("Race", DRIVER_RACES, race);
+    const classPicker = createPicker("Class", DRIVER_CLASSES, driverClass);
+    const statLabels = { acceleration: "Acceleration", grip: "Cornering grip", brakes: "Braking force", nitro: "Nitro duration" } as const;
+    controls.append(stats, status);
+    layout.append(canvas, controls);
+    menuContent.append(layout);
+
+    const showDriver = (): void => {
+      const name = driverName(save.driver);
+      status.textContent = `${name} equipped`;
+      canvas.setAttribute("aria-label", `${name} model`);
+      disposeModelPreview?.();
+      // A new canvas gives the next preview its own WebGL context.
+      const next = canvas.cloneNode() as HTMLCanvasElement;
+      layout.querySelector("canvas")?.replaceWith(next);
+      disposeModelPreview = modelLibrary?.previewDriver(next, save.driver);
+      stats.replaceChildren();
+      const modifiers = getDriverStats(save.driver);
+      for (const key of Object.keys(statLabels) as (keyof typeof statLabels)[]) {
+        const term = document.createElement("dt");
+        term.textContent = statLabels[key];
+        const value = document.createElement("dd");
+        value.textContent = `${Math.round(modifiers[key] * 100)}%`;
+        stats.append(term, value);
+      }
+    };
+    const selectDriver = (): void => {
+      save.driver = `${racePicker.value as DriverRace}-${classPicker.value as DriverClass}`;
+      saveProgress();
+      showDriver();
+    };
+    racePicker.addEventListener("change", selectDriver);
+    classPicker.addEventListener("change", selectDriver);
+    showDriver();
   }
 
   function buildMiniMapSvg(map: MapConfig): string {
@@ -4808,15 +4975,12 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     const pageIndex = clamp(menuPageIndex, 0, MAPS.length - 1);
     menuPageIndex = pageIndex;
     const map = MAPS[pageIndex];
-    const unlocked = isLevelUnlocked(map.id);
     const best = save.bestPlaces[map.id];
     const bestLap = save.bestLapTimes[map.id];
     const bestRace = save.bestRaceTimes[map.id];
-    const detail = unlocked
-      ? `${map.label} · Base Reward ${map.reward} coins`
-      : `Locked · Finish ${getPreviousLevelName(map.id)} to unlock`;
+    const detail = `${map.label} · Base Reward ${map.reward} coins`;
     const card = document.createElement("div");
-    card.className = `option-button level-card${unlocked ? "" : " locked"}`;
+    card.className = "option-button level-card";
     const kmLen = ((map.sections.reduce((s, sec) => s + sec.enter + sec.hold + sec.leave, 0) * SEGMENT_LENGTH) / 1800).toFixed(1);
 
     card.innerHTML = `
@@ -4840,14 +5004,14 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         selectedMapId = map.id;
         resetRace();
       }
-      panelStatus.textContent = unlocked ? "Select Forward or Reverse" : "Locked";
+      panelStatus.textContent = "Select Forward or Reverse";
     });
 
     const actions = document.createElement("div");
     actions.className = "level-actions";
 
-    const forwardButton = createLevelActionButton("▶ Race Forward", () => startRace(map.id, "forward"), unlocked);
-    const reverseButton = createLevelActionButton("◀ Race Reverse", () => startRace(map.id, "reverse"), unlocked);
+    const forwardButton = createLevelActionButton("▶ Race Forward", () => startRace(map.id, "forward"));
+    const reverseButton = createLevelActionButton("◀ Race Reverse", () => startRace(map.id, "reverse"));
     actions.append(forwardButton, reverseButton);
     card.append(actions);
     grid.append(card);
@@ -4861,12 +5025,11 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     });
   }
 
-  function createLevelActionButton(label: string, onClick: () => void, enabled: boolean): HTMLButtonElement {
+  function createLevelActionButton(label: string, onClick: () => void): HTMLButtonElement {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "primary level-action";
     button.textContent = label;
-    button.disabled = !enabled;
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       raceMessage.hidden = true;
@@ -4917,7 +5080,15 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 
     const leftCol = document.createElement("div");
     const activePaintObj = PAINT_OPTIONS.find((p) => p.id === activePaint) ?? PAINT_OPTIONS[0];
-    leftCol.innerHTML = buildCarPreviewSvg(car, activePaintObj.color, activePaintObj.glow);
+    const preview = document.createElement("canvas");
+    preview.className = "car-preview";
+    preview.width = 400;
+    preview.height = 200;
+    preview.setAttribute("role", "img");
+    preview.setAttribute("aria-label", `${car.label} model`);
+    disposeModelPreview = modelLibrary?.previewCar(preview, id, activePaintObj.color || car.color);
+    if (disposeModelPreview) leftCol.append(preview);
+    else leftCol.innerHTML = buildCarPreviewSvg(car, activePaintObj.color, activePaintObj.glow);
 
     const actionBtn = document.createElement("button");
     actionBtn.type = "button";
@@ -5493,6 +5664,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   function updatePlayer(dt: number): void {
     const map = getMapConfig(selectedMapId);
     const car = getPlayerCar();
+    const driver = getDriverStats(save.driver);
     const segment = findSegment(player.position);
     const speedRatio = clamp(player.speed / Math.max(1, maxSpeed), 0, 1);
 
@@ -5509,7 +5681,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     if (tiltEnabled && Math.abs(tiltSteerValue) > Math.abs(targetSteer)) targetSteer = tiltSteerValue;
 
     player.steerInput += (targetSteer - player.steerInput) * Math.min(1, dt * 14);
-    const steering = Math.abs(player.steerInput) > 0.08;
 
     const unlimitedNitro = shouldUseUnlimitedNitro();
     if (unlimitedNitro) {
@@ -5553,18 +5724,21 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     }
     player.slipstream = clamp(player.slipstream + (drafting ? dt * 0.95 : -dt * 1.4), 0, 1);
 
-    // Arcade Kart Hop + 3-Tier Drift Mini-Turbo (Blue -> Orange -> Pink sparks!)
+    const onRoad = Math.abs(player.x) <= 1 && player.airY <= 0;
     const wasDrifting = player.drifting;
-    const wantsDrift = (braking || keys.has("c") || keys.has("control")) && Math.abs(player.steerInput) > 0.3 && speedRatio > 0.35 && player.stunTime <= 0;
-    if (wantsDrift && !wasDrifting && player.airY <= 0) {
-      player.airVy = 175; // Kart hop!
-      player.driftDir = Math.sign(player.steerInput) || 1;
-      playHopSfx();
+    const handbrake = keys.has("c") || keys.has("control");
+    const cornerLoad = Math.abs(segment.curve) * speedRatio ** 2;
+    const wantsDrift = onRoad && (handbrake || (braking && cornerLoad > 0.22))
+      && Math.abs(player.steerInput) > 0.28 && speedRatio > 0.35 && player.stunTime <= 0;
+    if (wantsDrift && !wasDrifting) {
+      player.driftDir = Math.sign(player.steerInput);
     }
     player.drifting = wantsDrift;
 
     if (player.drifting) {
-      player.driftCharge = Math.min(2.1, player.driftCharge + dt);
+      if (player.steerInput * segment.curve > 0 && cornerLoad > 0.22) {
+        player.driftCharge = Math.min(2.1, player.driftCharge + dt * 1.5);
+      }
       addSkidMark(player.position, player.x - 0.14);
       addSkidMark(player.position, player.x + 0.14);
       const pRect = getPlayerCarRect(raceTime);
@@ -5572,27 +5746,23 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       const pKind: Particle["kind"] = player.driftCharge >= 0.45 ? "spark" : "smoke";
       spawnParticle(pRect.x + pRect.width * 0.22, pRect.y + pRect.height * 0.88, -60 - Math.random() * 80, -35, 5, 0.28, sparkColor, pKind);
       spawnParticle(pRect.x + pRect.width * 0.78, pRect.y + pRect.height * 0.88, 60 + Math.random() * 80, -35, 5, 0.28, sparkColor, pKind);
-    } else if (wasDrifting && player.driftCharge >= 0.45) {
+    } else if (wasDrifting && onRoad && player.stunTime <= 0 && !braking && player.driftCharge >= 0.45) {
       const tier = player.driftCharge >= 1.75 ? 3 : player.driftCharge >= 1.05 ? 2 : 1;
       const bonus = tier * 14;
       player.nitro = Math.min(NITRO_MAX, player.nitro + bonus);
       player.miniTurboTime = 0.55 + tier * 0.35;
-      player.speed = Math.max(player.speed, getPlayerMaxSpeed() * 1.05);
       playNitroIgnition();
       pushCallout(tier === 3 ? "ULTRA MINI-TURBO!! 💜" : tier === 2 ? "SUPER MINI-TURBO! 🧡" : "MINI-TURBO! 💙", tier === 3 ? "red" : tier === 2 ? "gold" : "cyan");
       player.driftCharge = 0;
     } else if (!player.drifting) {
-      player.driftCharge = Math.max(0, player.driftCharge - dt * 2);
+      player.driftCharge = 0;
     }
 
     const screechIntensity = player.drifting ? 0.9 : (braking && speedRatio > 0.4 ? 0.65 : (Math.abs(segment.curve) > 0.95 && speedRatio > 0.85 ? 0.35 : 0));
     updateTireScreech(screechIntensity);
 
-    const turnAmount = steering ? Math.abs(player.steerInput) : 0;
-    const turnThrottle = interpolate(1, TURN_THROTTLE_FACTOR, turnAmount);
-
     if (player.nitroActive && !unlimitedNitro && player.overdriveTime <= 0) {
-      player.nitro = Math.max(0, player.nitro - NITRO_DRAIN * dt);
+      player.nitro = Math.max(0, player.nitro - NITRO_DRAIN / driver.nitro * dt);
       if (player.nitro <= 0) {
         player.nitro = 0;
         player.nitroActive = false;
@@ -5609,53 +5779,35 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     player.gear = Math.floor(gearFloat) + 1;
     player.rpm = clamp(0.24 + (gearFloat % 1) * 0.72 + (player.nitroActive || player.mushroomTime > 0 ? 0.12 : 0), 0.18, 1);
 
-    if (player.stunTime > 0) {
-      player.speed -= DECEL * 2.4 * dt;
-    } else if (accelerating || player.mushroomTime > 0 || player.starTime > 0 || player.overdriveTime > 0) {
-      const slipBoost = 1 + player.slipstream * 0.14;
-      const itemBoost = player.mushroomTime > 0 || player.starTime > 0 || player.miniTurboTime > 0 ? 1.45 : 1;
-      const nitroMult = player.nitroActive ? NITRO_ACCEL * car.nitro : 1;
-      player.speed += (ACCEL * car.accel * nitroMult * itemBoost * turnThrottle * slipBoost + slopeForce) * dt;
-    } else {
-      player.speed -= (DECEL - slopeForce * 0.4) * dt;
-    }
-
-    if (braking && !player.drifting) {
-      player.speed -= BRAKE * dt;
-      addSkidMark(player.position, player.x - 0.14);
-      addSkidMark(player.position, player.x + 0.14);
-    } else if (player.drifting) {
-      player.speed -= BRAKE * 0.18 * dt;
-    }
-
-    if (player.stunTime <= 0) {
-      if (player.overdriveTime > 0) {
-        // Bullet Dash gently centers toward road center!
-        player.x += (0 - player.x) * Math.min(1, dt * 4);
-      } else {
-        const driftSteerMult = player.drifting ? 1.32 : 1;
-        const hazardWobble = player.hazardSpinTime > 0 ? Math.sin(raceTime * 24) * 1.45 : 0;
-        player.x += (player.steerInput * STEERING * car.grip * driftSteerMult * (0.25 + speedRatio * 0.85) + hazardWobble) * dt;
-      }
-    }
-
-    player.x -= segment.curve * (map.curvePull / Math.sqrt(car.grip)) * dt * speedRatio;
-
-    if (turnAmount > 0 && !player.drifting) {
-      player.speed -= TURN_DECEL * (0.45 + speedRatio * 0.55) * turnAmount * dt;
-    }
-
     const currentMaxSpeed = getPlayerMaxSpeed();
-    let speedLimit = currentMaxSpeed;
-    if (turnAmount > 0) {
-      speedLimit = Math.min(speedLimit, getTurnLimitedSpeed(currentMaxSpeed, turnAmount));
-    }
+    const gravel = Math.abs(player.x) > 1 && player.airY <= 0 && player.starTime <= 0 && player.mushroomTime <= 0 && player.overdriveTime <= 0;
+    const surfaceGrip = gravel ? 0.62 : 1;
+    const traction = car.grip * driver.grip * surfaceGrip;
+    const speedLoad = (player.speed / currentMaxSpeed) ** 2;
+    const boost = player.nitroActive ? NITRO_ACCEL * car.nitro : player.miniTurboTime > 0 ? 1.3 : 1;
+    const poweredItem = player.mushroomTime > 0 || player.starTime > 0 || player.overdriveTime > 0;
+    const power = ACCEL * car.accel * driver.acceleration * boost * (poweredItem ? 1.35 : 1);
+    const drive = player.stunTime <= 0 && !braking && (accelerating || poweredItem || player.nitroActive || player.miniTurboTime > 0)
+      ? power * Math.max(0, 1 - 0.68 * speedLoad) : 0;
+    const rollingDrag = power * (0.07 + 0.25 * speedLoad);
+    const brakeForce = BRAKE * driver.brakes * surfaceGrip * (braking ? (player.drifting ? 0.67 : 1) : handbrake ? 0.22 : 0);
+    const stunDrag = player.stunTime > 0 ? DECEL : 0;
+    player.speed += (drive - rollingDrag - brakeForce - stunDrag + slopeForce) * dt;
 
-    // Off-road gravel drag (ignored during Star/Mushroom/Bullet Dash)
-    if (Math.abs(player.x) > 1 && player.airY <= 0 && player.starTime <= 0 && player.mushroomTime <= 0 && player.overdriveTime <= 0) {
+    const motionRatio = clamp(player.speed / maxSpeed, 0, 1.5);
+    const brakingGrip = braking ? 0.8 : 1;
+    const steeringAuthority = STEERING * brakingGrip * Math.min(1, motionRatio * 2.4) / (1 + motionRatio ** 2 * 0.8);
+    const cornerPush = segment.curve * map.curvePull * motionRatio ** 2;
+    const gripResponse = (player.drifting ? 4 : 13) * traction;
+    const targetLateralSpeed = player.overdriveTime > 0 ? -player.x * 3
+      : (player.stunTime <= 0 ? player.steerInput * steeringAuthority * traction : 0)
+        - cornerPush / traction + (player.hazardSpinTime > 0 ? Math.sin(raceTime * 24) * 1.45 : 0);
+    player.lateralSpeed += (targetLateralSpeed - player.lateralSpeed) * (1 - Math.exp(-gripResponse * (player.airY > 0 ? 0.1 : 1) * dt));
+    player.x += player.lateralSpeed * dt;
+
+    if (gravel) {
       const shieldAssist = POWERUP_FLAGS.shield && player.shieldTime > 0 ? 0.35 : 1;
-      player.speed -= OFFROAD_DECEL * (2 - car.grip) * shieldAssist * dt;
-      speedLimit = Math.min(speedLimit, currentMaxSpeed * OFFROAD_MAX_SPEED_RATIO);
+      player.speed -= OFFROAD_DECEL * shieldAssist * (0.15 + 0.85 * motionRatio) * dt;
       if (player.speed > 900 && Math.random() < 0.7) {
         const pRect = getPlayerCarRect(raceTime);
         spawnParticle(pRect.x + Math.random() * pRect.width, pRect.y + pRect.height * 0.9, (Math.random() - 0.5) * 90, -45, 5, 0.35, map.palette.grass1, "dust");
@@ -5663,8 +5815,11 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     }
 
     if (Math.abs(player.x) > 1.44) {
-      player.x = Math.sign(player.x) * 1.38;
-      player.speed *= 0.985;
+      const side = Math.sign(player.x);
+      player.x = side * 1.44;
+      const impact = Math.max(0, player.lateralSpeed * side);
+      if (impact > 0) player.lateralSpeed = -side * impact * 0.25;
+      player.speed -= (impact * 360 + player.speed * dt * 0.7);
       if (player.speed > 1200 && player.collisionCooldown <= 0) {
         player.collisionCooldown = 0.22;
         cameraShake = Math.max(cameraShake, 3);
@@ -5695,10 +5850,9 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       spawnParticle(pRect.x + pRect.width * 0.66, pRect.y + pRect.height * 0.86, (Math.random() - 0.5) * 30, 80, 5, 0.16, flameColor, "flame");
     }
 
-    player.speed = clamp(player.speed, 0, speedLimit);
+    player.speed = Math.max(0, player.speed);
     player.totalDistance += player.speed * dt;
     player.position = positiveModulo(player.totalDistance, trackLength);
-    player.lap = clamp(Math.floor(player.totalDistance / trackLength) + 1, 1, getRaceLaps());
 
     const dispSpeed = getPlayerDisplaySpeed();
     if (dispSpeed > raceTopSpeed) {
@@ -5737,7 +5891,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         car.nitroActive = false;
       }
 
-      const previousOffset = car.offset;
       const trafficIntent = getOpponentTrafficIntent(car);
       car.targetLaneOffset = trafficIntent.targetOffset;
       car.blockedBy = trafficIntent.blockedBy;
@@ -5746,27 +5899,15 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       car.turnSignal = Math.abs(laneDiff) > 0.14 ? (laneDiff > 0 ? 1 : -1) : 0;
       car.offset += laneDiff * Math.min(1, dt * (car.trait === "aggressive" ? 1.2 : 0.88));
 
-      const segment = findSegment(car.position);
-      const laneTurn = clamp(Math.abs(car.offset - previousOffset) / Math.max(dt, 0.001) / STEERING, 0, 1);
-      const curveTurn = clamp(Math.abs(segment.curve) * ROAD_CURVE_TURN_FACTOR, 0, 1);
-      const turnAmount = Math.max(laneTurn, curveTurn);
-      const offRoadAmount = Math.max(0, Math.abs(car.offset) - 1);
-      const targetSpeed = getOpponentTargetSpeed(car, turnAmount, trafficIntent.followSpeed, diff.aiScale) * (car.shrunkTime > 0 ? 0.65 : 1);
+      const targetSpeed = getOpponentTargetSpeed(car, trafficIntent.followSpeed, diff.aiScale) * (car.shrunkTime > 0 ? 0.65 : 1);
 
       car.braking = targetSpeed < car.speed * 0.88 || trafficIntent.followSpeed !== undefined;
 
       if (car.stunTime > 0) {
         car.speed = Math.max(0, car.speed - DECEL * 2.2 * dt);
       } else {
-        car.speed += (targetSpeed - car.speed) * Math.min(1, dt * 2.4);
-        if (turnAmount > 0) {
-          const carSpeedRatio = clamp(car.speed / Math.max(1, car.baseSpeed), 0, 1);
-          car.speed -= TURN_DECEL * (0.45 + carSpeedRatio * 0.55) * turnAmount * dt;
-        }
-        if (offRoadAmount > 0) {
-          car.speed -= OFFROAD_DECEL * (1 + offRoadAmount) * dt;
-          car.speed = Math.min(car.speed, car.baseSpeed * OFFROAD_MAX_SPEED_RATIO);
-        }
+        car.speed += clamp((targetSpeed - car.speed) * 3, -BRAKE, ACCEL * getCarConfig(car.carId).accel) * dt;
+        if (Math.abs(car.offset) > 1) car.speed -= OFFROAD_DECEL * dt;
       }
 
       car.speed = Math.max(0, car.speed);
@@ -5957,23 +6098,24 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     return bestIndex;
   }
 
-  function getTurnLimitedSpeed(speed: number, turnAmount: number): number {
-    return speed * (1 - clamp(turnAmount, 0, 1) * MAX_TURN_SPEED_REDUCTION);
-  }
-
-  function getOpponentTargetSpeed(car: Opponent, turnAmount: number, followSpeed: number | undefined, aiScale: number): number {
+  function getOpponentTargetSpeed(car: Opponent, followSpeed: number | undefined, aiScale: number): number {
     const nitroMult = car.nitroActive ? 1.14 : 1;
-    const turnLimitedSpeed = getTurnLimitedSpeed(car.baseSpeed * nitroMult, turnAmount);
     const balance = getOpponentSpeedBalance(selectedMapId, car.carId, player.carId);
-    let targetSpeed = turnLimitedSpeed;
+    const config = getCarConfig(car.carId);
+    let targetSpeed = car.baseSpeed * nitroMult;
     if (!car.isTraffic && car.totalDistance > player.totalDistance && balance) {
-      const config = getCarConfig(car.carId);
       const configuredSpeed = BASE_MAX_SPEED * config.maxSpeed * aiScale;
-      targetSpeed = Math.min(turnLimitedSpeed, configuredSpeed * balance.aheadSpeedRatio);
+      targetSpeed = Math.min(targetSpeed, configuredSpeed * balance.aheadSpeedRatio);
     }
 
     if (!car.isTraffic && player.totalDistance - car.totalDistance > 2400 && save.difficulty !== "rookie") {
       targetSpeed *= 1.07;
+    }
+
+    for (let distance = 0; distance <= car.speed * 0.65; distance += SEGMENT_LENGTH * 3) {
+      const curve = Math.abs(findSegment(car.position + distance).curve);
+      const cornerSpeed = BASE_MAX_SPEED * Math.sqrt(config.grip / Math.max(0.1, curve * 1.55));
+      targetSpeed = Math.min(targetSpeed, Math.sqrt(cornerSpeed ** 2 + 2 * BRAKE * 0.55 * distance));
     }
 
     if (followSpeed !== undefined) {
@@ -6338,11 +6480,11 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       const closeCollision = Math.abs(gap) <= COLLISION_DEPTH;
       const playerPassedOpponent = previousGap > 0 && gap <= 0;
       const opponentPassedPlayer = previousGap < 0 && gap >= 0;
-      const lateralCollision = lateralPathsOverlap(
-        previousPlayerOffset,
-        player.x,
-        previousCarOffset,
-        car.offset,
+      const lateralCollision = sweptCollision(
+        previousGap,
+        gap,
+        previousPlayerOffset - previousCarOffset,
+        player.x - car.offset,
         (PLAYER_ROAD_WIDTH + OPPONENT_ROAD_WIDTH) * 0.5,
       );
 
@@ -6368,7 +6510,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
           if (opponentHitPlayerFromBack) {
             placeOpponentBehindPlayer(car);
             applyOpponentRearEndPenalty(car, playerSpeedBeforeCollision);
-            player.speed = Math.max(player.speed, playerSpeedBeforeCollision * PLAYER_REAR_HIT_SPEED_RETENTION);
           } else {
             car.speed *= player.starTime > 0 ? 0.35 : 0.62;
             pushCallout(player.starTime > 0 ? "⭐ STAR BASH!" : "SHIELD BASH!", player.starTime > 0 ? "gold" : "cyan");
@@ -6378,11 +6519,14 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
           impactEffects.push({ position: player.position, offset: player.x, start: raceTime, duration: 0.34, shielded: true });
         } else if (opponentHitPlayerFromBack) {
           placeOpponentBehindPlayer(car);
+          const closingSpeed = Math.max(0, car.speed - playerSpeedBeforeCollision);
+          const massShare = getCarConfig(car.carId).mass / (getCarConfig(car.carId).mass + getPlayerCar().mass);
+          player.speed += closingSpeed * massShare * 0.85;
           applyOpponentRearEndPenalty(car, playerSpeedBeforeCollision);
-          player.speed = Math.max(player.speed, playerSpeedBeforeCollision * PLAYER_REAR_HIT_SPEED_RETENTION);
           playCollisionSfx(0.6, false);
         } else if (sideSwipe) {
-          player.speed *= 0.92;
+          player.speed *= 0.98;
+          player.lateralSpeed = -player.lateralSpeed * 0.25;
           cameraShake = Math.max(cameraShake, 4);
           playCollisionSfx(0.55, false);
           spawnBurst(pRect.x + pRect.width * 0.5, pRect.y + pRect.height * 0.5, 8, "#ffcf42", "spark", 200);
@@ -6391,13 +6535,14 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
           comboCount = 0;
           comboTimer = 0;
           placePlayerBehindOpponent(car);
-          if (player.collisionCooldown <= 0) {
-            player.speed *= 1 - PLAYER_REAR_END_SPEED_LOSS;
-            player.collisionCooldown = PLAYER_COLLISION_COOLDOWN;
-          }
-          player.speed = Math.min(player.speed, car.speed * 0.72);
-          car.speed *= 0.94;
-          cameraShake = Math.max(cameraShake, 8);
+          const closingSpeed = Math.max(0, player.speed - car.speed);
+          const playerMass = getPlayerCar().mass;
+          const opponentMass = getCarConfig(car.carId).mass;
+          const impulse = closingSpeed * 1.05 / (1 / playerMass + 1 / opponentMass);
+          player.speed -= impulse / playerMass;
+          car.speed += impulse / opponentMass;
+          player.collisionCooldown = PLAYER_COLLISION_COOLDOWN;
+          cameraShake = Math.max(cameraShake, 2 + 6 * clamp(closingSpeed / maxSpeed, 0, 1));
           playCollisionSfx(1.0, false);
           spawnBurst(pRect.x + pRect.width * 0.5, pRect.y + pRect.height * 0.3, 12, "#ff5f5a", "spark", 260);
           impactEffects.push({ position: player.position, offset: player.x, start: raceTime, duration: 0.38, shielded: false });
@@ -6423,7 +6568,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         const firstPassedSecond = previousGap > 0 && gap <= 0;
         const secondPassedFirst = previousGap < 0 && gap >= 0;
 
-        if (!lateralPathsOverlap(previousFirstOffset, first.offset, previousSecondOffset, second.offset, OPPONENT_ROAD_WIDTH)) {
+        if (!sweptCollision(previousGap, gap, previousFirstOffset - previousSecondOffset, first.offset - second.offset, OPPONENT_ROAD_WIDTH)) {
           continue;
         }
 
@@ -6442,12 +6587,20 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     }
   }
 
-  function lateralPathsOverlap(previousA: number, currentA: number, previousB: number, currentB: number, clearance: number): boolean {
-    const minA = Math.min(previousA, currentA);
-    const maxA = Math.max(previousA, currentA);
-    const minB = Math.min(previousB, currentB);
-    const maxB = Math.max(previousB, currentB);
-    return minA <= maxB + clearance && minB <= maxA + clearance;
+  function sweptCollision(previousGap: number, gap: number, previousSideGap: number, sideGap: number, clearance: number): boolean {
+    const travel = gap - previousGap;
+    if (Math.abs(travel) < 0.001) {
+      return Math.abs(gap) <= COLLISION_DEPTH
+        && Math.min(previousSideGap, sideGap) <= clearance && Math.max(previousSideGap, sideGap) >= -clearance;
+    }
+    const frontContact = (COLLISION_DEPTH - previousGap) / travel;
+    const rearContact = (-COLLISION_DEPTH - previousGap) / travel;
+    const enter = Math.max(0, Math.min(frontContact, rearContact));
+    const leave = Math.min(1, Math.max(frontContact, rearContact));
+    if (enter > leave) return false;
+    const entrySide = interpolate(previousSideGap, sideGap, enter);
+    const exitSide = interpolate(previousSideGap, sideGap, leave);
+    return Math.min(entrySide, exitSide) <= clearance && Math.max(entrySide, exitSide) >= -clearance;
   }
 
   function placeOpponentBehindPlayer(car: Opponent): void {
@@ -6458,7 +6611,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   function placePlayerBehindOpponent(car: Opponent): void {
     player.totalDistance = Math.max(0, car.totalDistance - COLLISION_SEPARATION);
     player.position = positiveModulo(player.totalDistance, trackLength);
-    player.lap = clamp(Math.floor(player.totalDistance / trackLength) + 1, 1, getRaceLaps());
   }
 
   function placeOpponentBehindOpponent(rear: Opponent, front: Opponent): void {
@@ -6467,9 +6619,10 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
   }
 
   function applyOpponentRearEndPenalty(car: Opponent, frontSpeed: number): void {
-    car.speed *= 1 - OPPONENT_REAR_END_SPEED_LOSS;
-    car.speed = Math.min(car.speed, frontSpeed * 0.72);
-    car.stunTime = Math.max(car.stunTime, OPPONENT_REAR_END_STUN);
+    const closingSpeed = Math.max(0, car.speed - frontSpeed);
+    car.speed = Math.min(car.speed, frontSpeed) - closingSpeed * 0.1;
+    car.speed = Math.max(0, car.speed);
+    car.stunTime = Math.max(car.stunTime, clamp(closingSpeed / BASE_MAX_SPEED, 0, 0.4));
   }
 
   function calculatePlace(): number {
@@ -6713,6 +6866,69 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 
   // ---- Rendering ----
 
+  function drawWhimsicalSkyline(ctx: CanvasRenderingContext2D, mapId: MapId, horizon: number): void {
+    const { colors } = ROUTE_THEMES[mapId];
+    const unit = Math.min(renderWidth, renderHeight);
+    const random = createRandom(303 + getMapConfig(mapId).seed);
+    for (let i = 0; i < 22; i += 1) {
+      const x = random() * renderWidth;
+      const y = horizon * (0.32 + random() * 0.42);
+      const radius = unit * (0.009 + random() * 0.022);
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.beginPath();
+      ctx.moveTo(x, y - radius);
+      ctx.quadraticCurveTo(x + radius * 0.24, y - radius * 0.24, x + radius, y);
+      ctx.quadraticCurveTo(x + radius * 0.24, y + radius * 0.24, x, y + radius);
+      ctx.quadraticCurveTo(x - radius * 0.24, y + radius * 0.24, x - radius, y);
+      ctx.quadraticCurveTo(x - radius * 0.24, y - radius * 0.24, x, y - radius);
+      ctx.fill();
+    }
+
+    for (let i = 0; i < 5; i += 1) {
+      const x = renderWidth * (0.08 + i * 0.21);
+      const y = horizon * (0.49 + (i % 2) * 0.18);
+      const r = unit * (0.045 + (i % 3) * 0.015);
+      ctx.strokeStyle = colors[(i + 1) % colors.length];
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.lineWidth = r * 0.24;
+      ctx.beginPath();
+      if (mapId === "desert" || mapId === "night" || mapId === "coast") {
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(x, y, r * 1.45, r * 0.38, mapId === "coast" ? 0.4 : -0.32, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (mapId === "alpine") {
+        ctx.moveTo(x, y - r);
+        ctx.lineTo(x + r * 0.55, y);
+        ctx.lineTo(x, y + r);
+        ctx.lineTo(x - r * 0.55, y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (mapId === "test") {
+        ctx.moveTo(x - r, y - r);
+        ctx.lineTo(x + r, y - r * 0.5);
+        ctx.lineTo(x - r, y + r * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - r, y - r);
+        ctx.lineTo(x - r, y + r * 1.45);
+        ctx.stroke();
+      } else {
+        ctx.ellipse(x, y, r * 0.85, r, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - r * 0.3, y + r * 0.85);
+        ctx.lineTo(x - r * 0.2, y + r * 1.44);
+        ctx.lineTo(x + r * 0.2, y + r * 1.44);
+        ctx.lineTo(x + r * 0.3, y + r * 0.85);
+        ctx.stroke();
+      }
+    }
+  }
+
   function drawVectorSky(targetCtx: CanvasRenderingContext2D, map: MapConfig, time: number): void {
     const cacheH = Math.round(renderHeight * 1.3);
     const cacheKey = `${map.id}:${renderWidth}x${renderHeight}`;
@@ -6724,43 +6940,13 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
       skyCacheKey = cacheKey;
 
       const grad = skyCacheCtx.createLinearGradient(0, 0, 0, Math.max(1, baseHorizon));
-      if (map.skyline === "desert") {
-        grad.addColorStop(0, "#3b0764");
-        grad.addColorStop(0.45, "#c2410c");
-        grad.addColorStop(1, "#fb923c");
-      } else if (map.skyline === "urban") {
-        grad.addColorStop(0, "#0284c7");
-        grad.addColorStop(0.6, "#38bdf8");
-        grad.addColorStop(1, "#bae6fd");
-      } else if (map.skyline === "night") {
-        grad.addColorStop(0, "#020617");
-        grad.addColorStop(0.6, "#1e1b4b");
-        grad.addColorStop(1, "#312e81");
-      } else if (map.skyline === "alpine") {
-        grad.addColorStop(0, "#0f172a");
-        grad.addColorStop(0.55, "#1d4ed8");
-        grad.addColorStop(1, "#93c5fd");
-      } else {
-        grad.addColorStop(0, "#3b0764");
-        grad.addColorStop(0.5, "#be123c");
-        grad.addColorStop(1, "#fb923c");
-      }
+      const theme = ROUTE_THEMES[map.id];
+      grad.addColorStop(0, theme.sky);
+      grad.addColorStop(1, theme.horizon);
       skyCacheCtx.fillStyle = grad;
       skyCacheCtx.fillRect(0, 0, renderWidth, cacheH);
 
-      if (map.skyline !== "night") {
-        const sunX = renderWidth * 0.72;
-        const sunY = baseHorizon - renderHeight * 0.27;
-        const sunR = renderWidth * 0.055;
-        const sunGlow = skyCacheCtx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 2.8);
-        sunGlow.addColorStop(0, "rgba(255, 250, 210, 0.98)");
-        sunGlow.addColorStop(0.35, "rgba(253, 186, 116, 0.48)");
-        sunGlow.addColorStop(1, "rgba(253, 186, 116, 0)");
-        skyCacheCtx.fillStyle = sunGlow;
-        skyCacheCtx.beginPath();
-        skyCacheCtx.arc(sunX, sunY, sunR * 2.8, 0, Math.PI * 2);
-        skyCacheCtx.fill();
-      }
+      drawWhimsicalSkyline(skyCacheCtx, map.id, baseHorizon);
 
       if (map.skyline === "alpine" || map.skyline === "desert") {
         skyCacheCtx.fillStyle = map.skyline === "alpine" ? "rgba(30, 58, 138, 0.58)" : "rgba(124, 45, 18, 0.55)";
@@ -7330,10 +7516,15 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     if (mode === "countdown") {
       updateCountdown(dt);
     } else if (mode === "race") {
-      update(dt);
+      raceStepTime += Math.min(rawDt, 0.1);
+      while (raceStepTime >= RACE_STEP && mode === "race") {
+        raceStepTime -= RACE_STEP;
+        update(RACE_STEP);
+      }
     } else {
       updateParticles(dt, getMapConfig(selectedMapId));
     }
+    if (mode !== "race") raceStepTime = 0;
 
     updateNitroZoomVisual(dt);
     updateVisualPlayerX(dt);
@@ -7472,6 +7663,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
 
     window.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
+      if (event.target instanceof HTMLSelectElement && key !== "escape") return;
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d", " ", "shift", "n", "p", "e", "q", "f"].includes(key)) {
         event.preventDefault();
       }

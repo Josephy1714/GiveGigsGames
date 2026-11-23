@@ -843,7 +843,10 @@
             setText('gg2dbHero', build.emoji);
             setText('gg2dbHp', Math.ceil(p.hp) + '/' + p.maxHp);
             setText('gg2dbArmor', Math.ceil(p.armor));
-            setText('gg2dbWeapon', w.name + (p.weaponSlot === 'pickup' ? ' · ' + p.pickupAmmo : ' · ∞'));
+            var pickupActive = p.weaponSlot === 'pickup';
+            var fallback = !pickupActive && s.ticks < G.weaponFallbackUntil;
+            var ammo = pickupActive ? (p.pickupAmmo <= 3 ? 'LOW ' : '') + p.pickupAmmo : '∞';
+            setText('gg2dbWeapon', w.name + ' · ' + ammo + (fallback ? ' · PICKUP EMPTY' : ''));
             setText('gg2dbAlt', p.altAmmo > 0 ? 'Grenade x' + p.altAmmo : 'Grenade --');
             setText('gg2dbObjective', s.objective);
             setText('gg2dbRescues', s.routeMode === 'wave' ? 'Wave ' + s.wave + ' active' : s.rescued + ' rescued · ' + s.lifeQueue.length + ' lives');
@@ -1184,10 +1187,11 @@
         var clockTitle = G.run.gameMode === 'chrono-lock' ? 'CHRONO-LOCK' : G.run.gameMode === 'turn-based' ? 'TURN-BASED' : 'REAL-TIME';
         showBanner(routeTitle + ' · ' + clockTitle + ' — ' + mission.toUpperCase(),
             intro + '\nTake the stairs to the gantries and lookout loot.');
+        G.weaponFallbackUntil = 0;
         G.acc = 0; G.last = performance.now();
     }
 
-    function stepInput() {
+    function stepInput(gp) {
         var inp = { move: 0, jump: false, fire: false, alt: false, dash: false, interact: false, melee: false, ability: false, climb: false };
         try {
             var K = G.keys;
@@ -1218,7 +1222,6 @@
             } else if (G.run) {
                 inp.aim = (inp.move || G.run.player.face) < 0 ? Math.PI : 0;
             }
-            var gp = readPad();
             if (gp) {
                 var ax = (gp.axes && gp.axes.length > 0) ? gp.axes[0] : 0;
                 if (Math.abs(ax) > 0.25) inp.move = clamp(ax, -1, 1);
@@ -1241,8 +1244,32 @@
         return inp;
     }
 
+    function togglePause() {
+        G.paused = !G.paused;
+        if (G.paused) showBanner('PAUSED', 'Esc or controller Menu to resume', true);
+        else hideBanner();
+    }
+
+    function pollPadShortcuts(gp) {
+        var buttons = gp && gp.buttons || [];
+        var menu = !!buttons[9]?.pressed;
+        var starter = !!buttons[14]?.pressed;
+        var pickup = !!buttons[15]?.pressed;
+        if (G.run && !G.run.over) {
+            if (menu && !G.padMenu) togglePause();
+            if (!G.paused && starter && !G.padStarter) G.keys.swap = 'starter';
+            else if (!G.paused && pickup && !G.padPickup) G.keys.swap = 'pickup';
+        }
+        G.padMenu = menu;
+        G.padStarter = starter;
+        G.padPickup = pickup;
+        if (!gp) G.padJump = G.padDash = G.padUse = false;
+    }
+
     function loop(now) {
         try {
+            var gp = readPad();
+            pollPadShortcuts(gp);
             if (G.run && !G.run.over && !G.paused) {
                 /* Fixed timestep: DT steps, frame delta clamped to 0.1s. */
                 var frame = (now - G.last) / 1000;
@@ -1252,13 +1279,14 @@
                 G.acc += frame;
                 var n = 0;
                 while (G.acc >= DT && n < 6) {
-                    var ev = tick(G.run, stepInput());
+                    var ev = tick(G.run, stepInput(gp));
                     G.acc -= DT; n += 1;
                     if (G.run.gigglesSaved && !G.gigglesSaveNotified) {
                         G.gigglesSaveNotified = true;
                         showBanner('▰ GG · GIGGLES CAUGHT YOU', 'A briefcase catch leaves you at 1 HP with a moment of invulnerability. It happens once each run, before your rescued crew lives are used.');
                     }
                     for (var i = 0; i < ev.length; i++) {
+                        if (ev[i].t === 'empty') G.weaponFallbackUntil = G.run.ticks + Math.ceil(1.5 / DT);
                         if (ev[i].t === 'rescue') {
                             var rescueCopy = G.run.contentMode === 'kids' ? 'A new friend is ready: ' + ev[i].name : G.run.contentMode === 'adult' ? 'Chain broken. ' + ev[i].name + ' joins the reserve lives.' : 'Crew freed: ' + ev[i].name + ' joins the reverse rescue queue.';
                             showBanner(G.run.contentMode === 'kids' ? '✨ FRIEND RESCUED' : '⛓️‍💥 CREW FREE', rescueCopy);
@@ -1465,9 +1493,7 @@
                     else if (k === '2' && G.run) G.keys.swap = 'pickup';
                     else if (!ev.repeat && (k === 'Escape' || k === 'p' || k === 'P')) {
                         if (G.run && G.run.over) { startRun(buildId, gameMode, contentMode, routeMode); return; }
-                        G.paused = !G.paused;
-                        showBanner(G.paused ? 'PAUSED' : 'BREACH', G.paused ? 'Esc resume · controls in menu' : '', G.paused);
-                        if (!G.paused) hideBanner();
+                        togglePause();
                     } else if ((k === 'r' || k === 'R' || k === 'Enter') && G.run && G.run.over) { startRun(buildId, gameMode, contentMode, routeMode); }
                 } catch (_) {}
             });

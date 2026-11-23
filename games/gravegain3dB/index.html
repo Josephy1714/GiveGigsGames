@@ -28,11 +28,11 @@
             document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
         }
     </script>
-    <script src="../../models/gravegain-kit.js"></script>
-    <script src="../../models/gravegain-props.js"></script>
-    <script src="../../models/gravegain-enemies.js"></script>
-    <script src="../../models/gravegain-races.js"></script>
-    <script src="../../models/gravegain-weapons.js"></script>
+    <script src="../_shared/gravegain-kit.js"></script>
+    <script src="../_shared/gravegain-props.js"></script>
+    <script src="../_shared/gravegain-enemies.js"></script>
+    <script src="../_shared/gravegain-races.js"></script>
+    <script src="../_shared/gravegain-weapons.js"></script>
     <script src="../html/gravegain_shared_missions.js"></script>
     <script src="engine/config.js"></script>
     <script src="engine/persistence.js"></script>
@@ -216,6 +216,7 @@ html{scrollbar-color:rgba(255,255,255,.25) #000}
                 <button type="button" id="weaponComparison" class="weapon-comparison" hidden>
                     <span></span>
                     <span></span>
+                    <span id="weaponComparisonDelta"></span>
                     <strong>U / Tap to swap equipped weapon</strong>
                 </button>
                 <div id="hudTargetReadout" class="hud-target-readout hidden" aria-live="polite">

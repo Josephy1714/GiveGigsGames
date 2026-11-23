@@ -728,24 +728,22 @@
                 this.stamina = Math.min(this.maxStamina, this.stamina + 15 * dt);
             }
 
-            // Normalize vector
+            const tile = tilemap?.grid?.[Math.floor(this.x / 48)]?.[Math.floor(this.y / 48)];
             const len = Math.hypot(dx, dy);
             if (len > 0) {
                 dx /= len;
                 dy /= len;
-                this.vx = dx * currentSpeed;
-                this.vy = dy * currentSpeed;
-            } else {
-                this.vx = 0;
-                this.vy = 0;
             }
+            const surfaceSpeed = currentSpeed * (tile === 2 ? 0.5 : 1);
+            const grip = tile === 5 ? 1 - Math.exp(-dt * 4) : 1;
+            this.vx += (dx * surfaceSpeed - this.vx) * grip;
+            this.vy += (dy * surfaceSpeed - this.vy) * grip;
 
-            // Slow down in water
-            const tileX = Math.floor(this.x / 48);
-            const tileY = Math.floor(this.y / 48);
-            if (tilemap && tilemap.grid && tilemap.grid[tileX] && tilemap.grid[tileX][tileY] === 2) {
-                this.vx *= 0.5;
-                this.vy *= 0.5;
+            this.hazardCooldown = Math.max(0, (this.hazardCooldown || 0) - dt);
+            if ((tile === 3 || tile === 4) && this.hazardCooldown === 0) {
+                this.hazardCooldown = 0.45;
+                this.takeDamage(tile === 3 ? 3 : 6, tile === 3 ? 'poison' : 'fire');
+                if (this.isDead) return;
             }
 
             // Dodge roll trigger space
@@ -2569,6 +2567,19 @@
                     }
                 }
             });
+            for (const wall of this.dungeon?.breakableWalls || []) {
+                if (this.dungeon.grid[wall.x][wall.y] !== 6) continue;
+                const x = wall.x * 48 + 24;
+                const y = wall.y * 48 + 24;
+                const dx = x - this.player.x;
+                const dy = y - this.player.y;
+                const offset = angle - Math.atan2(dy, dx);
+                if (Math.hypot(dx, dy) > sweepRadius || Math.abs(Math.atan2(Math.sin(offset), Math.cos(offset))) > Math.PI / 3) continue;
+                this.dungeon.grid[wall.x][wall.y] = 0;
+                this.vfx.spawnFloater(x, y - 12, 'WALL BROKEN', '#fbbf24');
+                this.audio.play('hit');
+                hits++;
+            }
             return hits;
         }
 

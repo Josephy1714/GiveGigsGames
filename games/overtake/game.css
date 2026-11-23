@@ -2259,3 +2259,66 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.overtake-shell .driver-selection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.overtake-shell .driver-selection canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 1rem;
+  background: radial-gradient(ellipse at 50% 55%, #424a77 0%, #22253e 58%, #121525 100%);
+}
+
+.overtake-shell .driver-controls {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid #555e81;
+  border-radius: 0.85rem;
+  background: #171a2e;
+}
+
+.overtake-shell .driver-controls label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.overtake-shell .driver-controls select {
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid #555e81;
+  border-radius: 0.4rem;
+  background: #171a2e;
+  color: #fff;
+  font: inherit;
+}
+
+.overtake-shell .driver-stats {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.5rem;
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+}
+
+.overtake-shell .driver-stats dd {
+  margin: 0;
+  color: #93eeff;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.overtake-shell .driver-status {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 420px) {
+  .overtake-shell .driver-selection {
+    gap: 0.5rem;
+  }
+}

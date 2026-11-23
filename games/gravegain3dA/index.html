@@ -212,7 +212,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
                 <!-- Holographic Minimap Radar -->
                 <div class="hud-minimap-container" id="minimapContainer">
                     <canvas id="hudMinimap" width="130" height="130"></canvas>
-                    <div class="minimap-label">RADAR SCAN</div>
+                    <div class="minimap-label" id="hudMinimapLabel" role="status">RADAR SCAN</div>
                 </div>
 
                 <!-- Floating Combat Text Overlay -->
@@ -292,7 +292,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
             <div class="desktop-bottom-row" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px; max-width: 100%; padding-right: 175px; box-sizing: border-box;">
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; max-width: 100%;">
                     <button class="btn-game" id="btnPause">⏸️ Pause</button>
-                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | Left-Click Attack | Right-Click Block | F Ability | Space Jump | Q Potion</span>
+                    <span id="controlsHint" class="controls-hint desktop-only">Controls: WASD Move | Mouse Look | Left-Click Attack | Right-Click Block | F Ability | Space Jump | Q Potion | H Quick-eat | Z Cycle weapons</span>
                 </div>
                 <button class="btn-game btn-primary" id="btnReturnToHub" style="margin-right: 175px;">🚀 Return to Starship</button>
             </div>

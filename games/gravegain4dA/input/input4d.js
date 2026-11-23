@@ -51,6 +51,10 @@
         window.addEventListener('keydown', function (e) {
             // F stays ability-free: never bind KeyF to anything.
             if (e.code === 'KeyF') return;
+            if (e.code === 'Space') {
+                if (e.target?.closest?.('button, input, select, textarea, a')) return;
+                e.preventDefault();
+            }
             self.keys[e.code] = true;
             if (e.code === 'KeyE' || e.code === 'KeyR') {
                 var ball = self.putt && self.putt.ball;
@@ -58,10 +62,6 @@
                     var direction = e.code === 'KeyE' ? 1 : -1;
                     ball.w = Math.max(self.putt.wMin || 0, Math.min(self.putt.wMax || 3, ball.w + direction));
                 }
-            }
-            if (e.code === 'Space' && self.putt && !e.target.closest('button, input, select, textarea, a')) {
-                e.preventDefault();
-                if (!e.repeat) self.startPuttCharge();
             }
             if (e.code === 'KeyT' && !self.rewindHeld) {
                 self.rewindHeld = true;
@@ -75,7 +75,6 @@
         window.addEventListener('keyup', function (e) {
             if (e.code === 'KeyF') return;
             self.keys[e.code] = false;
-            if (e.code === 'Space' && self.puttCharging) self.releasePutt();
             if (e.code === 'KeyT' && self.rewindHeld) {
                 self.rewindHeld = false;
                 if (self.timefold && typeof self.timefold.endRewind === 'function') {

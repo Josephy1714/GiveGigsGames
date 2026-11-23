@@ -509,7 +509,18 @@
             setText('gg5dStrokes', s.foes ? s.foes.filter(function (f) { return f.hp > 0; }).length + ' foes' : '');
             setText('gg5dGold', s.gold);
             setText('gg5dUniverse', u.emoji + ' ' + u.name);
-            setText('gg5dParadox', s.paradox + (s.doom > 0 ? ' 💥' + s.doom : ''));
+            setText('gg5dParadox', s.paradox);
+            var warning = el('gg5dCollapseWarning');
+            if (warning) {
+                var danger = !s.over && u.collapseTicks > 0;
+                var actions = s.doom === 1 ? ' action' : ' actions';
+                var headline = danger && s.doom > 0 ? 'Collapse in ' + s.doom + actions :
+                    danger && s.paradox >= 80 ? 'Collapse risk at 100 paradox' :
+                    !s.over && s.doom > 0 ? 'Paradox vent in ' + s.doom + actions : '';
+                warning.hidden = !headline;
+                if (warning.textContent !== headline) warning.textContent = headline;
+                warning.classList.toggle('urgent', danger && s.doom > 0 && s.doom <= 3);
+            }
             setText('gg5dChain', 'x' + s.combo);
             setText('gg5dHp', (s.hp != null ? s.hp : '?') + '/' + (s.maxHp != null ? s.maxHp : '?'));
             setText('gg5dLevel', 'Lv' + (s.level || 1) + ' ' + (s.xp || 0) + 'xp');
@@ -607,6 +618,23 @@
     function bind() {
         try {
             var cls = 'putter', universe = 'prime';
+            var settings = loadProfile().settings || {};
+            var racePick = el('gg5dRacePick');
+            if (racePick) {
+                Object.keys(RACES).forEach(function (id) {
+                    var race = RACES[id];
+                    var option = document.createElement('option');
+                    option.value = id;
+                    var deltas = [['HP', race.hp], ['ATK', race.atk], ['DEF', race.def], ['SPD', race.spd]];
+                    option.textContent = race.name + ' · ' + deltas.filter(function (entry) {
+                        return entry[1] !== 0;
+                    }).map(function (entry) {
+                        return (entry[1] > 0 ? '+' : '') + entry[1] + ' ' + entry[0];
+                    }).join(', ');
+                    racePick.appendChild(option);
+                });
+                racePick.value = Object.hasOwn(RACES, settings.race) ? settings.race : 'human';
+            }
             function paint() {
                 var cp = el('gg5dClassPick');
                 if (cp) for (var i = 0; i < cp.children.length; i++) {
@@ -636,9 +664,10 @@
             if (go) go.addEventListener('click', function () {
                 try {
                     var prof = loadProfile();
-                    prof.settings = { cls: cls, universe: universe };
+                    var race = racePick ? racePick.value : 'human';
+                    prof.settings = { cls: cls, universe: universe, race: race };
                     saveProfile(prof);
-                    startRun(cls, universe);
+                    startRun(cls, universe, race);
                 } catch (_) {}
             });
             var tb = el('gg5dTouch');

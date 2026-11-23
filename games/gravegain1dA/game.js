@@ -667,9 +667,10 @@
     function el(id) { try { return document.getElementById(id); } catch (e) { return null; } }
     function setText(id, v) { try { var n = el(id); if (n) n.textContent = String(v); } catch (e) { /* ignore */ } }
 
-    function startRun(classId, mode, raceId) {
+    function startRun(classId, mode, raceId, endless) {
         var seed = (Date.now() % 100000) | 0;
         var run = newRun(seed, classId, mode, raceId);
+        run.endless = !!endless;
         G = {
             run: run, floaters: [], parts: [], slashes: [],
             acc: 0, last: 0, paused: false, banner: false,
@@ -688,7 +689,8 @@
             chargeSet(0);
         } catch (e) { /* ignore */ }
         sizeCanvas();
-        showBanner('SECTOR 1 — ' + SECTORS[0].name.toUpperCase(), SECTORS[0].brief, null);
+        if (run.endless) showBanner('🌌 ECHO DRIFT', 'Walk east forever. Bury what rises.', null);
+        else showBanner('SECTOR 1 — ' + SECTORS[0].name.toUpperCase(), SECTORS[0].brief, null);
         render();
         try {
             if (window.GigglesHelpDraft) setTimeout(function () {
@@ -892,7 +894,10 @@
             if (G.run.endless) p.endlessBest = Math.max(p.endlessBest, G.run.x);
             saveProfile(p);
             showBanner('💀 RUN OVER', 'The line takes another courier.\nScore: ' + score + '  ·  Best east: ' + p.bestX, [
-                { label: '↻ March again', fn: function () { toMenu(); } },
+                { label: '↻ March again', fn: function () {
+                    var run = G.run;
+                    startRun(run.cls, run.mode, run.race, run.endless);
+                } },
                 { label: '📜 Menu', fn: function () { toMenu(); } }
             ]);
         } catch (e) { /* ignore */ }
@@ -1169,9 +1174,11 @@
 
     function renderCodex() {
         try {
+            var p = loadProfile();
+            var drift = el('gg1dDriftBtn');
+            if (drift) drift.hidden = !(p.wins > 0);
             var box = el('gg1dCodex');
             if (!box) return;
-            var p = loadProfile();
             var html = '<b>📖 Ley-Line Codex</b> — best east: ' + p.bestX + ' · ★' + p.bestStars + '/15 · victories: ' + p.wins;
             var keys = ['helmet', 'mercenary', 'compact', 'sparkite', 'guy', 'good'];
             for (var i = 0; i < keys.length; i++) {
@@ -1426,14 +1433,19 @@
                 } catch (e) { /* ignore */ }
             });
             paint();
-            var go = el('gg1dGoBtn');
-            if (go) go.addEventListener('click', function () {
+            function launch(endless) {
                 try {
                     var prof = loadProfile();
                     prof.settings = { mode: mode, speed: 1, cls: cls, race: race };
                     saveProfile(prof);
-                    startRun(cls, mode, race);
+                    startRun(cls, mode, race, endless);
                 } catch (e) { /* ignore */ }
+            }
+            var go = el('gg1dGoBtn');
+            if (go) go.addEventListener('click', function () { launch(false); });
+            var drift = el('gg1dDriftBtn');
+            if (drift) drift.addEventListener('click', function () {
+                if (loadProfile().wins > 0) launch(true);
             });
             var tb = el('gg1dTouch');
             if (tb) tb.addEventListener('click', function (ev) {

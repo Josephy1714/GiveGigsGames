@@ -1,5 +1,5 @@
 // GraveGain 3D & 2D Detailed Enemy & Boss Models (10 Iconic Enemies)
-// Requires /models/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
+// Requires /games/_shared/gravegain-kit.js (window.GGG_GRAVEGAIN_KIT)
 // Every model uses outer `root` + inner `rig` and supports 6 animations: idle, move, attack, special, hurt, death.
 
 (function () {
