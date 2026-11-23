@@ -186,7 +186,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
- let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,cameraBaseX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0;
+ let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,cameraBaseX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0,trafficTravel=0;
  jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay-unified.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
  console.info("Jay unified gameplay rig loaded",jayRig.availableClips);
@@ -251,20 +251,22 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   // Obstacles advance 0.55 normalized units per second across a 46-unit depth span.
   // Scroll every piece of campus scenery at that exact same world-space speed.
   const renderSpeed=Number.isFinite(Number(g.speed))?Math.max(0,Number(g.speed)):367;
-  worldTravel+=dt*(46*.55)*renderSpeed/(Number(g.baseSpeed)||367);
+  const travelDelta=dt*(46*.55)*renderSpeed/(Number(g.baseSpeed)||367);
+  worldTravel+=travelDelta;
+  trafficTravel+=travelDelta*2;
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
-   // Advance traffic toward Jay; recycle each vehicle far up the road after it passes.
-   const cycle=258,phase=i*43+36-worldTravel;
-   const distance=((phase%cycle)+cycle)%cycle;
-   const lap=Math.floor((worldTravel-i*43-36)/cycle);
+   // Traffic approaches at an oncoming relative speed and only recycles after clearing the follow camera.
+   const cycle=300,startZ=-36-i*43;
+   const phase=startZ+trafficTravel+280;
+   const lap=Math.floor(phase/cycle);
    const lane=((v.userData.baseLane+Math.max(0,lap))%3+3)%3;
-   if(g.vehicleImpact&&g.impactTrafficIndex===i){for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;return;}
+   if(g.vehicleImpact&&g.impactTrafficIndex===i){for(const wheel of v.userData.wheels||[])wheel.rotation.x=trafficTravel/.35;return;}
    const previousZ=v.position.z;
    v.position.x=laneX[lane];
-   v.position.z=-distance;
+   v.position.z=((phase%cycle)+cycle)%cycle-280;
    v.userData.previousCollisionZ=previousZ;
-   for(const wheel of v.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
+   for(const wheel of v.userData.wheels||[])wheel.rotation.x=trafficTravel/.35;
   });
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);
@@ -329,7 +331,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   for(let i=0;i<24;i++){const candidate=g.t+.001+i*.035;const score=Math.abs(Math.sin(candidate*48))+.7*Math.abs(Math.sin(candidate*36));if(score>best){best=score;impactTime=candidate;}}
   return {impact:sample(.62,impactTime),recovered:sample(0,impactTime+.031)};
  },resetRun(){
-  lastGameT=0;worldTravel=0;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
+  lastGameT=0;worldTravel=0;trafficTravel=0;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
   traffic.forEach((vehicle,index)=>{vehicle.position.set(laneX[vehicle.userData.baseLane],0,-36-index*43);vehicle.userData.previousCollisionZ=vehicle.position.z;for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});
   jayRig.reset();jayRig.root.position.set(0,rigBaseY,2);jayRig.root.rotation.set(0,Math.PI,0);jayRig.root.scale.set(rigBaseScaleX,rigBaseScaleY,rigBaseScaleZ);jayRig.play("run",{fadeSeconds:0});
   camera.position.set(0,4.9,11.8);camera.fov=57;camera.updateProjectionMatrix();camera.lookAt(0,1.8,-9.5);impactRing.visible=false;impactRing.material.opacity=0;mount.dataset.trafficCollision="false";
