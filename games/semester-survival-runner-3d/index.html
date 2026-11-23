@@ -237,7 +237,7 @@ $("#retry").onclick=()=>start();$("#play").onclick=()=>start();$("#nav-play").on
 if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  endRun:(distance=0)=>{if(g)g.d=distance;finish(true)},
  forceVehicleFall:()=>{if(!g||!g.on)return null;g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.vehicleImpactType="front";g.vehicleImpactClip="fall";g.vehicleImpactDuration=Math.max(1.18,(threeRenderer?.getClipDuration?.("fall")||1.18)+.1);g.hitTimer=g.vehicleImpactDuration;g.pendingFinish="TEST VEHICLE";g.speed=0;g.inv=999;g.impactShakeScale=.34;return {duration:g.vehicleImpactDuration,clipDuration:threeRenderer?.getClipDuration?.("fall")||0};},
- state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0,slidePhase:g?g.slidePhase:null,animationClip:threeRenderer?.activeAnimation||animator?.snapshot().clip||null,pendingFinish:g?.pendingFinish||null,hitTimer:g?.hitTimer||0,fallFinished:threeRenderer?.isAnimationFinished?.("fall")||false,playerX:g?L[g.lane]:null,projectedLaneX:(lane,z)=>270+(lane-1)*((48+z*270)*2/3)}),
+ state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,energy:g?g.energy:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0,slidePhase:g?g.slidePhase:null,animationClip:threeRenderer?.activeAnimation||animator?.snapshot().clip||null,runApproachCompleted:threeRenderer?.runApproachCompleted??null,pendingFinish:g?.pendingFinish||null,hitTimer:g?.hitTimer||0,fallFinished:threeRenderer?.isAnimationFinished?.("fall")||false,playerX:g?L[g.lane]:null,projectedLaneX:(lane,z)=>270+(lane-1)*((48+z*270)*2/3)}),
  probeCoin:({lane=1,coinLane=1}={})=>{
   if(!g||!g.on)return null;
   const saved={pick:g.pick,coins:g.coins,lane:g.lane,spawn:g.spawn,obs:g.obs,energy:g.energy,t:g.t,speed:g.speed,inv:g.inv};
@@ -292,6 +292,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   const obstacle=g.obs[0];
   const clipDuration=threeRenderer?.getClipDuration?.(jump>.02?"jump":"fall")||1.18;
   const result={pendingFinish:!!g.pendingFinish,impactType:g.vehicleImpactType,speed:g.speed,remaining:g.obs.length,holdInfinite:obstacle?.hitHold===Infinity,hitTimer:g.hitTimer,clipDuration};
+  for(const key of Object.keys(g)){if(!(key in saved))delete g[key];}
   Object.assign(g,saved);
   return result;
  },
