@@ -92,6 +92,14 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
       assert.ok(airborneProbe.throwHeight > 1, "the airborne vehicle impact must visibly lift Jay");
       assert.ok(airborneProbe.throwZ > 2, "the airborne impact must throw Jay toward the camera");
       assert.equal(airborneProbe.vehicleVisible, true, "the vehicle must remain visible after an airborne collision");
+      const sideProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 0, vehicleIndex: index, side: true }), vehicleIndex);
+      assert.equal(sideProbe.hit, true, "a lane-change side impact must register for every traffic vehicle type");
+      assert.equal(sideProbe.impactType, "side", "a lateral lane-change impact must be classified as a side collision");
+      assert.equal(sideProbe.impactAnimation, "fall", "a side impact must play Shoulder Hit And Fall");
+      assert.equal(sideProbe.speed > 0, true, "a side impact must keep forward travel active during the fall");
+      assert.equal(sideProbe.continueTraffic, true, "the impacted vehicle must continue moving instead of freezing");
+      assert.equal(sideProbe.vehicleVisible, true, "the impacted vehicle must remain rendered while passing behind Jay");
+      assert.ok(sideProbe.vehiclePositionAfter > 11.8, "the impacted vehicle must travel behind the follow camera before leaving view");
     }
     for (const jump of [0, 1]) {
       const obstacleProbe = await page.evaluate(value => window.__runnerSmoke.probeVehicleObstacle({ jump: value }), jump);
