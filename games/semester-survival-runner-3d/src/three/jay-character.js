@@ -277,6 +277,7 @@ export async function loadJayCharacter({
     runMotionFound: runMotion.rootMotionFound,
     runMotionUsedFallback: Boolean(runMotion.usedFallback),
     play,
+    getClipDuration(state) { return actions[state]?.getClip()?.duration ?? 0; },
     update,
     dispose,
     get activeState() { return activeState; },
