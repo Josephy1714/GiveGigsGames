@@ -421,13 +421,13 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    for(const vehicle of traffic){
     if(laneForX(vehicle.position.x)!==lane)continue;
     const gap=vehicle.position.z-vehicleZ;
-    if(gap>-28&&gap<14)risk+=10/(Math.abs(gap)+1);
+    if(gap>-65&&gap<14)risk+=10/(Math.abs(gap)+1);
    }
    for(const obstacle of obstacles||[]){
     if(obstacle.lane!==lane||obstacle.collided)continue;
     const obstacleZ=-42+clamp(obstacle.z,0,1.12)*46+3.1;
     const gap=obstacleZ-vehicleZ;
-    if(gap>-22&&gap<12)risk+=14/(Math.abs(gap)+1);
+    if(gap>-32&&gap<12)risk+=14/(Math.abs(gap)+1);
    }
    return risk;
   };

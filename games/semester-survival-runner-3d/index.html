@@ -183,7 +183,6 @@ tick = function(dt){
    if(previousPhase!=="boarding"&&g.carryState?.phase==="boarding")g.jump=1;
    if(previousPhase!=="dismounting"&&g.carryState?.phase==="dismounting")g.jump=1;
   }
- }
   if(!g.rampState){
    const ramp=g.obs.find(o=>o.ramp&&canBoardRamp({progress:o.z,playerLane:g.lane,vehicleLane:o.lane,active:!!o.rampActive}));
    if(ramp){ramp.rampActive=true;g.rampState={phase:"climbing",elapsed:0,obstacle:ramp,surfaceHeight:rampSurfaceHeightAtProgress(ramp.z)};}

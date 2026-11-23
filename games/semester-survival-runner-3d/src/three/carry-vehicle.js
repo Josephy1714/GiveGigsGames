@@ -7,7 +7,7 @@ export const CARRY_VEHICLE = Object.freeze({
   slowingDurationSeconds: 2,
   stoppedDurationSeconds: 0.38,
   dismountDurationSeconds: 0.72,
-  safeLaneCheckSeconds: 0.75,
+  safeLaneCheckSeconds: 0.35,
   slowingVehicleDrift: 0.45,
   stoppedVehicleZ: -2.3,
   exitSpeed: 6,
@@ -53,7 +53,7 @@ export function advanceCarryEvent(state, dt, { safeLane } = {}) {
   if (!state) return null;
   const delta = Math.max(0, Number(dt) || 0);
   const next = { ...state };
-  if (["approaching", "riding"].includes(next.phase)) {
+  if (["approaching", "riding", "slowing_down"].includes(next.phase)) {
     next.nextLaneCheck = Math.max(0, (Number(next.nextLaneCheck) || 0) - delta);
     if (next.nextLaneCheck <= 0 && VALID_LANES.has(safeLane)) {
       next.lane = safeLane;

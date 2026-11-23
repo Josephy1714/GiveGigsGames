@@ -63,6 +63,14 @@ test("safe lane decisions update only at controlled intervals", () => {
   assert.equal(state.lane, 0);
 });
 
+test("safe lane checks continue while the vehicle is slowing to its stop", () => {
+  let state = reachRiding();
+  state = advanceCarryEvent(state, CARRY_VEHICLE.rideDurationSeconds);
+  assert.equal(state.phase, "slowing_down");
+  state = advanceCarryEvent(state, 0.01, { safeLane: 0 });
+  assert.equal(state.lane, 0);
+});
+
 test("completed vehicle leaves the gameplay area and is recycled", () => {
   let state = reachRiding();
   state = advanceCarryEvent(state, 20);
