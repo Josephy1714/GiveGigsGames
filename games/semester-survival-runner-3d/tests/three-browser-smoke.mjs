@@ -79,6 +79,8 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       assert.equal(frontProbe.speed, 0, "a direct front collision must stop Jay and the road immediately");
       assert.equal(frontProbe.thrown, false, "a direct front collision must not use the airborne throw");
       assert.equal(frontProbe.vehicleVisible, true, "the vehicle must remain visible after a direct collision");
+      assert.ok(frontProbe.safeGap > 0.05, "Jay's body must remain fully clear of the vehicle after impact");
+      assert.ok(frontProbe.hitDuration >= frontProbe.fallClipDuration, "Game Over must wait for the complete fall animation");
 
       const airborneProbe = await page.evaluate(index => window.__runnerSmoke.probeCarCollision({ lane: 1, jump: 1, vehicleIndex: index }), vehicleIndex);
       assert.equal(airborneProbe.hit, true, "a jumping collision must register for every traffic vehicle type");
@@ -97,6 +99,7 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
       assert.equal(obstacleProbe.speed, 0, "vehicle obstacle impact must stop the game world immediately");
       assert.equal(obstacleProbe.remaining, 1, "the collided vehicle obstacle must remain in the world");
       assert.equal(obstacleProbe.holdInfinite, true, "the collided vehicle must not be removed during its impact animation");
+      assert.ok(obstacleProbe.hitTimer >= obstacleProbe.clipDuration, "vehicle obstacle Game Over must wait for the impact clip");
     }
     const bossProbe = await page.evaluate(() => window.__runnerSmoke.probeBoss());
     assert.equal(bossProbe.active, true, "semester boss must activate at its distance threshold");
@@ -173,6 +176,12 @@ test("production 3D runner loads Jay and plays real jump and slide states", asyn
     await page.locator('[data-page="journey"]').first().click();
     assert.equal(await page.locator("#semester-grid .semester-card").count(), 8, "the journey must display all eight semesters");
     assert.equal(await page.locator("#semester-grid .semester-card:not(.locked)").count(), 8, "all semesters must remain cleared after reload");
+    await page.locator("#nav-play").click();
+    await page.evaluate(() => window.__runnerSmoke.endRun(20));
+    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 2000 });
+    await page.locator("#retry").click();
+    await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
+    await page.waitForFunction(() => window.__runnerSmoke.state().distance > 0, null, { timeout: 3000 });
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
   } finally {
     await browser.close();
