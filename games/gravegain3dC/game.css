@@ -38,6 +38,33 @@ html, body {
     cursor: pointer;
 }
 
+#hp-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#hp-bar {
+    width: 84px;
+    height: 8px;
+    border: none;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.14);
+    accent-color: #22ff88;
+}
+
+#hp-bar::-webkit-progress-bar {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+}
+
+#hp-bar::-webkit-progress-value {
+    background: linear-gradient(90deg, #ff3d5a, #22ff88);
+    border-radius: 4px;
+    transition: width 0.1s ease-out;
+}
+
 #crosshair {
     position: absolute;
     top: 50%;

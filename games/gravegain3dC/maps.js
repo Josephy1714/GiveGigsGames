@@ -351,7 +351,116 @@ export const MAPS = {
             [0, 0, 0]
         ],
         rtsCamera: { pos: [0, 38, -30], target: [0, 0, 0] }
+    },
+
+    mega_labyrinth: {
+        id: 'mega_labyrinth',
+        name: 'MEGA LABYRINTH',
+        tagline: 'Massive 420×420 cyber-maze — 10× larger than standard arenas with towering walls & jump-pad shortcuts.',
+        accent: '#39ff14',
+        clearColor: [0.02, 0.04, 0.03, 1],
+        fogColor: [0.02, 0.05, 0.04],
+        fogDensity: 0.0025,
+        hemiColor: [0.8, 1.0, 0.85],
+        hemiIntensity: 0.85,
+        dirColor: [0.75, 1.0, 0.82],
+        dirIntensity: 0.8,
+        hasFloor: true,
+        floorSize: 420,
+        floorColor: [0.08, 0.12, 0.1],
+        floorEmissive: [0.01, 0.03, 0.02],
+        halfBound: 205,
+        voidY: null,
+        palette: {
+            primary: [0.1, 0.24, 0.18],
+            primaryEmissive: [0.01, 0.08, 0.04],
+            platform: [0.14, 0.34, 0.22],
+            platformEmissive: [0.02, 0.14, 0.06],
+            trim: [0.22, 1.0, 0.08],
+            trimEmissive: [0.1, 0.55, 0.02],
+            pad: [0.22, 1.0, 0.08],
+            padEmissive: [0.15, 0.85, 0.05]
+        },
+        blocks: [
+            // Outer perimeter walls (420x420)
+            { x: 0, y: 6, z: -208, w: 418, h: 12, d: 4, style: 'primary' },
+            { x: 0, y: 6, z: 208, w: 418, h: 12, d: 4, style: 'primary' },
+            { x: -208, y: 6, z: 0, w: 4, h: 12, d: 412, style: 'primary' },
+            { x: 208, y: 6, z: 0, w: 4, h: 12, d: 412, style: 'primary' },
+
+            // Outer Maze Ring (±160) with 4 cardinal & diagonal gaps
+            { x: -95, y: 5, z: -160, w: 120, h: 10, d: 4, style: 'primary' },
+            { x: 95, y: 5, z: -160, w: 120, h: 10, d: 4, style: 'primary' },
+            { x: -95, y: 5, z: 160, w: 120, h: 10, d: 4, style: 'primary' },
+            { x: 95, y: 5, z: 160, w: 120, h: 10, d: 4, style: 'primary' },
+            { x: -160, y: 5, z: -95, w: 4, h: 10, d: 120, style: 'primary' },
+            { x: -160, y: 5, z: 95, w: 4, h: 10, d: 120, style: 'primary' },
+            { x: 160, y: 5, z: -95, w: 4, h: 10, d: 120, style: 'primary' },
+            { x: 160, y: 5, z: 95, w: 4, h: 10, d: 120, style: 'primary' },
+
+            // Second Maze Ring (±110)
+            { x: -65, y: 5, z: -110, w: 80, h: 10, d: 4, style: 'platform' },
+            { x: 65, y: 5, z: -110, w: 80, h: 10, d: 4, style: 'platform' },
+            { x: -65, y: 5, z: 110, w: 80, h: 10, d: 4, style: 'platform' },
+            { x: 65, y: 5, z: 110, w: 80, h: 10, d: 4, style: 'platform' },
+            { x: -110, y: 5, z: -65, w: 4, h: 10, d: 80, style: 'platform' },
+            { x: -110, y: 5, z: 65, w: 4, h: 10, d: 80, style: 'platform' },
+            { x: 110, y: 5, z: -65, w: 4, h: 10, d: 80, style: 'platform' },
+            { x: 110, y: 5, z: 65, w: 4, h: 10, d: 80, style: 'platform' },
+
+            // Inner Maze Ring (±60)
+            { x: -35, y: 5, z: -60, w: 45, h: 10, d: 4, style: 'primary' },
+            { x: 35, y: 5, z: -60, w: 45, h: 10, d: 4, style: 'primary' },
+            { x: -35, y: 5, z: 60, w: 45, h: 10, d: 4, style: 'primary' },
+            { x: 35, y: 5, z: 60, w: 45, h: 10, d: 4, style: 'primary' },
+            { x: -60, y: 5, z: -35, w: 4, h: 10, d: 45, style: 'primary' },
+            { x: -60, y: 5, z: 35, w: 4, h: 10, d: 45, style: 'primary' },
+            { x: 60, y: 5, z: -35, w: 4, h: 10, d: 45, style: 'primary' },
+            { x: 60, y: 5, z: 35, w: 4, h: 10, d: 45, style: 'primary' },
+
+            // Radial Maze Baffles & Dead-End Dividers
+            { x: 0, y: 5, z: -135, w: 4, h: 10, d: 46, style: 'trim' },
+            { x: 0, y: 5, z: 135, w: 4, h: 10, d: 46, style: 'trim' },
+            { x: -135, y: 5, z: 0, w: 46, h: 10, d: 4, style: 'trim' },
+            { x: 135, y: 5, z: 0, w: 46, h: 10, d: 4, style: 'trim' },
+            { x: -85, y: 5, z: -85, w: 4, h: 10, d: 44, style: 'platform' },
+            { x: 85, y: 5, z: -85, w: 4, h: 10, d: 44, style: 'platform' },
+            { x: -85, y: 5, z: 85, w: 4, h: 10, d: 44, style: 'platform' },
+            { x: 85, y: 5, z: 85, w: 4, h: 10, d: 44, style: 'platform' },
+
+            // Central Sanctum Pillars
+            { x: -18, y: 5, z: -18, w: 6, h: 10, d: 6, style: 'trim' },
+            { x: 18, y: 5, z: -18, w: 6, h: 10, d: 6, style: 'trim' },
+            { x: -18, y: 5, z: 18, w: 6, h: 10, d: 6, style: 'trim' },
+            { x: 18, y: 5, z: 18, w: 6, h: 10, d: 6, style: 'trim' }
+        ],
+        jumpPads: [
+            { x: 0, y: 0, z: -180, vx: 0, vy: 28, vz: 0, radius: 3.0 },
+            { x: 0, y: 0, z: 180, vx: 0, vy: 28, vz: 0, radius: 3.0 },
+            { x: -180, y: 0, z: 0, vx: 0, vy: 28, vz: 0, radius: 3.0 },
+            { x: 180, y: 0, z: 0, vx: 0, vy: 28, vz: 0, radius: 3.0 },
+            { x: 0, y: 0, z: 0, vx: 0, vy: 30, vz: 0, radius: 3.2 }
+        ],
+        hazards: [],
+        playerSpawn: [0, 0, -188],
+        friendlySpawns: [
+            [-12, 0, -188],
+            [12, 0, -188],
+            [-24, 0, -182],
+            [24, 0, -182],
+            [-85, 0, -135],
+            [85, 0, -135]
+        ],
+        enemySpawns: [
+            [0, 0, 188],
+            [-85, 0, 135],
+            [85, 0, 135],
+            [-135, 0, 0],
+            [135, 0, 0],
+            [0, 0, 28]
+        ],
+        rtsCamera: { pos: [0, 160, -140], target: [0, 0, 0] }
     }
 };
 
-export const MAP_LIST = [MAPS.cyber_courtyard, MAPS.void_spires, MAPS.magma_foundry, MAPS.cargo_shipment];
+export const MAP_LIST = [MAPS.cyber_courtyard, MAPS.void_spires, MAPS.magma_foundry, MAPS.cargo_shipment, MAPS.mega_labyrinth];

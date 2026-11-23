@@ -1223,6 +1223,7 @@ function createScene() {
     const speedEl = document.getElementById('speedometer');
     const fpsEl = document.getElementById('fps-counter');
     const hpEl = document.getElementById('hp-val');
+    const hpBar = document.getElementById('hp-bar');
     const livesEl = document.getElementById('lives-val');
     const weaponEl = document.getElementById('weapon-val');
     const weaponSwitch = document.getElementById('weapon-switch');
@@ -1358,18 +1359,36 @@ function createScene() {
             hero.mesh.position.addToRef(_spectateOffset, _targetCam);
             BABYLON.Vector3.LerpToRef(camera.position, _targetCam, frameBlend(0.08, dt), camera.position);
             camera.setTarget(hero.mesh.position);
-            const hpText = String(Math.max(0, Math.round(hero.hp)));
-            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
+            const hpVal = Math.max(0, Math.round(hero.hp));
+            const hpText = String(hpVal);
+            if (hpText !== lastHpText) {
+                hpEl.textContent = hpText;
+                hpBar.max = hero.maxHp || 100;
+                hpBar.value = hpVal;
+                lastHpText = hpText;
+            }
             livesEl.textContent = hero.lives;
         } else if (mode === 'rts') {
             let sumHp = 0;
             for (let i = 0; i < friendlies.length; i++) sumHp += friendlies[i].hp;
             const avgHp = friendlies.length ? sumHp / friendlies.length : 0;
-            const hpText = String(Math.max(0, Math.round(avgHp)));
-            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
+            const hpVal = Math.max(0, Math.round(avgHp));
+            const hpText = String(hpVal);
+            if (hpText !== lastHpText) {
+                hpEl.textContent = hpText;
+                hpBar.max = 100;
+                hpBar.value = hpVal;
+                lastHpText = hpText;
+            }
         } else {
-            const hpText = String(Math.max(0, Math.round(player.hp)));
-            if (hpText !== lastHpText) { hpEl.textContent = hpText; lastHpText = hpText; }
+            const hpVal = Math.max(0, Math.round(player.hp));
+            const hpText = String(hpVal);
+            if (hpText !== lastHpText) {
+                hpEl.textContent = hpText;
+                hpBar.max = player.maxHp || 100;
+                hpBar.value = hpVal;
+                lastHpText = hpText;
+            }
         }
 
         // Projectiles
