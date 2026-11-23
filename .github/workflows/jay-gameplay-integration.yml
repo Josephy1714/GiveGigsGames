@@ -7,6 +7,8 @@ on:
       - 'games/semester-survival-runner-3d/src/three/jay-character.js'
       - 'games/semester-survival-runner-3d/src/three/run-motion.js'
       - 'games/semester-survival-runner-3d/src/three/runner-three-renderer.js'
+      - 'games/semester-survival-runner-3d/src/difficulty/**'
+      - 'games/semester-survival-runner-3d/tests/difficulty-progression.test.mjs'
       - 'games/semester-survival-runner-3d/tests/jay-gameplay-integration.*'
       - 'games/semester-survival-runner-3d/tests/run-motion.test.mjs'
       - 'games/semester-survival-runner-3d/tests/jay-live-runner-e2e.mjs'

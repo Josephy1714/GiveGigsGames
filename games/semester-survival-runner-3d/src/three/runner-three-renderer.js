@@ -253,7 +253,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const renderSpeed=Number.isFinite(Number(g.speed))?Math.max(0,Number(g.speed)):367;
   const travelDelta=dt*(46*.55)*renderSpeed/(Number(g.baseSpeed)||367);
   worldTravel+=travelDelta;
-  trafficTravel+=travelDelta*2;
+  const difficulty=g.difficulty||{};const trafficApproach=clamp((Number(difficulty.trafficSpeedMultiplier)||1)*(Number(difficulty.trafficFrequencyMultiplier)||1)*(Number(difficulty.trafficDensityMultiplier)||1),1,1.5);trafficTravel+=travelDelta*2*trafficApproach;mount.dataset.difficultyBand=difficulty.band||"Beginner";mount.dataset.difficultyProgress=String(Number(difficulty.progress)||0);mount.dataset.trafficApproachMultiplier=trafficApproach.toFixed(3);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
    // Traffic approaches at an oncoming relative speed and only recycles after clearing the follow camera.
