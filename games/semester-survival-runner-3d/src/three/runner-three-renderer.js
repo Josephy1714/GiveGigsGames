@@ -328,7 +328,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  },probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
   const vehicle=traffic[vehicleIndex]||traffic[0],savedPositions=traffic.map(item=>item.position.clone()),savedPlayerX=playerX;
-  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactPlayerX","impactShakeScale","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
+  const keys=["energy","hit","hitVehicle","vehicleImpact","vehicleImpactType","vehicleImpactStartHeight","impactTrafficIndex","impactPlayerX","impactShakeScale","vehicleImpactDuration","speed","inv","pendingFinish","hitTimer","recoveryTimer","lastCollision","jump","lane","d","forceTrafficCollision"];
   const saved={};for(const key of keys)saved[key]=g[key];
   const internal={lastGameT,wasHit,impactPulse,landingPulse,previousJump,cameraBaseX};
   traffic.forEach(item=>item.position.z=-1000);vehicle.position.set(laneX[lane],0,0);vehicle.userData.previousCollisionZ=-1000;playerX=laneX[lane];g.jump=jump;g.energy=100;g.speed=367;g.hit=false;g.hitVehicle=false;g.vehicleImpact=false;g.vehicleImpactType=null;g.vehicleImpactStartHeight=0;g.impactTrafficIndex=null;g.impactPlayerX=playerX;g.impactShakeScale=1;g.inv=0;g.pendingFinish=null;g.hitTimer=0;g.recoveryTimer=0;g.forceTrafficCollision=true;
