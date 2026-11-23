@@ -55,6 +55,11 @@ try{
  assert.equal(ramp.exited.phase,"inactive","The ramp state should clear after landing.");
  assert.equal(ramp.exited.rampActive,false,"The ramp vehicle should resume normal movement after Jay exits.");
  assert.equal(ramp.recycled.rampCount,0,"The ramp vehicle should recycle only after passing behind the camera.");
+ const trafficDensity=await page.evaluate(()=>window.__runnerSmoke.probeTrafficDensity());
+ assert.equal(trafficDensity.beginner.count,6);
+ assert.equal(trafficDensity.expert.count,8);
+ assert.equal(trafficDensity.master.count,8);
+ assert.ok(trafficDensity.master.spacing<trafficDensity.expert.spacing&&trafficDensity.expert.spacing<trafficDensity.beginner.spacing);
  const carry=await page.evaluate(()=>window.__runnerSmoke.probeCarryVehicle());
  assert.ok(carry,"Carry vehicle browser probe should run.");
  assert.equal(carry.approach.phase,"approaching");
@@ -89,5 +94,5 @@ try{
  assert.deepEqual(errors,[],"Browser console/runtime errors: "+errors.join(" | "));
  await page.screenshot({path:"/tmp/jay-live-runner-gameplay.png",fullPage:false});
  await mkdir("/tmp/jay-live-runner-results",{recursive:true});
- console.log("JAY_LIVE_RUNNER_E2E",JSON.stringify({initial,running,ramp,carry,carryRestarts,final,errors},null,2));
+ console.log("JAY_LIVE_RUNNER_E2E",JSON.stringify({initial,running,ramp,trafficDensity,carry,carryRestarts,final,errors},null,2));
 }finally{await browser.close();}

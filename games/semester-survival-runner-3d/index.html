@@ -372,6 +372,19 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   g=savedGame;render(g);
   return {boarding,climbing,jumpOff,exited,recycled};
  },
+ probeTrafficDensity:()=>{
+  if(!g||!threeRenderer)return null;
+  const savedGame=g;
+  g={...savedGame,difficulty:getDifficultyProfile(0)};
+  render(g);
+  const beginner={count:Number($("#three-world").dataset.trafficActiveCount),spacing:Number($("#three-world").dataset.trafficSpacing)};
+  g.difficulty=getDifficultyProfile(3000);render(g);
+  const expert={count:Number($("#three-world").dataset.trafficActiveCount),spacing:Number($("#three-world").dataset.trafficSpacing)};
+  g.difficulty=getDifficultyProfile(5000);render(g);
+  const master={count:Number($("#three-world").dataset.trafficActiveCount),spacing:Number($("#three-world").dataset.trafficSpacing)};
+  g=savedGame;render(g);
+  return {beginner,expert,master};
+ },
  probeCarryVehicle:()=>{
   if(!g||!g.on||!threeRenderer)return null;
   const savedGame=g;

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DIFFICULTY_MILESTONES, getDifficultyProfile } from "../src/difficulty/difficulty-progression.js";
+import { DIFFICULTY_MILESTONES, getDifficultyProfile, getTrafficSpawnLayout } from "../src/difficulty/difficulty-progression.js";
 
 test("difficulty milestones map to the intended distance bands", () => {
   assert.deepEqual(DIFFICULTY_MILESTONES.map(item => item.distance), [0, 500, 1500, 3000, 5000]);
@@ -66,4 +66,20 @@ test("difficulty milestones and tuning values can be configured", () => {
 test("invalid distances safely resolve to the beginner profile", () => {
   assert.equal(getDifficultyProfile(Number.NaN).progress, 0);
   assert.equal(getDifficultyProfile(undefined).progress, 0);
+});
+
+
+test("traffic frequency and density increase without spawning vehicles on top of Jay", () => {
+  const beginner = getTrafficSpawnLayout(getDifficultyProfile(0));
+  const intermediate = getTrafficSpawnLayout(getDifficultyProfile(500));
+  const advanced = getTrafficSpawnLayout(getDifficultyProfile(1500));
+  const expert = getTrafficSpawnLayout(getDifficultyProfile(3000));
+  const master = getTrafficSpawnLayout(getDifficultyProfile(5000));
+  assert.equal(beginner.activeVehicleCount, 6);
+  assert.equal(intermediate.activeVehicleCount, 6);
+  assert.equal(advanced.activeVehicleCount, 7);
+  assert.equal(expert.activeVehicleCount, 8);
+  assert.equal(master.activeVehicleCount, 8);
+  assert.ok(master.spacing < expert.spacing && expert.spacing < advanced.spacing && advanced.spacing < beginner.spacing);
+  assert.ok(master.spacing > 30, "Traffic spacing must retain a safe minimum at the Master cap.");
 });

@@ -57,3 +57,11 @@ export function getDifficultyProfile(distance, config = DEFAULT_DIFFICULTY_CONFI
     rampVehicleChance: interpolate(config.rampVehicleChance, progress)
   });
 }
+
+export function getTrafficSpawnLayout(profile = {}) {
+  const distance = Math.max(0, Number(profile.distance) || 0);
+  const frequency = clamp(Number(profile.trafficFrequencyMultiplier) || 1, 1, 1.12);
+  const density = clamp(Number(profile.trafficDensityMultiplier) || 1, 1, 1.12);
+  const activeVehicleCount = 6 + Number(distance >= 1500) + Number(distance >= 3000);
+  return Object.freeze({ activeVehicleCount, spacing: 43 / (frequency * density) });
+}

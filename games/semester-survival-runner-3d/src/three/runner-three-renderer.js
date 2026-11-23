@@ -4,6 +4,7 @@ import { resolveRunnerAnimationState } from "../animation/three-character-animat
 import { resolveQualityProfile } from "./quality-profile.js";
 import { rampVehicleWorldZ, rampSurfaceHeightAtProgress, RAMP_VEHICLE } from "./ramp-vehicle.js";
 import { CARRY_VEHICLE, getCarryPlayerHeight, isCarryEventActive } from "./carry-vehicle.js";
+import { getTrafficSpawnLayout } from "../difficulty/difficulty-progression.js";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-4.68,0,4.68];
 const mat=(c,r=.82,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(p,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
@@ -243,11 +244,12 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  // Balanced traffic pool: all three lanes are used, with lane changes only when a vehicle recycles far up the road.
  const trafficSpecs=[
   [0,0x315b7a,"car"],[1,0x9a4c39,"matatu"],[2,0x777d78,"shuttle"],
-  [0,0xc1a65e,"car"],[2,0x496f5e,"matatu"],[1,0x9a9d98,"car"]
+  [0,0xc1a65e,"car"],[2,0x496f5e,"matatu"],[1,0x9a9d98,"car"],
+  [1,0x8b7b9a,"shuttle"],[0,0x4f7d91,"car"]
  ];
  const traffic=trafficSpecs.map(([lane,color,kind],i)=>{
   const vehicle=car(scene,laneX[lane],-36-i*43,color,m,kind);
-  vehicle.userData.baseLane=lane;vehicle.userData.trafficIndex=i;
+  vehicle.userData.baseLane=lane;vehicle.userData.trafficIndex=i;vehicle.visible=i<6;
   return vehicle;
  });
  const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
@@ -290,6 +292,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   if(g.carryState&&isCarryEventActive(g.carryState)&&["boarding","riding","slowing_down","stopped","dismounting"].includes(g.carryState.phase))return false;
   if(new URLSearchParams(location.search).has("smoke")&&!g.forceTrafficCollision)return false;
   for(const vehicle of traffic){
+   if(!vehicle.visible)continue;
    const halfLength=(vehicle.userData.collisionLength||3.8)/2;
    const halfWidth=vehicle.userData.collisionHalfWidth||((vehicle.userData.collisionWidth||1.9)/2);
    // Conservative animated-body envelope: include Jay's shoulders, hands and rearward lean.
@@ -328,11 +331,14 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const renderSpeed=Number.isFinite(Number(g.speed))?Math.max(0,Number(g.speed)):367;
   const travelDelta=dt*(46*.55)*renderSpeed/(Number(g.baseSpeed)||367);
   worldTravel+=travelDelta;
-  const difficulty=g.difficulty||{};const trafficApproach=clamp((Number(difficulty.trafficSpeedMultiplier)||1)*(Number(difficulty.trafficFrequencyMultiplier)||1)*(Number(difficulty.trafficDensityMultiplier)||1),1,1.5);const carryPhase=g.carryState?.phase;const independentTrafficDelta=dt*46*.55*(Number(g.baseSpeed)||367)/367;const trafficDelta=carryPhase==="stopped"||carryPhase==="dismounting"?independentTrafficDelta:carryPhase==="slowing_down"?Math.max(travelDelta,independentTrafficDelta*.45):travelDelta;trafficTravel+=trafficDelta*2*trafficApproach;mount.dataset.difficultyBand=difficulty.band||"Beginner";mount.dataset.difficultyProgress=String(Number(difficulty.progress)||0);mount.dataset.trafficApproachMultiplier=trafficApproach.toFixed(3);
+  const difficulty=g.difficulty||{};const trafficLayout=getTrafficSpawnLayout(difficulty);const trafficApproach=clamp(Number(difficulty.trafficSpeedMultiplier)||1,1,1.18);const carryPhase=g.carryState?.phase;const independentTrafficDelta=dt*46*.55*(Number(g.baseSpeed)||367)/367;const trafficDelta=carryPhase==="stopped"||carryPhase==="dismounting"?independentTrafficDelta:carryPhase==="slowing_down"?Math.max(travelDelta,independentTrafficDelta*.45):travelDelta;trafficTravel+=trafficDelta*2*trafficApproach;mount.dataset.difficultyBand=difficulty.band||"Beginner";mount.dataset.difficultyProgress=String(Number(difficulty.progress)||0);mount.dataset.trafficApproachMultiplier=trafficApproach.toFixed(3);mount.dataset.trafficActiveCount=String(trafficLayout.activeVehicleCount);mount.dataset.trafficSpacing=trafficLayout.spacing.toFixed(3);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
+   if(i>=trafficLayout.activeVehicleCount){v.visible=false;return;}
+   v.visible=true;
+   // Extra vehicles enter from far ahead as density grows; spacing stays validated and recycling remains behind Jay.
    // Traffic approaches at an oncoming relative speed and only recycles after clearing the follow camera.
-   const cycle=300,startZ=-36-i*43;
+   const cycle=300,startZ=-36-i*trafficLayout.spacing;
    const phase=startZ+trafficTravel+280;
    const lap=Math.floor(phase/cycle);
    const lane=((v.userData.baseLane+Math.max(0,lap))%3+3)%3;
@@ -419,7 +425,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const score=lane=>{
    let risk=0;
    for(const vehicle of traffic){
-    if(laneForX(vehicle.position.x)!==lane)continue;
+    if(!vehicle.visible||laneForX(vehicle.position.x)!==lane)continue;
     const gap=vehicle.position.z-vehicleZ;
     if(gap>-65&&gap<14)risk+=10/(Math.abs(gap)+1);
    }
