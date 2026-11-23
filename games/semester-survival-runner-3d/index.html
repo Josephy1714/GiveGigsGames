@@ -69,7 +69,7 @@ function jay(){/* Jay is rendered by the skinned Three.js GLB. */}function spawn
   let obstacle;
   if(roll<profile.rampVehicleChance){obstacle={lane,z:0,label:"RAMP LOADER",action:"ramp",ramp:true};}
   else if(roll<profile.rampVehicleChance+profile.vehicleChance){const labels=["LATE BUS","MATATU","CAMPUS SHUTTLE"];obstacle={lane,z:0,label:labels[Math.floor(Math.random()*labels.length)],action:"lane",vehicle:true};}
-  else if(roll<profile.vehicleChance+.43){const labels=["LOW CAMPUS BARRIER","LECTURE HALL BEAM","PIPE CROSSING"];obstacle={lane,z:0,label:labels[Math.floor(Math.random()*labels.length)],action:"slide",obstacleType:"overhead"};}
+  else if(roll<profile.rampVehicleChance+profile.vehicleChance+.43){const labels=["LOW CAMPUS BARRIER","LECTURE HALL BEAM","PIPE CROSSING"];obstacle={lane,z:0,label:labels[Math.floor(Math.random()*labels.length)],action:"slide",obstacleType:"overhead"};}
   else{const labels=["ROADWORK HURDLE","STACKED BOOKS","LOW SECURITY BARRIER"];obstacle={lane,z:0,label:labels[Math.floor(Math.random()*labels.length)],action:"jump",obstacleType:"hurdle"};}
   g.obs.push(obstacle);
   if(pairPattern&&!obstacle.ramp){
@@ -171,11 +171,12 @@ tick = function(dt){
   }
   if(g.rampState){
    const rampObstacle=g.rampState.obstacle;
-   if(g.rampState.phase==="climbing"&&g.lane!==rampObstacle.lane)g.rampState=beginRampDismount(g.rampState,g.rampState.surfaceHeight);
+   const wasClimbing=g.rampState.phase==="climbing";
+   if(wasClimbing&&g.lane!==rampObstacle.lane)g.rampState=beginRampDismount(g.rampState,g.rampState.surfaceHeight);
    const previousPhase=g.rampState.phase;
    const surfaceHeight=previousPhase==="climbing"?rampSurfaceHeightAtProgress(rampObstacle.z):g.rampState.surfaceHeight;
    g.rampState=advanceRampEvent(g.rampState,dt,surfaceHeight);
-   if(previousPhase==="climbing"&&g.rampState?.phase==="jumpingOff")g.jump=1;
+   if(wasClimbing&&g.rampState?.phase==="jumpingOff")g.jump=1;
    if(previousPhase==="jumpingOff"&&!g.rampState){rampObstacle.rampActive=false;g.jump=0;}
   }
  }

@@ -55,7 +55,8 @@ test("difficulty milestones and tuning values can be configured", () => {
     spawnIntervalSeconds: [3, 2],
     obstacleChance: [0.1, 0.5],
     vehicleChance: [0.1, 0.2],
-    multiLanePatternChance: [0, 0.2]
+    multiLanePatternChance: [0, 0.2],
+    rampVehicleChance: [0.01, 0.05]
   });
   assert.equal(profile.band, "Peak");
   assert.equal(profile.playerSpeedMultiplier, 1.5);

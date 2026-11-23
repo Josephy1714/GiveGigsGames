@@ -144,9 +144,9 @@ function car(scene,x,z,color,m,kind="car"){
 function createRampVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
  const paint=mat(0x355c70,.38,.24),deck=mat(0x737f82,.58,.24),rampMaterial=mat(0x9ba7a5,.62,.18);
- box(group,2.72,.82,7.8,paint,0,.78,-.05);
- box(group,2.82,.16,5.55,deck,0,1.19,-.15);
- box(group,2.48,.12,5.3,m.dark,0,1.105,-.15);
+ box(group,2.72,.82,7.8,paint,0,.72,-.05);
+ box(group,2.82,.16,5.55,deck,0,1.07,-.15);
+ box(group,2.48,.12,5.3,m.dark,0,.98,-.15);
  // The rear-facing loading ramp joins the road to the elevated flatbed at the exact shared surface coordinates.
  const angle=Math.atan(RAMP_VEHICLE.deckHeight/(RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ));
  const ramp=new THREE.Mesh(new THREE.PlaneGeometry(2.62,RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ),rampMaterial);

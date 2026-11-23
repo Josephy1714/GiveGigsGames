@@ -4,7 +4,7 @@ export const RAMP_VEHICLE = Object.freeze({
   roadEdgeLocalZ: 5.8,
   deckEdgeLocalZ: 2.6,
   deckHeight: 1.15,
-  climbDurationSeconds: 2.4,
+  climbDurationSeconds: 1.7,
   dismountDurationSeconds: 0.68,
   activeTravelScale: 0.15
 });
