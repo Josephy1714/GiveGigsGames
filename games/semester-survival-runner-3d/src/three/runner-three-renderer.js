@@ -171,8 +171,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  for(let i=0;i<16;i++){tree(world,-10.8,-12-i*17,m);tree(world,10.8,-20-i*17,m);}
  // Balanced traffic pool: all three lanes are used, with lane changes only when a vehicle recycles far up the road.
  const trafficSpecs=[
-  [0,0x315b7a,"car"],[2,0x9a4c39,"matatu"],[0,0x777d78,"shuttle"],
-  [1,0xc1a65e,"car"],[2,0x496f5e,"matatu"],[1,0x9a9d98,"car"]
+  [0,0x315b7a,"car"],[1,0x9a4c39,"matatu"],[2,0x777d78,"shuttle"],
+  [0,0xc1a65e,"car"],[2,0x496f5e,"matatu"],[1,0x9a9d98,"car"]
  ];
  const traffic=trafficSpecs.map(([lane,color,kind],i)=>{
   const vehicle=car(scene,laneX[lane],-36-i*43,color,m,kind);
