@@ -1650,6 +1650,35 @@
       ],
       "runtimeType": "static",
       "guideEntrypoint": "semester-survival-runner/guide.html"
+    },
+    {
+      "slug": "country-generalizer",
+      "title": "CountryGeneralizer",
+      "description": "Deduce the mystery nation from the Top 100 most populous countries across 36 generalization dimensions—food, fauna, flora, exports, demographics, and geography—with Hourly, Daily, Weekly 3x, and Practice resets.",
+      "genre": "Puzzle",
+      "tags": [
+        "Puzzle",
+        "Trivia",
+        "Geography",
+        "Educational",
+        "Daily Challenge",
+        "Offline-friendly"
+      ],
+      "emoji": "🌍",
+      "status": "preview",
+      "featured": false,
+      "recommended": false,
+      "entrypoint": "country-generalizer/index.html",
+      "guideEntrypoint": "country-generalizer/guide.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Type or tap a Top-100 country to guess (press / to focus, Up/Down/Enter to submit). Wrong guesses reduce your score and unlock another of 36 generalization dimensions alongside Geo-Radar distance/bearing hints.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static"
     }
   ]
 }

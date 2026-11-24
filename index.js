@@ -302,6 +302,7 @@
     for (const game of sorted.slice(0, visibleLimit)) {
       const card = document.createElement("article");
       card.className = "game-card";
+      const playHref = `/ggg/play/${encodeURIComponent(game.slug)}`;
       const head = document.createElement("div");
       head.className = "card-head";
       const emoji = document.createElement("span");
@@ -310,6 +311,12 @@
       emoji.textContent = game.emoji || "🎮";
       head.append(emoji);
       if (game.capsule) {
+        const capsuleLink = document.createElement("a");
+        capsuleLink.className = "game-capsule-link";
+        capsuleLink.href = playHref;
+        capsuleLink.tabIndex = -1;
+        capsuleLink.setAttribute("aria-hidden", "true");
+        capsuleLink.addEventListener("click", () => rememberLaunch(game));
         const capsule = document.createElement("img");
         capsule.className = "game-capsule";
         capsule.alt = "";
@@ -321,14 +328,15 @@
         capsule.loading = "lazy";
         capsule.decoding = "async";
         capsule.addEventListener("error", () => {
-          capsule.remove();
+          capsuleLink.remove();
           emoji.hidden = false;
           head.classList.remove("has-capsule");
         }, { once: true });
         head.classList.add("has-capsule");
         emoji.hidden = true;
         capsule.src = new URL(game.capsule, gamesRoot).href;
-        head.prepend(capsule);
+        capsuleLink.append(capsule);
+        head.prepend(capsuleLink);
       }
       if (game.featured) {
         const badge = document.createElement("span");
@@ -364,7 +372,7 @@
       const play = document.createElement("a");
       play.id = `launch-${game.slug}`;
       play.className = "play-label";
-      play.href = `/ggg/play/${encodeURIComponent(game.slug)}`;
+      play.href = playHref;
       play.textContent = "Play";
       play.setAttribute("aria-label", `Play ${game.title}`);
       play.addEventListener("click", () => rememberLaunch(game));

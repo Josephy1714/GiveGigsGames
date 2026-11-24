@@ -238,11 +238,24 @@
   color: #66c0f4;
 }
 
+.game-capsule-link {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
 .game-capsule {
   display: block;
   width: 100%;
   height: auto;
   aspect-ratio: 1;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.game-capsule-link:hover .game-capsule {
+  transform: scale(1.03);
+  filter: brightness(1.06);
 }
 
 .game-grid.grid-view .card-head.has-capsule {
@@ -257,6 +270,7 @@
   right: 8px;
   bottom: 8px;
   background: #07111de8;
+  pointer-events: none;
 }
 
 .game-grid.list-view .game-card:has(.has-capsule) {
@@ -268,6 +282,7 @@
   gap: 6px;
 }
 
+.game-grid.list-view .game-capsule-link,
 .game-grid.list-view .game-capsule {
   border-radius: 5px;
 }

@@ -17,7 +17,11 @@ class GameApp {
     this.scene.fog = new THREE.FogExp2(0x030308, 0.022);
     
     this.camera = new THREE.PerspectiveCamera(60, this.container.clientWidth / this.container.clientHeight, 0.1, 200);
+    this.camera.rotation.order = 'YXZ';
     this.camera.position.set(0, 0.2, 5.0);
+    this.camFocus = { x: 0, z: 5.0, yaw: 0, pitch: 0, fov: 60, zoom: 0 };
+    this.crosshairState = { x: 50, y: 50 };
+    this._aimVec = new THREE.Vector3();
     
     // Add player spotlight
     this.flashlight = new THREE.SpotLight(0x8eefff, 18.0, 30.0, Math.PI / 5, 0.55, 1.2);
@@ -435,6 +439,7 @@ class GameApp {
     lightTarget.position.set(0, -0.15, -10.0);
     this.handsGroup.add(lightTarget);
     this.flashlight.target = lightTarget;
+    this.flashlightTarget = lightTarget;
     
     // Volumetric Cone attached to hands group pointing forward
     const volumetricGeo = new THREE.CylinderGeometry(0.015, 1.2, 5.0, 16, 1, true);
@@ -519,49 +524,125 @@ class GameApp {
     leftArmGroup.rotation.set(Math.PI / 4, 0, Math.PI / 6);
     this.keyboardGroup.add(leftArmGroup);
     
-    // 3. RIGHT ARM (pokes keys, idle holds the right side)
-    this.rightArmGroup = new THREE.Group();
-    const rightSleeve = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.03, 0.3, 8),
+    // 3. RIGHT ARM (shoulder-anchored 2-bone IK arm; hand hovers & types keys)
+    this.rightShoulderPos = new THREE.Vector3(0.24, -0.34, -0.18);
+    this.rightUpperArmLen = 0.24;
+    this.rightForearmLen = 0.25;
+
+    this.rightUpperArmGroup = new THREE.Group();
+    const rightUpperSleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.028, 0.036, this.rightUpperArmLen, 8),
       suitMat
     );
-    rightSleeve.rotation.x = Math.PI / 2.2;
-    rightSleeve.position.set(0, -0.01, 0.12);
-    this.rightArmGroup.add(rightSleeve);
+    rightUpperSleeve.rotation.x = Math.PI / 2;
+    rightUpperSleeve.position.set(0, 0, this.rightUpperArmLen / 2);
+    this.rightUpperArmGroup.add(rightUpperSleeve);
+    const rightElbowJoint = new THREE.Mesh(
+      new THREE.SphereGeometry(0.028, 8, 6),
+      suitMat
+    );
+    rightElbowJoint.position.set(0, 0, this.rightUpperArmLen);
+    this.rightUpperArmGroup.add(rightElbowJoint);
+    this.handsGroup.add(this.rightUpperArmGroup);
+
+    this.rightForearmGroup = new THREE.Group();
+    const rightForeSleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.021, 0.028, this.rightForearmLen, 8),
+      suitMat
+    );
+    rightForeSleeve.rotation.x = Math.PI / 2;
+    rightForeSleeve.position.set(0, 0, this.rightForearmLen / 2);
+    this.rightForearmGroup.add(rightForeSleeve);
+    this.handsGroup.add(this.rightForearmGroup);
+
+    this.rightArmGroup = new THREE.Group();
+    this.rightArmGroup.rotation.order = 'YXZ';
     const rightGlove = new THREE.Mesh(
-      new THREE.BoxGeometry(0.035, 0.035, 0.05),
+      new THREE.BoxGeometry(0.036, 0.020, 0.042),
       skinMat
     );
-    rightGlove.position.set(0, 0.015, -0.03);
+    rightGlove.position.set(0, 0, -0.022);
     this.rightArmGroup.add(rightGlove);
-    
-    this.rightArmIdlePos = new THREE.Vector3(0.14, -0.19, -0.42);
+    const rightThumb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.009, 0.011, 0.022),
+      skinMat
+    );
+    rightThumb.position.set(-0.021, -0.003, -0.026);
+    rightThumb.rotation.set(-0.22, 0.35, 0);
+    this.rightArmGroup.add(rightThumb);
+
+    this.rightFingers = [];
+    const rightFingerLengths = [0.028, 0.030, 0.028, 0.022];
+    for (let i = 0; i < 4; i++) {
+      const knuckle = new THREE.Group();
+      knuckle.position.set(-0.0135 + i * 0.009, 0.002, -0.042);
+      knuckle.rotation.x = -0.25 - i * 0.04;
+      const len = rightFingerLengths[i];
+      const fingerMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.008, 0.010, len),
+        skinMat
+      );
+      fingerMesh.position.set(0, 0, -len / 2);
+      knuckle.add(fingerMesh);
+      this.rightArmGroup.add(knuckle);
+      this.rightFingers.push(knuckle);
+    }
+
+    this.rightArmIdlePos = new THREE.Vector3(0.130, -0.198, -0.402);
+    this.rightHandBasePitch = 0.50;
+    this.rightHandBaseYaw = 0.24;
+    this.rightHandBaseRoll = -0.12;
+    this.rightFingertipLocal = new THREE.Vector3(-0.008, -0.006, -0.066);
+    this.currentRightWristPos = this.rightArmIdlePos.clone();
+    this.currentRightHandYaw = this.rightHandBaseYaw;
+    this.pokeStartWristPos = this.rightArmIdlePos.clone();
+    this.pokeTargetWristPos = this.rightArmIdlePos.clone();
+    this.pokeStartYaw = this.rightHandBaseYaw;
+    this.pokeTargetYaw = this.rightHandBaseYaw;
     this.rightArmGroup.position.copy(this.rightArmIdlePos);
-    this.rightArmGroup.rotation.set(-Math.PI / 8, -Math.PI / 10, -Math.PI / 18);
+    this.rightArmGroup.rotation.set(this.rightHandBasePitch, this.rightHandBaseYaw, this.rightHandBaseRoll);
     this.handsGroup.add(this.rightArmGroup);
-    
+
     this.keyboardFinish.railMat = addKeyboardLegends(this.keyboardGroup, this.qwertyKeyMeshes);
     const cuffMat = new THREE.MeshBasicMaterial({ color: 0xffbc56, fog: false });
     this.keyboardFinish.cuffMat = cuffMat;
+    const leftCuff = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.031, 0.015, 8), cuffMat);
+    leftCuff.rotation.x = Math.PI / 2;
+    leftCuff.position.z = 0.04;
+    leftArmGroup.add(leftCuff);
     const fingerGeo = new THREE.BoxGeometry(0.0085, 0.012, 0.025);
-    for (const [arm, direction] of [[leftArmGroup, -1], [this.rightArmGroup, 1]]) {
-      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.031, 0.015, 8), cuffMat);
-      cuff.rotation.x = Math.PI / 2;
-      cuff.position.z = 0.04;
-      arm.add(cuff);
-      for (let i = 0; i < 4; i++) {
-        const finger = new THREE.Mesh(fingerGeo, skinMat);
-        finger.position.set((i - 1.5) * 0.009, direction === 1 ? 0.011 : 0, direction === 1 ? -0.057 : -0.027);
-        finger.rotation.x = (i - 1) * 0.1;
-        arm.add(finger);
-      }
+    for (let i = 0; i < 4; i++) {
+      const finger = new THREE.Mesh(fingerGeo, skinMat);
+      finger.position.set((i - 1.5) * 0.009, 0, -0.027);
+      finger.rotation.x = (i - 1) * 0.1;
+      leftArmGroup.add(finger);
     }
+    const rightCuff = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.015, 8), cuffMat);
+    rightCuff.rotation.x = Math.PI / 2;
+    rightCuff.position.z = this.rightForearmLen - 0.008;
+    this.rightForearmGroup.add(rightCuff);
+    this._ikTmp = {
+      dir: new THREE.Vector3(),
+      pole: new THREE.Vector3(0.55, -0.82, 0.15).normalize(),
+      bend: new THREE.Vector3(),
+      elbow: new THREE.Vector3(),
+      xAxis: new THREE.Vector3(),
+      yAxis: new THREE.Vector3(),
+      zAxis: new THREE.Vector3(),
+      up: new THREE.Vector3(0, 1, 0),
+      altUp: new THREE.Vector3(0, 0, 1),
+      basis: new THREE.Matrix4(),
+      quat: new THREE.Quaternion(),
+      euler: new THREE.Euler(0, 0, 0, 'YXZ'),
+      tip: new THREE.Vector3()
+    };
+    this.solveRightArmIK(this.rightArmIdlePos);
     this.keyboardSigil = createKeyboardSigil();
     this.handsGroup.add(this.keyboardSigil);
     this.camera.add(this.handsGroup);
     
     this.pokeTimer = 0.0;
-    this.pokeDuration = 0.18;
+    this.pokeDuration = 0.22;
     this.targetPokeCamPos = new THREE.Vector3();
   }
 
@@ -594,6 +675,42 @@ class GameApp {
     return this.state.selectedLevel === 'fantasy' ? 0xffcd66 : 0x00f2fe;
   }
 
+  orientArmSegment(group, start, end) {
+    const { xAxis, yAxis, zAxis, up, altUp, basis } = this._ikTmp;
+    group.position.copy(start);
+    zAxis.subVectors(end, start).normalize();
+    const refUp = Math.abs(zAxis.y) > 0.98 ? altUp : up;
+    xAxis.crossVectors(refUp, zAxis).normalize();
+    yAxis.crossVectors(zAxis, xAxis).normalize();
+    basis.makeBasis(xAxis, yAxis, zAxis);
+    group.quaternion.setFromRotationMatrix(basis);
+  }
+
+  solveRightArmIK(wristPos) {
+    if (!this.rightUpperArmGroup || !this.rightForearmGroup) return;
+    const { dir, pole, bend, elbow } = this._ikTmp;
+    const S = this.rightShoulderPos;
+    const L1 = this.rightUpperArmLen;
+    const L2 = this.rightForearmLen;
+
+    dir.subVectors(wristPos, S);
+    const rawDist = dir.length();
+    if (rawDist < 1e-5) return;
+    dir.divideScalar(rawDist);
+
+    const d = THREE.MathUtils.clamp(rawDist, Math.abs(L1 - L2) + 0.01, L1 + L2 - 0.005);
+    const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d);
+    const h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+
+    bend.copy(pole).addScaledVector(dir, -pole.dot(dir));
+    if (bend.lengthSq() < 1e-6) bend.set(1, -1, 0);
+    bend.normalize();
+
+    elbow.copy(S).addScaledVector(dir, a).addScaledVector(bend, h);
+    this.orientArmSegment(this.rightUpperArmGroup, S, elbow);
+    this.orientArmSegment(this.rightForearmGroup, elbow, wristPos);
+  }
+
   animateKeyboardPress(char) {
     if (!char) return;
     const lowerChar = char.toLowerCase();
@@ -610,6 +727,18 @@ class GameApp {
 
       this.keyboardGroup.updateMatrix();
       this.targetPokeCamPos.copy(keyMesh.position).applyMatrix4(this.keyboardGroup.matrix);
+      this.targetPokeCamPos.y += 0.003;
+      this.targetPokeCamPos.z += 0.003;
+
+      this.pokeStartWristPos.copy(this.currentRightWristPos);
+      this.pokeStartYaw = this.currentRightHandYaw;
+      this.pokeTargetYaw = THREE.MathUtils.clamp(this.rightHandBaseYaw - this.targetPokeCamPos.x * 1.4, 0.08, 0.46);
+      const { euler, quat, tip } = this._ikTmp;
+      euler.set(this.rightHandBasePitch - 0.18, this.pokeTargetYaw, this.rightHandBaseRoll);
+      quat.setFromEuler(euler);
+      tip.copy(this.rightFingertipLocal).applyQuaternion(quat);
+      this.pokeTargetWristPos.copy(this.targetPokeCamPos).sub(tip);
+
       this.pokeTimer = this.pokeDuration;
     }
     // Every keystroke fires a tiny muzzle flash light pulse
@@ -949,8 +1078,10 @@ class GameApp {
     const container = document.getElementById('wave-word-definitions');
     if (!container) return;
     container.innerHTML = '';
+    const count = this.state.waveWords.size;
+    container.dataset.density = count > 28 ? 'ultra' : (count > 16 ? 'dense' : 'normal');
     
-    if (this.state.waveWords.size === 0) {
+    if (count === 0) {
       container.innerHTML = '<p style="color: #718096; font-family: var(--font-cyber);">No words decrypted in this wave.</p>';
       return;
     }
@@ -1661,6 +1792,25 @@ class GameApp {
     this.damageFlash = 0;
     this.gameOverSlowMo = 0;
     this.hideBossBar();
+    this.camFocus.x = 0;
+    this.camFocus.z = 5.0;
+    this.camFocus.yaw = 0;
+    this.camFocus.pitch = 0;
+    this.camFocus.fov = 60;
+    this.camFocus.zoom = 0;
+    this.camera.fov = 60;
+    this.camera.updateProjectionMatrix();
+    this.camera.rotation.set(0, 0, 0);
+    if (this.handsGroup) this.handsGroup.scale.setScalar(1);
+    this.crosshairState.x = 50;
+    this.crosshairState.y = 50;
+    const chEl = this.dom('crosshair');
+    if (chEl) {
+      chEl.style.left = '50%';
+      chEl.style.top = '50%';
+      chEl.style.setProperty('--ch-zoom', '0');
+      chEl.classList.remove('locked', 'sniper');
+    }
     
     this.lastTime = 0;
     this.setSpeedUp(false);
@@ -2259,34 +2409,169 @@ class GameApp {
       }
     }
     
-    // Right arm poke/idle handling
+    // Right arm poke/idle handling (shoulder stays anchored; 2-bone IK moves elbow & wrist)
     if (this.rightArmGroup) {
+      const idleX = this.rightArmIdlePos.x + Math.cos(time * 0.5 - 0.5) * 0.003;
+      const idleY = this.rightArmIdlePos.y + Math.sin(time - 0.5) * 0.004;
+      const idleZ = this.rightArmIdlePos.z;
+      let pitch = this.rightHandBasePitch;
+      let yaw = this.rightHandBaseYaw;
+      const roll = this.rightHandBaseRoll;
+      let fingerCurl = 0;
+
       if (this.pokeTimer > 0) {
-        this.pokeTimer -= rdt;
-        const progress = 1 - Math.max(0, this.pokeTimer / this.pokeDuration);
-        const factor = Math.sin(progress * Math.PI);
-        
-        this.rightArmGroup.position.copy(this.rightArmIdlePos).lerp(this.targetPokeCamPos, factor);
-        this.rightArmGroup.rotation.z = (-Math.PI / 18) * factor;
-        this.rightArmGroup.rotation.x = (-Math.PI / 12) * factor;
+        this.pokeTimer = Math.max(0, this.pokeTimer - rdt);
+        const progress = 1 - (this.pokeTimer / this.pokeDuration);
+        const strikeEnd = 0.42;
+        if (progress <= strikeEnd) {
+          const t = progress / strikeEnd;
+          const ease = t * t * (3 - 2 * t);
+          this.currentRightWristPos.copy(this.pokeStartWristPos).lerp(this.pokeTargetWristPos, ease);
+          this.currentRightWristPos.y += Math.sin(t * Math.PI) * 0.015;
+          yaw = THREE.MathUtils.lerp(this.pokeStartYaw, this.pokeTargetYaw, ease);
+        } else {
+          const t = (progress - strikeEnd) / (1 - strikeEnd);
+          const ease = t * t * (3 - 2 * t);
+          this.currentRightWristPos.set(
+            THREE.MathUtils.lerp(this.pokeTargetWristPos.x, idleX, ease),
+            THREE.MathUtils.lerp(this.pokeTargetWristPos.y, idleY, ease) + Math.sin(t * Math.PI) * 0.012,
+            THREE.MathUtils.lerp(this.pokeTargetWristPos.z, idleZ, ease)
+          );
+          yaw = THREE.MathUtils.lerp(this.pokeTargetYaw, this.rightHandBaseYaw, ease);
+        }
+        const tapPulse = Math.sin(Math.min(1, progress / 0.84) * Math.PI);
+        pitch -= 0.18 * tapPulse;
+        fingerCurl = 0.38 * tapPulse;
       } else {
-        this.rightArmGroup.position.copy(this.rightArmIdlePos);
-        this.rightArmGroup.position.y += Math.sin(time - 0.5) * 0.006;
-        this.rightArmGroup.position.x += Math.cos(time * 0.5 - 0.5) * 0.004;
-        this.rightArmGroup.rotation.set(-Math.PI / 8, -Math.PI / 10, -Math.PI / 18);
+        this.currentRightWristPos.set(idleX, idleY, idleZ);
       }
+
+      this.currentRightHandYaw = yaw;
+      this.rightArmGroup.position.copy(this.currentRightWristPos);
+      this.rightArmGroup.rotation.set(pitch, yaw, roll);
+      if (this.rightFingers) {
+        for (let i = 0; i < this.rightFingers.length; i++) {
+          const fingerWeight = i === 0 ? 1.0 : (i === 1 ? 0.65 : 0.35);
+          this.rightFingers[i].rotation.x = -0.25 - i * 0.04 - fingerCurl * fingerWeight;
+        }
+      }
+      this.solveRightArmIK(this.currentRightWristPos);
     }
     
+    const lockedTarget = (
+      this.state.currentState === GameState.PLAYING &&
+      this.typing &&
+      this.typing.currentTarget &&
+      !this.typing.currentTarget.isDead &&
+      this.typing.currentTarget.worldZ < 4.9
+    ) ? this.typing.currentTarget : null;
+
+    let nearestZ = -Infinity;
+    let hasLive = false;
+    if (this.state.currentState === GameState.PLAYING && this.zombies) {
+      for (let i = 0; i < this.zombies.length; i++) {
+        const z = this.zombies[i];
+        if (!z || z.isDead || z.worldZ >= 4.9) continue;
+        hasLive = true;
+        if (z.worldZ > nearestZ) nearestZ = z.worldZ;
+      }
+    }
+
+    let goalZoom = 0;
+    if (hasLive) {
+      const safety = THREE.MathUtils.clamp((2.0 - nearestZ) / 3.5, 0, 1);
+      const farZoom = nearestZ < -3.0
+        ? THREE.MathUtils.clamp((-3.0 - nearestZ) / 14.0, 0, 1) * 0.72
+        : 0;
+      const aimZoom = (lockedTarget && lockedTarget.worldZ < -1.0)
+        ? THREE.MathUtils.clamp((-1.0 - lockedTarget.worldZ) / 15.0, 0, 1) * safety
+        : 0;
+      goalZoom = Math.max(farZoom, aimZoom);
+    }
+
+    let goalCamX = 0;
+    let goalCamYaw = 0;
+    let goalCamPitch = 0;
+    const goalCamZ = THREE.MathUtils.lerp(5.0, 3.0, goalZoom);
+    const goalFov = THREE.MathUtils.lerp(60, 41, goalZoom);
+    if (lockedTarget) {
+      const aimY = lockedTarget.worldY + 0.98 * (lockedTarget.archetypeScale || 1);
+      const dx = lockedTarget.worldX;
+      const dy = aimY - 0.2;
+      const dz = Math.max(0.5, this.camFocus.z - lockedTarget.worldZ);
+      goalCamYaw = THREE.MathUtils.clamp(-Math.atan2(dx, dz) * 0.45, -0.18, 0.18);
+      goalCamPitch = THREE.MathUtils.clamp(Math.atan2(dy, Math.hypot(dx, dz)) * 0.35, -0.07, 0.08);
+      goalCamX = THREE.MathUtils.clamp(dx * 0.14, -0.26, 0.26);
+    }
+
+    if (rdt > 0) {
+      const camAlpha = 1 - Math.exp(-(lockedTarget ? 8.0 : 5.0) * rdt);
+      const zoomAlpha = 1 - Math.exp(-(goalZoom > this.camFocus.zoom ? 3.2 : 5.5) * rdt);
+      this.camFocus.x = THREE.MathUtils.lerp(this.camFocus.x, goalCamX, camAlpha);
+      this.camFocus.yaw = THREE.MathUtils.lerp(this.camFocus.yaw, goalCamYaw, camAlpha);
+      this.camFocus.pitch = THREE.MathUtils.lerp(this.camFocus.pitch, goalCamPitch, camAlpha);
+      this.camFocus.zoom = THREE.MathUtils.lerp(this.camFocus.zoom, goalZoom, zoomAlpha);
+      this.camFocus.z = THREE.MathUtils.lerp(this.camFocus.z, goalCamZ, zoomAlpha);
+      this.camFocus.fov = THREE.MathUtils.lerp(this.camFocus.fov, goalFov, zoomAlpha);
+    }
+
+    if (Math.abs(this.camera.fov - this.camFocus.fov) > 0.01) {
+      this.camera.fov = this.camFocus.fov;
+      this.camera.updateProjectionMatrix();
+      if (this.handsGroup) {
+        const fovComp = Math.tan(THREE.MathUtils.degToRad(this.camFocus.fov * 0.5)) / Math.tan(THREE.MathUtils.degToRad(30));
+        this.handsGroup.scale.setScalar(fovComp);
+      }
+    }
+
+    let shakeDx = 0;
+    let shakeDy = 0;
     if (this.shakeIntensity > 0) {
       this.shakeIntensity -= this.shakeDecay * rdt;
       if (this.shakeIntensity < 0) this.shakeIntensity = 0;
 
-      const dx = (Math.random() - 0.5) * this.shakeIntensity * 0.15;
-      const dy = (Math.random() - 0.5) * this.shakeIntensity * 0.15;
+      shakeDx = (Math.random() - 0.5) * this.shakeIntensity * 0.15;
+      shakeDy = (Math.random() - 0.5) * this.shakeIntensity * 0.15;
+    }
 
-      this.camera.position.set(dx, 0.2 + dy, 5.0);
-    } else {
-      this.camera.position.set(0, 0.2, 5.0);
+    this.camera.rotation.set(this.camFocus.pitch, this.camFocus.yaw, 0);
+    this.camera.position.set(this.camFocus.x + shakeDx, 0.2 + shakeDy, this.camFocus.z);
+    this.camera.updateMatrixWorld();
+
+    if (this.flashlightTarget) {
+      const lightGoalX = lockedTarget ? THREE.MathUtils.clamp(lockedTarget.worldX * 0.5, -1.6, 1.6) : 0;
+      const lightGoalY = lockedTarget
+        ? -0.15 + THREE.MathUtils.clamp((lockedTarget.worldY + 0.98 * (lockedTarget.archetypeScale || 1) - 0.2) * 0.35, -0.5, 0.5)
+        : -0.15;
+      if (rdt > 0) {
+        const lightAlpha = 1 - Math.exp(-8.0 * rdt);
+        this.flashlightTarget.position.x = THREE.MathUtils.lerp(this.flashlightTarget.position.x, lightGoalX, lightAlpha);
+        this.flashlightTarget.position.y = THREE.MathUtils.lerp(this.flashlightTarget.position.y, lightGoalY, lightAlpha);
+      }
+    }
+
+    const crosshair = this.dom('crosshair');
+    if (crosshair) {
+      let goalChX = 50;
+      let goalChY = 50;
+      if (lockedTarget) {
+        const aimY = lockedTarget.worldY + 0.98 * (lockedTarget.archetypeScale || 1);
+        this._aimVec.set(lockedTarget.worldX, aimY, lockedTarget.worldZ).project(this.camera);
+        if (this._aimVec.z < 1) {
+          goalChX = THREE.MathUtils.clamp((this._aimVec.x * 0.5 + 0.5) * 100, 6, 94);
+          goalChY = THREE.MathUtils.clamp((-this._aimVec.y * 0.5 + 0.5) * 100, 8, 92);
+        }
+      }
+      if (rdt > 0) {
+        const chAlpha = 1 - Math.exp(-(lockedTarget ? 22.0 : 10.0) * rdt);
+        this.crosshairState.x = THREE.MathUtils.lerp(this.crosshairState.x, goalChX, chAlpha);
+        this.crosshairState.y = THREE.MathUtils.lerp(this.crosshairState.y, goalChY, chAlpha);
+      }
+      crosshair.style.left = `${this.crosshairState.x.toFixed(2)}%`;
+      crosshair.style.top = `${this.crosshairState.y.toFixed(2)}%`;
+      crosshair.style.setProperty('--ch-zoom', this.camFocus.zoom.toFixed(3));
+      crosshair.classList.toggle('locked', Boolean(lockedTarget));
+      crosshair.classList.toggle('sniper', this.camFocus.zoom > 0.22);
     }
 
     // Muzzle flash: flashlight flares on every kill/keystroke, decays fast

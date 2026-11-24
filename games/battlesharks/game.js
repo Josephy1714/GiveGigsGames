@@ -40,12 +40,19 @@
             osc.stop(now + dur);
         },
         chomp() { this.tone(180, 'sawtooth', 0.12, 0.18, 70); },
-        laser() { this.tone(880, 'square', 0.14, 0.1, 220); },
+        laser() {
+            this.tone(1320, 'square', 0.11, 0.08, 240);
+            this.tone(720, 'sawtooth', 0.13, 0.07, 140);
+        },
         dash() { this.tone(140, 'triangle', 0.25, 0.22, 420); },
         hit() { this.tone(110, 'sawtooth', 0.22, 0.25, 45); },
         electric() { this.tone(640, 'sawtooth', 0.18, 0.12, 1280); },
         missile() { this.tone(320, 'triangle', 0.2, 0.14, 780); },
         explosion() { this.tone(95, 'sawtooth', 0.45, 0.28, 28); },
+        blockBreak() {
+            this.tone(150, 'square', 0.08, 0.14, 65);
+            setTimeout(() => this.tone(240, 'triangle', 0.07, 0.10, 90), 25);
+        },
         upgrade() {
             this.tone(440, 'sine', 0.12, 0.16);
             setTimeout(() => this.tone(660, 'sine', 0.14, 0.16), 90);
@@ -252,10 +259,11 @@
 
     let treasureChests = [];
     let plushieCompanion = null;
+    let voxelWorld = null;
     function buildAquariumBase() {
         if (window.BSWorld) {
             window.BSWorld.buildAquariumComplex(scene, AQUARIUM_POS, state.shopOwned || {});
-            treasureChests = window.BSWorld.buildTreasureChests(scene, ARENA_RADIUS, FLOOR_Y);
+            treasureChests = window.BSWorld.buildTreasureChests(scene, ARENA_RADIUS, FLOOR_Y, voxelWorld);
         }
         if (window.BSCreatures) {
             plushieCompanion = window.BSCreatures.buildPlushieCompanion(scene);
@@ -263,57 +271,21 @@
     }
 
     function buildEnvironment() {
-        // Seafloor (Abyssal Floor at y = -280)
-        const floorGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.6, ARENA_RADIUS * 2.6, 48, 48);
-        floorGeo.rotateX(-Math.PI / 2);
-        const posAttr = floorGeo.attributes.position;
-        for (let i = 0; i < posAttr.count; i++) {
-            const x = posAttr.getX(i);
-            const z = posAttr.getZ(i);
-            const y = Math.sin(x * 0.05) * 4.5 + Math.cos(z * 0.05) * 4.5;
-            posAttr.setY(i, y);
-        }
-        floorGeo.computeVertexNormals();
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x061624, roughness: 0.92, metalness: 0.1 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = FLOOR_Y;
-        scene.add(floor);
-
-        // Deep Cave Systems: Arches, Rock Shelves & Bioluminescent Caverns
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9, metalness: 0.15 });
-        const crystalColors = [0x00e5ff, 0xa855f7, 0x10b981, 0xf43f5e];
-        for (let i = 0; i < 42; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 28 + Math.random() * (ARENA_RADIUS - 36);
-            const y = FLOOR_Y + 20 + Math.random() * 240;
-            const arch = new THREE.Mesh(
-                new THREE.TorusGeometry(12 + Math.random() * 14, 3.2 + Math.random() * 2.5, 8, 16, Math.PI),
-                rockMat
-            );
-            arch.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
-            arch.rotation.y = Math.random() * Math.PI * 2;
-            scene.add(arch);
-
-            // Bioluminescent Crystal Cluster on cave arch
-            const cColor = crystalColors[i % crystalColors.length];
-            const crystal = new THREE.Mesh(
-                new THREE.OctahedronGeometry(2.2 + Math.random() * 2.0, 0),
-                new THREE.MeshBasicMaterial({ color: cColor })
-            );
-            crystal.position.copy(arch.position).add(new THREE.Vector3(0, 8, 0));
-            scene.add(crystal);
+        // Subnautica-Inspired Multi-Biome Voxel Ocean & Complex Cave Systems
+        if (window.BSWorld && window.BSWorld.buildVoxelWorld) {
+            voxelWorld = window.BSWorld.buildVoxelWorld(scene, AQUARIUM_POS);
         }
 
-        // Abyssal Hydrothermal Vents
+        // Abyssal Lava Zone Hydrothermal Vents (inside deep volcanic cavern)
         const ventMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
         const magmaMat = new THREE.MeshBasicMaterial({ color: 0xff4500 });
-        for (let i = 0; i < 16; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 20 + Math.random() * (ARENA_RADIUS - 30);
+        for (let i = 0; i < 12; i++) {
+            const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.3;
+            const rad = 14 + Math.random() * 40;
             const vent = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 4.2, 12, 10), ventMat);
-            vent.position.set(Math.cos(ang) * rad, FLOOR_Y + 5, Math.sin(ang) * rad);
+            vent.position.set(Math.cos(ang) * rad, FLOOR_Y + 10, Math.sin(ang) * rad);
             const core = new THREE.Mesh(new THREE.SphereGeometry(1.6, 8, 8), magmaMat);
-            core.position.set(vent.position.x, FLOOR_Y + 11, vent.position.z);
+            core.position.set(vent.position.x, FLOOR_Y + 16, vent.position.z);
             scene.add(vent, core);
         }
 
@@ -341,24 +313,23 @@
             scene.add(ring);
         }
 
-        // Super-Detailed Multi-Branched Corals & Sunken Debris
+        // Safe Shallows Multi-Branched Corals & Reef Props (placed in open voxel spots)
         const coralColors = [0xf43f5e, 0xa855f7, 0xfb923c, 0x14b8a6, 0x38bdf8];
         const baseRockMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
-        for (let i = 0; i < 48; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 14 + Math.random() * (ARENA_RADIUS - 20);
-            const x = Math.cos(ang) * rad;
-            const z = Math.sin(ang) * rad;
+        for (let i = 0; i < 36; i++) {
+            const spot = voxelWorld
+                ? voxelWorld.findOpenSpot(-20, -2, 22, ARENA_RADIUS - 22, 3)
+                : new THREE.Vector3(Math.cos(i) * 45, -14, Math.sin(i) * 45);
             const col = coralColors[i % coralColors.length];
 
             const coralGroup = new THREE.Group();
-            coralGroup.position.set(x, FLOOR_Y, z);
+            coralGroup.position.copy(spot);
 
             const pedestal = new THREE.Mesh(new THREE.DodecahedronGeometry(2.2, 1), baseRockMat);
             pedestal.scale.set(1.2, 0.5, 1.2);
             coralGroup.add(pedestal);
 
-            const branchMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, emissive: col, emissiveIntensity: 0.18 });
+            const branchMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, emissive: col, emissiveIntensity: 0.25 });
             const tipMat = new THREE.MeshBasicMaterial({ color: col });
             const branches = 3 + (i % 4);
             for (let b = 0; b < branches; b++) {
@@ -376,30 +347,23 @@
             scene.add(coralGroup);
         }
 
-        // Random Sunken Debris & Wreckage
-        const debrisMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.4 });
-        const hazardMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.4, roughness: 0.5 });
-        for (let i = 0; i < 24; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 18 + Math.random() * (ARENA_RADIUS - 26);
-            const crate = new THREE.Group();
-            crate.position.set(Math.cos(ang) * rad, FLOOR_Y + 1.4, Math.sin(ang) * rad);
-            crate.rotation.set((Math.random() - 0.5) * 0.4, Math.random() * Math.PI * 2, (Math.random() - 0.5) * 0.4);
-            const box = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.4, 3.2), debrisMat);
-            const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.4, 3.3), hazardMat);
-            crate.add(box, stripe);
-            scene.add(crate);
-        }
-
-        // Swaying Kelp
-        const kelpGeo = new THREE.CylinderGeometry(0.18, 0.35, 14, 6);
-        kelpGeo.translate(0, 7, 0);
+        // Swaying Subnautica Creepvine Kelp (in Safe Shallows & Kelp Reef)
+        const kelpGeo = new THREE.CylinderGeometry(0.18, 0.35, 18, 6);
+        kelpGeo.translate(0, 9, 0);
         const kelpMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.8 });
-        for (let i = 0; i < 35; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const rad = 10 + Math.random() * (ARENA_RADIUS - 14);
+        const seedMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+        const seedGeo = new THREE.SphereGeometry(0.45, 8, 8);
+        for (let i = 0; i < 38; i++) {
+            const spot = voxelWorld
+                ? voxelWorld.findOpenSpot(-28, -10, 20, ARENA_RADIUS - 20, 2.5)
+                : new THREE.Vector3(Math.cos(i) * 50, -20, Math.sin(i) * 50);
             const kelp = new THREE.Mesh(kelpGeo, kelpMat);
-            kelp.position.set(Math.cos(ang) * rad, FLOOR_Y, Math.sin(ang) * rad);
+            kelp.position.copy(spot);
+            for (let s = 0; s < 3; s++) {
+                const seed = new THREE.Mesh(seedGeo, seedMat);
+                seed.position.set((Math.random() - 0.5) * 0.8, 5 + s * 4.2, (Math.random() - 0.5) * 0.8);
+                kelp.add(seed);
+            }
             kelp.userData = { phase: Math.random() * Math.PI * 2 };
             scene.add(kelp);
             kelpList.push(kelp);
@@ -816,10 +780,16 @@
         tail.position.z = s * 1.05;
         group.add(tail);
 
-        const ang = Math.random() * Math.PI * 2;
-        const rad = 10 + Math.random() * (ARENA_RADIUS - 18);
-        const y = type.bottomWalker ? FLOOR_Y + 1.5 : FLOOR_Y + 5 + Math.random() * (SURFACE_Y - FLOOR_Y - 10);
-        group.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+        if (voxelWorld) {
+            const minY = type.bottomWalker ? -30 : FLOOR_Y + 14;
+            const maxY = type.bottomWalker ? 0 : SURFACE_Y - 4;
+            group.position.copy(voxelWorld.findOpenSpot(minY, maxY, 14, ARENA_RADIUS - 18, type.size + 1.5));
+        } else {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 10 + Math.random() * (ARENA_RADIUS - 18);
+            const y = type.bottomWalker ? FLOOR_Y + 1.5 : FLOOR_Y + 5 + Math.random() * (SURFACE_Y - FLOOR_Y - 10);
+            group.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+        }
 
         scene.add(group);
         preys.push({
@@ -932,10 +902,14 @@
             group.add(body, visor);
         }
 
-        const ang = Math.random() * Math.PI * 2;
-        const rad = 25 + Math.random() * (ARENA_RADIUS - 30);
-        const y = FLOOR_Y + 6 + Math.random() * (SURFACE_Y - FLOOR_Y - 12);
-        group.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+        if (voxelWorld) {
+            group.position.copy(voxelWorld.findOpenSpot(FLOOR_Y + 16, SURFACE_Y - 6, 24, ARENA_RADIUS - 22, type.size + 2.5));
+        } else {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 25 + Math.random() * (ARENA_RADIUS - 30);
+            const y = FLOOR_Y + 6 + Math.random() * (SURFACE_Y - FLOOR_Y - 12);
+            group.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+        }
 
         scene.add(group);
         enemies.push({
@@ -1000,11 +974,84 @@
         setTimeout(() => alertEl.classList.add('hidden'), 3200);
     }
 
-    function spawnProjectile(pos, dir, speed, color, isPlayer, isMissile = false, damage = 25) {
-        const geo = isMissile ? new THREE.ConeGeometry(0.35, 1.2, 8) : new THREE.SphereGeometry(0.32, 8, 8);
-        if (isMissile) geo.rotateX(Math.PI / 2);
-        const mat = new THREE.MeshBasicMaterial({ color });
-        const mesh = new THREE.Mesh(geo, mat);
+    const laserBeams = [];
+    const laserMuzzleLight = new THREE.PointLight(0xff1e6e, 0, 34);
+    scene.add(laserMuzzleLight);
+
+    function spawnLaserTracer(startPos, endPos, color, radius = 0.14, duration = 0.13) {
+        const dist = Math.max(0.5, startPos.distanceTo(endPos));
+        const grp = new THREE.Group();
+        const coreGeo = new THREE.CylinderGeometry(radius * 0.42, radius * 0.42, dist, 6);
+        coreGeo.rotateX(Math.PI / 2);
+        const coreMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const haloGeo = new THREE.CylinderGeometry(radius * 1.8, radius * 1.8, dist, 8);
+        haloGeo.rotateX(Math.PI / 2);
+        const haloMat = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.55,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        grp.add(new THREE.Mesh(coreGeo, coreMat), new THREE.Mesh(haloGeo, haloMat));
+        grp.position.copy(startPos).lerp(endPos, 0.5);
+        grp.lookAt(endPos);
+        scene.add(grp);
+        laserBeams.push({ mesh: grp, coreMat, haloMat, age: 0, maxAge: duration });
+    }
+
+    function spawnLaserImpact(pos, color) {
+        spawnParticles(pos, color, 8, 13);
+        spawnParticles(pos, 0xffffff, 4, 8);
+        const ringGeo = new THREE.TorusGeometry(0.9, 0.12, 6, 16);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.copy(pos);
+        ring.lookAt(camera.position);
+        scene.add(ring);
+        laserBeams.push({ mesh: ring, coreMat: ringMat, haloMat: null, age: 0, maxAge: 0.2, isRing: true });
+    }
+
+    function spawnProjectile(pos, dir, speed, color, isPlayer, isMissile = false, damage = 25, isLaser = false) {
+        let mesh;
+        if (isMissile) {
+            const geo = new THREE.ConeGeometry(0.38, 1.4, 8);
+            geo.rotateX(Math.PI / 2);
+            mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+        } else if (isLaser) {
+            mesh = new THREE.Group();
+            const len = 10.5;
+            const coreGeo = new THREE.CylinderGeometry(0.09, 0.09, len, 6);
+            coreGeo.rotateX(Math.PI / 2);
+            const innerGeo = new THREE.CylinderGeometry(0.24, 0.24, len * 1.08, 8);
+            innerGeo.rotateX(Math.PI / 2);
+            const outerGeo = new THREE.CylinderGeometry(0.52, 0.52, len * 1.15, 8);
+            outerGeo.rotateX(Math.PI / 2);
+            mesh.add(
+                new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color: 0xffffff })),
+                new THREE.Mesh(innerGeo, new THREE.MeshBasicMaterial({
+                    color, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false
+                })),
+                new THREE.Mesh(outerGeo, new THREE.MeshBasicMaterial({
+                    color, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false
+                }))
+            );
+        } else {
+            const geo = new THREE.SphereGeometry(0.32, 8, 8);
+            mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+        }
         mesh.position.copy(pos);
         mesh.lookAt(pos.clone().add(dir));
         scene.add(mesh);
@@ -1013,10 +1060,12 @@
             mesh,
             pos: mesh.position,
             vel: dir.clone().normalize().multiplyScalar(speed),
+            color,
             isPlayer,
             isMissile,
+            isLaser,
             damage,
-            life: isMissile ? 4.5 : 2.5
+            life: isMissile ? 4.5 : (isLaser ? 1.4 : 2.5)
         });
     }
 
@@ -1114,9 +1163,32 @@
         }
     }
 
+    function spawnVoxelDebris(pos, color) {
+        const geo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+        const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.1 });
+        for (let i = 0; i < 6; i++) {
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(
+                pos.x + (Math.random() - 0.5) * 2.2,
+                pos.y + (Math.random() - 0.5) * 2.2,
+                pos.z + (Math.random() - 0.5) * 2.2
+            );
+            mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            scene.add(mesh);
+            const vel = new THREE.Vector3(
+                (Math.random() - 0.5) * 14,
+                Math.random() * 8 - 2,
+                (Math.random() - 0.5) * 14
+            );
+            particles.push({ mesh, vel, life: 0.55 + Math.random() * 0.35, spin: true });
+        }
+    }
+
     // ==================== INPUT ====================
     const keys = {};
     const touchState = { x: 0, y: 0, up: false, down: false };
+    const mouseSteer = { x: 0, y: 0, active: false };
+    let mouseDownLeft = false;
     let pointerLocked = false;
 
     window.addEventListener('keydown', (e) => {
@@ -1189,18 +1261,41 @@
     canvas.addEventListener('mousedown', (e) => {
         if (!state.running || state.paused) return;
         if (e.button === 0) {
+            mouseDownLeft = true;
             fireLasers();
         } else if (e.button === 2 && state.mode === 'shark') {
             triggerBiteLunge();
         }
     });
 
+    window.addEventListener('mouseup', (e) => {
+        if (e.button === 0) mouseDownLeft = false;
+    });
+
     window.addEventListener('mousemove', (e) => {
         if (!state.running || state.paused) return;
         if (document.pointerLockElement === canvas || e.buttons === 2) {
+            mouseSteer.active = false;
             player.yaw -= e.movementX * 0.0032;
             player.pitch = Math.max(-0.85, Math.min(0.85, player.pitch - e.movementY * 0.0028));
+            return;
         }
+        if (e.target !== canvas) {
+            mouseSteer.active = false;
+            return;
+        }
+        mouseSteer.x = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
+        mouseSteer.y = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
+        mouseSteer.active = true;
+    });
+
+    document.addEventListener('mouseleave', () => {
+        mouseSteer.active = false;
+    });
+
+    window.addEventListener('blur', () => {
+        mouseSteer.active = false;
+        mouseDownLeft = false;
     });
 
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1272,6 +1367,28 @@
         spawnParticles(player.pos, 0x00e5ff, 14, 14);
     }
 
+    function traceLaserEnd(startPos, dir, maxDist = 88) {
+        let bestDist = maxDist;
+        let endPoint = startPos.clone().addScaledVector(dir, maxDist);
+        if (voxelWorld && voxelWorld.raycastVoxel) {
+            const hit = voxelWorld.raycastVoxel(startPos, dir, maxDist);
+            if (hit && hit.dist < bestDist) {
+                bestDist = hit.dist;
+                endPoint = hit.hitPos;
+            }
+        }
+        const step = 3.5;
+        const probe = startPos.clone();
+        for (let d = step; d <= bestDist; d += step) {
+            probe.copy(startPos).addScaledVector(dir, d);
+            for (let j = 0; j < enemies.length; j++) {
+                if (probe.distanceTo(enemies[j].pos) < enemies[j].type.size + 1.5) return probe;
+            }
+            if (boss.active && probe.distanceTo(boss.pos) < 7.0) return probe;
+        }
+        return endPoint;
+    }
+
     function fireLasers() {
         if (state.mode === 'human') {
             if (state.turretOverheated || player.laserCooldown > 0) return;
@@ -1287,27 +1404,48 @@
             state.cameraShake = Math.max(state.cameraShake, isSonic ? 0.14 : 0.08);
             const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
             const origin = player.pos.clone().add(forward.clone().multiplyScalar(2.6));
-            spawnParticles(origin, isSonic ? 0xa855f7 : 0x38bdf8, 4, 10);
             const isCrit = Math.random() < 0.28;
             const baseDmg = isSonic ? 65 : 38;
             const dmg = isCrit ? Math.round(baseDmg * 2.5) : baseDmg;
-            spawnProjectile(origin, forward, isSonic ? 105 : 85, isCrit ? 0xfacc15 : (isSonic ? 0xa855f7 : 0x38bdf8), true, false, dmg);
+            const beamCol = isCrit ? 0xfacc15 : (isSonic ? 0xa855f7 : 0x00e5ff);
+            spawnParticles(origin, beamCol, 5, 12);
+            const endPos = traceLaserEnd(origin, forward, 95);
+            spawnLaserTracer(origin, endPos, beamCol, isSonic ? 0.22 : 0.15, 0.11);
+            laserMuzzleLight.color.setHex(beamCol);
+            laserMuzzleLight.position.copy(origin);
+            laserMuzzleLight.intensity = 3.0;
+            spawnProjectile(origin, forward, isSonic ? 145 : 135, beamCol, true, false, dmg, true);
             return;
         }
         if (!state.upgrades.lasers || player.laserCooldown > 0) return;
-        player.laserCooldown = 0.22;
+        player.laserCooldown = 0.16;
         sfx.laser();
-        const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
-        const origin = player.pos.clone().add(forward.clone().multiplyScalar(2.4 * player.scale));
-        const dmg = 30 + player.level * 4;
-        if (player.level >= 10) {
-            // #50 Apex Evolution Finale: Dual-beam lasers
-            const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ')).multiplyScalar(0.9 * player.scale);
-            spawnProjectile(origin.clone().add(right), forward, 72, 0x00f5a0, true, false, dmg);
-            spawnProjectile(origin.clone().sub(right), forward, 72, 0x00f5a0, true, false, dmg);
-        } else {
-            spawnProjectile(origin, forward, 68, 0xff0055, true, false, dmg);
+        state.cameraShake = Math.max(state.cameraShake, 0.045);
+
+        const euler = new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ');
+        const forward = new THREE.Vector3(0, 0, -1).applyEuler(euler);
+        const aimPoint = player.pos.clone().addScaledVector(forward, 72);
+        const dmg = 34 + player.level * 5;
+        const laserCol = player.level >= 10 ? 0x00ffaa : (player.level >= 5 ? 0x00f0ff : 0xff1e6e);
+
+        const muzzleOffsets = player.level >= 10
+            ? [[-0.65, 0.35, -2.2], [0.65, 0.35, -2.2], [-1.05, 0.12, -1.8], [1.05, 0.12, -1.8]]
+            : [[-0.65, 0.35, -2.2], [0.65, 0.35, -2.2]];
+
+        for (const [ox, oy, oz] of muzzleOffsets) {
+            const emitterPos = new THREE.Vector3(ox * player.scale, oy * player.scale, oz * player.scale)
+                .applyQuaternion(sharkGroup.quaternion)
+                .add(player.pos);
+            const beamDir = aimPoint.clone().sub(emitterPos).normalize();
+            const tracerEnd = traceLaserEnd(emitterPos, beamDir, 88);
+            spawnLaserTracer(emitterPos, tracerEnd, laserCol, player.level >= 5 ? 0.16 : 0.13, 0.12);
+            spawnParticles(emitterPos, laserCol, 3, 7);
+            spawnProjectile(emitterPos, beamDir, 155, laserCol, true, false, dmg, true);
         }
+
+        laserMuzzleLight.color.setHex(laserCol);
+        laserMuzzleLight.position.copy(player.pos).addScaledVector(forward, 2.5 * player.scale);
+        laserMuzzleLight.intensity = 3.5;
     }
 
     function damagePlayer(amount) {
@@ -1362,11 +1500,21 @@
         state.difficultyTimer += dt;
         state.difficulty = 1 + state.difficultyTimer / 45;
 
+        const applyDeadzone = (v, dz = 0.08) => {
+            const abs = Math.abs(v);
+            if (abs <= dz) return 0;
+            return Math.sign(v) * ((abs - dz) / (1 - dz));
+        };
+
         // Player Movement
         let turnInput = 0;
         if (keys['KeyA'] || keys['ArrowLeft']) turnInput += 1;
         if (keys['KeyD'] || keys['ArrowRight']) turnInput -= 1;
         turnInput -= touchState.x;
+        if (mouseSteer.active && document.pointerLockElement !== canvas) {
+            turnInput -= applyDeadzone(mouseSteer.x) * 1.15;
+        }
+        turnInput = Math.max(-1.25, Math.min(1.25, turnInput));
         player.yaw += turnInput * 2.3 * dt;
 
         let pitchInput = 0;
@@ -1374,12 +1522,24 @@
         if (keys['KeyE']) pitchInput += 1;
         if (touchState.up) pitchInput += 1;
         if (touchState.down) pitchInput -= 1;
+        if (mouseSteer.active && document.pointerLockElement !== canvas) {
+            pitchInput -= applyDeadzone(mouseSteer.y) * 0.95;
+        }
+        pitchInput = Math.max(-1.1, Math.min(1.1, pitchInput));
         player.pitch = Math.max(-0.85, Math.min(0.85, player.pitch + pitchInput * 1.8 * dt));
 
         let moveInput = 0;
         if (keys['KeyW'] || keys['ArrowUp']) moveInput += 1;
         if (keys['KeyS'] || keys['ArrowDown']) moveInput -= 0.5;
         moveInput -= touchState.y;
+        if (state.mode === 'shark') {
+            if (player.isDashing) {
+                moveInput = Math.max(moveInput, 1);
+            } else if (Math.abs(moveInput) < 0.05) {
+                // Constant gentle forward swim like a real shark
+                moveInput = 0.45;
+            }
+        }
 
         const frenzyMult = state.frenzyTimer > 0 ? 1.3 : 1.0;
         const maxSpd = (player.isDashing ? player.baseMaxSpeed * 2.2 : player.baseMaxSpeed) * frenzyMult;
@@ -1415,6 +1575,14 @@
             const scaleBack = (ARENA_RADIUS - 3) / horizLen;
             player.pos.x *= scaleBack;
             player.pos.z *= scaleBack;
+        }
+        if (voxelWorld && state.mode === 'shark') {
+            voxelWorld.resolveSphereCollision(player.pos, 1.55 * player.scale);
+        }
+
+        // Hold-to-fire rapid cyber lasers
+        if (mouseDownLeft || keys['KeyF']) {
+            fireLasers();
         }
 
         // Update Shark Mesh & Animations
@@ -1566,12 +1734,29 @@
             if (subGroup) subGroup.visible = false;
         }
 
-        // Third-Person Camera
+        // Third-Person Camera (with voxel cave wall collision so walls never occlude the shark)
         const camDist = (player.isDashing ? 16 : 13) * (0.85 + player.scale * 0.25);
         const camOffset = new THREE.Vector3(0, 3.8 * player.scale, camDist).applyEuler(new THREE.Euler(player.pitch * 0.6, player.yaw, 0, 'YXZ'));
         const desiredPos = player.pos.clone().add(camOffset);
         desiredPos.y = Math.max(FLOOR_Y + 1.5, Math.min(SURFACE_Y - 1, desiredPos.y));
-        camCurrentPos.lerp(desiredPos, Math.min(1, dt * 8));
+
+        let clippedDist = desiredPos.distanceTo(player.pos);
+        if (voxelWorld && voxelWorld.raycastVoxel && clippedDist > 0.1) {
+            const camDir = desiredPos.clone().sub(player.pos).normalize();
+            const wallHit = voxelWorld.raycastVoxel(player.pos, camDir, clippedDist);
+            if (wallHit) {
+                const safeDist = Math.max(4.6, wallHit.dist - 1.2);
+                desiredPos.copy(player.pos).addScaledVector(camDir, safeDist);
+                desiredPos.y += 1.2 * player.scale;
+                clippedDist = safeDist;
+            }
+            voxelWorld.resolveSphereCollision(desiredPos, 1.0);
+        }
+        if (camCurrentPos.distanceTo(player.pos) > clippedDist + 0.5) {
+            camCurrentPos.copy(desiredPos);
+        } else {
+            camCurrentPos.lerp(desiredPos, Math.min(1, dt * 10));
+        }
 
         const lookTarget = player.pos.clone().add(forward.clone().multiplyScalar(8));
         camCurrentLook.lerp(lookTarget, Math.min(1, dt * 10));
@@ -1664,6 +1849,9 @@
             }
             p.pos.x += Math.sin(p.yaw) * p.type.speed * dt;
             p.pos.z += Math.cos(p.yaw) * p.type.speed * dt;
+            if (voxelWorld && voxelWorld.resolveSphereCollision(p.pos, p.type.size * 0.7)) {
+                p.yaw += Math.PI * 0.75;
+            }
             p.mesh.rotation.y = p.yaw + Math.PI;
 
             if (p.pos.distanceTo(player.pos) < eatRadius + p.type.size * 0.5) {
@@ -1723,6 +1911,9 @@
                     e.pos.x += Math.sin(e.yaw) * e.type.speed * dt;
                     e.pos.z += Math.cos(e.yaw) * e.type.speed * dt;
                 }
+                if (voxelWorld && voxelWorld.resolveSphereCollision(e.pos, e.type.size * 0.8)) {
+                    e.yaw += Math.PI * 0.75;
+                }
             }
 
             if (dist < eatRadius + e.type.size * 0.65) {
@@ -1763,30 +1954,85 @@
             }
         }
 
+        // Update Laser Beams & Muzzle Light
+        if (laserMuzzleLight.intensity > 0) {
+            laserMuzzleLight.intensity = Math.max(0, laserMuzzleLight.intensity - dt * 28);
+        }
+        for (let i = laserBeams.length - 1; i >= 0; i--) {
+            const lb = laserBeams[i];
+            lb.age += dt;
+            const k = 1 - lb.age / lb.maxAge;
+            if (lb.isRing) {
+                const s = 1 + (1 - k) * 3.8;
+                lb.mesh.scale.setScalar(s);
+                lb.coreMat.opacity = Math.max(0, 0.9 * k);
+            } else {
+                lb.coreMat.opacity = Math.max(0, 0.95 * k);
+                if (lb.haloMat) lb.haloMat.opacity = Math.max(0, 0.55 * k);
+            }
+            if (lb.age >= lb.maxAge) {
+                scene.remove(lb.mesh);
+                laserBeams.splice(i, 1);
+            }
+        }
+
         // Update Projectiles
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const pr = projectiles[i];
             pr.life -= dt;
+            const prevPos = pr.pos.clone();
             pr.pos.addScaledVector(pr.vel, dt);
             pr.mesh.position.copy(pr.pos);
 
+            const midPos = prevPos.lerp(pr.pos, 0.5);
             let hit = false;
-            if (pr.isPlayer) {
+
+            if (voxelWorld && (voxelWorld.isSolidAt(pr.pos.x, pr.pos.y, pr.pos.z) || voxelWorld.isSolidAt(midPos.x, midPos.y, midPos.z))) {
+                const hitPoint = voxelWorld.isSolidAt(midPos.x, midPos.y, midPos.z) ? midPos : pr.pos;
+                spawnLaserImpact(hitPoint, pr.color || 0x00e5ff);
+                if (pr.isPlayer && voxelWorld.damageVoxelAt) {
+                    const splash = player.level >= 4 ? 1 : 0;
+                    const broken = voxelWorld.damageVoxelAt(hitPoint.x, hitPoint.y, hitPoint.z, pr.damage, splash);
+                    if (broken.length > 0) {
+                        sfx.blockBreak();
+                        let bonusDebris = 0;
+                        let bonusCoins = 0;
+                        for (const blk of broken) {
+                            spawnVoxelDebris(blk.pos, blk.color);
+                            if (blk.matId >= 7) {
+                                bonusCoins += 3;
+                                bonusDebris += 1;
+                            }
+                        }
+                        if (bonusDebris > 0 || bonusCoins > 0) {
+                            state.debris += bonusDebris;
+                            state.coins += bonusCoins;
+                            localStorage.setItem('battlesharks_coins', String(state.coins));
+                            state.score += bonusCoins * 2;
+                        }
+                    }
+                }
+                hit = true;
+            }
+
+            if (!hit && pr.isPlayer) {
                 for (let j = enemies.length - 1; j >= 0; j--) {
-                    if (pr.pos.distanceTo(enemies[j].pos) < enemies[j].type.size + 1.2) {
+                    const hitRad = enemies[j].type.size + 1.4;
+                    if (pr.pos.distanceTo(enemies[j].pos) < hitRad || midPos.distanceTo(enemies[j].pos) < hitRad) {
                         enemies[j].hp -= pr.damage;
+                        spawnLaserImpact(pr.pos, pr.color || 0xff1e6e);
                         if (enemies[j].hp <= 0) destroyEnemy(j);
                         hit = true;
                         break;
                     }
                 }
-                if (!hit && boss.active && pr.pos.distanceTo(boss.pos) < 6.5) {
+                if (!hit && boss.active && (pr.pos.distanceTo(boss.pos) < 6.8 || midPos.distanceTo(boss.pos) < 6.8)) {
                     boss.hp -= pr.damage;
                     hit = true;
-                    spawnParticles(pr.pos, 0xff0055, 8, 10);
+                    spawnLaserImpact(pr.pos, pr.color || 0xff0055);
                     if (boss.hp <= 0) defeatBoss();
                 }
-            } else {
+            } else if (!hit) {
                 if (pr.pos.distanceTo(player.pos) < 2.2 * player.scale) {
                     damagePlayer(pr.damage);
                     hit = true;
@@ -1815,10 +2061,15 @@
             }
         }
 
-        // Update Particles
+        // Update Particles & Voxel Debris
         for (let i = particles.length - 1; i >= 0; i--) {
             const pt = particles[i];
             pt.life -= dt;
+            if (pt.spin) {
+                pt.vel.y -= 14 * dt;
+                pt.mesh.rotation.x += dt * 7;
+                pt.mesh.rotation.y += dt * 5;
+            }
             pt.mesh.position.addScaledVector(pt.vel, dt);
             pt.mesh.scale.setScalar(Math.max(0.01, pt.life * 1.5));
             if (pt.life <= 0) {
@@ -1849,13 +2100,21 @@
         }
 
         // Depth-Driven Atmosphere (Subnautica-style biome transition)
-        const depthNorm = Math.max(0, Math.min(1, (SURFACE_Y - player.pos.y) / (SURFACE_Y - FLOOR_Y)));
-        const shallowCol = new THREE.Color(0x042f4b);
-        const abyssCol = new THREE.Color(0x010712);
-        const curCol = shallowCol.lerp(abyssCol, depthNorm);
-        scene.background.copy(curCol);
-        scene.fog.color.copy(curCol);
-        scene.fog.density = 0.0085 + depthNorm * 0.0065;
+        if (voxelWorld && voxelWorld.getBiomeAt) {
+            const biome = voxelWorld.getBiomeAt(player.pos.x, player.pos.y, player.pos.z);
+            const targetCol = new THREE.Color(biome.color);
+            scene.background.lerp(targetCol, Math.min(1, dt * 2.5));
+            scene.fog.color.lerp(targetCol, Math.min(1, dt * 2.5));
+            scene.fog.density += (biome.fogDensity - scene.fog.density) * Math.min(1, dt * 2.5);
+        } else {
+            const depthNorm = Math.max(0, Math.min(1, (SURFACE_Y - player.pos.y) / (SURFACE_Y - FLOOR_Y)));
+            const shallowCol = new THREE.Color(0x042f4b);
+            const abyssCol = new THREE.Color(0x010712);
+            const curCol = shallowCol.lerp(abyssCol, depthNorm);
+            scene.background.copy(curCol);
+            scene.fog.color.copy(curCol);
+            scene.fog.density = 0.0085 + depthNorm * 0.0065;
+        }
 
         // Combo & Frenzy timers
         if (state.comboTimer > 0) {
@@ -1876,6 +2135,7 @@
         if (Math.abs(player.speed) > 14 && Math.random() < 0.35) {
             spawnParticles(player.pos, 0xbae6fd, 1, 2.5);
         }
+        const t = performance.now() * 0.001;
         for (const k of kelpList) {
             k.rotation.z = Math.sin(t * 1.4 + k.userData.phase) * 0.12;
         }
@@ -1999,7 +2259,9 @@
         document.getElementById('hudBiomass').textContent = state.biomass;
         const depthM = Math.max(0, Math.round(SURFACE_Y - player.pos.y));
         document.getElementById('hudDepth').textContent = `${depthM}m`;
-        const biomeName = depthM < 45 ? 'BS-07 Shallows' : depthM < 130 ? 'Sunken Ruins' : depthM < 220 ? 'Deep Trenches' : 'Abyssal Caverns';
+        const biomeName = voxelWorld && voxelWorld.getBiomeAt
+            ? voxelWorld.getBiomeAt(player.pos.x, player.pos.y, player.pos.z).name
+            : (depthM < 45 ? 'Safe Shallows' : depthM < 130 ? 'Jellyshroom Caverns' : depthM < 220 ? 'Lost River Brine' : 'Abyssal Lava Zone');
         document.getElementById('hudBiome').textContent = biomeName;
         document.getElementById('hudDebris').textContent = state.debris;
         document.getElementById('hudMutagens').textContent = state.mutagens;
@@ -2187,6 +2449,7 @@
         for (const p of preys) scene.remove(p.mesh);
         for (const e of enemies) scene.remove(e.mesh);
         for (const pr of projectiles) scene.remove(pr.mesh);
+        for (const lb of laserBeams) scene.remove(lb.mesh);
         for (const pt of particles) scene.remove(pt.mesh);
         for (const c of acidClouds) scene.remove(c.mesh);
         if (boss.mesh) scene.remove(boss.mesh);
@@ -2194,6 +2457,9 @@
         preys.length = 0;
         enemies.length = 0;
         projectiles.length = 0;
+        laserBeams.length = 0;
+        laserMuzzleLight.intensity = 0;
+        mouseDownLeft = false;
         particles.length = 0;
         acidClouds.length = 0;
         boss.mesh = null;
@@ -2212,6 +2478,8 @@
             dashCooldown: 0, dashTimer: 0, isDashing: false, laserCooldown: 0, jawTimer: 0, invulnTimer: 2.0
         });
         player.pos.set(0, 6, 12);
+        mouseSteer.active = false;
+        if (voxelWorld && voxelWorld.resetTerrain) voxelWorld.resetTerrain();
         tutorial.active = localStorage.getItem('battlesharks_tut_done') !== 'true';
         tutorial.step = 0;
         tutorial.preyEaten = 0;
@@ -2259,6 +2527,7 @@
     }
 
     function startGame(mode = 'shark') {
+        if (typeof mode !== 'string') mode = state.mode || 'shark';
         state.mode = mode;
         sfx.init();
         sfx.startMusic();
@@ -2303,8 +2572,8 @@
     // ==================== UI BINDINGS ====================
     document.getElementById('btnStart').addEventListener('click', () => startGame('shark'));
     document.getElementById('btnStartHuman').addEventListener('click', () => startGame('human'));
-    document.getElementById('btnRestart').addEventListener('click', startGame);
-    document.getElementById('btnRestartPause').addEventListener('click', startGame);
+    document.getElementById('btnRestart').addEventListener('click', () => startGame(state.mode));
+    document.getElementById('btnRestartPause').addEventListener('click', () => startGame(state.mode));
     document.getElementById('btnResume').addEventListener('click', togglePause);
     document.getElementById('btnPause').addEventListener('click', togglePause);
     document.getElementById('btnShop').addEventListener('click', () => toggleShop());

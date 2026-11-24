@@ -152,7 +152,7 @@ html, body {
 /* Tutorial Banner */
 .tutorial-banner {
     position: absolute;
-    top: 96px;
+    bottom: 58px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(4, 24, 48, 0.88);
@@ -394,7 +394,10 @@ html, body {
 
 .hud-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: min(36vw, 410px);
     pointer-events: auto;
 }
 
@@ -402,8 +405,9 @@ html, body {
     background: rgba(6, 26, 50, 0.85);
     border: 1px solid rgba(0, 229, 255, 0.35);
     color: #e6f4ff;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 10px;
+    font-size: 0.82rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s ease;

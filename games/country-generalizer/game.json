@@ -1,0 +1,47 @@
+{
+  "title": "CountryGeneralizer",
+  "slug": "country-generalizer",
+  "description": "Deduce the mystery nation from the Top 100 most populous countries across 36 generalization dimensions—food, fauna, flora, exports, demographics, and geography—with Hourly, Daily, Weekly 3x, and Practice challenges.",
+  "genre": "Puzzle",
+  "tags": [
+    "Puzzle",
+    "Trivia",
+    "Geography",
+    "Educational",
+    "Daily Challenge",
+    "Offline-friendly"
+  ],
+  "emoji": "🌍",
+  "entrypoint": "index.html",
+  "guideEntrypoint": "guide.html",
+  "controls": {
+    "mouse": "Type or select a Top-100 country from the dropdown, drag/zoom the Geo-Radar map, and switch Hourly/Daily/Weekly/Practice resets or Sets & Decks.",
+    "touch": true,
+    "keyboard": {
+      "/": "Focus country search",
+      "ArrowUp / ArrowDown": "Navigate autocomplete results",
+      "Enter": "Submit selected country guess",
+      "Escape": "Close dropdown or modal"
+    }
+  },
+  "assets": {
+    "external": [],
+    "local": [
+      "index.html",
+      "game.css",
+      "game.js",
+      "data-dims.js",
+      "data-countries-1.js",
+      "data-countries-2.js",
+      "data-countries-3.js",
+      "data-countries-4.js",
+      "game.json",
+      "guide.html"
+    ]
+  },
+  "meta": {
+    "version": "1.0.0",
+    "created": "2026-11-23",
+    "license": "MIT"
+  }
+}

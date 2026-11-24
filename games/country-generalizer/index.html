@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#09131d">
+  <meta name="description" content="CountryGeneralizer — Deduce the mystery nation from the Top 100 most populous countries using 36+ generalization dimensions across food, fauna, flora, exports, demographics, and geography.">
+  <title>CountryGeneralizer — Global Atlas Deduction</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+  <link rel="stylesheet" href="../_shared/game-interface.css">
+  <link rel="stylesheet" href="./game.css">
+</head>
+<body>
+  <div class="cg-app" id="cg-app">
+    <header class="cg-topbar">
+      <div class="cg-brand-wrap">
+        <div class="cg-brand">
+          <span class="cg-logo" aria-hidden="true">🌍</span>
+          <div>
+            <h1>CountryGeneralizer</h1>
+            <p class="cg-subtitle" id="cg-challenge-subtitle">Daily #Loading · Top 100</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="cg-cadence-tabs" aria-label="Challenge reset schedule">
+        <button type="button" class="cg-tab" data-cadence="hourly">
+          <span>Hourly</span>
+          <small id="timer-hourly">--:--</small>
+        </button>
+        <button type="button" class="cg-tab is-active" data-cadence="daily">
+          <span>Daily</span>
+          <small id="timer-daily">--:--:--</small>
+        </button>
+        <button type="button" class="cg-tab" data-cadence="weekly">
+          <span>Weekly 3x</span>
+          <small id="timer-weekly">--d --h</small>
+        </button>
+        <button type="button" class="cg-tab" data-cadence="practice">
+          <span>Practice</span>
+          <small>Unlimited</small>
+        </button>
+      </nav>
+
+      <div class="cg-actions">
+        <button type="button" class="cg-icon-btn" id="btn-options" title="Sets &amp; Options" aria-label="Sets and Options">
+          <span aria-hidden="true">⚙️</span><span class="cg-btn-label">Sets</span>
+        </button>
+        <button type="button" class="cg-icon-btn" id="btn-leaderboard" title="Leaderboards" aria-label="Leaderboards">
+          <span aria-hidden="true">🏆</span><span class="cg-btn-label">Ranks</span>
+        </button>
+        <button type="button" class="cg-icon-btn" id="btn-passport" title="Stats &amp; 100-Country Passport" aria-label="Stats and Passport">
+          <span aria-hidden="true">🛂</span><span class="cg-btn-label">Passport</span>
+        </button>
+        <button type="button" class="cg-icon-btn" id="btn-help" title="How to Play" aria-label="How to Play">
+          <span aria-hidden="true">?</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="cg-status-ribbon" aria-label="Round status">
+      <div class="cg-status-item">
+        <span class="cg-status-label">GUESSES</span>
+        <div class="cg-pips" id="guess-pips" aria-live="polite"></div>
+      </div>
+      <div class="cg-status-item">
+        <span class="cg-status-label">POTENTIAL SCORE</span>
+        <strong class="cg-score-val" id="potential-score">5,000</strong>
+      </div>
+      <div class="cg-status-item">
+        <span class="cg-status-label">INTEL REVEALED</span>
+        <strong class="cg-intel-val" id="intel-count">2 / 36</strong>
+      </div>
+      <div class="cg-status-item cg-active-set-pill">
+        <span class="cg-status-label">ACTIVE DECK</span>
+        <strong id="active-deck-label">Balanced 36</strong>
+      </div>
+      <div class="cg-status-item" id="weekly-progress-box" hidden>
+        <span class="cg-status-label">WEEKLY MARATHON</span>
+        <strong id="weekly-round-label">Round 1 / 3 · 0 pts</strong>
+      </div>
+    </section>
+
+    <main class="cg-workspace">
+      <!-- Left Column: Clues, Guess Input, Reveal Dossier -->
+      <section class="cg-dossier-col" aria-label="Intelligence dossier and guess input">
+        <div class="cg-panel cg-clue-panel">
+          <div class="cg-panel-head">
+            <div>
+              <h2>Mystery Country Dossier</h2>
+              <p class="cg-panel-note" id="clue-subnote">Only a sliver of intel is shown each round. Wrong guesses cost 1,000 pts and unlock another dimension.</p>
+            </div>
+            <button type="button" class="cg-peek-btn" id="btn-peek-clue" title="Spend 250 potential points to unlock an extra dimension factoid">
+              + Extra Clue <small>(-250 pts)</small>
+            </button>
+          </div>
+
+          <div class="cg-clues-grid" id="clues-grid" aria-live="polite"></div>
+        </div>
+
+        <!-- Guess Console -->
+        <div class="cg-panel cg-guess-panel" id="guess-panel">
+          <form class="cg-guess-form" id="guess-form" autocomplete="off">
+            <div class="cg-autocomplete-wrap">
+              <label for="country-input" class="sr-only">Guess a country</label>
+              <input
+                id="country-input"
+                type="text"
+                placeholder="Type a Top-100 country name (press / to focus)..."
+                aria-autocomplete="list"
+                aria-controls="country-dropdown"
+                aria-expanded="false"
+                spellcheck="false"
+              >
+              <button type="button" class="cg-clear-input" id="btn-clear-input" aria-label="Clear search" hidden>✕</button>
+              <ul class="cg-dropdown" id="country-dropdown" role="listbox" hidden></ul>
+            </div>
+            <button type="submit" class="cg-submit-btn" id="btn-submit-guess">Guess Country</button>
+          </form>
+          <div class="cg-quick-hint" id="guess-feedback" aria-live="polite"></div>
+        </div>
+
+        <!-- Post-Round Reveal Banner & Full 36-Dimension Explorer -->
+        <div class="cg-panel cg-reveal-panel" id="reveal-panel" hidden>
+          <div class="cg-reveal-banner" id="reveal-banner">
+            <div class="cg-reveal-flag" id="reveal-flag">🌍</div>
+            <div class="cg-reveal-meta">
+              <span class="cg-reveal-badge" id="reveal-badge">SOLVED IN 2/5</span>
+              <h2 id="reveal-name">Country Name</h2>
+              <p id="reveal-facts">Capital: — · Pop Rank #— (~—M) · Region</p>
+            </div>
+            <div class="cg-reveal-score-box">
+              <span class="cg-status-label">FINAL SCORE</span>
+              <strong id="reveal-score">4,000</strong>
+            </div>
+          </div>
+
+          <div class="cg-reveal-actions">
+            <button type="button" class="cg-btn-primary" id="btn-share-result">📋 Share Result</button>
+            <button type="button" class="cg-btn-secondary" id="btn-next-challenge">🎲 New Practice Round</button>
+            <button type="button" class="cg-btn-secondary" id="btn-open-ranks-after">🏆 View Leaderboard</button>
+          </div>
+          <p class="cg-share-toast" id="share-toast" hidden></p>
+
+          <div class="cg-full-almanac">
+            <div class="cg-almanac-head">
+              <h3>Complete 36-Dimension Generalizer Dossier</h3>
+              <div class="cg-cat-filters" id="almanac-cat-filters"></div>
+            </div>
+            <div class="cg-almanac-grid" id="almanac-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Interactive Map Radar & Guess Telemetry -->
+      <section class="cg-telemetry-col" aria-label="World map radar and guess telemetry">
+        <div class="cg-panel cg-map-panel">
+          <div class="cg-panel-head">
+            <div>
+              <h2>Geo-Radar Map</h2>
+              <p class="cg-panel-note" id="map-note">Pins plot your guesses with proximity heat &amp; compass bearing.</p>
+            </div>
+            <div class="cg-map-controls">
+              <button type="button" class="cg-mini-btn" id="btn-zoom-in" title="Zoom In">+</button>
+              <button type="button" class="cg-mini-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+              <button type="button" class="cg-mini-btn" id="btn-zoom-reset" title="Reset Map">Reset</button>
+            </div>
+          </div>
+          <div class="cg-map-stage">
+            <canvas id="world-map-canvas" width="720" height="380" aria-label="Interactive vector world map showing guessed countries"></canvas>
+            <div class="cg-map-tooltip" id="map-tooltip" hidden></div>
+            <div class="cg-map-legend">
+              <span><i class="dot dot-hot"></i>&lt;1,500 km</span>
+              <span><i class="dot dot-warm"></i>&lt;4,000 km</span>
+              <span><i class="dot dot-mid"></i>&lt;8,000 km</span>
+              <span><i class="dot dot-cold"></i>&gt;8,000 km</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cg-panel cg-history-panel">
+          <div class="cg-panel-head">
+            <h2>Guess Telemetry Log</h2>
+            <span class="cg-panel-note" id="history-count">0 / 5 guesses</span>
+          </div>
+          <div class="cg-guess-list" id="guess-list">
+            <div class="cg-empty-state">Make your first deduction! Wrong guesses reveal distance, compass bearing, trait matches, and a new dimension factoid.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal Backdrop -->
+  <div class="cg-modal-backdrop" id="modal-backdrop" hidden>
+    <!-- Sets & Options Modal -->
+    <div class="cg-modal" id="modal-options" role="dialog" aria-modal="true" aria-labelledby="opt-title" hidden>
+      <div class="cg-modal-head">
+        <h2 id="opt-title">⚙️ Sets, Decks &amp; Game Options</h2>
+        <button type="button" class="cg-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div class="cg-modal-body">
+        <div class="cg-opt-group">
+          <label for="opt-callsign">Player Callsign (for Leaderboards)</label>
+          <input id="opt-callsign" type="text" maxlength="20" placeholder="AtlasExplorer">
+        </div>
+
+        <div class="cg-opt-group">
+          <label>Country Pool / Set</label>
+          <p class="cg-opt-hint">Daily/Hourly/Weekly official leaderboards use <strong>Top 100 + Balanced 36</strong>, or pick any custom set below for its own seeded board!</p>
+          <div class="cg-radio-grid" id="opt-country-sets"></div>
+        </div>
+
+        <div class="cg-opt-group">
+          <label>Dimension Deck (36 Dimensions)</label>
+          <div class="cg-radio-grid" id="opt-dimension-decks"></div>
+        </div>
+
+        <div class="cg-opt-toggles">
+          <label class="cg-toggle-row">
+            <span>
+              <strong>Purist Mode (No Geo Distance/Bearing Hints)</strong>
+              <small>Hide km distances &amp; compass arrows — deduce purely from generalizations (+20% score!)</small>
+            </span>
+            <input type="checkbox" id="opt-purist">
+          </label>
+          <label class="cg-toggle-row">
+            <span>
+              <strong>Use Miles (mi) instead of Kilometers (km)</strong>
+              <small>Switch map &amp; telemetry distances</small>
+            </span>
+            <input type="checkbox" id="opt-miles">
+          </label>
+          <label class="cg-toggle-row">
+            <span>
+              <strong>Tactile Sound Effects</strong>
+              <small>Web Audio chimes on clues, guesses &amp; solves</small>
+            </span>
+            <input type="checkbox" id="opt-sound" checked>
+          </label>
+        </div>
+
+        <div class="cg-modal-footer">
+          <button type="button" class="cg-btn-secondary" id="btn-reset-official">Use Official Preset</button>
+          <button type="button" class="cg-btn-primary" id="btn-apply-options">Apply &amp; Play</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div class="cg-modal cg-modal-wide" id="modal-leaderboard" role="dialog" aria-modal="true" aria-labelledby="lb-title" hidden>
+      <div class="cg-modal-head">
+        <h2 id="lb-title">🏆 Leaderboards &amp; Benchmarks</h2>
+        <button type="button" class="cg-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div class="cg-modal-body">
+        <div class="cg-lb-tabs" id="lb-tabs">
+          <button type="button" class="cg-lb-tab is-active" data-lb="daily">Daily</button>
+          <button type="button" class="cg-lb-tab" data-lb="hourly">Hourly</button>
+          <button type="button" class="cg-lb-tab" data-lb="weekly">Weekly 3x</button>
+          <button type="button" class="cg-lb-tab" data-lb="alltime">All-Time Best</button>
+        </div>
+        <p class="cg-opt-hint" id="lb-period-info"></p>
+        <div class="cg-lb-table-wrap">
+          <table class="cg-lb-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Player</th>
+                <th>Score</th>
+                <th>Result</th>
+                <th>Time</th>
+                <th>Setup</th>
+              </tr>
+            </thead>
+            <tbody id="lb-tbody"></tbody>
+          </table>
+        </div>
+        <div class="cg-import-box">
+          <label for="lb-import-code">Compare with a Friend (Paste Share Token)</label>
+          <div class="cg-import-row">
+            <input id="lb-import-code" type="text" placeholder="Paste CG1|... code from a friend's Share Result">
+            <button type="button" class="cg-btn-secondary" id="btn-import-score">Add to Board</button>
+          </div>
+          <small id="lb-import-msg"></small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Passport & Stats Modal -->
+    <div class="cg-modal cg-modal-wide" id="modal-passport" role="dialog" aria-modal="true" aria-labelledby="pp-title" hidden>
+      <div class="cg-modal-head">
+        <h2 id="pp-title">🛂 Global Stats &amp; 100-Country Passport</h2>
+        <button type="button" class="cg-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div class="cg-modal-body">
+        <div class="cg-stats-cards" id="stats-cards"></div>
+        <div class="cg-dist-wrap">
+          <h3>Guess Distribution</h3>
+          <div class="cg-dist-bars" id="dist-bars"></div>
+        </div>
+        <div class="cg-passport-wrap">
+          <div class="cg-passport-head">
+            <h3>Top 100 Population Passport (<span id="passport-discovered">0</span> / 100 Discovered)</h3>
+            <small>Click any discovered country to inspect all 36 of its dimensions!</small>
+          </div>
+          <div class="cg-passport-grid" id="passport-grid"></div>
+        </div>
+        <div class="cg-passport-inspect" id="passport-inspect" hidden></div>
+      </div>
+    </div>
+
+    <!-- How to Play Modal -->
+    <div class="cg-modal" id="modal-help" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+      <div class="cg-modal-head">
+        <h2 id="help-title">🧭 How to Play CountryGeneralizer</h2>
+        <button type="button" class="cg-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <div class="cg-modal-body cg-help-copy">
+        <p>Identify the mystery country from the <strong>Top 100 most populous nations on Earth</strong> using generalized national profiles across <strong>36 dimensions</strong>.</p>
+        <ul>
+          <li><strong>Start Small:</strong> Round 1 reveals only a couple of clues (e.g. a Tradle-style Export Portfolio or staple diet/biome).</li>
+          <li><strong>5 Guesses:</strong> Each wrong guess reduces your potential score by <strong>1,000 pts</strong> (5,000 → 4,000 → 3,000 → 2,000 → 1,000) and unlocks <strong>another dimension factoid</strong>.</li>
+          <li><strong>Geo-Radar + Trait Telemetry:</strong> Every wrong guess plots on the world map with distance, compass bearing, region match, population rank arrow (↑/↓), income tier, and climate hint.</li>
+          <li><strong>Hourly, Daily &amp; Weekly Resets:</strong> Compete on synchronized UTC resets! Weekly mode is a <strong>3-Country Marathon</strong> with cumulative scoring.</li>
+          <li><strong>Sets &amp; Decks:</strong> Switch between Top 100, Top 30 Giants, Challenger 31–100, Regional sets, or specialized Dimension Decks (Tradle Economy, Bio-Atlas, Food &amp; Culture, Mystery Blind).</li>
+        </ul>
+        <p class="cg-controls-tip"><strong>Keyboard shortcuts:</strong> Press <code>/</code> to focus search, <code>↑</code>/<code>↓</code> to pick a country, <code>Enter</code> to submit, <code>Esc</code> to close panels.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="./data-dims.js" defer></script>
+  <script src="./data-countries-1.js" defer></script>
+  <script src="./data-countries-2.js" defer></script>
+  <script src="./data-countries-3.js" defer></script>
+  <script src="./data-countries-4.js" defer></script>
+  <script src="./game.js" defer></script>
+  <script src="../_shared/game-select.js" defer></script>
+</body>
+</html>

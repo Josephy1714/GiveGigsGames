@@ -132,6 +132,7 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
             <!-- Center crosshair with hit pulse -->
             <div id="crosshair" class="hidden" aria-hidden="true">
+                <div class="ch-scope"></div>
                 <div class="ch-dot"></div>
                 <div class="ch-ring"></div>
             </div>
@@ -357,16 +358,16 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
             <!-- Wave Cleared / Glossary Screen -->
             <div class="TEMPLATE-4weird-game-overlay" id="wave-cleared-screen" role="dialog" aria-modal="true" aria-label="Wave cleared" style="z-index: 999; display: none;">
-                <div class="TEMPLATE-4weird-overlay-content" style="max-width: 500px; width: 95%; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto;">
-                    <h2 style="color: var(--neon-cyan); text-shadow: var(--glow-cyan); margin-bottom: 5px;">WAVE <span id="cleared-wave-num">1</span> DECRYPTED</h2>
-                    <p id="glossary-stats" style="font-family: var(--font-cyber); font-size: 0.72rem; color: var(--neon-yellow); margin-bottom: 15px;"></p>
-                    <p style="font-family: var(--font-cyber); font-size: 0.8rem; color: var(--neon-yellow); margin-bottom: 15px;">UNITS GLOSSARY DEFINITIONS</p>
+                <div class="TEMPLATE-4weird-overlay-content wave-cleared-content">
+                    <h2 class="wave-cleared-title">WAVE <span id="cleared-wave-num">1</span> DECRYPTED</h2>
+                    <p id="glossary-stats" class="glossary-stats"></p>
+                    <p class="glossary-subtitle">UNITS GLOSSARY DEFINITIONS</p>
                     
-                    <div id="wave-word-definitions" class="definitions-container" style="flex: 1; overflow-y: visible; margin-bottom: 20px; text-align: left; display: flex; flex-direction: column; gap: 15px; padding-right: 8px;">
+                    <div id="wave-word-definitions" class="definitions-container">
                         <!-- Populated dynamically via JS -->
                     </div>
                     
-                    <button type="button" class="btn btn-primary" id="btn-next-wave" style="width: 100%; flex-shrink: 0;">START NEXT WAVE</button>
+                    <button type="button" class="btn btn-primary" id="btn-next-wave">START NEXT WAVE</button>
                 </div>
             </div>
         </div>

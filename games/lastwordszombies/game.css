@@ -1084,33 +1084,121 @@
 }
 
 /* ===== 17. GLOSSARY/DEFINITIONS CONTAINER ===== */
+#wave-cleared-screen.TEMPLATE-4weird-game-overlay {
+  padding: 12px !important;
+  overflow: hidden !important;
+}
+#wave-cleared-screen .wave-cleared-content {
+  width: min(1160px, 96vw);
+  max-width: 1160px;
+  max-height: 100%;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+#wave-cleared-screen .wave-cleared-title {
+  color: var(--neon-cyan) !important;
+  text-shadow: var(--glow-cyan) !important;
+  font-family: var(--font-cyber) !important;
+  font-size: clamp(1.1rem, 2.3vw, 1.55rem) !important;
+  margin: 0 0 3px 0 !important;
+  flex-shrink: 0;
+}
+#wave-cleared-screen .glossary-stats,
+#wave-cleared-screen .glossary-subtitle {
+  font-family: var(--font-cyber) !important;
+  color: var(--neon-yellow) !important;
+  max-width: none !important;
+  line-height: 1.3 !important;
+  flex-shrink: 0;
+}
+#wave-cleared-screen .glossary-stats {
+  font-size: clamp(0.68rem, 1.2vw, 0.78rem) !important;
+  margin: 0 auto 3px auto !important;
+}
+#wave-cleared-screen .glossary-subtitle {
+  font-size: clamp(0.66rem, 1.15vw, 0.75rem) !important;
+  opacity: 0.88;
+  margin: 0 auto 10px auto !important;
+}
 .definitions-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 8px;
+  align-content: start;
+  text-align: left;
+  margin-bottom: 12px;
+  padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) rgba(0, 0, 0, 0.1);
 }
+.definitions-container[data-density="dense"] {
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 6px;
+}
+.definitions-container[data-density="ultra"] {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 5px;
+}
+.definitions-container > p {
+  grid-column: 1 / -1;
+  text-align: center;
+}
 .word-def-entry {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
   border-left: 3px solid var(--neon-cyan);
-  padding: 10px 15px;
+  padding: 7px 10px;
   border-radius: 0 6px 6px 0;
+}
+.definitions-container[data-density="dense"] .word-def-entry {
+  padding: 6px 8px;
+}
+.definitions-container[data-density="ultra"] .word-def-entry {
+  padding: 5px 7px;
 }
 .word-def-title {
   font-family: var(--font-cyber);
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--neon-cyan);
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.definitions-container[data-density="ultra"] .word-def-title {
+  font-size: 0.78rem;
+  margin-bottom: 2px;
 }
 .word-def-list {
   margin: 0;
-  padding-left: 18px;
-  font-size: 0.85rem;
-  line-height: 1.4;
+  padding-left: 14px;
+  font-size: 0.72rem;
+  line-height: 1.28;
   color: #e2e8f0;
 }
+.definitions-container[data-density="dense"] .word-def-list {
+  font-size: 0.68rem;
+  line-height: 1.24;
+}
+.definitions-container[data-density="ultra"] .word-def-list {
+  font-size: 0.64rem;
+  line-height: 1.2;
+}
 .word-def-list li {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+.word-def-list li:last-child {
+  margin-bottom: 0;
+}
+#btn-next-wave {
+  width: 100%;
+  flex-shrink: 0;
+  padding: 12px 20px;
 }
 
 /* ===== 18. GAME SPEED TRIGGER ===== */
@@ -1171,12 +1259,29 @@
   left: 50%;
   width: 44px;
   height: 44px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(calc(1 - var(--ch-zoom, 0) * 0.14));
   z-index: 4;
   pointer-events: none;
   opacity: 0.85;
+  transition: opacity 0.15s ease;
 }
 #crosshair.hidden { display: none; }
+#crosshair .ch-scope {
+  position: absolute;
+  inset: -14px;
+  border: 1px dashed rgba(0, 242, 254, 0.55);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(1.45);
+  transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+#crosshair.sniper .ch-scope {
+  opacity: 0.85;
+  transform: scale(calc(1.18 - var(--ch-zoom, 0) * 0.28));
+}
+#crosshair.sniper.locked .ch-scope {
+  border-color: rgba(255, 0, 119, 0.78);
+}
 #crosshair .ch-dot {
   position: absolute;
   top: 50%; left: 50%;
@@ -1194,6 +1299,19 @@
   transition: transform 0.08s ease-out;
 }
 #crosshair.pulse .ch-ring { transform: scale(1.5); border-color: #fff; }
+#crosshair.locked .ch-ring {
+  transform: scale(0.84);
+  border-color: var(--neon-magenta);
+  box-shadow: 0 0 12px rgba(255, 0, 119, 0.65);
+}
+#crosshair.locked .ch-dot {
+  background: var(--neon-magenta);
+  box-shadow: var(--glow-magenta);
+}
+#crosshair.locked.pulse .ch-ring {
+  transform: scale(1.32);
+  border-color: #fff;
+}
 #crosshair::before, #crosshair::after {
   content: "";
   position: absolute;

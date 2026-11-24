@@ -39,6 +39,11 @@ try {
   assert.equal(await search.inputValue(), "Platform Wars");
 
   const card = page.locator(".game-card").filter({ has: play });
+  await card.locator(".game-capsule-link").click();
+  await page.frameLocator("#game-frame").locator("#arena").waitFor({ state: "attached" });
+  await page.getByRole("link", { name: "Back to game select" }).click();
+  await page.waitForFunction(() => document.activeElement?.id === "launch-platform-wars");
+
   await card.getByRole("button", { name: "Favorite Platform Wars" }).click();
   await page.getByLabel("Collection").selectOption("favorites");
   assert.equal(await page.locator(".game-card").count(), 1);
