@@ -155,7 +155,16 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
 
     await page.keyboard.press("ArrowUp");
     await page.waitForFunction(() => window.__runnerSmoke.state().jump > 0, null, { timeout: 2500 });
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 8000 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 8000 }).catch(async error => {
+      const diagnostic = await page.evaluate(() => ({
+        state: window.__runnerSmoke.state(),
+        activeAnimation: document.querySelector("#three-world")?.dataset.activeAnimation,
+        rendererReady: document.querySelector("#three-world")?.dataset.rendererReady,
+        overlayOpen: document.querySelector("#game")?.classList.contains("open"),
+        visibility: document.visibilityState
+      }));
+      throw new Error(`${error.message}; jump diagnostics: ${JSON.stringify(diagnostic)}`);
+    });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 8000 });
 
     await page.keyboard.press("ArrowDown");
