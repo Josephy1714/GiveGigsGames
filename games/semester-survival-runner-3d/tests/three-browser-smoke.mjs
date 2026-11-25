@@ -218,7 +218,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     const restartedState = await page.evaluate(() => window.__runnerSmoke.state());
     assert.ok(restartedState.distance < 5, "Run It Back must reset distance to the starting area, allowing a small head start and the first rendered frames");
     assert.equal(restartedState.lane, 1, "Run It Back must reset Jay to the centre lane");
-    assert.equal(restartedState.energy, 100, "Run It Back must restore full starting energy");
+    assert.ok(Math.abs(restartedState.energy - 100) < 0.01, "Run It Back must restore full starting energy before normal frame drain");
     assert.equal(restartedState.runApproachCompleted, initialRunState.runApproachCompleted, "Run It Back must reset the character animation timeline");
     await page.waitForFunction(() => window.__runnerSmoke.state().distance > 0, null, { timeout: 3000 });
     assert.deepEqual(pageErrors, [], "browser runtime should not throw page errors");
