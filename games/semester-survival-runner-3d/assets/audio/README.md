@@ -1,7 +1,5 @@
-# Gameplay audio assets
+# Gameplay audio
 
-Upload the compressed background music file into this folder.
+The runner uses synthesized gameplay sound effects and a generated highway-wind ambience through the Web Audio API.
 
-Expected filename: `chase-the-light.mp3`
-
-Keep music and sound-effect assets in this folder so the gameplay audio integration can reference a stable path.
+No background music or external soundtrack assets are loaded by the game. Keep this directory for future licensed or original sound-effect assets only.
