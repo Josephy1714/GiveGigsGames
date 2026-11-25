@@ -154,6 +154,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.waitForFunction(() => window.__runnerSmoke.state().lane === 1, null, { timeout: 2500 });
 
     await page.keyboard.press("ArrowUp");
+    // Confirm input state before checking the renderer output below.
     await page.waitForFunction(() => window.__runnerSmoke.state().jump > 0, null, { timeout: 2500 });
     await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 8000 }).catch(async error => {
       const diagnostic = await page.evaluate(() => ({
