@@ -112,6 +112,13 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     assert.ok(Math.abs(bossClearProbe.energy - 52) < 0.01, "boss victory must restore energy, allowing the frame energy drain");
     await page.waitForTimeout(6000);
     assert.equal(await world.getAttribute("data-jay-run-phase"), "loop", "Jay must remain in the endless run loop after the forward approach finishes");
+    const controlRunStarted = await page.evaluate(() => {
+      if (!window.__runnerSmoke.state().active) return window.__runnerSmoke.restart();
+      return true;
+    });
+    assert.equal(controlRunStarted, true, "the browser control checks must begin with an active run");
+    await page.waitForFunction(() => window.__runnerSmoke.state().active && !window.__runnerSmoke.state().paused, null, { timeout: 3000 });
+    assert.equal(await page.evaluate(() => window.__runnerSmoke.holdSafeRun()), true, "the restarted control run must be held safe");
 
     await page.keyboard.press("ArrowLeft");
     await page.waitForFunction(() => window.__runnerSmoke.state().lane === 0, null, { timeout: 2500 });
