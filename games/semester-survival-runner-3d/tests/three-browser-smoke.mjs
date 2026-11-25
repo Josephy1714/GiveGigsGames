@@ -196,11 +196,21 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.locator('[data-page="journey"]').first().click();
     assert.equal(await page.locator("#semester-grid .semester-card").count(), 8, "the journey must display all eight semesters");
     assert.equal(await page.locator("#semester-grid .semester-card:not(.locked)").count(), 8, "all semesters must remain cleared after reload");
-    await page.locator("#nav-play").click();
+    assert.equal(await page.evaluate(() => window.__runnerSmoke.restart()), true, "the fall-animation check must begin with a fresh active run");
+    await page.waitForFunction(() => window.__runnerSmoke.state().active && !window.__runnerSmoke.state().paused, null, { timeout: 3000 });
     const initialRunState = await page.evaluate(() => window.__runnerSmoke.state());
     const fallInfo = await page.evaluate(() => window.__runnerSmoke.forceVehicleFall());
     assert.ok(fallInfo.clipDuration > 0, "the authored fall clip must have a measurable duration");
-    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 10000 });
+    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 10000 }).catch(async error => {
+      const diagnostic = await page.evaluate(() => ({
+        state: window.__runnerSmoke.state(),
+        activeAnimation: document.querySelector("#three-world")?.dataset.activeAnimation,
+        rendererReady: document.querySelector("#three-world")?.dataset.rendererReady,
+        resultModal: document.querySelector("#result-modal")?.classList.contains("show"),
+        visibility: document.visibilityState
+      }));
+      throw new Error(`${error.message}; fall diagnostics: ${JSON.stringify(diagnostic)}`);
+    });
     assert.equal(await page.evaluate(() => window.__runnerSmoke.state().fallFinished), true, "Game Over must not appear until the full fall clip has finished");
     await page.locator("#retry").click();
     await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
