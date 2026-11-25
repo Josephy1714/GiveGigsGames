@@ -113,3 +113,22 @@
 .bug-draft-box button{margin-top:8px;min-height:36px;padding:0 12px;border:1px solid #486174;border-radius:8px;background:#122235;color:#d5e7f4;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
 
 @media(max-width:860px){.studio-grid,.field-grid{grid-template-columns:1fr}.inline-select{margin-left:0}}
+
+/* Tester 3.0 · Test-Driven LLM Evals Variant */
+.v3-live-stage{margin:20px 0 8px;border:1px solid #2b455f;border-radius:14px;background:#0a1725;padding:12px 16px}
+.v3-live-stage summary{cursor:pointer;font-size:13px;font-weight:800;color:#b8ffe3}
+.v3-stage-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.v3-stage-bar label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:#9db0c4}
+.v3-stage-bar select{padding:8px 10px;border:1px solid #263e54;border-radius:8px;background:#060f19;color:var(--text);font:inherit;font-size:12px}
+.v3-frame-wrap{height:420px;min-height:320px}
+.v3-table-wrap{overflow-x:auto}
+.v3-table{width:100%;border-collapse:collapse;font-size:12px}
+.v3-table th,.v3-table td{padding:9px 10px;border-bottom:1px solid #1b2f43;text-align:left;vertical-align:top}
+.v3-table th{color:#8eb1cc;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.v3-table input[type="number"]{width:76px;padding:5px 7px}
+.v3-sub{margin-top:4px;font-size:11px;color:#8ba3b9;line-height:1.4}
+.v3-breakdown{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.v3-kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.v3-kpi-card{border:1px solid #22384e;border-radius:10px;background:#060f19;padding:12px;display:flex;flex-direction:column;gap:4px}
+.v3-kpi-card span{font-size:11px;color:#8fa9c0}
+.v3-kpi-card strong{font-size:22px;color:#79f2c0;letter-spacing:-.03em}

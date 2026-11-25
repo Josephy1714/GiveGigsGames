@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08121f">
+    <title>GiveGigsGames Tester 3.0 · Test-Driven Gameplay LLM Evals</title>
+    <link rel="stylesheet" href="/tester/tester.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home">
+        <span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span>
+      </a>
+      <span class="dev-badge">TESTER 3.0 · TEST-DRIVEN LLM EVALS</span>
+      <a class="tool-button" href="/tester/">← Tester 2.0 Studio</a>
+      <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames">GitHub ↗</a>
+    </header>
+
+    <main class="shell">
+      <div class="intro">
+        <p class="eyebrow">TESTER 3.0 VARIANT · CTOs PLAYBOOK FOR TEST-DRIVEN GAMEPLAY LLMs</p>
+        <h1>Stop shipping black-box bots.<br><span>Evaluate every game state.</span></h1>
+        <p class="intro-copy">Run unit, functional, regression, and performance evals on GiveGigsGames AI gameplay bots. Combine statistical metrics with LLM-as-a-Judge, prioritize test cases with a Frequency × Impact Coverage Matrix, A/B test prompt variants (like <code>"Justify your answer."</code>), and export CI/CD quality gates — 100% offline or with your own API key.</p>
+      </div>
+
+      <!-- Optional Collapsible Live Game Iframe for On-the-Fly State Capture -->
+      <details id="v3-live-stage" class="v3-live-stage">
+        <summary>🎮 Optional Live Game Preview &amp; On-the-Fly State Capture (Click to expand)</summary>
+        <div class="v3-stage-bar">
+          <label>Game from Catalog
+            <select id="v3-game-select">
+              <option value="platform-wars">Platform Wars</option>
+              <option value="lastwordszombies">Last Words Zombies</option>
+              <option value="overtake">Overtake</option>
+              <option value="serversavershield">Server Saver Shield</option>
+              <option value="venturemechanically">Venture Mechanically</option>
+              <option value="battlesharks2">Battle Sharks 2</option>
+              <option value="assassinanimals">Assassin Animals</option>
+            </select>
+          </label>
+          <button id="v3-load-game" type="button" class="tool-button primary">Load in Preview</button>
+          <button id="v3-capture-case" type="button" class="tool-button">📸 Capture Current State as Golden Test Case</button>
+        </div>
+        <div class="frame-wrap v3-frame-wrap">
+          <iframe id="v3-game-frame" title="Live game capture preview" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock"></iframe>
+        </div>
+      </details>
+
+      <!-- Main Tester 3.0 Studio -->
+      <section class="tester-studio" aria-label="Tester 3.0 Evaluation Studio">
+        <div class="studio-header">
+          <div>
+            <span class="dev-console-badge">TEST-DRIVEN LLM EVALUATION STUDIO</span>
+            <h2>Gameplay Eval Runner, Datasets, Coverage &amp; CI/CD</h2>
+          </div>
+          <div class="studio-status-pills" aria-live="polite">
+            <span id="v3-pill-gate" class="pill pill-idle">GATE: READY</span>
+            <span id="v3-pill-cases" class="pill">cases: 0</span>
+            <span id="v3-pill-pass" class="pill">pass: —</span>
+            <span id="v3-pill-judge" class="pill">judge: —</span>
+            <span id="v3-pill-mode" class="pill">mode: offline</span>
+          </div>
+        </div>
+
+        <div class="studio-tabs" role="tablist" aria-label="Tester 3.0 tabs">
+          <button type="button" role="tab" class="studio-tab active" data-v3-tab="runner" aria-selected="true">🧪 Eval Runner &amp; Metrics</button>
+          <button type="button" role="tab" class="studio-tab" data-v3-tab="datasets" aria-selected="false">📦 Test Dataset Builder</button>
+          <button type="button" role="tab" class="studio-tab" data-v3-tab="matrix" aria-selected="false">🎯 Coverage Matrix</button>
+          <button type="button" role="tab" class="studio-tab" data-v3-tab="ablab" aria-selected="false">⚖️ Prompt &amp; Model A/B Lab</button>
+          <button type="button" role="tab" class="studio-tab" data-v3-tab="cicd" aria-selected="false">🚀 CI/CD &amp; KPI Dashboard</button>
+        </div>
+
+        <!-- TAB 1: EVAL RUNNER & METRICS -->
+        <div id="v3-panel-runner" class="studio-panel" role="tabpanel">
+          <div class="studio-grid">
+            <div class="studio-card">
+              <h3>1. Suite Scope &amp; Pass/Fail Thresholds</h3>
+              <div class="field-grid">
+                <label>Test Type
+                  <select id="v3-suite-type">
+                    <option value="regression">Regression Suite (All Selected)</option>
+                    <option value="functional">Functional (By Scenario Category)</option>
+                    <option value="unit">Unit (Single Game Filter)</option>
+                    <option value="performance">Performance (Latency &amp; Token Cost)</option>
+                  </select>
+                </label>
+                <label>Filter by Game
+                  <select id="v3-filter-game">
+                    <option value="all">All Games</option>
+                  </select>
+                </label>
+              </div>
+              <div class="field-grid">
+                <label>Min Judge Overall (0–1)
+                  <input id="v3-min-overall" type="number" min="0" max="1" step="0.05" value="0.72">
+                </label>
+                <label>Min Suite Pass Rate (0–1)
+                  <input id="v3-min-pass" type="number" min="0" max="1" step="0.05" value="0.80">
+                </label>
+              </div>
+              <div class="field-grid">
+                <label>LLM-as-a-Judge Mode
+                  <select id="v3-judge-mode">
+                    <option value="with-reference">Single Output Scoring (With Reference)</option>
+                    <option value="without-reference">Single Output Scoring (No Reference)</option>
+                  </select>
+                </label>
+                <div class="checkbox-stack">
+                  <label class="check-label"><input id="v3-justify-toggle" type="checkbox" checked> Append <code>"Justify your answer."</code></label>
+                  <label class="check-label"><input id="v3-zero-violations" type="checkbox" checked> Require 0 Guardrail Violations</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="studio-card">
+              <h3>2. Execution Engine (Offline or BYOK)</h3>
+              <div class="field-grid">
+                <label>Provider
+                  <select id="v3-provider">
+                    <option value="heuristic">Offline Deterministic + Rubric Judge (No Key)</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="local">Local Ollama / LM Studio</option>
+                  </select>
+                </label>
+                <label>Model ID
+                  <input id="v3-model" type="text" placeholder="gpt-4o-mini / gemini-2.5-flash">
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="grow">API Key (stays in your browser)
+                  <input id="v3-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Optional — leave blank for 100% offline mode">
+                </label>
+              </div>
+              <label class="block-field">Active Bot Prompt Template
+                <textarea id="v3-prompt-template" rows="3"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="studio-toolbar">
+            <button id="v3-run-eval" type="button" class="tool-button primary">▶ Run Eval Suite</button>
+            <button id="v3-reset-defaults" type="button" class="tool-button">↺ Reset Default Benchmarks</button>
+          </div>
+
+          <div id="v3-run-summary" class="audit-summary" aria-live="polite">
+            Click <strong>Run Eval Suite</strong> to score your gameplay test dataset with Statistical Metrics (Exact/Fuzzy, ROUGE-L, Keyword F1, Guardrails) and LLM-as-a-Judge.
+          </div>
+
+          <div class="studio-card">
+            <h3>Case-by-Case Evaluation Results</h3>
+            <div id="v3-results-list" class="v3-table-wrap">
+              <p class="muted-note">No evaluation run yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TEST DATASET BUILDER -->
+        <div id="v3-panel-datasets" class="studio-panel" role="tabpanel" hidden>
+          <div class="studio-grid">
+            <div class="studio-card">
+              <h3>Add Human-Written Golden Test Case</h3>
+              <div class="field-grid">
+                <label>Game Slug
+                  <input id="v3-tc-game" type="text" value="any-game" placeholder="e.g. lastwordszombies">
+                </label>
+                <label>Dataset Type
+                  <select id="v3-tc-type">
+                    <option value="human-golden">Synthetic Human-Written (Golden)</option>
+                    <option value="public-benchmark">Public / Built-in Benchmark</option>
+                    <option value="synthetic-model">Synthetic Model-Generated</option>
+                    <option value="production-replay">Production / Replay-Derived</option>
+                  </select>
+                </label>
+              </div>
+              <div class="field-grid">
+                <label>Scenario Category
+                  <select id="v3-tc-cat">
+                    <option value="boot">Boot &amp; Menu Navigation</option>
+                    <option value="core-loop" selected>Core Gameplay Loop</option>
+                    <option value="stuck-recovery">Stuck / Soft-Lock Recovery</option>
+                    <option value="edge-case">Edge &amp; Adversarial Inputs</option>
+                    <option value="mobile-viewport">Mobile / Viewport Scaling</option>
+                    <option value="win-lose">Win / Lose &amp; End States</option>
+                  </select>
+                </label>
+                <label>Title
+                  <input id="v3-tc-title" type="text" placeholder="e.g. Boss Wave Shield Timing">
+                </label>
+              </div>
+              <label class="block-field">Input Game State / Context
+                <textarea id="v3-tc-input" rows="2" placeholder="Describe HUD, enemies, viewport, or stuck frame state..."></textarea>
+              </label>
+              <label class="block-field">Expected Action (Ground Truth)
+                <input id="v3-tc-expected" type="text" placeholder="e.g. press 1 for Shockwave, then 3 for Shield">
+              </label>
+              <div class="field-grid">
+                <label>Expected Keywords (comma-separated)
+                  <input id="v3-tc-keywords" type="text" placeholder="shockwave, shield, 1, 3">
+                </label>
+                <label>Forbidden Actions / Guardrails (comma-separated)
+                  <input id="v3-tc-forbidden" type="text" placeholder="idle, press esc">
+                </label>
+              </div>
+              <div class="studio-toolbar compact">
+                <button id="v3-add-case" type="button" class="tool-button primary">+ Add Golden Case</button>
+              </div>
+            </div>
+
+            <div class="studio-card">
+              <h3>Synthetic Generator &amp; Replay Importer</h3>
+              <p class="muted-note">Combine all 4 playbook dataset types: Public Benchmarks, Human Golden, Synthetic Edge Cases, and Production Replays.</p>
+              <div class="field-grid">
+                <label>Synthetic Target Game
+                  <input id="v3-syn-game" type="text" value="platform-wars">
+                </label>
+                <label>Edge-Case Category
+                  <select id="v3-syn-cat">
+                    <option value="stuck-recovery">Stuck / Soft-Lock Recovery</option>
+                    <option value="mobile-viewport">Mobile 390px Overflow</option>
+                    <option value="edge-case">Rapid Multi-Key Boundary Stress</option>
+                  </select>
+                </label>
+              </div>
+              <div class="studio-toolbar compact">
+                <button id="v3-gen-synthetic" type="button" class="tool-button primary">✨ Generate Synthetic Case</button>
+                <button id="v3-import-replay-btn" type="button" class="tool-button">⬆ Import Tester 2.0 Replay JSON</button>
+                <input id="v3-import-replay-input" type="file" accept=".json,application/json" hidden>
+                <button id="v3-export-dataset" type="button" class="tool-button">⬇ Export Dataset JSON</button>
+              </div>
+              <div id="v3-dataset-breakdown" class="v3-breakdown"></div>
+            </div>
+          </div>
+
+          <div class="studio-card">
+            <h3>Active Test Dataset (<span id="v3-dataset-count">0</span> cases)</h3>
+            <div id="v3-dataset-list" class="v3-table-wrap"></div>
+          </div>
+        </div>
+
+        <!-- TAB 3: DATA-DRIVEN COVERAGE MATRIX -->
+        <div id="v3-panel-matrix" class="studio-panel" role="tabpanel" hidden>
+          <div class="studio-card">
+            <h3>Frequency × Gameplay Impact Coverage Matrix (Playbook Section 7)</h3>
+            <p class="muted-note">Prioritize where to invest test cases using <code>Weighted Score = Frequency × Impact (1–4)</code>. Edit frequencies or impacts to recalculate priorities and spot coverage gaps in real time.</p>
+            <div id="v3-matrix-table" class="v3-table-wrap"></div>
+          </div>
+        </div>
+
+        <!-- TAB 4: PROMPT & MODEL A/B LAB -->
+        <div id="v3-panel-ablab" class="studio-panel" role="tabpanel" hidden>
+          <div class="studio-grid">
+            <div class="studio-card">
+              <h3>Variant A (Baseline)</h3>
+              <label class="block-field">Name
+                <input id="v3-ab-name-a" type="text">
+              </label>
+              <label class="check-label"><input id="v3-ab-justify-a" type="checkbox"> Append <code>"Justify your answer."</code></label>
+              <label class="block-field">Prompt Template
+                <textarea id="v3-ab-tpl-a" rows="4"></textarea>
+              </label>
+            </div>
+            <div class="studio-card">
+              <h3>Variant B (Challenger · Playbook Pattern)</h3>
+              <label class="block-field">Name
+                <input id="v3-ab-name-b" type="text">
+              </label>
+              <label class="check-label"><input id="v3-ab-justify-b" type="checkbox" checked> Append <code>"Justify your answer."</code></label>
+              <label class="block-field">Prompt Template
+                <textarea id="v3-ab-tpl-b" rows="4"></textarea>
+              </label>
+            </div>
+          </div>
+          <div class="studio-toolbar">
+            <button id="v3-run-ab" type="button" class="tool-button primary">⚖️ Run A/B Comparison on Active Dataset</button>
+          </div>
+          <div id="v3-ab-results" class="audit-summary" aria-live="polite">
+            Click <strong>Run A/B Comparison</strong> to benchmark Variant A vs Variant B side-by-side and detect accuracy gains or regressions.
+          </div>
+        </div>
+
+        <!-- TAB 5: CI/CD & KPI DASHBOARD -->
+        <div id="v3-panel-cicd" class="studio-panel" role="tabpanel" hidden>
+          <div class="studio-grid">
+            <div class="studio-card">
+              <h3>Gameplay QA Business KPIs (Playbook Section 2)</h3>
+              <div class="field-grid">
+                <label>Manual QA Minutes / Run
+                  <input id="v3-kpi-manual" type="number" min="5" max="480" value="45">
+                </label>
+                <label>QA Runs / Month
+                  <input id="v3-kpi-runs" type="number" min="1" max="500" value="40">
+                </label>
+              </div>
+              <div id="v3-kpi-cards" class="v3-kpi-grid"></div>
+            </div>
+
+            <div class="studio-card">
+              <h3>Export Reports &amp; CI/CD Quality Gates</h3>
+              <div class="studio-toolbar compact">
+                <button id="v3-btn-export-md" type="button" class="tool-button primary">⬇ Export Markdown Report</button>
+                <button id="v3-btn-export-json" type="button" class="tool-button">⬇ Export JSON Run</button>
+                <button id="v3-btn-gen-yaml" type="button" class="tool-button">⚙ Generate GitHub Actions YAML</button>
+              </div>
+              <textarea id="v3-cicd-preview" class="mono-area" rows="12" readonly placeholder="Click Generate GitHub Actions YAML or run an eval to preview CI/CD output..."></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/tester/engine/evals.js" defer></script>
+    <script src="/tester/v3.js" defer></script>
+  </body>
+</html>
