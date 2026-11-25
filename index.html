@@ -2,11 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#08131f">
-    <meta name="description" content="Download GiveGigsGames to a desktop or phone and play the static browser games from index.html, even offline.">
-    <title>GiveGigsGames — Full Game Library</title>
-    <link rel="stylesheet" href="/index.css?v=capsule-layout-3">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d10">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c0d10'/%3E%3Ctext x='31' y='44' font-family='Verdana,Geneva,sans-serif' font-size='27' font-weight='700' text-anchor='middle' fill='%235865f2'%3EGG%3C/text%3E%3Ccircle cx='53' cy='13' r='5' fill='%232ebd6b'/%3E%3C/svg%3E">
+    <meta name="description" content="Browse and play the GiveGigsGames browser game library. Filter by genre, input, and mode, then play in your browser.">
+    <title>GiveGigsGames — Game library</title>
+    <script>document.documentElement.classList.add("is-booting");setTimeout(function(){document.documentElement.classList.remove("is-booting")},2500);</script>
+    <style>html.is-booting{background:#0c0d10}html.is-booting body{visibility:hidden}</style>
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk.woff2" crossorigin>
+    <link rel="stylesheet" href="/site.css">
     <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -17,127 +21,302 @@
     }
   </script>
 </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
-      <span class="host-label">FULL GAME LIBRARY</span>
-      <nav class="top-nav" aria-label="Primary navigation">
-        <a class="top-link" href="#all-games">Games</a>
-        <a class="top-link" href="/models/">3D Models</a>
-        <a class="top-link" href="/tester/">Tester ↗</a>
-      </nav>
-    </header>
+  <body class="page-games">
+    <div class="backdrop" aria-hidden="true">
+      <span class="shard shard-a"></span>
+      <span class="shard shard-b"></span>
+      <span class="shard shard-c"></span>
+      <span class="shard shard-d"></span>
+    </div>
 
-    <main>
-      <section id="all-games" class="catalog-section">
-        <div class="section-heading">
-          <div><p class="eyebrow">THE COMPLETE CATALOG</p><h2>Browse every game</h2></div>
-          <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
-        </div>
-        <div class="catalog-tools">
-          <label class="catalog-search"><span class="sr-only">Search titles, genres, and tags</span><input id="catalog-search" type="search" placeholder="Search games, genres, tags…" autocomplete="off"></label>
-          <label class="catalog-sort">Sort <select id="catalog-sort"><option value="featured">Featured first</option><option value="size-desc">File size · largest first</option><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
-          <div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" data-view="list" aria-pressed="false">List</button><button type="button" class="active" data-view="grid" aria-pressed="true">Grid</button></div>
-          <label class="catalog-sort">Collection
-            <select id="catalog-collection">
-              <option value="">All games</option>
-              <option value="favorites">Favorites</option>
-              <option value="recent">Recently played</option>
-              <option value="offline">Downloadable browser games</option>
-            </select>
-          </label>
-          <label class="catalog-sort">Input
-            <select id="catalog-input">
-              <option value="">Any input</option>
-              <option value="touch">Touch</option>
-              <option value="keyboard">Keyboard</option>
-              <option value="gamepad">Gamepad</option>
-            </select>
-          </label>
-          <label class="catalog-sort">Mode
-            <select id="catalog-mode">
-              <option value="">Any mode</option>
-              <option value="solo">Solo</option>
-              <option value="multiplayer">Multiplayer</option>
-            </select>
-          </label>
-        </div>
-        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button></div><div id="tag-options" class="tag-options"></div></details>
-        <div id="game-grid" class="game-grid grid-view"></div>
-        <div id="catalog-pagination" class="catalog-pagination" hidden>
-          <p id="catalog-pagination-status" role="status" aria-live="polite"></p>
-          <div><button id="show-more-games" type="button">Show 10 more</button><button id="show-all-games" type="button">Show all</button></div>
-        </div>
-        <p id="catalog-error" class="catalog-error" hidden>Catalog data could not be loaded. Check that games/catalog-data.js is present.</p>
-      </section>
+    <!-- Lucide icons, inlined as one SVG sprite. No icon font, no CDN. -->
+    <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-logo" viewBox="0 0 32 32">
+        <path d="M23.4 11.2A9.3 9.3 0 1 0 23.4 20.8" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M19.9 16h3.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M11.9 12.7 17.1 16l-5.2 3.3Z" fill="#7ef0a8"/>
+      </symbol>
+      <symbol id="i-games" viewBox="0 0 24 24"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9V3Z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M10 4H6v16h4V4Z"/><path d="M18 4h-4v16h4V4Z"/></symbol>
+      <symbol id="i-step" viewBox="0 0 24 24"><path d="m5 4 10 8-10 8V4Z"/><path d="M19 5v14"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="i-touch" viewBox="0 0 24 24"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3Z"/><path d="m13 13 6 6"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01"/><path d="M10 10h.01"/><path d="M14 10h.01"/><path d="M18 10h.01"/><path d="M8 14h8"/></symbol>
+      <symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+      <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+      <symbol id="i-package" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+      <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-12 0V8Z"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M9 2v2"/><path d="M9 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></symbol>
+      <symbol id="i-bug" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.53 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.66 6.9 7.6 4 12 4s8.34 2.9 9.94 7.65a1 1 0 0 1 0 .7C20.34 17.1 16.4 20 12 20s-8.34-2.9-9.94-7.65Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    </svg>
 
-      <section class="quickstart models-banner" aria-labelledby="models-banner-title">
-        <div>
-          <p class="eyebrow">PROCEDURAL THREE.JS ASSETS</p>
-          <h2 id="models-banner-title">Shared 3D Model Library</h2>
-          <p>Browse every procedural Three.js model from across GiveGigsGames — starfighters, zombies, skulls, weapons, 4D hypercubes, and world props. Inspect any model in 3D and copy standalone code for your own projects.</p>
-        </div>
-        <div class="quickstart-actions">
-          <a class="button primary" href="/models/">Open 3D Model Library →</a>
-        </div>
-      </section>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="live-dot"></span> ALL GAMES · ALL BUILDS</p>
-          <h1>Every game has<br><span>a place to play.</span></h1>
-          <p class="lede">The complete GiveGigsGames testing arcade lives here: released titles, previews, experiments, and games still being built. Pick a title to launch its current browser build.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Contribute on GitHub ↗</a>
-            <a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/compare">Submit a game or fix ↗</a>
-            <a class="button secondary" href="#all-games">Browse all games <span aria-hidden="true">↓</span></a>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+        <nav class="side-nav" aria-label="Sections">
+          <a href="/ggg/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+          <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+          <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recently played</a>
+          <a href="/models/"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>3D Models</a>
+          <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+        </nav>
+        <div class="sidebar-foot">
+          <a href="https://github.com/mattyjacks/GiveGigsGames"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-github"></use></svg>Source code<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <span>Runs in your browser. No account, no cloud saves.</span>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="topbar">
+          <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span class="brand-name">GiveGigs<span class="brand-light">Games</span></span></a>
+          <label class="search">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"></use></svg>
+            <span class="sr-only">Search games, genres, and tags</span>
+            <input id="catalog-search" type="search" placeholder="Search games" autocomplete="off">
+          </label>
+          <div class="topbar-actions">
+            <button id="filters-toggle" class="btn btn-secondary" type="button" aria-expanded="false" aria-controls="filters-panel">
+              <svg class="icon" aria-hidden="true"><use href="#i-filter"></use></svg>
+              <span class="btn-label">Filters</span>
+              <span id="filters-count" class="badge-count" hidden>0</span>
+            </button>
           </div>
-        </div>
-        <aside class="release-note">
-          <p class="note-icon" aria-hidden="true">◈</p>
-          <h2>Testing environment · no cloud saves</h2>
-          <p>This public site includes games that are not ready for the curated GiveGigs catalog. Builds may be incomplete or change without notice. Progress stays in this browser's local storage; there are no cloud saves or cross-device sync here.</p>
-          <a href="https://github.com/mattyjacks/GiveGigsGames">Open the repo, pick a game, and make it yours ↗</a>
-        </aside>
-        <div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
-      </section>
+        </header>
 
-      <section class="quickstart" aria-labelledby="quickstart-title">
-        <div><p class="eyebrow">PLAY · EDIT · SHARE</p><h2 id="quickstart-title">Your next game can be in this arcade</h2><p>Fork the repo, copy the tiny HTML starter, and build a game anyone can remix. Keep each game under 10 MB, then send a pull request. The whole arcade also fits on your phone or desktop: download the ZIP, extract it, and open <code>index.html</code>—even offline.</p></div>
-        <div class="quickstart-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Fork GiveGigsGames ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Read the contributor guide ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip">Download ZIP ↓</a></div>
-      </section>
+        <main id="main" class="content">
+          <h1 class="sr-only">GiveGigsGames game library</h1>
 
-      <section id="save-files" class="save-manager" aria-labelledby="save-manager-title">
-        <div class="save-manager-copy">
-          <p class="eyebrow">YOUR BROWSER · YOUR FILES</p>
-          <h2 id="save-manager-title">Back up or restore game saves</h2>
-          <p>Download each browser save as a readable, structured <code>.txt</code> file. Upload one later to restore it in this browser. Restored saves replace data with the same storage key.</p>
-        </div>
-        <div class="save-manager-actions">
-          <button id="download-all-saves" class="save-download-button" type="button">Download all saves</button>
-          <label class="button secondary upload-save-button" for="save-file-input">Upload save files</label>
-          <input id="save-file-input" class="sr-only" type="file" accept=".txt,text/plain,application/json" multiple>
-          <p id="save-manager-status" class="save-manager-status" role="status" aria-live="polite">Looking for browser saves…</p>
-        </div>
-        <div id="save-file-list" class="save-file-list" aria-live="polite"></div>
-        <p class="save-manager-note">Save files contain the stored game data. Keep them private if the game data is personal. After restoring a save, reload that game to see the restored progress.</p>
-      </section>
+          <section class="hero" id="featured" aria-roledescription="carousel" aria-label="Featured games">
+            <div class="hero-media">
+              <span class="gcard-fallback"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-gamepad"></use></svg></span>
+              <img id="hero-cover" alt="" width="1280" height="720" decoding="async" fetchpriority="high" hidden>
+            </div>
+            <div class="hero-body">
+              <h2 id="hero-title">Loading featured game…</h2>
+              <p class="hero-blurb" id="hero-blurb"></p>
+              <div class="hero-meta" id="hero-meta"></div>
+              <div class="hero-actions">
+                <a class="btn btn-play btn-lg" id="hero-play" href="#all-games"><svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>Play</a>
+                <a class="btn btn-secondary btn-lg" id="hero-details" href="#all-games"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>Details</a>
+              </div>
+            </div>
+            <div class="hero-nav">
+              <div class="hero-dots" id="hero-dots" role="group" aria-label="Choose a featured game"></div>
+              <div class="hero-actions">
+                <button class="icon-btn icon-btn--raised" id="hero-pause" type="button" aria-label="Pause featured rotation" aria-pressed="false" data-tip="Pause"><svg class="icon" aria-hidden="true"><use href="#i-pause"></use></svg></button>
+                <button class="icon-btn icon-btn--raised" id="hero-prev" type="button" aria-label="Previous featured game" data-tip="Previous"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg></button>
+                <button class="icon-btn icon-btn--raised" id="hero-next" type="button" aria-label="Next featured game" data-tip="Next"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg></button>
+              </div>
+            </div>
+          </section>
 
-    </main>
+          <div class="ticker" aria-hidden="true">
+            <div class="ticker-track" id="ticker-track"></div>
+          </div>
+
+          <section class="row-section" id="row-recent-section" aria-labelledby="row-recent-title" hidden>
+            <div class="row-head">
+              <h2 id="row-recent-title">Continue playing</h2>
+              <a class="btn btn-ghost btn-sm" href="#recent">See all</a>
+            </div>
+            <div class="row-track" id="row-recent"></div>
+          </section>
+
+          <section class="row-section" id="row-favorites-section" aria-labelledby="row-favorites-title" hidden>
+            <div class="row-head">
+              <h2 id="row-favorites-title">Favorites</h2>
+              <a class="btn btn-ghost btn-sm" href="#favorites">See all</a>
+            </div>
+            <div class="row-track" id="row-favorites"></div>
+          </section>
+
+          <section class="row-section" id="row-new-section" aria-labelledby="row-new-title" hidden>
+            <div class="row-head">
+              <h2 id="row-new-title">New and in progress</h2>
+              <span class="row-note" id="row-new-note"></span>
+            </div>
+            <div class="row-track" id="row-new"></div>
+          </section>
+
+          <section id="all-games" class="catalog" aria-labelledby="all-games-title">
+            <div class="row-head">
+              <h2 id="all-games-title">All games</h2>
+              <p id="catalog-count" class="catalog-count" aria-live="polite">Loading catalog…</p>
+            </div>
+
+            <div class="toolbar">
+              <label class="select-wrap">Sort
+                <select id="catalog-sort" class="select">
+                  <option value="featured">Featured first</option>
+                  <option value="title">Title A–Z</option>
+                  <option value="size-desc">Largest first</option>
+                  <option value="genre">Genre A–Z</option>
+                  <option value="tag">Tag A–Z</option>
+                  <option value="tags-desc">Most tags</option>
+                  <option value="tags-asc">Fewest tags</option>
+                </select>
+              </label>
+              <div class="view-switch" role="group" aria-label="Layout">
+                <button type="button" class="icon-btn icon-btn--raised" data-view="grid" aria-pressed="true" aria-label="Grid view" data-tip="Grid view"><svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg></button>
+                <button type="button" class="icon-btn icon-btn--raised" data-view="list" aria-pressed="false" aria-label="List view" data-tip="List view"><svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg></button>
+              </div>
+            </div>
+
+            <div id="active-filters" class="active-filters" aria-live="polite" hidden></div>
+
+            <div id="game-grid" class="game-grid grid-view" aria-busy="true"></div>
+
+            <div id="catalog-error" class="state-box is-error" role="alert" hidden>
+              <h3>Games could not load</h3>
+              <p>The catalog file did not respond. Check your connection and try again.</p>
+              <button id="catalog-retry" class="btn btn-secondary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>Retry</button>
+            </div>
+          </section>
+
+          <section id="settings" class="settings panel" aria-labelledby="settings-title">
+            <div class="panel-head">
+              <h2 id="settings-title">Settings</h2>
+            </div>
+            <p class="settings-intro">Game progress is stored in this browser only. Back it up before you clear site data or switch devices.</p>
+            <details class="fold">
+              <summary>Back up or restore saves <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+              <div class="fold-body">
+                <div class="save-manager-actions">
+                  <button id="download-all-saves" class="btn btn-secondary" type="button"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg>Download all saves</button>
+                  <label class="btn btn-secondary" for="save-file-input"><svg class="icon" aria-hidden="true"><use href="#i-upload"></use></svg>Restore saves</label>
+                  <input id="save-file-input" class="sr-only" type="file" accept=".txt,text/plain,application/json" multiple>
+                </div>
+                <p id="save-manager-status" class="save-manager-status" role="status" aria-live="polite">Looking for browser saves…</p>
+                <div id="save-file-list" class="save-file-list" aria-live="polite"></div>
+                <p class="save-manager-note">Restored saves replace data with the same storage key. Reload a game after restoring.</p>
+              </div>
+            </details>
+            <div class="setting-row">
+              <div>
+                <strong>Developer tools</strong>
+                <p>Automated gameplay tests, audits, and replays.</p>
+              </div>
+              <a class="btn btn-secondary" href="/tester/">Open developer tools</a>
+            </div>
+          </section>
+
+          <section id="contribute" class="contribute" aria-labelledby="contribute-title">
+            <h2 id="contribute-title">Contribute</h2>
+            <p>Every game is plain HTML, CSS, and JavaScript, and each one stays under 10 MB. Add a game, fix a bug, or send art and sound as a pull request.</p>
+            <div class="contribute-actions">
+              <a class="btn btn-primary" href="https://github.com/mattyjacks/GiveGigsGames"><svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg>Open the repository<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+              <a class="btn btn-secondary" href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md"><svg class="icon" aria-hidden="true"><use href="#i-file-text"></use></svg>Contributing guide<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+              <a class="btn btn-secondary" href="https://github.com/mattyjacks/GiveGigsGames/issues/new/choose"><svg class="icon" aria-hidden="true"><use href="#i-bug"></use></svg>Submit a game or bug<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+              <a class="btn btn-ghost" href="https://github.com/mattyjacks/GiveGigsGames/archive/refs/heads/main.zip"><svg class="icon" aria-hidden="true"><use href="#i-package"></use></svg>Download ZIP<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+            </div>
+          </section>
+        </main>
+
+        <footer class="footer">
+          <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+          <a href="/models/">3D Models</a>
+          <a href="/tester/">Developer tools</a>
+          <a href="#contribute">Contribute</a>
+          <a href="https://github.com/mattyjacks/GiveGigsGames">GitHub<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <a href="https://givegigs.com/games/">Curated catalog<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <a href="/terms.html">Terms</a>
+          <a href="/privacy.html">Privacy</a>
+        </footer>
+      </div>
+    </div>
+
+    <nav class="tabbar" aria-label="Sections">
+      <a href="/ggg/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+      <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+      <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recent</a>
+      <a href="/models/"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>Models</a>
+      <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+    </nav>
+
+    <div id="filters-scrim" class="scrim" hidden></div>
+    <section id="filters-panel" class="filters-panel" role="dialog" aria-label="Filters" hidden>
+      <div class="filters-head">
+        <h2>Filters</h2>
+        <button id="filters-close" class="icon-btn" type="button" aria-label="Close filters" data-tip="Close"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
+      </div>
+      <div class="filters-body">
+        <div class="filter-group">
+          <h3 id="filter-collection-label">Collection</h3>
+          <div class="chip-set" id="filter-collection" role="group" aria-labelledby="filter-collection-label"></div>
+        </div>
+        <div class="filter-group">
+          <h3 id="filter-input-label">Input</h3>
+          <div class="chip-set" id="filter-input" role="group" aria-labelledby="filter-input-label"></div>
+        </div>
+        <div class="filter-group">
+          <h3 id="filter-mode-label">Mode</h3>
+          <div class="chip-set" id="filter-mode" role="group" aria-labelledby="filter-mode-label"></div>
+        </div>
+        <div class="filter-group">
+          <h3 id="filter-tags-label">Tags</h3>
+          <label class="search">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"></use></svg>
+            <span class="sr-only">Find a tag</span>
+            <input id="tag-search" type="search" placeholder="Find a tag" autocomplete="off">
+          </label>
+          <div id="tag-options" class="filter-tags" role="group" aria-labelledby="filter-tags-label"></div>
+          <label class="select-wrap">Match
+            <select id="tag-match" class="select">
+              <option value="any">Any selected tag</option>
+              <option value="all">All selected tags</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="filters-foot">
+        <button id="clear-filters" class="btn btn-ghost" type="button">Clear all</button>
+        <button id="apply-filters" class="btn btn-primary" type="button">Show results</button>
+      </div>
+    </section>
+
     <dialog id="restore-dialog" aria-labelledby="restore-title">
       <form method="dialog">
-        <h2 id="restore-title">Review save import</h2>
-        <p>Choose the entries to restore. Existing saves are left unchecked.</p>
+        <h2 id="restore-title">Restore saves</h2>
+        <p>Choose the saves to restore. Saves already in this browser stay unchecked.</p>
         <div id="restore-options"></div>
         <button value="cancel" autofocus>Cancel</button>
         <button value="restore">Restore selected</button>
       </form>
     </dialog>
 
-    <section class="contribute-strip" aria-label="Contribute to GiveGigsGames"><div><p class="eyebrow">OPEN SOURCE · UNDER 10 MB PER GAME</p><h2>Don't just play the arcade. Help build it.</h2><p>New games, fixes, art, sound, and ideas are welcome. Fork the repo, make something playable, and share it with the next contributor.</p></div><div class="contribute-actions"><a class="button primary" href="https://github.com/mattyjacks/GiveGigsGames">Start contributing on GitHub ↗</a><a class="button secondary" href="https://github.com/mattyjacks/GiveGigsGames/issues/new/choose">Pitch an idea or report a bug ↗</a></div></section>
-    <footer class="footer"><a class="brand footer-brand" href="/ggg/"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a><p>Full game library and public preview arcade.</p><a href="https://github.com/mattyjacks/GiveGigsGames">Contribute ↗</a><a href="/tester/">Tester</a><a href="https://givegigs.com/games/">Curated GiveGigs catalog</a><a href="/terms.html">Terms of Use</a><a href="/privacy.html">Privacy Policy</a></footer>
     <script src="/games/catalog-data.js" defer></script>
-    <script src="/index.js?v=capsule-layout-3" defer></script>
-    <script src="games/_shared/gamepad-adapter.js" defer></script>
+    <script src="/index.js" defer></script>
+    <script src="/games/_shared/gamepad-adapter.js" defer></script>
   </body>
 </html>

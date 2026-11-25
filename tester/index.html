@@ -3,10 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="robots" content="noindex">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#08121f">
-    <title>GiveGigsGames Automated Gameplay Tester & Library</title>
-    <link rel="stylesheet" href="/tester/tester.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d10">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c0d10'/%3E%3Ctext x='31' y='44' font-family='Verdana,Geneva,sans-serif' font-size='27' font-weight='700' text-anchor='middle' fill='%235865f2'%3EGG%3C/text%3E%3Ccircle cx='53' cy='13' r='5' fill='%232ebd6b'/%3E%3C/svg%3E">
+    <meta name="description" content="Run, test and capture every GiveGigsGames title in one place: pick a game, drive it with the bot script and capture the win state.">
+    <script>document.documentElement.classList.add("is-booting");setTimeout(function(){document.documentElement.classList.remove("is-booting")},2500);</script>
+    <style>html.is-booting{background:#0c0d10}html.is-booting body{visibility:hidden}</style>
+    <title>Developer tools — GiveGigsGames</title>
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk.woff2" crossorigin>
+    <link rel="stylesheet" href="/site.css">
     <script>
     if ((location.protocol === "https:" || location.protocol === "http:") && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
@@ -17,390 +22,556 @@
     }
   </script>
 </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark">GG</span><span>GiveGigs<span class="brand-light">Games</span></span></a>
-      <span class="dev-badge">AI GAMEPLAY TESTER · FULL CATALOG</span>
-      <a class="tool-button primary" href="/tester/v3.html">Tester 3.0 · LLM Evals ↗</a>
-      <a class="repo-link" href="https://github.com/mattyjacks/GiveGigsGames">Contribute a game ↗</a>
-    </header>
-    <main class="shell">
-      <section id="library-view" class="library-view">
-        <div class="intro">
-          <p class="eyebrow">FULL LIBRARY · AUTOMATED AI GAMEPLAY TESTER & DEBUGGER</p>
-          <h1>Play a build.<br><span>Debug any game automatically.</span></h1>
-          <p class="intro-copy">Run autonomous AI or offline playbook/reflex gameplay tests on any GiveGigsGames build, any arbitrary web game URL, or any desktop game program via Screen Capture or the Local Companion Bridge. Bring your own API key (stays in your browser) or run 100% locally with zero keys.</p>
-          <div class="tester-cta"><a href="https://github.com/mattyjacks/GiveGigsGames">Fork the game library on GitHub ↗</a><a href="https://github.com/mattyjacks/GiveGigsGames/blob/main/CONTRIBUTING.md">Start with the quick-start guide</a></div>
-        </div>
+  <body class="page-devtools">
+    <div class="backdrop" aria-hidden="true">
+      <span class="shard shard-a"></span>
+      <span class="shard shard-b"></span>
+      <span class="shard shard-c"></span>
+      <span class="shard shard-d"></span>
+    </div>
 
-        <section class="arbitrary-launcher" aria-label="Launch automated tester for any target">
-          <div class="arbitrary-launcher-head">
-            <span class="dev-console-badge">ANY WEB GAME OR PROGRAM</span>
-            <h2>Debug an external web game or desktop program</h2>
+    <!-- Lucide icons, inlined as one SVG sprite. No icon font, no CDN. -->
+    <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-logo" viewBox="0 0 32 32">
+        <path d="M23.4 11.2A9.3 9.3 0 1 0 23.4 20.8" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M19.9 16h3.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M11.9 12.7 17.1 16l-5.2 3.3Z" fill="#7ef0a8"/>
+      </symbol>
+      <symbol id="i-games" viewBox="0 0 24 24"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+      <symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3l14 9-14 9V3Z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M10 4H6v16h4V4Z"/><path d="M18 4h-4v16h4V4Z"/></symbol>
+      <symbol id="i-step" viewBox="0 0 24 24"><path d="m5 4 10 8-10 8V4Z"/><path d="M19 5v14"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+      <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-12 0V8Z"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M9 2v2"/><path d="M9 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/></symbol>
+      <symbol id="i-film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></symbol>
+      <symbol id="i-bug" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.53 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.66 6.9 7.6 4 12 4s8.34 2.9 9.94 7.65a1 1 0 0 1 0 .7C20.34 17.1 16.4 20 12 20s-8.34-2.9-9.94-7.65Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    </svg>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+        <nav class="side-nav" aria-label="Sections">
+          <a href="/ggg/"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+          <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+          <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recently played</a>
+          <a href="/models/"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>3D Models</a>
+          <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+        </nav>
+        <div class="sidebar-foot">
+          <a href="https://github.com/mattyjacks/GiveGigsGames"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-github"></use></svg>Source code<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <span>Test builds before they ship. Keys and saves stay in this browser.</span>
+        </div>
+      </aside>
+
+      <div class="app-main">
+        <header class="topbar">
+          <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span class="brand-name">GiveGigs<span class="brand-light">Games</span></span></a>
+          <div class="topbar-actions">
+            <a class="icon-btn icon-btn--raised" href="/ggg/" aria-label="Game library" data-tip="Game library"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg></a>
           </div>
-          <div class="arbitrary-launcher-row">
-            <label class="arbitrary-url-wrap">
-              <span class="sr-only">Web game URL</span>
-              <input id="custom-url-input" type="url" placeholder="https://example.com/game or http://localhost:3000/game" autocomplete="off">
-            </label>
-            <button id="launch-custom-url" class="tool-button primary" type="button">Debug Web Game URL →</button>
-            <button id="launch-screen-capture" class="tool-button" type="button">🖥 Screen / Window Capture</button>
-            <button id="launch-native-bridge" class="tool-button" type="button">🔌 Local Desktop Bridge</button>
-          </div>
-          <p class="arbitrary-note">Run <code>npm run tester:bridge</code> locally to enable Win32 desktop game input, window screenshots, and static source code auditing from the browser.</p>
-        </section>
+        </header>
 
-        <div class="library-tools">
-          <label class="search-wrap"><span class="sr-only">Search games</span><span aria-hidden="true">⌕</span><input id="game-search" type="search" placeholder="Find a game…" autocomplete="off"></label>
-          <label class="filter-wrap"><span class="sr-only">Filter by genre</span><select id="genre-filter"><option value="">All genres</option></select></label>
-          <label class="filter-wrap sort-wrap"><span class="sr-only">Sort games</span><select id="game-sort"><option value="title">Title A–Z</option><option value="genre">Genre A–Z</option><option value="tag">Tag A–Z</option><option value="tags-desc">Most tags</option><option value="tags-asc">Fewest tags</option></select></label>
-          <span id="game-count" class="game-count" aria-live="polite"></span>
-        </div>
-        <details class="tag-picker"><summary>Filter by tags <span id="selected-tag-count">All tags</span></summary><div class="tag-picker-tools"><label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag…"></label><select id="tag-match" aria-label="How selected tags match"><option value="any">Match any selected tag</option><option value="all">Match all selected tags</option></select><button id="clear-tags" type="button">Clear tags</button><div class="view-switch" role="group" aria-label="Catalog layout"><button type="button" class="active" data-view="list" aria-pressed="true">List</button><button type="button" data-view="grid" aria-pressed="false">Grid</button></div></div><div id="tag-options" class="tag-options"></div></details>
-        <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
-        <p id="load-error" class="load-error" hidden></p>
-        <footer class="library-footer">Some titles are works in progress. For local development, serve the repository over HTTP (or <code>npm run tester:bridge</code>) so storage, workers, and relative assets behave like a hosted game. <a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a></footer>
-      </section>
-
-      <section id="player-view" class="player-view" hidden>
-        <div class="player-heading">
-          <button id="back-button" class="back-button" type="button">← All games</button>
-          <div class="player-title"><span id="player-emoji" class="player-emoji" aria-hidden="true"></span><div><p id="player-genre" class="eyebrow"></p><h1 id="player-name"></h1></div></div>
-          <div class="player-actions">
-            <a id="view-info" class="tool-button">Info</a>
-            <a id="view-guide" class="tool-button">Guide</a>
-            <a id="view-roadmap" class="tool-button">Roadmap</a>
-            <a id="view-play" class="tool-button">Play</a>
-            <a id="open-game" class="tool-button" target="_blank" rel="noreferrer">Open raw game ↗</a>
-            <button id="reload-game" class="tool-button" type="button">Reload</button>
-            <button id="fullscreen-game" class="tool-button primary" type="button">Fullscreen ⛶</button>
-          </div>
-        </div>
-        <p id="player-description" class="player-description"></p>
-
-        <section id="dev-console" class="dev-console" hidden aria-label="GraveGain2DA tester console">
-          <div class="dev-console-heading"><div><span class="dev-console-badge">DEVELOPER TEST MODE</span><h2>GraveGain2DA control console</h2><p>Same game files as the public build, with local test cheats. Changes may affect this browser's saved progress.</p></div><a href="https://github.com/mattyjacks/GiveGigsGames">Improve this game ↗</a></div>
-          <div class="cheat-buttons"><button type="button" data-command="help">Help</button><button type="button" data-command="god on">God mode</button><button type="button" data-command="heal">Restore HP</button><button type="button" data-command="gold 1000">+1,000 gold</button><button type="button" data-command="win">Win run</button><button type="button" data-command="lose">End run</button></div>
-          <form id="console-form" class="console-form"><label class="sr-only" for="console-input">Enter a GraveGain tester command</label><span aria-hidden="true">&gt;</span><input id="console-input" autocomplete="off" spellcheck="false" placeholder="help · god on/off · heal · gold 1000 · win · lose"><button type="submit">Run</button></form>
-          <output id="console-output" class="console-output" aria-live="polite">Console ready. Select a command or type help.</output>
-        </section>
-
-        <div class="viewport-controls">
-          <label>Preview viewport
-            <select id="viewport-preset">
-              <option value="">Fit available space</option>
-              <option value="390x844">Phone portrait</option>
-              <option value="844x390">Phone landscape</option>
-              <option value="768x1024">Tablet</option>
-              <option value="1280x720">Desktop</option>
-            </select>
-          </label>
-          <small>Presets resize the frame. Bot cursor &amp; heatmap overlay tracks normalized 0–1000 inputs.</small>
-        </div>
-
-        <div id="frame-wrap" class="frame-wrap">
-          <iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe>
-          <div id="capture-preview-stage" class="capture-preview-stage" hidden>
-            <img id="capture-stage-img" alt="Live captured game stream">
-            <p id="capture-stage-hint" class="capture-stage-hint">Click <strong>🖥 Share Game Window/Tab</strong> or select a <strong>Native Window</strong> via the Local Bridge below to stream any external game or program.</p>
-          </div>
-          <canvas id="bot-overlay-canvas" class="bot-overlay-canvas" aria-hidden="true"></canvas>
-        </div>
-
-        <div id="external-runtime" class="external-runtime" hidden><p>This game is hosted externally and may block iframe embedding. Open it in another tab and use <strong>🖥 Share Game Window/Tab</strong> below to stream and debug it with the AI gameplay tester.</p><a id="open-external" class="tool-button primary" target="_blank" rel="noreferrer">Open game ↗</a></div>
-
-        <!-- Automated Gameplay Tester & AI Debugger Studio -->
-        <section id="ai-tester-studio" class="tester-studio" aria-label="Automated Gameplay Tester Studio">
-          <div class="studio-header">
+        <main id="main" class="devtools-shell">
+          <div class="devtools-intro">
             <div>
-              <span class="dev-console-badge">AUTOMATED GAMEPLAY TESTER · WEB + LOCAL</span>
-              <h2>AI &amp; Playbook Debugger Studio</h2>
+              <h1>Developer tools</h1>
+              <p>Run automated gameplay tests on a GiveGigsGames build, any web game URL, or a desktop program. Work offline with the built-in playbooks, or add your own AI key.</p>
             </div>
-            <div class="studio-status-pills" aria-live="polite">
-              <span id="status-badge" class="pill pill-idle">IDLE</span>
-              <span id="status-source" class="pill">source: heuristic</span>
-              <span id="status-steps" class="pill">steps: 0</span>
-              <span id="status-bugs" class="pill">bugs: 0</span>
-              <span id="status-stuck" class="pill">stuck: 0</span>
-              <span id="status-tokens" class="pill">tokens: 0</span>
+            <div class="devtools-actions">
+              <a class="btn btn-secondary" href="/tester/v3.html">Tester 3.0 · LLM Evals</a>
+              <a class="btn btn-secondary" href="/ggg/">Back to games</a>
             </div>
           </div>
 
-          <div class="studio-tabs" role="tablist" aria-label="Tester studio tabs">
-            <button type="button" role="tab" class="studio-tab active" data-tab="runner" aria-selected="true">🤖 Auto-Tester &amp; API Key</button>
-            <button type="button" role="tab" class="studio-tab" data-tab="timeline" aria-selected="false">🎬 Vision &amp; Timeline</button>
-            <button type="button" role="tab" class="studio-tab" data-tab="bugs" aria-selected="false">🐛 Bugs, Audits &amp; Fixer</button>
-            <button type="button" role="tab" class="studio-tab" data-tab="replays" aria-selected="false">📼 Replays, BotScript &amp; State</button>
-            <button type="button" role="tab" class="studio-tab" data-tab="plays" aria-selected="false">🎭 25 AI QA Plays</button>
-          </div>
-
-          <!-- TAB 1: AUTO-TESTER & API KEY -->
-          <div id="panel-runner" class="studio-panel" role="tabpanel">
-            <div class="studio-grid">
-              <div class="studio-card">
-                <h3>1. Target &amp; Capture Source</h3>
-                <div class="field-grid">
-                  <label>Target Mode
-                    <select id="studio-target-mode">
-                      <option value="iframe">Catalog / Web Game (Iframe)</option>
-                      <option value="custom-url">Custom Web Game URL</option>
-                      <option value="display">Screen / Window Capture (Any Program)</option>
-                      <option value="bridge">Local Native Bridge (Win32 / Static Audit)</option>
-                    </select>
-                  </label>
-                  <label>Driver Strategy
-                    <select id="driver-mode">
-                      <option value="auto">Auto (Playbook + Reflex + AI / Heuristic)</option>
-                      <option value="braid">BRAID Vision &amp; DOM AI Agent</option>
-                      <option value="playbook">Playbook &amp; Reflex Only (Deterministic)</option>
-                      <option value="botscript">GiveGigs BotScript Rules</option>
-                      <option value="native">Universal Native Game Director</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div id="custom-url-controls" class="field-row" hidden>
-                  <label class="grow">Target Web URL
-                    <input id="studio-custom-url" type="url" placeholder="https://example.com/game or http://localhost:3000">
-                  </label>
-                  <button id="btn-load-custom-url" type="button" class="tool-button">Load URL</button>
-                </div>
-
-                <div id="bridge-controls" class="field-grid" hidden>
-                  <label>Local Bridge URL
-                    <input id="bridge-url" type="url" value="http://127.0.0.1:42069" placeholder="http://127.0.0.1:42069">
-                  </label>
-                  <label>Desktop Game Window
-                    <div class="inline-field">
-                      <select id="studio-native-window"><option value="">-- Click Refresh Windows --</option></select>
-                      <button id="refresh-native-windows" type="button" class="tool-button">↻</button>
-                    </div>
-                  </label>
-                </div>
-
-                <label class="block-field">Game Rules, Playbook &amp; Instructions (auto-resolved; editable)
-                  <textarea id="custom-game-rules" rows="3" placeholder="Auto-populated from game playbook and page metadata..."></textarea>
+          <section id="library-view" class="library-view">
+            <section class="arbitrary-launcher" aria-labelledby="external-launcher-title">
+              <h2 id="external-launcher-title">Test an external game</h2>
+              <div class="arbitrary-launcher-row">
+                <label class="arbitrary-url-wrap">
+                  <span class="sr-only">Web game URL</span>
+                  <input id="custom-url-input" type="url" placeholder="https://example.com/game or http://localhost:3000/game" autocomplete="off">
                 </label>
+                <button id="launch-custom-url" class="tool-button primary" type="button">Open URL</button>
+                <button id="launch-screen-capture" class="tool-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-monitor"></use></svg>Share a screen</button>
+                <button id="launch-native-bridge" class="tool-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-plug"></use></svg>Local bridge</button>
+              </div>
+              <p class="arbitrary-note">Run <code>npm run tester:bridge</code> locally for desktop window capture, real input, and source audits.</p>
+            </section>
+
+            <div class="lib-tools">
+              <label class="search">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"></use></svg>
+                <span class="sr-only">Search games</span>
+                <input id="game-search" type="search" placeholder="Find a game" autocomplete="off">
+              </label>
+              <label class="select-wrap">
+                <span class="sr-only">Filter by genre</span>
+                <select id="genre-filter" class="select"><option value="">All genres</option></select>
+              </label>
+              <label class="select-wrap">
+                <span class="sr-only">Sort games</span>
+                <select id="game-sort" class="select">
+                  <option value="title">Title A–Z</option>
+                  <option value="genre">Genre A–Z</option>
+                  <option value="tag">Tag A–Z</option>
+                  <option value="tags-desc">Most tags</option>
+                  <option value="tags-asc">Fewest tags</option>
+                </select>
+              </label>
+              <span id="game-count" class="game-count" aria-live="polite"></span>
+            </div>
+
+            <details class="tag-picker">
+              <summary>Tags <span id="selected-tag-count">All tags</span></summary>
+              <div class="tag-picker-tools">
+                <label><span class="sr-only">Find a tag</span><input id="tag-search" type="search" placeholder="Find a tag"></label>
+                <select id="tag-match" aria-label="How selected tags match">
+                  <option value="any">Match any selected tag</option>
+                  <option value="all">Match all selected tags</option>
+                </select>
+                <button id="clear-tags" type="button" class="btn btn-secondary btn-sm">Clear tags</button>
+                <div class="view-switch" role="group" aria-label="Layout">
+                  <button type="button" class="icon-btn icon-btn--raised" data-view="list" aria-pressed="true" aria-label="List view" data-tip="List view"><svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg></button>
+                  <button type="button" class="icon-btn icon-btn--raised" data-view="grid" aria-pressed="false" aria-label="Grid view" data-tip="Grid view"><svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg></button>
+                </div>
+              </div>
+              <div id="tag-options" class="tag-options"></div>
+            </details>
+
+            <div id="game-grid" class="game-grid list-view" aria-live="polite"></div>
+            <p id="load-error" class="load-error" hidden></p>
+            <footer class="library-footer">
+              <span>Some builds are works in progress. Serve the repository over HTTP so storage and relative assets behave like production.</span>
+              <a href="/terms.html">Terms</a>
+              <a href="/privacy.html">Privacy</a>
+            </footer>
+          </section>
+
+          <section id="player-view" class="player-view" hidden>
+            <div class="player-heading">
+              <button id="back-button" class="btn btn-secondary btn-sm" type="button"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-left"></use></svg>All games</button>
+              <div class="player-title">
+                <span id="player-emoji" class="player-emoji" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-gamepad"></use></svg></span>
+                <div>
+                  <p id="player-genre"></p>
+                  <h1 id="player-name"></h1>
+                </div>
+              </div>
+              <div class="player-actions">
+                <a id="view-info" class="btn btn-secondary btn-sm">Info</a>
+                <button id="reload-game" class="btn btn-secondary btn-sm" type="button"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"></use></svg>Reload</button>
+                <button id="fullscreen-game" class="btn btn-primary btn-sm" type="button">Fullscreen</button>
+              </div>
+            </div>
+            <details class="fold player-links">
+              <summary>Game links <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+              <div class="fold-body">
+                <a id="view-guide" class="btn btn-ghost btn-sm">Guide</a>
+                <a id="view-roadmap" class="btn btn-ghost btn-sm">Roadmap</a>
+                <a id="view-play" class="btn btn-ghost btn-sm">Open player page</a>
+                <a id="open-game" class="btn btn-ghost btn-sm" target="_blank" rel="noreferrer">Open raw build<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+              </div>
+            </details>
+            <p id="player-description" class="player-description"></p>
+
+            <section id="dev-console" class="dev-console" hidden aria-label="GraveGain2DA tester console">
+              <div class="dev-console-heading">
+                <div>
+                  <h2>GraveGain2DA control console</h2>
+                  <p>Same game files as the public build, with local test cheats. Changes may affect this browser's saved progress.</p>
+                </div>
+              </div>
+              <div class="cheat-buttons">
+                <button type="button" data-command="help">Help</button>
+                <button type="button" data-command="god on">God mode</button>
+                <button type="button" data-command="heal">Restore HP</button>
+                <button type="button" data-command="gold 1000">+1,000 gold</button>
+                <button type="button" data-command="win">Win run</button>
+                <button type="button" data-command="lose">End run</button>
+              </div>
+              <form id="console-form" class="console-form">
+                <label class="sr-only" for="console-input">Enter a GraveGain test command</label>
+                <span aria-hidden="true">&gt;</span>
+                <input id="console-input" autocomplete="off" spellcheck="false" placeholder="help, god on, heal, gold 1000, win, lose">
+                <button type="submit" class="btn btn-secondary btn-sm">Run</button>
+              </form>
+              <output id="console-output" class="console-output" aria-live="polite">Console ready. Pick a command or type help.</output>
+            </section>
+
+            <div class="viewport-controls">
+              <label>Preview size
+                <select id="viewport-preset">
+                  <option value="">Fit available space</option>
+                  <option value="390x844">Phone portrait</option>
+                  <option value="844x390">Phone landscape</option>
+                  <option value="768x1024">Tablet</option>
+                  <option value="1280x720">Desktop</option>
+                </select>
+              </label>
+              <small>Presets resize the frame. The bot cursor and heatmap overlay tracks normalized 0–1000 inputs.</small>
+            </div>
+
+            <div id="frame-wrap" class="frame-wrap">
+              <iframe id="game-frame" title="Game preview" allow="fullscreen; gamepad; pointer-lock" allowfullscreen sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-pointer-lock allow-downloads"></iframe>
+              <div id="capture-preview-stage" class="capture-preview-stage" hidden>
+                <img id="capture-stage-img" alt="Live captured game stream">
+                <p id="capture-stage-hint" class="capture-stage-hint">Start screen sharing, or pick a native window through the local bridge, to stream any game or program.</p>
+              </div>
+              <canvas id="bot-overlay-canvas" class="bot-overlay-canvas" aria-hidden="true"></canvas>
+            </div>
+
+            <div id="external-runtime" class="external-runtime" hidden>
+              <p>This game is hosted externally and may block embedding. Open it in another tab, then share that tab or window to test it.</p>
+              <a id="open-external" class="btn btn-primary btn-sm" target="_blank" rel="noreferrer">Open game<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+            </div>
+
+            <section id="ai-tester-studio" class="tester-studio" aria-label="Automated gameplay tester">
+              <div class="studio-header">
+                <div>
+                  <h2>Test run</h2>
+                </div>
+                <div class="studio-status-pills" aria-live="polite">
+                  <span id="status-badge" class="pill pill-idle">idle</span>
+                  <span id="status-source" class="pill">source: heuristic</span>
+                  <span id="status-steps" class="pill">steps: 0</span>
+                  <span id="status-bugs" class="pill">bugs: 0</span>
+                  <span id="status-stuck" class="pill">stuck: 0</span>
+                  <span id="status-tokens" class="pill">tokens: 0</span>
+                </div>
               </div>
 
-              <div class="studio-card">
-                <h3>2. Self-Inputted API Key (BYOK) &amp; Model</h3>
-                <div class="field-grid">
-                  <label>AI Provider
-                    <select id="ai-provider">
-                      <option value="heuristic">Offline Heuristic / Playbook (No Key)</option>
-                      <option value="openrouter">OpenRouter (Multi-model Vision)</option>
-                      <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
-                      <option value="gemini">Google Gemini (Flash / Pro Vision)</option>
-                      <option value="deepseek">DeepSeek</option>
-                      <option value="custom">Custom OpenAI-Compatible</option>
-                      <option value="local">Local Ollama / LM Studio</option>
-                    </select>
-                  </label>
-                  <label>Model ID
-                    <input id="ai-model" type="text" placeholder="openai/gpt-4o-mini">
-                  </label>
-                </div>
+              <div class="studio-tabs" role="tablist" aria-label="Tester sections">
+                <button type="button" role="tab" class="studio-tab active" data-tab="runner" aria-selected="true">Run tests</button>
+                <button type="button" role="tab" class="studio-tab" data-tab="timeline" aria-selected="false">Vision and timeline</button>
+                <button type="button" role="tab" class="studio-tab" data-tab="bugs" aria-selected="false">Bugs and audits</button>
+                <button type="button" role="tab" class="studio-tab" data-tab="replays" aria-selected="false">Replays and state</button>
+                <button type="button" role="tab" class="studio-tab" data-tab="plays" aria-selected="false">QA plays</button>
+              </div>
 
-                <div class="field-row">
-                  <label class="grow">Your API Key (never leaves your browser except to the chosen provider)
-                    <div class="inline-field">
-                      <input id="ai-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... / AIza... (optional for offline mode)">
-                      <button id="toggle-key-vis" type="button" class="tool-button" aria-label="Show or hide API key">👁</button>
-                      <button id="clear-api-key" type="button" class="tool-button">Clear</button>
+              <div id="panel-runner" class="studio-panel" role="tabpanel">
+                <div class="studio-grid">
+                  <div class="studio-card">
+                    <h3>Target</h3>
+                    <div class="field-grid">
+                      <label>Target mode
+                        <select id="studio-target-mode">
+                          <option value="iframe">Catalog or web game (iframe)</option>
+                          <option value="custom-url">Custom web game URL</option>
+                          <option value="display">Screen or window capture</option>
+                          <option value="bridge">Local native bridge</option>
+                        </select>
+                      </label>
+                      <label>Driver
+                        <select id="driver-mode">
+                          <option value="auto">Auto (playbook, reflex, heuristic)</option>
+                          <option value="braid">Vision and DOM agent</option>
+                          <option value="playbook">Playbook and reflex only</option>
+                          <option value="botscript">BotScript rules</option>
+                          <option value="native">Native game director</option>
+                        </select>
+                      </label>
                     </div>
-                  </label>
-                </div>
 
-                <div class="field-grid">
-                  <label>Custom / Ollama Endpoint URL
-                    <input id="ai-endpoint" type="url" placeholder="https://openrouter.ai/api/v1/chat/completions">
-                  </label>
-                  <div class="checkbox-stack">
-                    <label class="check-label"><input id="remember-api-key" type="checkbox"> Remember key in browser <code>localStorage</code></label>
-                    <label class="check-label"><input id="opt-fovea" type="checkbox" checked> Foveated Vision (overview + detail crops)</label>
-                    <label class="check-label"><input id="opt-adaptive" type="checkbox" checked> Adaptive Tick Timing</label>
-                    <label class="check-label"><input id="opt-cursor" type="checkbox" checked> Show Bot Cursor &amp; Heatmap</label>
+                    <div id="custom-url-controls" class="field-row" hidden>
+                      <label class="grow">Web URL
+                        <input id="studio-custom-url" type="url" placeholder="https://example.com/game or http://localhost:3000">
+                      </label>
+                      <button id="btn-load-custom-url" type="button" class="tool-button">Load URL</button>
+                    </div>
+
+                    <div id="bridge-controls" class="field-grid" hidden>
+                      <label>Local bridge URL
+                        <input id="bridge-url" type="url" value="http://127.0.0.1:42069" placeholder="http://127.0.0.1:42069">
+                      </label>
+                      <label>Desktop window
+                        <div class="inline-field">
+                          <select id="studio-native-window"><option value="">Refresh to list windows</option></select>
+                          <button id="refresh-native-windows" type="button" class="tool-button" aria-label="Refresh window list" data-tip="Refresh">Refresh</button>
+                        </div>
+                      </label>
+                    </div>
+
+                    <label class="block-field">Game rules and instructions (auto-filled, editable)
+                      <textarea id="custom-game-rules" rows="3" placeholder="Filled in from the game playbook and page metadata."></textarea>
+                    </label>
+                  </div>
+
+                  <div class="studio-card">
+                    <h3>AI provider and key</h3>
+                    <details class="fold" open>
+                      <summary>Provider and model <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                      <div class="fold-body">
+                        <div class="field-grid">
+                          <label>Provider
+                            <select id="ai-provider">
+                              <option value="heuristic">Offline playbook (no key)</option>
+                              <option value="openrouter">OpenRouter</option>
+                              <option value="openai">OpenAI</option>
+                              <option value="gemini">Google Gemini</option>
+                              <option value="deepseek">DeepSeek</option>
+                              <option value="custom">Custom OpenAI-compatible</option>
+                              <option value="local">Local Ollama or LM Studio</option>
+                            </select>
+                          </label>
+                          <label>Model
+                            <input id="ai-model" type="text" placeholder="openai/gpt-4o-mini">
+                          </label>
+                        </div>
+                        <label>Endpoint URL
+                          <input id="ai-endpoint" type="url" placeholder="https://openrouter.ai/api/v1/chat/completions">
+                        </label>
+                      </div>
+                    </details>
+
+                    <div class="field-row" style="margin-top:10px;">
+                      <label class="grow">API key (sent only to the provider you choose)
+                        <div class="inline-field">
+                          <input id="ai-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... or AIza... (optional offline)">
+                          <button id="toggle-key-vis" type="button" class="icon-btn icon-btn--raised" aria-label="Show or hide API key" aria-pressed="false" data-tip="Show key"><svg class="icon" aria-hidden="true"><use href="#i-eye"></use></svg></button>
+                          <button id="clear-api-key" type="button" class="tool-button">Clear</button>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div class="checkbox-stack">
+                      <label class="check-label"><input id="remember-api-key" type="checkbox"> Remember the API key in this browser (localStorage)</label>
+                      <p class="note"><strong>Off by default.</strong> Storing the key keeps it after you close the tab, but any script on this site can read it. Turn this on only on a device you trust.</p>
+                    </div>
+
+                    <details class="fold" style="margin-top:10px;">
+                      <summary>Advanced options <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                      <div class="fold-body">
+                        <div class="field-grid">
+                          <label>Max steps
+                            <input id="opt-max-steps" type="number" min="1" max="500" value="50">
+                          </label>
+                          <label>Base tick delay (ms)
+                            <input id="opt-delay-ms" type="number" min="100" max="5000" value="650">
+                          </label>
+                        </div>
+                        <div class="checkbox-stack">
+                          <label class="check-label"><input id="opt-fovea" type="checkbox" checked> Detailed vision crops (overview plus detail)</label>
+                          <label class="check-label"><input id="opt-adaptive" type="checkbox" checked> Adaptive tick timing</label>
+                          <label class="check-label"><input id="opt-cursor" type="checkbox" checked> Show bot cursor and heatmap</label>
+                        </div>
+                      </div>
+                    </details>
                   </div>
                 </div>
 
-                <div class="field-grid">
-                  <label>Max Steps
-                    <input id="opt-max-steps" type="number" min="1" max="500" value="50">
+                <div class="studio-toolbar">
+                  <button id="btn-tester-start" type="button" class="tool-button primary"><svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>Start</button>
+                  <button id="btn-tester-pause" type="button" class="tool-button" disabled><svg class="icon" aria-hidden="true"><use href="#i-pause"></use></svg><span class="btn-label">Pause</span></button>
+                  <button id="btn-tester-step" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-step"></use></svg>Step once</button>
+                  <button id="btn-tester-stop" type="button" class="tool-button" disabled><svg class="icon" aria-hidden="true"><use href="#i-stop"></use></svg>Stop</button>
+                  <button id="btn-tester-analyze" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg>Capture and analyze</button>
+                  <button id="btn-share-display" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-monitor"></use></svg>Share a screen</button>
+                  <button id="btn-upload-frame" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-image"></use></svg>Upload screenshot</button>
+                  <input id="upload-frame-input" type="file" accept="image/*" hidden>
+                  <button id="btn-bridge-check" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-plug"></use></svg>Test local bridge</button>
+                </div>
+
+                <div class="studio-grid">
+                  <div class="studio-card">
+                    <h3>Live decision</h3>
+                    <p id="live-reasoning-box" class="reasoning-box" aria-live="polite">Ready. Pick a game, URL, or capture stream, then press Start or Step once.</p>
+                  </div>
+                  <div class="studio-card">
+                    <h3>Log</h3>
+                    <pre id="live-log" class="live-log" aria-live="polite"></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div id="panel-timeline" class="studio-panel" role="tabpanel" hidden>
+                <details class="fold" open>
+                  <summary>Latest overview frame <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                  <div class="fold-body">
+                    <div class="vision-preview-box">
+                      <img id="vision-overview-img" alt="Latest downsampled gameplay overview">
+                    </div>
+                  </div>
+                </details>
+                <details class="fold">
+                  <summary>Detail crops <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                  <div class="fold-body">
+                    <div id="vision-crops-row" class="vision-crops-row">
+                      <p class="muted-note">Detail crops appear here when detailed vision is on.</p>
+                    </div>
+                  </div>
+                </details>
+                <details class="fold">
+                  <summary>Frame timeline <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                  <div class="fold-body">
+                    <div id="tester-timeline" class="tester-timeline" aria-live="polite">
+                      <p class="muted-note">No frames analyzed yet. Run a test, step once, or capture a frame.</p>
+                    </div>
+                    <div id="selected-frame-details" class="selected-frame-details"></div>
+                  </div>
+                </details>
+              </div>
+
+              <div id="panel-bugs" class="studio-panel" role="tabpanel" hidden>
+                <div class="studio-toolbar">
+                  <button id="btn-run-audit" type="button" class="tool-button primary"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>Run game and site audit</button>
+                  <button id="btn-static-audit" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-file-text"></use></svg>Source audit (bridge)</button>
+                  <button id="btn-suggest-fixes" type="button" class="tool-button"><svg class="icon" aria-hidden="true"><use href="#i-bug"></use></svg>Suggest fixes</button>
+                  <button id="btn-gen-megaprompt" type="button" class="tool-button">Generate prompt</button>
+                  <button id="btn-export-md" type="button" class="tool-button">Export Markdown</button>
+                  <button id="btn-export-json" type="button" class="tool-button">Export JSON</button>
+                  <label class="inline-select">Severity
+                    <select id="bug-severity-filter">
+                      <option value="all">All</option>
+                      <option value="critical">Critical</option>
+                      <option value="high">High</option>
+                      <option value="warning">Warning</option>
+                      <option value="cosmetic">Cosmetic</option>
+                    </select>
                   </label>
-                  <label>Base Tick Delay (ms)
-                    <input id="opt-delay-ms" type="number" min="100" max="5000" value="650">
+                </div>
+
+                <div id="audit-summary" class="audit-summary" aria-live="polite">
+                  Run the game and site audit to check load time, canvases and WebGL, broken images, dead links, horizontal overflow, and console errors.
+                </div>
+
+                <div class="studio-grid">
+                  <div class="studio-card">
+                    <h3>Detected bugs and fix diffs</h3>
+                    <div id="bug-list" class="bug-list" aria-live="polite">
+                      <p class="muted-note">No bugs logged yet.</p>
+                    </div>
+                  </div>
+                  <div class="studio-card">
+                    <h3>QA checklist</h3>
+                    <div id="qa-checklist" class="qa-checklist"></div>
+                    <label class="block-field">Prompt and report preview
+                      <textarea id="megaprompt-output" rows="8" readonly placeholder="Generate a prompt to build a ready-to-paste debugging brief."></textarea>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div id="panel-replays" class="studio-panel" role="tabpanel" hidden>
+                <div class="studio-grid">
+                  <div class="studio-card">
+                    <h3>Action replay</h3>
+                    <div class="studio-toolbar compact">
+                      <button id="btn-replay-record" type="button" class="tool-button primary">Record</button>
+                      <button id="btn-replay-stop" type="button" class="tool-button" disabled><svg class="icon" aria-hidden="true"><use href="#i-stop"></use></svg>Stop</button>
+                      <button id="btn-replay-play" type="button" class="tool-button" disabled><svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>Play</button>
+                      <button id="btn-replay-export" type="button" class="tool-button" disabled>Export JSON</button>
+                      <button id="btn-replay-import" type="button" class="tool-button">Import JSON</button>
+                      <input id="replay-import-input" type="file" accept=".json,application/json" hidden>
+                    </div>
+                    <p id="replay-status" class="muted-note">Recorder idle.</p>
+                  </div>
+
+                  <div class="studio-card">
+                    <h3>Browser state checkpoints</h3>
+                    <div class="studio-toolbar compact">
+                      <button id="btn-ckpt-save" type="button" class="tool-button primary"><svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>Save checkpoint</button>
+                    </div>
+                    <div id="checkpoint-list" class="checkpoint-list">
+                      <p class="muted-note">Save a localStorage checkpoint before a risky test, then restore it any time.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <details class="fold">
+                  <summary>BotScript rules (advanced) <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg></summary>
+                  <div class="fold-body">
+                    <div class="field-row">
+                      <label class="grow">Load preset
+                        <select id="botscript-preset"></select>
+                      </label>
+                      <button id="btn-botscript-apply" type="button" class="tool-button primary">Validate and apply</button>
+                    </div>
+                    <textarea id="botscript-editor" rows="8" spellcheck="false" class="mono-area" aria-label="BotScript rules JSON"></textarea>
+                    <p id="botscript-status" class="muted-note" aria-live="polite"></p>
+                  </div>
+                </details>
+              </div>
+
+              <div id="panel-plays" class="studio-panel" role="tabpanel" hidden>
+                <div class="studio-card">
+                  <h3>QA and creative plays</h3>
+                  <div class="field-grid">
+                    <label>Play
+                      <select id="qa-play-select"></select>
+                    </label>
+                    <div class="checkbox-stack">
+                      <label class="check-label"><input id="opt-qa-play-speak" type="checkbox"> Read the answer aloud</label>
+                    </div>
+                  </div>
+                  <label class="block-field">Context (auto-filled from this session, or type your own)
+                    <textarea id="qa-play-input" rows="4" placeholder="Telemetry, a bug description, or a lore prompt."></textarea>
                   </label>
+                  <div class="studio-toolbar compact">
+                    <button id="btn-qa-play-run" type="button" class="tool-button primary">Run play</button>
+                    <button id="btn-qa-play-autofill" type="button" class="tool-button">Auto-fill from session</button>
+                  </div>
+                  <pre id="qa-play-output" class="live-log" aria-live="polite"></pre>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div class="studio-toolbar">
-              <button id="btn-tester-start" type="button" class="tool-button primary">▶ Start Auto-Test</button>
-              <button id="btn-tester-pause" type="button" class="tool-button" disabled>⏸ Pause</button>
-              <button id="btn-tester-step" type="button" class="tool-button">⏭ Step Once</button>
-              <button id="btn-tester-stop" type="button" class="tool-button" disabled>⏹ Stop</button>
-              <button id="btn-tester-analyze" type="button" class="tool-button">📸 Capture &amp; Analyze Frame</button>
-              <button id="btn-share-display" type="button" class="tool-button">🖥 Share Game Window/Tab</button>
-              <button id="btn-upload-frame" type="button" class="tool-button">📎 Upload Screenshot</button>
-              <input id="upload-frame-input" type="file" accept="image/*" hidden>
-              <button id="btn-bridge-check" type="button" class="tool-button">🔌 Test Local Bridge</button>
-            </div>
+            <details class="bug-draft-box">
+              <summary>Draft a bug report</summary>
+              <label for="bug-steps">Steps, expected behavior, and actual behavior</label>
+              <textarea id="bug-steps" rows="4"></textarea>
+              <button id="draft-bug" type="button">Generate draft</button>
+              <label for="bug-draft">Report draft</label>
+              <textarea id="bug-draft" rows="8" readonly></textarea>
+            </details>
 
-            <div class="studio-grid">
-              <div class="studio-card">
-                <h3>Live Decision &amp; Reasoning</h3>
-                <p id="live-reasoning-box" class="reasoning-box" aria-live="polite">Ready. Choose a game, URL, or capture stream and press Start Auto-Test or Step Once.</p>
-              </div>
-              <div class="studio-card">
-                <h3>Execution &amp; Console Log</h3>
-                <pre id="live-log" class="live-log" aria-live="polite"></pre>
-              </div>
-            </div>
-          </div>
+            <p class="player-note">Progress a game saves stays in this browser; there are no cloud saves. Click inside the game to send it keyboard or mouse input.</p>
+          </section>
+        </main>
 
-          <!-- TAB 2: VISION & TIMELINE -->
-          <div id="panel-timeline" class="studio-panel" role="tabpanel" hidden>
-            <div class="studio-grid">
-              <div class="studio-card">
-                <h3>Latest 640×360 Overview Frame</h3>
-                <div class="vision-preview-box">
-                  <img id="vision-overview-img" alt="Latest downsampled gameplay overview">
-                </div>
-              </div>
-              <div class="studio-card">
-                <h3>Foveated Detail Crops</h3>
-                <div id="vision-crops-row" class="vision-crops-row">
-                  <p class="muted-note">Detail crops appear here when Foveated Vision captures high-detail regions.</p>
-                </div>
-              </div>
-            </div>
-            <div class="studio-card">
-              <h3>Frame Timeline Scrubber</h3>
-              <div id="tester-timeline" class="tester-timeline" aria-live="polite">
-                <p class="muted-note">No frames analyzed yet. Run Start Auto-Test, Step Once, or Analyze Frame.</p>
-              </div>
-              <div id="selected-frame-details" class="selected-frame-details"></div>
-            </div>
-          </div>
+        <footer class="footer">
+          <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+          <a href="/ggg/">Game library</a>
+          <a href="/models/">3D Models</a>
+          <a href="/ggg/#contribute">Contribute</a>
+          <a href="https://github.com/mattyjacks/GiveGigsGames">GitHub<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <a href="/terms.html">Terms</a>
+          <a href="/privacy.html">Privacy</a>
+        </footer>
+      </div>
+    </div>
 
-          <!-- TAB 3: BUGS, AUDITS & AI FIXER -->
-          <div id="panel-bugs" class="studio-panel" role="tabpanel" hidden>
-            <div class="studio-toolbar">
-              <button id="btn-run-audit" type="button" class="tool-button primary">🔍 Run Full Game &amp; Site Audit</button>
-              <button id="btn-static-audit" type="button" class="tool-button">📁 Static Source Audit (Bridge)</button>
-              <button id="btn-suggest-fixes" type="button" class="tool-button">🛠 Suggest AI Code Fixes</button>
-              <button id="btn-gen-megaprompt" type="button" class="tool-button">📋 Generate AI Mega-Prompt</button>
-              <button id="btn-export-md" type="button" class="tool-button">⬇ Export Markdown Report</button>
-              <button id="btn-export-json" type="button" class="tool-button">⬇ Export JSON Session</button>
-              <label class="inline-select">Severity
-                <select id="bug-severity-filter">
-                  <option value="all">All</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="warning">Warning</option>
-                  <option value="cosmetic">Cosmetic</option>
-                </select>
-              </label>
-            </div>
+    <nav class="tabbar" aria-label="Sections">
+      <a href="/ggg/"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+      <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+      <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recent</a>
+      <a href="/models/"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>Models</a>
+      <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+    </nav>
 
-            <div id="audit-summary" class="audit-summary" aria-live="polite">
-              Click <strong>Run Full Game &amp; Site Audit</strong> to verify load time, canvases/WebGL, broken images, dead links, horizontal overflow, and guest console errors.
-            </div>
-
-            <div class="studio-grid">
-              <div class="studio-card">
-                <h3>Detected Bugs &amp; AI Fix Diffs</h3>
-                <div id="bug-list" class="bug-list" aria-live="polite">
-                  <p class="muted-note">No bugs logged yet.</p>
-                </div>
-              </div>
-              <div class="studio-card">
-                <h3>Guided QA Checklist</h3>
-                <div id="qa-checklist" class="qa-checklist"></div>
-                <label class="block-field">AI Mega-Prompt / Full Report Preview
-                  <textarea id="megaprompt-output" rows="8" readonly placeholder="Click Generate AI Mega-Prompt to build a ready-to-paste debugging prompt..."></textarea>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- TAB 4: REPLAYS, BOTSCRIPT & STATE -->
-          <div id="panel-replays" class="studio-panel" role="tabpanel" hidden>
-            <div class="studio-grid">
-              <div class="studio-card">
-                <h3>Action Replay Recorder</h3>
-                <div class="studio-toolbar compact">
-                  <button id="btn-replay-record" type="button" class="tool-button primary">● Record Actions</button>
-                  <button id="btn-replay-stop" type="button" class="tool-button" disabled>⏹ Stop</button>
-                  <button id="btn-replay-play" type="button" class="tool-button" disabled>▶ Play Replay</button>
-                  <button id="btn-replay-export" type="button" class="tool-button" disabled>⬇ Export JSON</button>
-                  <button id="btn-replay-import" type="button" class="tool-button">⬆ Import JSON</button>
-                  <input id="replay-import-input" type="file" accept=".json,application/json" hidden>
-                </div>
-                <p id="replay-status" class="muted-note">Recorder idle.</p>
-              </div>
-
-              <div class="studio-card">
-                <h3>Browser State Checkpoints</h3>
-                <div class="studio-toolbar compact">
-                  <button id="btn-ckpt-save" type="button" class="tool-button primary">💾 Save State Checkpoint</button>
-                </div>
-                <div id="checkpoint-list" class="checkpoint-list">
-                  <p class="muted-note">Save a localStorage checkpoint before risky tests and restore anytime.</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="studio-card">
-              <h3>GiveGigs BotScript Rules Engine (Deterministic JSON)</h3>
-              <div class="field-row">
-                <label class="grow">Load Preset
-                  <select id="botscript-preset"></select>
-                </label>
-                <button id="btn-botscript-apply" type="button" class="tool-button primary">Validate &amp; Apply BotScript</button>
-              </div>
-              <textarea id="botscript-editor" rows="8" spellcheck="false" class="mono-area"></textarea>
-              <p id="botscript-status" class="muted-note" aria-live="polite"></p>
-            </div>
-          </div>
-
-          <!-- TAB 5: 25 AI QA PLAYS -->
-          <div id="panel-plays" class="studio-panel" role="tabpanel" hidden>
-            <div class="studio-card">
-              <h3>25 AI QA &amp; Creative Plays (Works with Self-Inputted Key or Offline Fallback)</h3>
-              <div class="field-grid">
-                <label>Select Play
-                  <select id="qa-play-select"></select>
-                </label>
-                <div class="checkbox-stack">
-                  <label class="check-label"><input id="opt-qa-play-speak" type="checkbox"> Speak response via browser Speech Synthesis</label>
-                </div>
-              </div>
-              <label class="block-field">Input Context (auto-fill from current game telemetry &amp; bugs, or type anything)
-                <textarea id="qa-play-input" rows="4" placeholder="Paste telemetry, bug description, or lore prompt..."></textarea>
-              </label>
-              <div class="studio-toolbar compact">
-                <button id="btn-qa-play-run" type="button" class="tool-button primary">✨ Run Play</button>
-                <button id="btn-qa-play-autofill" type="button" class="tool-button">Auto-fill from Session</button>
-              </div>
-              <pre id="qa-play-output" class="live-log" aria-live="polite"></pre>
-            </div>
-          </div>
-        </section>
-
-        <details class="bug-draft-box">
-          <summary>Draft a bug report</summary>
-          <label for="bug-steps">Steps, expected behavior, and actual behavior</label>
-          <textarea id="bug-steps" rows="4"></textarea>
-          <button id="draft-bug" type="button">Generate draft</button>
-          <label for="bug-draft">Report draft</label>
-          <textarea id="bug-draft" rows="8" readonly></textarea>
-        </details>
-
-        <p class="player-note">Testing environment: cloud saves and cross-device sync are not available. Any progress a game saves stays in this browser's local storage. Click inside the game to send it keyboard or mouse input. <a href="https://github.com/mattyjacks/GiveGigsGames">Found a problem? Fix it and send a pull request ↗</a></p>
-      </section>
-    </main>
     <script src="/games/catalog-data.js" defer></script>
     <script src="/game-route.js" defer></script>
     <script src="/tester/engine/playbooks.js" defer></script>

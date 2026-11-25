@@ -124,13 +124,14 @@
   }
 
   async function copyCode(text, btn) {
+    const label = btn.querySelector('.btn-label') || btn;
+    const orig = label.textContent;
     try {
       await navigator.clipboard.writeText(text);
-      const orig = btn.textContent;
-      btn.textContent = 'Copied!';
+      label.textContent = 'Copied';
       btn.classList.add('copied');
       setTimeout(() => {
-        btn.textContent = orig;
+        label.textContent = orig;
         btn.classList.remove('copied');
       }, 1500);
     } catch {
@@ -197,8 +198,10 @@
       const card = document.createElement('article');
       card.className = 'model-card';
 
-      const previewBox = document.createElement('div');
+      const previewBox = document.createElement('button');
+      previewBox.type = 'button';
       previewBox.className = 'preview-box';
+      previewBox.setAttribute('aria-label', `Inspect ${model.name} in 3D`);
       const canvas = document.createElement('canvas');
       canvas.className = 'preview-canvas';
       canvas.width = thumbWidth;
@@ -216,7 +219,7 @@
       body.className = 'card-body';
       body.innerHTML = `
         <div class="card-title-row">
-          <h3 class="card-title">${model.name}</h3>
+          <h2 class="card-title">${model.name}</h2>
           <span class="card-game">${model.game}</span>
         </div>
         <p class="card-desc">${model.description}</p>
@@ -228,13 +231,13 @@
       const inspectBtn = document.createElement('button');
       inspectBtn.type = 'button';
       inspectBtn.className = 'btn';
-      inspectBtn.textContent = 'Inspect 3D';
+      inspectBtn.innerHTML = '<svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"></use></svg>Inspect 3D';
       inspectBtn.addEventListener('click', () => openInspector(model));
 
       const copyBtn = document.createElement('button');
       copyBtn.type = 'button';
       copyBtn.className = 'btn btn-primary';
-      copyBtn.textContent = 'Copy Code';
+      copyBtn.innerHTML = '<svg class="icon icon-sm" aria-hidden="true"><use href="#i-code"></use></svg><span class="btn-label">Copy code</span>';
       copyBtn.addEventListener('click', () => copyCode(formatStandaloneCode(model), copyBtn));
 
       actions.append(inspectBtn, copyBtn);
@@ -313,7 +316,7 @@
 
   function openInspector(model) {
     modalTitleEl.textContent = model.name;
-    modalMetaEl.textContent = `${model.game} • ${model.category}`;
+    modalMetaEl.textContent = `${model.game}, ${model.category}`;
     const codeStr = formatStandaloneCode(model);
     modalCodeEl.textContent = codeStr;
     modalCopyBtn.onclick = () => copyCode(codeStr, modalCopyBtn);
@@ -379,7 +382,7 @@
     const meshCount = countMeshes(modalRawGroup);
     const anims = modalRawGroup.userData && modalRawGroup.userData.animations;
     const hasAnims = Array.isArray(anims) && anims.length > 0 && typeof modalRawGroup.userData.animate === 'function';
-    modalMetaEl.textContent = `${model.game} • ${model.category} • ${meshCount} meshes${hasAnims ? ` • ${anims.length} animations` : ''}`;
+    modalMetaEl.textContent = `${model.game}, ${model.category}, ${meshCount} meshes${hasAnims ? `, ${anims.length} animations` : ''}`;
 
     animTime = 0;
     lastModalTime = performance.now();
@@ -457,11 +460,13 @@
   toggleRotateBtn.addEventListener('click', () => {
     autoRotate = !autoRotate;
     toggleRotateBtn.classList.toggle('active', autoRotate);
+    toggleRotateBtn.setAttribute('aria-pressed', String(autoRotate));
   });
 
   toggleWireframeBtn.addEventListener('click', () => {
     wireframe = !wireframe;
     toggleWireframeBtn.classList.toggle('active', wireframe);
+    toggleWireframeBtn.setAttribute('aria-pressed', String(wireframe));
     if (modalModelGroup) setWireframe(modalModelGroup, wireframe);
   });
 
@@ -474,7 +479,8 @@
     toggleAnimPlayBtn.addEventListener('click', () => {
       animPlaying = !animPlaying;
       toggleAnimPlayBtn.classList.toggle('active', animPlaying);
-      toggleAnimPlayBtn.textContent = animPlaying ? 'Pause Anim' : 'Play Anim';
+      toggleAnimPlayBtn.setAttribute('aria-pressed', String(animPlaying));
+      toggleAnimPlayBtn.textContent = animPlaying ? 'Pause animation' : 'Play animation';
     });
   }
 
