@@ -11,6 +11,9 @@
   const COUNTRY_BY_ID = Object.fromEntries(COUNTRIES.map((c) => [c.id, c]));
   const DIMENSIONS = CG.DIMENSIONS;
   const DIM_BY_ID = CG.DIMENSION_MAP;
+  const COUNTRY_SEARCH = new Map(COUNTRIES.map((country) => [
+    country.id, [country.name, country.id, ...(country.aliases || [])].map(normalizeCountryName)
+  ]));
   const CAT_BY_ID = Object.fromEntries(CG.CATEGORIES.map((c) => [c.id, c]));
 
   const MAX_GUESSES = 5;
@@ -129,9 +132,9 @@
     const R = 6371;
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
-    const a =
+    const a = Math.min(1,
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2));
     return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
@@ -173,7 +176,10 @@
   function loadJSON(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
+      const value = raw ? JSON.parse(raw) : null;
+      return value && typeof value === "object" && Array.isArray(value) === Array.isArray(fallback)
+        ? value
+        : fallback;
     } catch {
       return fallback;
     }
@@ -334,11 +340,14 @@
     dist: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, X: 0 }
   };
 
+  const savedStats = loadJSON(STORAGE_KEYS.stats, {});
   const state = {
     cadence: "daily",
     practiceSeed: 1,
+    practiceSession: `${Date.now()}-${Math.random()}`,
+    practiceRuns: new Map(),
     profile: Object.assign({}, defaultProfile, loadJSON(STORAGE_KEYS.profile, {})),
-    stats: Object.assign({}, defaultStats, loadJSON(STORAGE_KEYS.stats, {})),
+    stats: { ...defaultStats, ...savedStats, dist: { ...defaultStats.dist, ...savedStats.dist } },
     runs: loadJSON(STORAGE_KEYS.runs, {}),
     leaderboard: loadJSON(STORAGE_KEYS.leaderboard, []),
     passport: loadJSON(STORAGE_KEYS.passport, {}),
@@ -348,20 +357,23 @@
     ddIndex: -1,
     ddItems: [],
     mapView: { zoom: 1, panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 },
-    lastPeriodKeys: getPeriodKeys()
+    modalTrigger: null
   };
+
+  if (!CG.COUNTRY_SETS.some((set) => set.id === state.profile.setId)) state.profile.setId = defaultProfile.setId;
+  if (!CG.DIMENSION_DECKS.some((deck) => deck.id === state.profile.deckId)) state.profile.deckId = defaultProfile.deckId;
 
   // ---------- Run Construction & Persistence ----------
   function getActiveDeck() {
-    return CG.DIMENSION_DECKS.find((d) => d.id === state.profile.deckId) || CG.DIMENSION_DECKS[0];
+    return CG.DIMENSION_DECKS.find((d) => d.id === state.activeRun.deckId) || CG.DIMENSION_DECKS[0];
   }
 
   function getActiveSet() {
-    return CG.COUNTRY_SETS.find((s) => s.id === state.profile.setId) || CG.COUNTRY_SETS[0];
+    return CG.COUNTRY_SETS.find((s) => s.id === state.activeRun.setId) || CG.COUNTRY_SETS[0];
   }
 
   function getCurrentPeriodKey(cadence = state.cadence) {
-    if (cadence === "practice") return `p-${state.practiceSeed}`;
+    if (cadence === "practice") return `p-${state.practiceSession}-${state.practiceSeed}`;
     return getPeriodKeys()[cadence];
   }
 
@@ -397,18 +409,26 @@
     };
   }
 
-  function loadOrCreateRun() {
+  function loadOrCreateRun(previousTarget) {
     const periodKey = getCurrentPeriodKey();
     const { setId, deckId, purist } = state.profile;
     const runKey = makeRunKey(state.cadence, periodKey, setId, deckId, purist);
 
-    if (state.cadence !== "practice" && state.runs[runKey]) {
-      state.activeRun = state.runs[runKey];
+    const practice = state.cadence === "practice";
+    const setup = makeRunKey("practice", "", setId, deckId, purist);
+    const saved = practice ? state.practiceRuns.get(setup) : state.runs[runKey];
+    if (saved?.rounds?.[saved.currentRound]?.targetId &&
+        Array.isArray(saved.rounds) && saved.rounds.every((round) => round && Object.hasOwn(COUNTRY_BY_ID, round.targetId) &&
+          Array.isArray(round.guesses) && round.guesses.every((id) => Object.hasOwn(COUNTRY_BY_ID, id)) &&
+          Array.isArray(round.dimOrder) && round.dimOrder.every((id) => Object.hasOwn(DIM_BY_ID, id)))) {
+      state.activeRun = saved;
       return;
     }
 
     const totalRounds = state.cadence === "weekly" ? WEEKLY_ROUNDS : 1;
-    const targetIds = pickTargetsForRun(runKey, setId, totalRounds);
+    const targetIds = pickTargetsForRun(runKey, setId, practice ? 2 : totalRounds);
+    if (practice && targetIds[0] === previousTarget) targetIds.shift();
+    targetIds.length = totalRounds;
     const run = {
       key: runKey,
       cadence: state.cadence,
@@ -425,7 +445,9 @@
     };
 
     state.activeRun = run;
-    if (state.cadence !== "practice") {
+    if (practice) {
+      state.practiceRuns.set(setup, run);
+    } else {
       state.runs[runKey] = run;
       saveJSON(STORAGE_KEYS.runs, state.runs);
     }
@@ -441,10 +463,10 @@
     return state.activeRun.rounds[state.activeRun.currentRound];
   }
 
-  function calcPotentialScore(round) {
+  function calcPotentialScore(round, wrongCount = round.guesses.length) {
     const deck = getActiveDeck();
     const puristMult = state.activeRun.purist ? 1.2 : 1.0;
-    const base = Math.max(250, BASE_MAX_SCORE - round.guesses.length * WRONG_GUESS_PENALTY - round.peeksUsed * PEEK_PENALTY);
+    const base = Math.max(250, BASE_MAX_SCORE - wrongCount * WRONG_GUESS_PENALTY - round.peeksUsed * PEEK_PENALTY);
     return Math.round(base * deck.multiplier * puristMult);
   }
 
@@ -453,7 +475,7 @@
     const round = currentRound();
     if (!round || round.status !== "playing") return;
     const guessed = COUNTRY_BY_ID[countryId];
-    if (!guessed) return;
+    if (!guessed || !getCountryPool(state.activeRun.setId).includes(guessed)) return;
 
     if (round.guesses.includes(countryId)) {
       setFeedback(`Already guessed ${guessed.flag} ${guessed.name}!`);
@@ -466,11 +488,7 @@
 
     if (countryId === target.id) {
       // Won this round!
-      const deck = getActiveDeck();
-      const puristMult = state.activeRun.purist ? 1.2 : 1.0;
-      const wrongCount = round.guesses.length - 1;
-      const base = Math.max(250, BASE_MAX_SCORE - wrongCount * WRONG_GUESS_PENALTY - round.peeksUsed * PEEK_PENALTY);
-      round.score = Math.round(base * deck.multiplier * puristMult);
+      round.score = calcPotentialScore(round, round.guesses.length - 1);
       round.status = "won";
       round.finishedAt = Date.now();
       playTone("win");
@@ -544,18 +562,21 @@
     }
   }
 
+  function getRunTime(run) {
+    const elapsed = run.rounds.reduce((sum, round) => sum + Math.max(0, round.finishedAt - round.startedAt), 0);
+    return Math.max(1, Math.round(elapsed / 1000));
+  }
+
+  function formatRunResult(run) {
+    const guesses = run.rounds.reduce((sum, round) => sum + round.guesses.length, 0);
+    const wins = run.rounds.filter((round) => round.status === "won").length;
+    if (run.totalRounds > 1) return `${wins}/${run.totalRounds} (${guesses}g)`;
+    return `${wins ? guesses : "X"}/${MAX_GUESSES}`;
+  }
+
   function recordRunToLeaderboard(run) {
     if (run.recordedToLeaderboard) return;
     run.recordedToLeaderboard = true;
-    const totalTimeSec = Math.max(
-      1,
-      Math.round(
-        run.rounds.reduce((sum, r) => sum + ((r.finishedAt || Date.now()) - r.startedAt), 0) / 1000
-      )
-    );
-    const totalGuesses = run.rounds.reduce((s, r) => s + r.guesses.length, 0);
-    const wins = run.rounds.filter((r) => r.status === "won").length;
-
     const entry = {
       id: `${run.key}|${Date.now()}`,
       player: state.profile.callsign || "AtlasExplorer",
@@ -565,17 +586,17 @@
       deckId: run.deckId,
       purist: run.purist,
       score: run.totalScore,
-      resultText: run.totalRounds > 1 ? `${wins}/${run.totalRounds} (${totalGuesses}g)` : (wins ? `${totalGuesses}/5` : "X/5"),
-      timeSec: totalTimeSec,
+      resultText: formatRunResult(run),
+      timeSec: getRunTime(run),
       isYou: true,
       createdAt: Date.now()
     };
 
-    state.leaderboard.push(entry);
-    // Keep up to 300 entries
-    if (state.leaderboard.length > 300) {
-      state.leaderboard = state.leaderboard.slice(-300);
-    }
+    saveLeaderboardEntry(entry);
+  }
+
+  function saveLeaderboardEntry(entry) {
+    state.leaderboard = [...state.leaderboard, entry].slice(-300);
     saveJSON(STORAGE_KEYS.leaderboard, state.leaderboard);
   }
 
@@ -586,16 +607,20 @@
       run.rounds[run.currentRound].startedAt = Date.now();
       saveActiveRun();
       state.almanacCat = "all";
+      resetGuessInput();
       resetMapView();
       renderAll();
       return;
     }
-    // Practice or switch to fresh practice round
+    // A new practice round replaces the current practice round for this setup.
+    const { setId, deckId, purist } = run;
+    state.practiceRuns.delete(makeRunKey("practice", "", setId, deckId, purist));
     state.cadence = "practice";
     state.practiceSeed += 1;
     state.almanacCat = "all";
+    resetGuessInput();
     resetMapView();
-    loadOrCreateRun();
+    loadOrCreateRun(currentRound().targetId);
     renderAll();
   }
 
@@ -645,7 +670,7 @@
       const pips = round.guesses.map((gid) => {
         if (gid === target.id) return "🟩";
         const g = COUNTRY_BY_ID[gid];
-        const km = haversineKm(g.lat, g.lon, target.lat, target.lon);
+        const km = run.purist ? Infinity : haversineKm(g.lat, g.lon, target.lat, target.lon);
         return km < 2500 ? "🟨" : "🟥";
       }).join("");
       const outcome = round.status === "won" ? `${round.guesses.length}/5` : "X/5";
@@ -654,37 +679,60 @@
     }
     lines.push(`Set: ${setObj.name} · Deck: ${deckObj.name}${run.purist ? " (Purist)" : ""}`);
 
-    const totalSec = Math.max(1, Math.round(((round.finishedAt || Date.now()) - round.startedAt) / 1000));
-    const safeName = (state.profile.callsign || "Explorer").replace(/\|/g, "");
-    const token = `CG1|${run.cadence}|${run.periodKey}|${run.setId}|${run.deckId}|${run.totalScore}|${round.status === "won" ? round.guesses.length : "X"}|${totalSec}|${safeName}`;
-    lines.push(`Token: ${token}`);
+    const player = encodeURIComponent((state.profile.callsign || defaultProfile.callsign).toWellFormed());
+    lines.push(`Token: CG2|${run.cadence}|${run.periodKey}|${run.setId}|${run.deckId}|${run.purist ? "1" : "0"}|${run.totalScore}|${encodeURIComponent(formatRunResult(run))}|${getRunTime(run)}|${player}`);
     return lines.join("\n");
   }
 
   function importShareToken(raw) {
-    const text = raw.trim();
-    const match = text.match(/CG1\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(\d+)\|([^|]+)\|(\d+)\|([^\s|]+)/);
-    if (!match) return { ok: false, msg: "Invalid token format. Expected CG1|..." };
-    const [, cadence, periodKey, setId, deckId, scoreStr, res, secStr, player] = match;
-    const score = Number(scoreStr);
-    const timeSec = Number(secStr);
-    const entry = {
-      id: `friend|${Date.now()}|${Math.random()}`,
-      player: `${player} (Friend)`,
-      cadence,
-      periodKey,
-      setId,
-      deckId,
-      purist: false,
-      score,
-      resultText: cadence === "weekly" ? "Marathon" : `${res}/5`,
-      timeSec,
-      isFriend: true,
-      createdAt: Date.now()
+    const token = raw.split(/\r?\n/).map((line) => line.trim().replace(/^Token:\s*/, ""))
+      .find((line) => /^CG[12]\|/.test(line));
+    const fields = token?.split("|") || [];
+    const modern = fields[0] === "CG2";
+    const invalid = { ok: false, msg: "Paste a valid CG1 or CG2 challenge token." };
+    if (fields.length !== (modern ? 10 : 9)) return invalid;
+    const [, cadence, periodKey, setId, deckId] = fields;
+    const flag = modern ? fields[5] : "0";
+    const [scoreText, result, timeText, name] = fields.slice(modern ? 6 : 5);
+    const deck = CG.DIMENSION_DECKS.find((item) => item.id === deckId);
+    const periodFormats = {
+      hourly: /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3])$/,
+      daily: /^\d{4}-\d{2}-\d{2}$/,
+      weekly: /^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/,
+      practice: /^p-[\d.-]+$/
     };
-    state.leaderboard.push(entry);
-    saveJSON(STORAGE_KEYS.leaderboard, state.leaderboard);
-    return { ok: true, msg: `Added ${player}'s ${score.toLocaleString()} pt score to ${cadence} leaderboard!` };
+    const score = Number(scoreText);
+    const timeSec = Number(timeText);
+    const weekly = cadence === "weekly";
+    const purist = flag === "1";
+    if (!Object.hasOwn(periodFormats, cadence) || !periodFormats[cadence].test(periodKey) ||
+        !CG.COUNTRY_SETS.some((set) => set.id === setId) || !deck ||
+        !/^[01]$/.test(flag) || !/^\d+$/.test(scoreText) || !/^\d+$/.test(timeText) ||
+        score > Math.round(BASE_MAX_SCORE * deck.multiplier * (purist || !modern ? 1.2 : 1)) * (weekly ? WEEKLY_ROUNDS : 1) ||
+        !Number.isSafeInteger(timeSec) || timeSec < 1) return invalid;
+
+    let player;
+    let resultText;
+    try {
+      player = (modern ? decodeURIComponent(name) : name).trim();
+      resultText = modern ? decodeURIComponent(result) : weekly ? "Marathon (legacy)" : `${result}/5`;
+    } catch {
+      return invalid;
+    }
+    if (!player || player.length > 20 || /[\x00-\x1f]/.test(player)) return invalid;
+    if (weekly ? (modern ? !/^[0-3]\/3 \((?:[3-9]|1[0-5])g\)$/.test(resultText) : !/^[1-5X]$/.test(result)) :
+        !/^[1-5X]\/5$/.test(resultText)) return invalid;
+
+    const id = JSON.stringify(["friend", cadence, periodKey, setId, deckId, purist, score, resultText, timeSec, player]);
+    if (state.leaderboard.some((entry) => entry?.id === id)) return { ok: false, msg: "This result is already on your board." };
+    saveLeaderboardEntry({
+      id, player, cadence, periodKey, setId, deckId, purist, score, resultText, timeSec,
+      isFriend: true, createdAt: Date.now()
+    });
+    const active = state.activeRun;
+    const sameSetup = active.setId === setId && active.deckId === deckId && active.purist === purist;
+    state.lbTab = sameSetup && getPeriodKeys()[cadence] === periodKey ? cadence : "alltime";
+    return { ok: true, msg: `Added ${player}'s ${score.toLocaleString()} pt result.` };
   }
 
   // ---------- DOM Elements ----------
@@ -812,12 +860,14 @@
       hourly: `Hourly · ${run.periodKey} UTC`,
       daily: `Daily · ${run.periodKey} UTC`,
       weekly: `Weekly Marathon · ${run.periodKey}`,
-      practice: `Practice Run #${state.practiceSeed}`
+      practice: "Practice · Unlimited rounds"
     };
     el.subtitle.textContent = `${cadenceNames[run.cadence]} · ${setObj.name}`;
 
     el.cadenceTabs.forEach((btn) => {
-      btn.classList.toggle("is-active", btn.dataset.cadence === state.cadence);
+      const active = btn.dataset.cadence === state.cadence;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", String(active));
     });
 
     // Guess Pips
@@ -849,6 +899,16 @@
       el.weeklyBox.hidden = true;
     }
 
+    el.input.placeholder = `Search ${getCountryPool(run.setId).length} countries`;
+    const legend = document.getElementById("map-legend");
+    legend.hidden = run.purist;
+    const formatDistance = (km) => state.profile.miles
+      ? `${Math.round(km * 0.621371).toLocaleString()} mi`
+      : `${km.toLocaleString()} km`;
+    [1500, 4000, 8000, 8000].forEach((km, index) => {
+      legend.children[index].lastElementChild.textContent = `${index === 3 ? "≥" : "<"}${formatDistance(km)}`;
+    });
+
     el.mapNote.textContent = run.purist
       ? "Purist Mode active: map shows pins only (distances & bearings hidden)."
       : "Pins plot your guesses with proximity heat & compass bearing.";
@@ -873,9 +933,11 @@
         ? `+ Extra Clue <small>(-250 pts · ${peeksLeft} left)</small>`
         : `No Peeks Left`;
 
+    document.getElementById("guess-remaining").textContent =
+      `${MAX_GUESSES - round.guesses.length} of ${MAX_GUESSES} guesses left`;
     el.clueSubnote.textContent =
       round.status === "playing"
-        ? `Showing ${visibleIds.length} of 36 dimensions. Wrong guesses cost 1,000 pts and reveal 1 more factoid.`
+        ? "Use the dossier to identify the country. Each miss costs 1,000 base points and reveals a clue."
         : `Round finished! Explore all 36 dimensions of ${target.name} below.`;
   }
 
@@ -986,6 +1048,8 @@
     el.revealFacts.textContent = `Capital: ${target.capital} · Pop Rank #${target.rank} (~${target.pop}M) · ${target.region}`;
     el.revealScore.textContent = round.score.toLocaleString();
     el.shareToast.hidden = true;
+    document.getElementById("share-copy").hidden = true;
+    el.btnShare.hidden = !run.completed;
 
     if (run.cadence === "weekly" && run.currentRound < run.totalRounds - 1) {
       el.btnNext.textContent = `➡️ Next Weekly Country (${run.currentRound + 2} / ${run.totalRounds})`;
@@ -1051,18 +1115,28 @@
     const canvas = el.mapCanvas;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(320, Math.round(rect.width || 720));
-    const h = Math.max(170, Math.round((w * 380) / 720));
-
-    if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+    const { width: w, height: h } = rect;
+    if (!w || !h) return;
+    const width = Math.round(w * dpr);
+    const height = Math.round(h * dpr);
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
     }
 
+    const view = state.mapView;
+    canvas.classList.toggle("is-zoomed", view.zoom > 1);
+    const maxX = (view.zoom - 1) * w / 2;
+    const maxY = (view.zoom - 1) * h / 2;
+    view.panX = Math.max(-maxX, Math.min(maxX, view.panX));
+    view.panY = Math.max(-maxY, Math.min(maxY, view.panY));
+    el.mapTooltip.hidden = true;
+
     ctx.save();
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(width / w, 0, 0, height / h, 0, 0);
 
     // Ocean gradient
     const oceanGrad = ctx.createLinearGradient(0, 0, 0, h);
@@ -1126,7 +1200,7 @@
       const g = COUNTRY_BY_ID[gid];
       const [x, y] = projectLonLat(g.lon, g.lat, w, h);
       const km = haversineKm(g.lat, g.lon, target.lat, target.lon);
-      const col = heatColor(km);
+      const col = state.activeRun.purist && gid !== target.id ? "#7dd3fc" : heatColor(km);
 
       // Directional bearing tick (if not purist & not exact)
       if (!state.activeRun.purist && gid !== target.id) {
@@ -1191,83 +1265,98 @@
   }
 
   // ---------- Autocomplete Dropdown ----------
-  function filterCountries(query) {
-    const q = query.trim().toLowerCase();
-    const round = currentRound();
-    const pool = getCountryPool(state.activeRun.setId).filter((c) => !round.guesses.includes(c.id));
-    if (!q) return pool.slice(0, 12);
+  function normalizeCountryName(value) {
+    return value.normalize("NFKD").toLowerCase().replace(/\p{M}/gu, "").replace(/[^\p{L}\p{N}]/gu, "");
+  }
 
-    const scored = [];
-    for (const c of pool) {
-      const nameLow = c.name.toLowerCase();
-      const aliasesLow = (c.aliases || []).map((a) => a.toLowerCase());
-      let score = 99;
-      if (nameLow.startsWith(q)) score = 0;
-      else if (aliasesLow.some((a) => a.startsWith(q))) score = 1;
-      else if (nameLow.includes(q)) score = 2;
-      else if (aliasesLow.some((a) => a.includes(q))) score = 3;
-      else if (c.region.toLowerCase().includes(q)) score = 4;
-      if (score < 99) scored.push({ c, score });
-    }
-    scored.sort((a, b) => a.score - b.score || a.c.rank - b.c.rank);
-    return scored.slice(0, 15).map((x) => x.c);
+  function filterCountries(query) {
+    const normalized = normalizeCountryName(query.trim());
+    return getCountryPool(state.activeRun.setId)
+      .filter((country) => !currentRound().guesses.includes(country.id))
+      .map((country) => {
+        const names = COUNTRY_SEARCH.get(country.id);
+        const score = names.includes(normalized) ? 0
+          : names[0].startsWith(normalized) ? 1
+          : names.some((name) => name.startsWith(normalized)) ? 2
+          : names.some((name) => name.includes(normalized)) ? 3 : 4;
+        return { country, score };
+      })
+      .filter(({ score }) => score < 4)
+      .sort((a, b) => a.score - b.score || a.country.name.localeCompare(b.country.name))
+      .map(({ country }) => country);
+  }
+
+  function closeDropdown() {
+    state.ddIndex = -1;
+    state.ddItems = [];
+    el.dropdown.hidden = true;
+    el.input.setAttribute("aria-expanded", "false");
+    el.input.removeAttribute("aria-activedescendant");
   }
 
   function renderDropdown(items) {
     state.ddItems = items;
     el.dropdown.replaceChildren();
     if (!items.length) {
-      el.dropdown.hidden = true;
-      el.input.setAttribute("aria-expanded", "false");
+      closeDropdown();
       return;
     }
-    items.forEach((c, idx) => {
-      const li = document.createElement("li");
-      li.role = "option";
-      if (idx === state.ddIndex) li.classList.add("is-highlighted");
-      li.innerHTML = `<span class="cg-dd-left"><span>${c.flag}</span><span>${c.name}</span></span><span class="cg-dd-region">${c.region}</span>`;
-      li.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        fillCountrySelection(c);
+    items.forEach((country, index) => {
+      const option = document.createElement("li");
+      const highlighted = index === state.ddIndex;
+      option.id = `cg-country-${country.id}`;
+      option.role = "option";
+      option.setAttribute("aria-selected", String(highlighted));
+      option.classList.toggle("is-highlighted", highlighted);
+      option.innerHTML = `<span class="cg-dd-left"><span>${country.flag}</span><span>${country.name}</span></span><span class="cg-dd-region">${country.region}</span>`;
+      option.addEventListener("mousedown", (event) => event.preventDefault());
+      option.addEventListener("click", () => {
+        el.input.value = country.name;
+        el.btnClearInput.hidden = false;
+        closeDropdown();
+        setFeedback("");
+        el.btnSubmit.focus();
       });
-      el.dropdown.append(li);
+      el.dropdown.append(option);
     });
     el.dropdown.hidden = false;
     el.input.setAttribute("aria-expanded", "true");
+    const selected = el.dropdown.children[state.ddIndex];
+    if (selected) {
+      el.input.setAttribute("aria-activedescendant", selected.id);
+      selected.scrollIntoView({ block: "nearest" });
+    } else {
+      el.input.removeAttribute("aria-activedescendant");
+    }
   }
 
-  function fillCountrySelection(c) {
-    el.input.value = c.name;
-    el.btnClearInput.hidden = false;
-    state.ddIndex = -1;
-    el.dropdown.hidden = true;
-    el.input.setAttribute("aria-expanded", "false");
-    setFeedback("");
-    el.btnSubmit.focus();
-  }
-
-  function selectAndSubmitCountry(c) {
+  function resetGuessInput() {
     el.input.value = "";
     el.btnClearInput.hidden = true;
-    state.ddIndex = -1;
-    el.dropdown.hidden = true;
-    el.input.setAttribute("aria-expanded", "false");
-    submitGuess(c.id);
+    closeDropdown();
+    setFeedback("");
   }
 
   // ---------- Modals ----------
   function closeAllModals() {
+    if (el.backdrop.hidden) return;
     el.backdrop.hidden = true;
     el.modalOptions.hidden = true;
     el.modalLeaderboard.hidden = true;
     el.modalPassport.hidden = true;
     el.modalHelp.hidden = true;
+    document.getElementById("cg-app").inert = false;
+    state.modalTrigger?.focus();
+    state.modalTrigger = null;
   }
 
   function openModal(modalEl) {
-    closeAllModals();
+    if (el.backdrop.hidden) state.modalTrigger = document.activeElement;
+    closeDropdown();
+    document.getElementById("cg-app").inert = true;
     el.backdrop.hidden = false;
     modalEl.hidden = false;
+    modalEl.querySelector("[data-close-modal]").focus();
   }
 
   function openOptionsModal() {
@@ -1323,20 +1412,25 @@
     const periods = getPeriodKeys();
     const tab = state.lbTab;
     const periodKey = tab === "alltime" ? "All-Time" : periods[tab];
+    state.leaderboardPeriod = periodKey;
     const infoEl = document.getElementById("lb-period-info");
     const tbody = document.getElementById("lb-tbody");
+    const selectedSetup = { setId: state.activeRun.setId, deckId: state.activeRun.deckId, purist: state.activeRun.purist };
+    const matchesSetup = (row) => row.setId === selectedSetup.setId &&
+      row.deckId === selectedSetup.deckId && Boolean(row.purist) === selectedSetup.purist;
 
     let rows = [];
     if (tab === "alltime") {
-      infoEl.textContent = "Your personal all-time top runs across all challenges & sets (saved locally).";
+      infoEl.textContent = "All-time results saved on this device, including imported results.";
       rows = state.leaderboard.slice();
     } else {
-      infoEl.textContent = `Active ${tab.toUpperCase()} reset: ${periodKey} UTC · Combines your runs, imported friend tokens & deterministic Global Benchmarks.`;
-      const localRows = state.leaderboard.filter((r) => r.cadence === tab && r.periodKey === periodKey);
-      const benchRows = getBenchmarkField(tab, periodKey);
-      rows = [...localRows, ...benchRows];
+      const setups = getActiveSet().name + " · " + getActiveDeck().name + (selectedSetup.purist ? " · Purist" : "");
+      infoEl.textContent = `${periodKey} UTC · ${setups}. Results saved on this device.`;
+      const localRows = state.leaderboard.filter((row) => row && row.cadence === tab && row.periodKey === periodKey);
+      rows = [...localRows, ...getBenchmarkField(tab, periodKey)].filter(matchesSetup);
     }
 
+    rows = rows.filter((row) => row && Number.isFinite(row.score) && Number.isFinite(row.timeSec));
     rows.sort((a, b) => b.score - a.score || a.timeSec - b.timeSec);
     rows = rows.slice(0, 20);
 
@@ -1358,14 +1452,15 @@
           : r.isFriend
             ? `<span class="cg-tag-bench" style="color:var(--cyan)">Friend</span>`
             : "";
-      const setLabel = (CG.COUNTRY_SETS.find((s) => s.id === r.setId)?.name || r.setId).replace(" Population", "");
+      const setLabel = (CG.COUNTRY_SETS.find((s) => s.id === r.setId)?.name || String(r.setId ?? "Unknown setup")).replace(" Population", "");
+      const deckName = CG.DIMENSION_DECKS.find((deck) => deck.id === r.deckId)?.name || r.deckId;
       tr.innerHTML = `
         <td>${idx + 1}</td>
         <td>${escapeHtml(r.player)}${tag}</td>
         <td><strong>${r.score.toLocaleString()}</strong></td>
         <td>${escapeHtml(r.resultText)}</td>
         <td>${r.timeSec}s</td>
-        <td><small>${escapeHtml(setLabel)}</small></td>
+        <td><small>${escapeHtml(setLabel)} · ${escapeHtml(deckName)}${r.purist ? " · Purist" : ""}</small></td>
       `;
       tbody.append(tr);
     });
@@ -1457,10 +1552,11 @@
   function bindEvents() {
     el.cadenceTabs.forEach((tab) => {
       tab.addEventListener("click", () => {
+        if (state.cadence === tab.dataset.cadence) return;
         state.cadence = tab.dataset.cadence;
         state.almanacCat = "all";
         resetMapView();
-        setFeedback("");
+        resetGuessInput();
         loadOrCreateRun();
         renderAll();
       });
@@ -1471,85 +1567,99 @@
     el.btnRanksAfter.addEventListener("click", () => openLeaderboardModal());
 
     el.btnShare.addEventListener("click", async () => {
-      const txt = buildShareText();
+      const run = state.activeRun;
+      const text = buildShareText();
+      const copy = document.getElementById("share-copy");
       try {
-        await navigator.clipboard.writeText(txt);
-        el.shareToast.textContent = "✓ Result & verification token copied to clipboard!";
+        await navigator.clipboard.writeText(text);
+        if (state.activeRun !== run) return;
+        copy.hidden = true;
+        el.shareToast.textContent = "Result and comparison token copied.";
       } catch {
-        el.shareToast.textContent = "Share ready — select & copy from console or token.";
+        if (state.activeRun !== run) return;
+        copy.value = text;
+        copy.hidden = false;
+        copy.focus();
+        copy.select();
+        el.shareToast.textContent = "Copy the selected result to share it.";
       }
       el.shareToast.hidden = false;
     });
 
-    // Autocomplete & form
     el.input.addEventListener("input", () => {
-      const val = el.input.value;
-      el.btnClearInput.hidden = !val;
-      state.ddIndex = 0;
-      renderDropdown(filterCountries(val));
+      el.btnClearInput.hidden = !el.input.value;
+      state.ddIndex = -1;
+      const matches = filterCountries(el.input.value);
+      renderDropdown(matches);
+      setFeedback(matches.length ? "" : "No available countries match that search.");
     });
 
     el.input.addEventListener("focus", () => {
-      if (currentRound().status === "playing") {
-        renderDropdown(filterCountries(el.input.value));
-      }
+      if (currentRound().status === "playing") renderDropdown(filterCountries(el.input.value));
     });
 
-    el.input.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        if (!state.ddItems.length) renderDropdown(filterCountries(el.input.value));
-        state.ddIndex = Math.min(state.ddItems.length - 1, state.ddIndex + 1);
-        renderDropdown(state.ddItems);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        state.ddIndex = Math.max(0, state.ddIndex - 1);
-        renderDropdown(state.ddItems);
-      } else if (e.key === "Escape") {
-        el.dropdown.hidden = true;
-        el.input.setAttribute("aria-expanded", "false");
+    el.input.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeDropdown();
+      } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const items = state.ddItems.length ? state.ddItems : filterCountries(el.input.value);
+        if (!items.length) return;
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        state.ddIndex = state.ddIndex < 0 && step < 0
+          ? items.length - 1
+          : Math.max(0, Math.min(items.length - 1, state.ddIndex + step));
+        renderDropdown(items);
       }
     });
 
     el.btnClearInput.addEventListener("click", () => {
-      el.input.value = "";
-      el.btnClearInput.hidden = true;
+      resetGuessInput();
       el.input.focus();
       renderDropdown(filterCountries(""));
     });
 
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".cg-autocomplete-wrap")) {
-        el.dropdown.hidden = true;
-        el.input.setAttribute("aria-expanded", "false");
-      }
+    document.addEventListener("focusin", (event) => {
+      if (!event.target.closest(".cg-autocomplete-wrap")) closeDropdown();
+    });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".cg-autocomplete-wrap")) closeDropdown();
     });
 
-    el.guessForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const raw = el.input.value.trim().toLowerCase();
-      if (state.ddIndex >= 0 && state.ddItems[state.ddIndex]) {
-        selectAndSubmitCountry(state.ddItems[state.ddIndex]);
+    el.guessForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const query = normalizeCountryName(el.input.value);
+      const selected = state.ddItems[state.ddIndex];
+      const matches = query ? filterCountries(el.input.value) : [];
+      const exact = matches.filter((country) => COUNTRY_SEARCH.get(country.id).includes(query));
+      const country = selected || (exact.length === 1 ? exact[0] : matches.length === 1 ? matches[0] : null);
+      if (!country) {
+        setFeedback("Choose a country from the search results.");
         return;
       }
-      const matches = filterCountries(raw);
-      const exact = matches.find(
-        (c) => c.name.toLowerCase() === raw || (c.aliases || []).some((a) => a.toLowerCase() === raw)
-      );
-      if (exact) {
-        selectAndSubmitCountry(exact);
-      } else if (matches.length === 1) {
-        selectAndSubmitCountry(matches[0]);
-      } else {
-        setFeedback("Pick a country from the dropdown list.");
+      resetGuessInput();
+      submitGuess(country.id);
+      if (currentRound().status !== "playing") {
+        (state.activeRun.completed ? el.btnShare : el.btnNext).focus();
       }
     });
 
-    // Global keyboard shortcuts
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeAllModals();
-      if (e.key === "/" && document.activeElement !== el.input && el.backdrop.hidden) {
-        e.preventDefault();
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !el.backdrop.hidden) closeAllModals();
+      if (event.key === "Tab" && !el.backdrop.hidden) {
+        const modal = el.backdrop.querySelector(".cg-modal:not([hidden])");
+        const controls = [...modal.querySelectorAll("button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href]")]
+          .filter((control) => control.getClientRects().length);
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first || !event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+      }
+      if (event.key === "/" && el.backdrop.hidden && currentRound().status === "playing" &&
+          !event.target.closest("input, textarea, [contenteditable]") && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
         el.input.focus();
       }
     });
@@ -1570,7 +1680,7 @@
     document.getElementById("btn-apply-options").addEventListener("click", () => {
       const selSet = document.querySelector("#opt-country-sets .is-selected")?.dataset.setId || "top100";
       const selDeck = document.querySelector("#opt-dimension-decks .is-selected")?.dataset.deckId || "balanced";
-      state.profile.callsign = document.getElementById("opt-callsign").value.trim() || "AtlasExplorer";
+      state.profile.callsign = document.getElementById("opt-callsign").value.trim().toWellFormed() || defaultProfile.callsign;
       state.profile.setId = selSet;
       state.profile.deckId = selDeck;
       state.profile.purist = document.getElementById("opt-purist").checked;
@@ -1578,17 +1688,22 @@
       state.profile.sound = document.getElementById("opt-sound").checked;
       saveJSON(STORAGE_KEYS.profile, state.profile);
       closeAllModals();
-      resetMapView();
+      const previousKey = state.activeRun.key;
       loadOrCreateRun();
+      if (state.activeRun.key !== previousKey) {
+        state.almanacCat = "all";
+        resetGuessInput();
+        resetMapView();
+      }
       renderAll();
+      if (currentRound().status === "playing") el.input.focus();
     });
 
     document.getElementById("btn-reset-official").addEventListener("click", () => {
-      state.profile.setId = "top100";
-      state.profile.deckId = "balanced";
-      state.profile.purist = false;
-      saveJSON(STORAGE_KEYS.profile, state.profile);
-      openOptionsModal();
+      for (const card of document.querySelectorAll(".cg-choice-card")) {
+        card.classList.toggle("is-selected", card.dataset.setId === "top100" || card.dataset.deckId === "balanced");
+      }
+      document.getElementById("opt-purist").checked = false;
     });
 
     document.querySelectorAll(".cg-lb-tab").forEach((btn) => {
@@ -1626,11 +1741,13 @@
     });
 
     el.mapCanvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || state.mapView.zoom === 1 || state.mapView.dragging) return;
       state.mapView.dragging = true;
+      el.mapCanvas.setPointerCapture(e.pointerId);
       state.mapView.lastX = e.clientX;
       state.mapView.lastY = e.clientY;
     });
-    window.addEventListener("pointerup", () => { state.mapView.dragging = false; });
+    el.mapCanvas.addEventListener("lostpointercapture", () => { state.mapView.dragging = false; });
     el.mapCanvas.addEventListener("pointermove", (e) => {
       const rect = el.mapCanvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
@@ -1656,7 +1773,7 @@
                 ? `${Math.round(hit.km * 0.621371).toLocaleString()} mi`
                 : `${hit.km.toLocaleString()} km`;
         el.mapTooltip.textContent = `#${hit.idx} ${hit.country.flag} ${hit.country.name} (${distTxt})`;
-        el.mapTooltip.style.left = `${Math.min(rect.width - 160, Math.max(6, mx + 10))}px`;
+        el.mapTooltip.style.left = `${Math.max(6, Math.min(rect.width - 160, mx + 10))}px`;
         el.mapTooltip.style.top = `${Math.max(6, my - 28)}px`;
         el.mapTooltip.hidden = false;
       } else {
@@ -1664,7 +1781,7 @@
       }
     });
     el.mapCanvas.addEventListener("mouseleave", () => { el.mapTooltip.hidden = true; });
-    window.addEventListener("resize", () => renderWorldMap());
+    new ResizeObserver(renderWorldMap).observe(el.mapCanvas);
   }
 
   // ---------- Live Countdown & Reset Watcher ----------
@@ -1675,18 +1792,16 @@
     el.timerDaily.textContent = cd.daily;
     el.timerWeekly.textContent = cd.weekly;
 
-    const currentPeriods = getPeriodKeys(now);
-    if (
-      state.cadence !== "practice" &&
-      currentPeriods[state.cadence] !== state.lastPeriodKeys[state.cadence]
-    ) {
-      state.lastPeriodKeys = currentPeriods;
+    const periods = getPeriodKeys(now);
+    if (state.cadence !== "practice" && periods[state.cadence] !== state.activeRun.periodKey) {
+      state.almanacCat = "all";
+      resetGuessInput();
       resetMapView();
       loadOrCreateRun();
       renderAll();
-    } else {
-      state.lastPeriodKeys = currentPeriods;
     }
+    if (!el.modalLeaderboard.hidden && state.lbTab !== "alltime" &&
+        state.leaderboardPeriod !== periods[state.lbTab]) renderLeaderboard();
   }
 
   // ---------- Boot ----------

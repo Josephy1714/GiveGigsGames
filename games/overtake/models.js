@@ -13,15 +13,25 @@
     return { positions, normals: directions };
   }
 
-  function carPart(outline, width, bevel) {
+  function carPart(outline, width, bevel, roof = false) {
     const shape = new THREE.Shape();
     outline.forEach(([z, y], i) => i ? shape.lineTo(z, y) : shape.moveTo(z, y));
     shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: width, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 1, steps: 1,
+      depth: width, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 3, steps: 1,
     });
     geometry.translate(0, 0, -width / 2);
     geometry.rotateY(-Math.PI / 2);
+    const vertices = geometry.getAttribute("position");
+    const minY = Math.min(...outline.map(([, y]) => y));
+    const maxY = Math.max(...outline.map(([, y]) => y));
+    for (let i = 0; i < vertices.count; i += 1) {
+      const taper = roof
+        ? 0.24 * THREE.MathUtils.clamp((vertices.getY(i) - minY) / (maxY - minY), 0, 1)
+        : 0.18 * THREE.MathUtils.smoothstep(vertices.getZ(i), 80, 340);
+      vertices.setX(i, vertices.getX(i) * (1 - taper));
+    }
+    geometry.computeVertexNormals();
     const data = meshData(geometry);
     geometry.dispose();
     return data;
@@ -40,11 +50,16 @@
   function car(id) {
     if (!cars.has(id)) {
       const profile = profiles[id] ?? profiles.starter;
+      const rear = profile.body.reduce((a, b) => a[0] < b[0] ? a : b);
+      const nose = profile.body.reduce((a, b) => a[0] > b[0] ? a : b);
       cars.set(id, {
         body: carPart(profile.body, profile.width, 13),
-        cabin: carPart(profile.cabin, profile.width * (id === "prototype" || id === "hyper" ? 0.50 : 0.66), 9),
+        cabin: carPart(profile.cabin, profile.width * (id === "prototype" || id === "hyper" ? 0.50 : 0.66), 9, true),
         width: profile.width,
         wing: profile.wing,
+        rearZ: -rear[0] + 12,
+        noseZ: -nose[0] - 8,
+        noseY: Math.max(66, nose[1]),
       });
     }
     return cars.get(id);
@@ -119,7 +134,7 @@
 
   function previewCar(canvas, id, color) {
     return preview(canvas, () => {
-      const { body, cabin, width, wing } = car(id);
+      const { body, cabin, width, wing, rearZ, noseZ } = car(id);
       const model = new THREE.Group();
       for (const [data, paint] of [[body, color], [cabin, "#203f64"]]) {
         const geometry = new THREE.BufferGeometry();
@@ -129,13 +144,18 @@
         model.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: paint, roughness: 0.36 })));
       }
       const rubber = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.82 });
-      const tire = new THREE.CylinderGeometry(58, 58, 46, 12);
+      const tire = new THREE.CylinderGeometry(58, 58, 54, 28);
+      const rim = new THREE.TorusGeometry(35, 4, 8, 20);
+      const alloy = new THREE.MeshStandardMaterial({ color: 0x879bad, roughness: 0.25, metalness: 0.6 });
       for (const side of [-1, 1]) {
-        for (const axle of [-165, 165]) {
+        for (const axle of [-rearZ * 0.66, -noseZ * 0.60]) {
           const wheel = new THREE.Mesh(tire, rubber);
           wheel.rotation.z = Math.PI / 2;
-          wheel.position.set(side * (width / 2 + 26), 58, axle);
-          model.add(wheel);
+          wheel.position.set(side * (width / 2 + 8), 58, axle);
+          const rimMesh = new THREE.Mesh(rim, alloy);
+          rimMesh.rotation.y = Math.PI / 2;
+          rimMesh.position.set(wheel.position.x + side * 27, 58, axle);
+          model.add(wheel, rimMesh);
         }
       }
       if (wing) {

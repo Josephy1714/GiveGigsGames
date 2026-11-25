@@ -36,6 +36,7 @@
             <div class="stat-box" id="lives-box">LIVES <span id="lives-val">3</span></div>
             <button type="button" class="stat-box hidden" id="weapon-switch" aria-label="Switch weapon">WEAPON <span id="weapon-val">DEVASTATOR</span><progress id="weapon-charge" aria-label="Weapon ready" value="1" max="1"></progress></button>
             <div class="stat-box">KILLS <span id="score-val">0</span></div>
+            <button type="button" class="utility-btn" data-stats>Stats</button>
             <button id="menu-btn">MENU</button>
         </div>
     </div>
@@ -52,8 +53,32 @@
             <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>
             <button class="mode-btn" data-mode="rts">3. RTS SQUAD (4+ BOTS)</button>
         </div>
-        <p class="controls-hint">Player: WASD, Space to jump, Shift to dash, hold click to fire, 1–4 to switch weapons, Q to hold or follow, E to upgrade a nearby bot you’re aiming at | Touch: move pad, drag to aim, tap HUD controls | Auto: Spectate &amp; Upgrade | RTS: Tap to Rally</p>
+        <div class="arena-options">
+            <label><input type="checkbox" id="voice-toggle" checked /> Teammate speech</label>
+            <button type="button" class="utility-btn" data-fullscreen>Fullscreen</button>
+            <button type="button" class="utility-btn" data-stats>Stats</button>
+        </div>
+        <p class="controls-hint">Player: WASD, Space to jump or wall-jump, Shift to dash, hold click to fire, 1–4 to switch weapons, Q to hold or follow, E to upgrade a nearby bot you’re aiming at, F for fullscreen, P for stats | Touch: move pad, drag to aim, tap HUD controls | Auto: Spectate &amp; Upgrade | RTS: Tap to Rally</p>
     </div>
+
+    <p id="fullscreen-status" role="status"></p>
+
+    <dialog id="stats-dialog" aria-labelledby="stats-heading">
+        <form method="dialog" class="stats-header">
+            <h2 id="stats-heading">Player stats</h2>
+            <button class="utility-btn" autofocus>Close</button>
+        </form>
+        <table aria-label="Player Control totals">
+            <thead><tr><th scope="col">Arena</th><th scope="col">Kills</th><th scope="col">Deaths</th><th scope="col">K/D</th></tr></thead>
+            <tbody id="stat-totals"></tbody>
+        </table>
+        <h3>Daily history · all arenas</h3>
+        <p id="stats-empty">Play a Player Control run to start tracking kills and deaths.</p>
+        <table aria-label="Daily Player Control history">
+            <thead><tr><th scope="col">Date</th><th scope="col">Kills</th><th scope="col">Deaths</th><th scope="col">K/D</th></tr></thead>
+            <tbody id="stat-history"></tbody>
+        </table>
+    </dialog>
 
     <div id="upgrade-modal" class="hidden">
         <h2>RUN OVER — UPGRADE BOT</h2>

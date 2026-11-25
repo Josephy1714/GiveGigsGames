@@ -132,6 +132,7 @@ export declare class StandardMaterial {
   diffuseColor: Color3;
   emissiveColor: Color3;
   specularColor: Color3;
+  specularPower: number;
   ambientColor: Color3;
   diffuseTexture: DynamicTexture | null;
   emissiveTexture: DynamicTexture | null;

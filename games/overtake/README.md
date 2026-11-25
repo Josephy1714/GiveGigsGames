@@ -23,7 +23,8 @@ Open `http://localhost:4173/games/overtake/index.html`.
 
 ## Controls
 
-- Arrow keys or WASD steer, accelerate, and brake.
+- Arrow keys or WASD steer, accelerate, and brake. Hold Up or W to accelerate. Auto-Accelerate is optional in Options.
+- Steer into curves and countersteer to straighten out. Ease off the throttle or brake before tight corners. The tires have less grip on the shoulder and during a handbrake drift.
 - C or Ctrl applies the handbrake. Release it on the pavement after a sustained corner drift to earn a mini-turbo.
 - Space, Shift, or N uses nitro while the bar has charge.
 - P or Escape pauses/resumes the race.

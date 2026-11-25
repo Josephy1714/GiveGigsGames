@@ -1,6 +1,7 @@
 // GraveGain3DC — Xonotic-inspired Arena FPS (Player, Auto-Battler Roguelite, RTS Squad, 3 Maps)
 import { MAPS, MAP_LIST } from './maps.js';
 import { createWeaponView } from './weapon-view.js';
+import { createPlayerStats } from './player-stats.js';
 import { createBotComms } from './bot-comms.js';
 import { createBotModels } from './bot-models.js';
 import { findCover, lineBlocked } from './squad-tactics.js';
@@ -14,19 +15,21 @@ const PLAYER_RADIUS = 0.55;
 const PLAYER_HEIGHT = 2.0;
 const BOT_RADIUS = 0.55;
 const BOT_HEIGHT = 2.2;
+const WALL_HOLD_TIME = 0.32;
+const ENEMY_MOVE_SCALE = 0.72;
 
 const WEAPONS = [
-    { name: 'DEVASTATOR', speed: 39, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, heatPerShot: 0.34, coolRate: 0.24, overheatCoolRate: 0.16, sound: [155, .18, "sawtooth"], hudColor: "#ff8235" },
-    { name: 'VORTEX', speed: 123.75, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, heatPerShot: 0.45, coolRate: 0.22, overheatCoolRate: 0.14, sound: [850, .15, "triangle"], hudColor: "#3af4ff" },
-    { name: 'SHOTGUN', speed: 67.5, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, heatPerShot: 0.26, coolRate: 0.32, overheatCoolRate: 0.24, sound: [105, .12, "square"], hudColor: "#ffdb59" },
-    { name: 'ELECTRO', speed: 51, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, heatPerShot: 0.10, coolRate: 0.38, overheatCoolRate: 0.30, sound: [430, .07, "sine"], hudColor: "#ca8bff" }
+    { name: 'DEVASTATOR', speed: 39, color: new BABYLON.Color3(1, 0.45, 0.1), splash: 8, damage: 70, cooldown: 0.6, heatPerShot: 0.34, coolRate: 0.24, overheatCoolRate: 0.16, sound: [155, .24, "sawtooth", 350, 3], hudColor: "#ff8235" },
+    { name: 'VORTEX', speed: 123.75, color: new BABYLON.Color3(0, 0.95, 1), splash: 0, damage: 90, cooldown: 0.85, heatPerShot: 0.45, coolRate: 0.22, overheatCoolRate: 0.14, sound: [850, .17, "triangle", 2600, 1.5], hudColor: "#3af4ff" },
+    { name: 'SHOTGUN', speed: 67.5, color: new BABYLON.Color3(1, 0.85, 0.2), splash: 0, damage: 50, cooldown: 0.48, heatPerShot: 0.26, coolRate: 0.32, overheatCoolRate: 0.24, sound: [105, .12, "square", 1200, 5], hudColor: "#ffdb59" },
+    { name: 'ELECTRO', speed: 51, color: new BABYLON.Color3(0.7, 0.3, 1), splash: 3.5, damage: 26, cooldown: 0.13, heatPerShot: 0.10, coolRate: 0.38, overheatCoolRate: 0.30, sound: [430, .09, "sine", 4600, 2], hudColor: "#ca8bff" }
 ];
 
 // Lightweight Web Audio synth for Xonotic-style SFX
 const audioCtx = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
 function playSfx(freq, dur = 0.08, type = 'sawtooth', vol = 0.06) {
     if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = type;
@@ -38,6 +41,31 @@ function playSfx(freq, dur = 0.08, type = 'sawtooth', vol = 0.06) {
     gain.connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + dur);
+}
+
+let shotNoise;
+function playWeaponSound(weapon, volume) {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const [pitch, duration, wave, cutoff, noiseLevel] = weapon.sound;
+    const variation = .88 + Math.random() * .24;
+    playSfx(pitch * variation, duration, wave, volume);
+    if (!shotNoise) {
+        shotNoise = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+        const samples = shotNoise.getChannelData(0);
+        for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = shotNoise;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = cutoff * variation;
+    const envelope = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+    envelope.gain.setValueAtTime(volume * noiseLevel, now);
+    envelope.gain.exponentialRampToValueAtTime(.001, now + duration);
+    noise.connect(filter).connect(envelope).connect(audioCtx.destination);
+    noise.start(now, Math.random() * .7, duration);
 }
 
 const SAVE_KEY = 'gravegain3dc_roguelite_v1';
@@ -92,7 +120,26 @@ function createScene() {
 
     const weaponView = createWeaponView(scene, camera, WEAPONS);
     const buildBotModel = createBotModels(scene);
-    const comms = createBotComms();
+    const voiceToggle = document.getElementById('voice-toggle');
+    const comms = createBotComms(audioCtx, camera, voiceToggle);
+    const statsDialog = document.getElementById('stats-dialog');
+    const stats = createPlayerStats(statsDialog);
+    const wallNormal = BABYLON.Vector3.Zero();
+    const wallContact = BABYLON.Vector3.Zero();
+    let wallHold = 0;
+    let wallUsed = false;
+    let jumpQueued = false;
+    let lowHealthWarned = false;
+
+    function squadCallout(event, bot) {
+        if (mode !== 'player') return;
+        const speaker = bot ?? friendlies.reduce((closest, ally) =>
+            !closest || BABYLON.Vector3.DistanceSquared(ally.mesh.position, camera.position) <
+                BABYLON.Vector3.DistanceSquared(closest.mesh.position, camera.position) ? ally : closest, null);
+        comms.say(event, speaker, friendlies.indexOf(speaker));
+    }
+
+    voiceToggle.addEventListener('change', () => comms.prepare());
 
     // Squad rally marker
     const rallyMarker = BABYLON.MeshBuilder.CreateTorus('rallyMarker', { diameter: 3.2, thickness: 0.25, tessellation: 24 }, scene);
@@ -367,6 +414,7 @@ function createScene() {
         bot.grounded = true;
         bot.padCooldown = 0;
         bot.padFlightTimer = 0;
+        bot.atCover = false;
         bot.mesh.position.set(sx, sy + 1.1, sz);
     }
 
@@ -378,7 +426,25 @@ function createScene() {
         player.padCooldown = 0;
         player.padFlightTimer = 0;
         player.hp = 100;
+        wallHold = 0;
+        wallUsed = false;
+        lowHealthWarned = false;
         camera.position.set(px, py + PLAYER_HEIGHT, pz);
+    }
+
+    function losePlayer() {
+        stats.record('deaths');
+        playSfx(140, 0.2, 'sawtooth', 0.07);
+        respawnPlayer();
+    }
+
+    function damagePlayer(amount) {
+        player.hp -= amount;
+        if (player.hp <= 0) losePlayer();
+        else if (player.hp <= 30 && !lowHealthWarned) {
+            lowHealthWarned = true;
+            squadCallout('low');
+        }
     }
 
     function clearEntities() {
@@ -401,8 +467,9 @@ function createScene() {
     }
 
     // Shared map AABB collision, jump pad & hazard physics (pos = entity feet)
-    function moveEntityWithMap(pos, vel, radius, height, dt, entityState) {
+    function moveEntityWithMap(pos, vel, radius, height, dt, entityState, contact) {
         // 1. Horizontal movement + wall/block AABB pushout
+        contact?.setAll(0);
         pos.x += vel.x * dt;
         pos.z += vel.z * dt;
 
@@ -418,9 +485,11 @@ function createScene() {
                     if (ox < oz) {
                         pos.x += dx >= 0 ? ox : -ox;
                         vel.x = 0;
+                        contact?.set(Math.sign(dx) || 1, 0, 0);
                     } else {
                         pos.z += dz >= 0 ? oz : -oz;
                         vel.z = 0;
+                        contact?.set(0, 0, Math.sign(dz) || 1);
                     }
                 }
             }
@@ -537,6 +606,7 @@ function createScene() {
         loadMap(selectedMapId);
         clearHeldInput();
         comms.reset();
+        if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
         mode = newMode;
         weaponView.setVisible(mode === 'player');
         player.fireTimer = 0;
@@ -559,6 +629,8 @@ function createScene() {
         rallyMarker.isVisible = newMode === 'rts';
 
         if (newMode === 'player') {
+            stats.start(currentMap.id);
+            comms.prepare();
             camera.rotation.set(0, 0, 0);
             camera.fov = 1.05;
             for (let i = 0; i < 2; i++) {
@@ -609,6 +681,35 @@ function createScene() {
         overlay.classList.remove('hidden');
         upgradeModal.classList.add('hidden');
     });
+
+    const fullscreenButtons = document.querySelectorAll('[data-fullscreen]');
+    async function toggleFullscreen() {
+        const status = document.getElementById('fullscreen-status');
+        try {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else await document.documentElement.requestFullscreen();
+            status.textContent = '';
+        } catch {
+            status.textContent = 'Fullscreen is unavailable here.';
+        }
+    }
+    fullscreenButtons.forEach(button => button.addEventListener('click', toggleFullscreen));
+    document.addEventListener('fullscreenchange', () => {
+        fullscreenButtons.forEach(button => {
+            button.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+        });
+        engine.resize();
+    });
+
+    function openStats() {
+        if (statsDialog.open) return;
+        clearHeldInput();
+        comms.reset();
+        if (document.pointerLockElement === canvas) document.exitPointerLock?.();
+        stats.render(mode === 'menu' ? MAPS[selectedMapId] : currentMap);
+        statsDialog.showModal();
+    }
+    document.querySelectorAll('[data-stats]').forEach(button => button.addEventListener('click', openStats));
 
     rtsAddBtn.addEventListener('click', () => {
         if (mode !== 'rts') return;
@@ -676,6 +777,7 @@ function createScene() {
         for (const key of Object.keys(keys)) keys[key] = false;
         touchMove.x = touchMove.y = 0;
         firing = false;
+        jumpQueued = false;
     }
     window.addEventListener('blur', clearHeldInput);
     document.addEventListener('pointerlockchange', () => {
@@ -717,7 +819,10 @@ function createScene() {
         lastLook = { x: event.clientX, y: event.clientY };
     }, () => { lastLook = null; });
     for (const [id, key] of [['btn-jump', 'Space'], ['btn-dash', 'ShiftLeft']]) {
-        bindTouch(document.getElementById(id), () => { keys[key] = true; }, () => { keys[key] = false; });
+        bindTouch(document.getElementById(id), (_event, start) => {
+            if (start && key === 'Space') jumpQueued = true;
+            keys[key] = true;
+        }, () => { keys[key] = false; });
     }
     bindTouch(document.getElementById('btn-fire'), () => { firing = true; }, () => { firing = false; });
 
@@ -726,6 +831,18 @@ function createScene() {
         camera.rotation.x = Math.max(-1.45, Math.min(1.45, camera.rotation.x + dy * sensitivity));
     }
     window.addEventListener('keydown', (e) => {
+        if (statsDialog.open) return;
+        if (e.code === 'KeyF' || e.code === 'KeyP') {
+            if (e.repeat) return;
+            e.preventDefault();
+            if (e.code === 'KeyF') toggleFullscreen();
+            else openStats();
+            return;
+        }
+        if (mode === 'player' && e.code === 'Space') {
+            e.preventDefault();
+            if (!e.repeat) jumpQueued = true;
+        }
         keys[e.code] = true;
         if (e.code === 'Digit1' || e.key === '1') player.weaponIdx = 0;
         if (e.code === 'Digit2' || e.key === '2') player.weaponIdx = 1;
@@ -735,7 +852,7 @@ function createScene() {
         if (!e.repeat && e.code === 'KeyE') upgradeCompanion();
     });
     window.addEventListener('wheel', (e) => {
-        if (mode !== 'player' || e.deltaY === 0) return;
+        if (statsDialog.open || mode !== 'player' || e.deltaY === 0) return;
         player.weaponIdx = (player.weaponIdx + (e.deltaY > 0 ? 1 : WEAPONS.length - 1)) % WEAPONS.length;
     }, { passive: true });
     window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -798,14 +915,14 @@ function createScene() {
         } else {
             spawnProjectile(origin, forward, weapon, 'friendly', true);
         }
-        playSfx(weapon.sound[0], weapon.sound[1], weapon.sound[2], .07);
+        playWeaponSound(weapon, .085);
     }
 
     const stopMouseFire = (e) => {
         if (e.pointerType !== 'touch' && e.button === 0) firing = false;
     };
     const startMouseFire = (e) => {
-        if (e.pointerType === 'touch' || mode !== 'player' || e.button !== 0) return;
+        if (statsDialog.open || e.pointerType === 'touch' || mode !== 'player' || e.button !== 0) return;
         if (document.pointerLockElement !== canvas &&
             e.target?.closest?.('button, a, input, select, #overlay, #upgrade-modal')) return;
         if (document.pointerLockElement !== canvas) {
@@ -830,10 +947,12 @@ function createScene() {
         rtsHint.textContent = 'Squad rally point set';
     });
 
-    function handleEnemyDeath(enemy) {
-        player.score++;
+    function handleEnemyDeath(enemy, playerKill = false) {
+        if (mode !== 'player' || playerKill) player.score++;
         if (mode === 'player') {
+            if (playerKill) stats.record('kills');
             dropScrap(enemy.mesh.position);
+            if (playerKill) squadCallout('kill');
             playSfx(1040, .12, 'triangle', .07);
         }
         if (mode === 'autobattler') {
@@ -867,7 +986,7 @@ function createScene() {
             bot.cover = null;
             bot.coverTimer = 0;
         }
-        comms.say(squadHolding ? 'hold' : 'follow', 'friendly');
+        squadCallout(squadHolding ? 'hold' : 'follow');
         playSfx(squadHolding ? 520 : 690, .12, 'triangle', .05);
     }
 
@@ -899,7 +1018,7 @@ function createScene() {
         bot.rank++;
         bot.maxHp += 25;
         bot.hp = bot.maxHp;
-        comms.say('upgrade', 'friendly');
+        squadCallout('upgrade', bot);
         playSfx(960, .22, 'triangle', .07);
     }
 
@@ -985,9 +1104,12 @@ function createScene() {
         move.set(goal.x - bot.pos.x, 0, goal.z - bot.pos.z);
         const distance = move.length();
         if (distance < (bot.cover ? .45 : 1.5)) {
+            if (bot.action === 'In cover' && !bot.atCover) squadCallout('cover', bot);
+            bot.atCover = bot.action === 'In cover';
             move.setAll(0);
             return;
         }
+        bot.atCover = false;
         move.scaleInPlace(1 / distance);
         if (!bot.grounded) return;
         const sample = bot.mesh.position.add(move.scale(Math.min(1.8, distance)));
@@ -1025,7 +1147,7 @@ function createScene() {
 
     function damageFriendly(bot, amount, impact) {
         if (bot.hurtTimer <= 0) {
-            comms.say('hurt', 'friendly');
+            squadCallout('hurt', bot);
         }
         fractureBot(bot, amount, impact, false);
         bot.hurtTimer = 1.8;
@@ -1040,12 +1162,8 @@ function createScene() {
             if (BABYLON.Vector3.Distance(bot.mesh.position, target.position) > 2.4 ||
                 lineBlocked(bot.mesh.position, target.position, solidBlocks)) return false;
             if (target === camera) {
-                player.hp -= 24;
                 playSfx(92, .18, 'triangle', .08);
-                if (player.hp <= 0) {
-                    playSfx(140, 0.2, 'sawtooth', 0.07);
-                    respawnPlayer();
-                }
+                damagePlayer(24);
                 return false;
             }
             const ally = friendlies.find(friend => friend.mesh === target);
@@ -1055,7 +1173,7 @@ function createScene() {
             !lineBlocked(bot.mesh.position, target.position, solidBlocks)) {
             bot.windup = .38;
             if (BABYLON.Vector3.Distance(camera.position, bot.mesh.position) < 18) {
-                comms.say('melee', 'enemy');
+                if (target === camera) squadCallout('melee');
                 playSfx(330, .16, 'triangle', .05);
             }
         }
@@ -1106,7 +1224,7 @@ function createScene() {
         }
 
         const speedBonus = 1 + autoUpgrade(bot.team, 'speed') * 0.1;
-        const moveSpeed = (bot.melee ? 15 : 12) * speedBonus;
+        const moveSpeed = (bot.melee ? 15 : 12) * speedBonus * (bot.team === 'enemy' ? ENEMY_MOVE_SCALE : 1);
         const moveDir = new BABYLON.Vector3(0, 0, 0);
 
         const companion = mode === 'player' && bot.team === 'friendly';
@@ -1163,8 +1281,10 @@ function createScene() {
                 (!companion || !lineBlocked(bot.mesh.position, nearest.position, solidBlocks))) {
                 const cdMult = bot.team === 'friendly' ? Math.max(0.4, 1 - autoUpgrade(bot.team, 'fireRate') * 0.1) : 1.15;
                 bot.fireTimer = (0.55 + Math.random() * 0.35) * cdMult / (1 + bot.rank * .08);
-                if (bot.team === 'enemy' && Math.random() < .22 &&
-                    BABYLON.Vector3.Distance(camera.position, bot.mesh.position) < 26) comms.say('ranged', 'enemy');
+                if (companion && Math.random() < .27) {
+                    const heightGap = nearest.position.y - bot.mesh.position.y;
+                    squadCallout(heightGap > 3 ? 'above' : heightGap < -3 ? 'below' : 'ranged', bot);
+                }
                 const aimDir = nearest.position.subtract(bot.mesh.position).normalize();
                 const jitter = bot.team === 'friendly' ? Math.max(0.005, 0.09 - autoUpgrade(bot.team, 'aim') * 0.015) : 0.1;
                 aimDir.x += (Math.random() - 0.5) * jitter;
@@ -1282,6 +1402,7 @@ function createScene() {
     let lastScoreText = '';
 
     scene.onBeforeRenderObservable.add(() => {
+        if (statsDialog.open) return;
         const dt = Math.min(0.05, engine.getDeltaTime() / 1000);
         updateVoxelDebris(dt);
         if (mode === 'menu') {
@@ -1317,6 +1438,8 @@ function createScene() {
                 player.dashTimer = 1.2;
             }
 
+            const jumpPressed = jumpQueued;
+            jumpQueued = false;
             const maxSpd = 15.3;
             if (player.grounded) {
                 const spd = Math.hypot(player.vel.x, player.vel.z);
@@ -1329,7 +1452,7 @@ function createScene() {
                     const acc = Math.min(add, 14 * maxSpd * dt);
                     player.vel.x += wish.x * acc; player.vel.z += wish.z * acc;
                 }
-                if (keys['Space']) {
+                if (keys.Space || jumpPressed) {
                     player.vel.y = 12.2;
                     player.grounded = false;
                     playSfx(320, 0.06, 'triangle', 0.04);
@@ -1341,18 +1464,38 @@ function createScene() {
                     const acc = Math.min(add, 18 * airWishCap * dt);
                     player.vel.x += wish.x * acc; player.vel.z += wish.z * acc;
                 }
-                player.vel.y -= GRAVITY * dt;
+                if (wallHold > 0 && jumpPressed) {
+                    player.vel.x = wallNormal.x * 12;
+                    player.vel.z = wallNormal.z * 12;
+                    player.vel.y = 11.5;
+                    wallHold = 0;
+                    playSfx(440, .1, 'triangle', .055);
+                } else if (wallHold > 0 && BABYLON.Vector3.Dot(wish, wallNormal) < -.1) {
+                    player.vel.y = 0;
+                    wallHold = Math.max(0, wallHold - dt);
+                } else {
+                    wallHold = 0;
+                    player.vel.y -= GRAVITY * dt;
+                }
             }
 
-            const phys = moveEntityWithMap(player.pos, player.vel, PLAYER_RADIUS, PLAYER_HEIGHT, dt, player);
-            if (phys.jumpedPad) playSfx(520, 0.16, 'sine', 0.07);
-            if (phys.hazardDmg > 0) player.hp -= phys.hazardDmg;
-            if (phys.fellInVoid || player.hp <= 0) {
-                playSfx(140, 0.2, 'sawtooth', 0.07);
-                respawnPlayer();
+            const phys = moveEntityWithMap(player.pos, player.vel, PLAYER_RADIUS, PLAYER_HEIGHT, dt, player, wallContact);
+            if (player.grounded || phys.jumpedPad) {
+                wallHold = 0;
+                wallUsed = false;
+            } else if (!wallUsed && BABYLON.Vector3.Dot(wish, wallContact) < -.1) {
+                wallNormal.copyFrom(wallContact);
+                wallHold = WALL_HOLD_TIME;
+                wallUsed = true;
+            } else if (BABYLON.Vector3.Dot(wallNormal, wallContact) < .5) {
+                wallHold = 0;
             }
+            if (phys.jumpedPad) playSfx(520, 0.16, 'sine', 0.07);
+            if (phys.fellInVoid) losePlayer();
+            else if (phys.hazardDmg > 0) damagePlayer(phys.hazardDmg);
 
             camera.position.set(player.pos.x, player.pos.y + PLAYER_HEIGHT, player.pos.z);
+            comms.update();
 
             const horiz = Math.hypot(player.vel.x, player.vel.z);
             camera.fov = BABYLON.Scalar.Lerp(camera.fov, 1.05 + Math.min(0.28, horiz * 0.01), frameBlend(0.12, dt));
@@ -1457,7 +1600,7 @@ function createScene() {
                             crosshair.animate([{ scale: '1.5', filter: 'brightness(2)' }, { scale: '1' }], 115);
                             playSfx(880, .05, 'sine', .05);
                         }
-                        if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
+                        if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j], p.fromPlayer);
                         break;
                     }
                 }
@@ -1465,13 +1608,9 @@ function createScene() {
                 const playerHit = mode === 'player' ? closestPointOnSegment(camera.position, prevPos, p.mesh.position) : null;
                 if (playerHit && playerHit.dist < 1.4) {
                     p.mesh.position.copyFrom(playerHit.point);
-                    player.hp -= 12;
                     directHitPlayer = true;
                     hit = true;
-                    if (player.hp <= 0) {
-                        playSfx(140, 0.2, 'sawtooth', 0.07);
-                        respawnPlayer();
-                    }
+                    damagePlayer(12);
                 } else {
                     for (const f of friendlies) {
                         const botHit = closestPointOnSegment(f.mesh.position, prevPos, p.mesh.position);
@@ -1502,11 +1641,7 @@ function createScene() {
                             player.vel.addInPlace(pushDir.scale((1 - dist / p.weapon.splash) * 20));
                             player.grounded = false;
                             if (p.ownerTeam === 'enemy' && !directHitPlayer) {
-                                player.hp -= 12 * 0.65 * (1 - dist / p.weapon.splash);
-                                if (player.hp <= 0) {
-                                    playSfx(140, 0.2, 'sawtooth', 0.07);
-                                    respawnPlayer();
-                                }
+                                damagePlayer(12 * 0.65 * (1 - dist / p.weapon.splash));
                             }
                         }
                     }
@@ -1516,7 +1651,7 @@ function createScene() {
                             const dist = BABYLON.Vector3.Distance(p.mesh.position, enemies[j].mesh.position);
                             if (dist < p.weapon.splash) {
                                 fractureBot(enemies[j], p.damage * 0.6 * (1 - dist / p.weapon.splash), p.mesh.position, true);
-                                if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j]);
+                                if (enemies[j].hp <= 0) handleEnemyDeath(enemies[j], p.fromPlayer);
                             }
                         }
                     } else if (p.ownerTeam === 'enemy') {

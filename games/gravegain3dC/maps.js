@@ -1,5 +1,22 @@
 // GraveGain3DC — Arena Definitions (pure ES module, no top-level BABYLON dependencies)
 
+// Container roofs double as playable platforms. The open ends connect the yard lanes.
+function openContainer(x, z, style, alongZ = false) {
+    const width = 9;
+    const depth = 4.2;
+    const height = 4.2;
+    const panel = .24;
+    return [
+        { x: 0, y: height - panel / 2, z: 0, w: width, h: panel, d: depth },
+        ...[-1, 1].map(side => ({
+            x: 0, y: height / 2, z: side * (depth - panel) / 2, w: width, h: height, d: panel
+        }))
+    ].map(block => ({
+        x: x + (alongZ ? block.z : block.x), y: block.y, z: z + (alongZ ? block.x : block.z),
+        w: alongZ ? block.d : block.w, h: block.h, d: alongZ ? block.w : block.d, style
+    }));
+}
+
 export const MAPS = {
     cyber_courtyard: {
         id: 'cyber_courtyard',
@@ -55,7 +72,9 @@ export const MAPS = {
             { x: -13, y: 4.5, z: -16, w: 3.5, h: 9, d: 3.5, style: 'primary' },
             { x: 13, y: 4.5, z: -16, w: 3.5, h: 9, d: 3.5, style: 'primary' },
             { x: -13, y: 4.5, z: 16, w: 3.5, h: 9, d: 3.5, style: 'primary' },
-            { x: 13, y: 4.5, z: 16, w: 3.5, h: 9, d: 3.5, style: 'primary' }
+            { x: 13, y: 4.5, z: 16, w: 3.5, h: 9, d: 3.5, style: 'primary' },
+            { x: 32, y: 1.65, z: 17, w: 2.5, h: 3.3, d: 7, style: 'platform' },
+            { x: -32, y: 1.65, z: -17, w: 2.5, h: 3.3, d: 7, style: 'platform' }
         ],
         jumpPads: [
             { x: -28, y: 0, z: -28, vx: 0, vy: 22, vz: 0, radius: 2.5 },
@@ -136,7 +155,9 @@ export const MAPS = {
 
             // East High Spire (topY = 6) + pillar
             { x: 28, y: 5, z: 0, w: 14, h: 2, d: 20, style: 'platform' },
-            { x: 31, y: 8, z: 0, w: 2.5, h: 4, d: 2.5, style: 'primary' }
+            { x: 31, y: 8, z: 0, w: 2.5, h: 4, d: 2.5, style: 'primary' },
+            { x: 10, y: 1, z: 6, w: 1.5, h: 2, d: 4, style: 'primary' },
+            { x: -10, y: 1, z: -6, w: 1.5, h: 2, d: 4, style: 'primary' }
         ],
         jumpPads: [
             // South Deck <-> Central Deck
@@ -230,7 +251,9 @@ export const MAPS = {
             { x: -28, y: 1.5, z: -28, w: 6, h: 3, d: 6, style: 'primary' },
             { x: 28, y: 1.5, z: -28, w: 6, h: 3, d: 6, style: 'primary' },
             { x: -28, y: 1.5, z: 28, w: 6, h: 3, d: 6, style: 'primary' },
-            { x: 28, y: 1.5, z: 28, w: 6, h: 3, d: 6, style: 'primary' }
+            { x: 28, y: 1.5, z: 28, w: 6, h: 3, d: 6, style: 'primary' },
+            { x: 38, y: 2.5, z: 12, w: 4, h: 5, d: 4, style: 'platform' },
+            { x: -38, y: 2.5, z: -12, w: 4, h: 5, d: 4, style: 'platform' }
         ],
         jumpPads: [
             { x: -20, y: 0, z: -18, vx: -4, vy: 20, vz: 0, radius: 2.5 },
@@ -267,7 +290,7 @@ export const MAPS = {
     cargo_shipment: {
         id: 'cargo_shipment',
         name: 'CARGO SHIPMENT',
-        tagline: 'Tight close-quarters container yard built for frantic, nonstop firefights.',
+        tagline: 'Cut through open containers or fight across the stacked roofs and yard lanes.',
         accent: '#00b4d8',
         clearColor: [0.05, 0.06, 0.08, 1],
         fogColor: [0.08, 0.07, 0.06],
@@ -302,31 +325,35 @@ export const MAPS = {
             // 4 Central paired container blocks (forming the + cross-lanes)
             // Top-left pair (horizontal)
             { x: -7, y: 2.1, z: 10, w: 9, h: 4.2, d: 4.2, style: 'platform' },
-            { x: -7, y: 2.1, z: 5.5, w: 9, h: 4.2, d: 4.2, style: 'primary' },
+            ...openContainer(-7, 5.5, 'primary'),
             // Top-right pair (horizontal) + upper stacked container
-            { x: 8, y: 2.1, z: 10, w: 9, h: 4.2, d: 4.2, style: 'trim' },
+            ...openContainer(8, 10, 'trim'),
             { x: 8, y: 2.1, z: 5.5, w: 9, h: 4.2, d: 4.2, style: 'primary' },
             { x: 8, y: 6.3, z: 7.75, w: 9, h: 4.2, d: 4.2, style: 'platform' },
             // Bottom-left pair (vertical)
             { x: -9.2, y: 2.1, z: -7, w: 4.2, h: 4.2, d: 9, style: 'trim' },
-            { x: -4.7, y: 2.1, z: -7, w: 4.2, h: 4.2, d: 9, style: 'primary' },
+            ...openContainer(-4.7, -7, 'primary', true),
             // Bottom-right pair (horizontal) + upper stacked container
             { x: 8, y: 2.1, z: -5.5, w: 9, h: 4.2, d: 4.2, style: 'platform' },
-            { x: 8, y: 2.1, z: -10, w: 9, h: 4.2, d: 4.2, style: 'primary' },
+            ...openContainer(8, -10, 'primary'),
             { x: 8, y: 6.3, z: -7.75, w: 9, h: 4.2, d: 4.2, style: 'trim' },
 
             // 4 Outer edge container pairs (N, S, E, W)
-            { x: 0, y: 2.1, z: 22.5, w: 9, h: 4.2, d: 4.2, style: 'platform' },
+            ...openContainer(0, 22.5, 'platform'),
             { x: 0, y: 2.1, z: -22.5, w: 9, h: 4.2, d: 4.2, style: 'trim' },
             { x: -22.5, y: 2.1, z: -2, w: 4.2, h: 4.2, d: 9, style: 'primary' },
-            { x: 22.5, y: 2.1, z: 0, w: 4.2, h: 4.2, d: 9, style: 'trim' },
+            ...openContainer(22.5, 0, 'trim', true),
 
             // Corner & flank cover (barrel clusters & crates)
             { x: -16, y: 1.3, z: 16, w: 3.2, h: 2.6, d: 3.2, style: 'platform' },
             { x: 16, y: 1.3, z: 17, w: 3.2, h: 2.6, d: 3.2, style: 'platform' },
             { x: -16, y: 1.1, z: -16, w: 4.2, h: 2.2, d: 3.2, style: 'trim' },
             { x: 15, y: 1.0, z: -15, w: 2.6, h: 2.0, d: 2.6, style: 'trim' },
-            { x: -3, y: 1.1, z: 2, w: 2.4, h: 2.2, d: 2.4, style: 'platform' }
+            { x: -3, y: 1.1, z: 2, w: 2.4, h: 2.2, d: 2.4, style: 'platform' },
+            { x: 18, y: 0.7, z: 4, w: 2, h: 1.4, d: 4, style: 'platform' },
+            { x: -17, y: 0.65, z: -4, w: 3, h: 1.3, d: 2, style: 'trim' },
+            { x: 15, y: 0.75, z: 22.5, w: 2.4, h: 1.5, d: 2.4, style: 'primary' },
+            { x: -17, y: 0.8, z: -23, w: 2.2, h: 1.6, d: 2.6, style: 'primary' }
         ],
         jumpPads: [
             { x: -16, y: 0, z: 8, vx: 0, vy: 23, vz: 0, radius: 2.4 },
@@ -454,7 +481,9 @@ export const MAPS = {
             { x: -85, y: 5, z: -35, w: 4, h: 10, d: 30, style: 'trim' },
             { x: -85, y: 5, z: 35, w: 4, h: 10, d: 30, style: 'trim' },
             { x: 85, y: 5, z: -35, w: 4, h: 10, d: 30, style: 'trim' },
-            { x: 85, y: 5, z: 35, w: 4, h: 10, d: 30, style: 'trim' }
+            { x: 85, y: 5, z: 35, w: 4, h: 10, d: 30, style: 'trim' },
+            { x: -10, y: 2, z: -158, w: 5, h: 4, d: 2, style: 'platform' },
+            { x: 10, y: 2, z: 158, w: 5, h: 4, d: 2, style: 'platform' }
         ],
         jumpPads: [
             // Cardinal & Center pads

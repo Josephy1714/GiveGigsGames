@@ -33,7 +33,7 @@
           <small id="timer-daily">--:--:--</small>
         </button>
         <button type="button" class="cg-tab" data-cadence="weekly">
-          <span>Weekly 3x</span>
+          <span>Weekly ×3</span>
           <small id="timer-weekly">--d --h</small>
         </button>
         <button type="button" class="cg-tab" data-cadence="practice">
@@ -84,6 +84,33 @@
     <main class="cg-workspace">
       <!-- Left Column: Clues, Guess Input, Reveal Dossier -->
       <section class="cg-dossier-col" aria-label="Intelligence dossier and guess input">
+        <!-- Guess Console -->
+        <div class="cg-panel cg-guess-panel" id="guess-panel">
+          <div class="cg-panel-head cg-guess-heading">
+            <h2>Make a deduction</h2>
+            <span class="cg-panel-note" id="guess-remaining"></span>
+          </div>
+          <form class="cg-guess-form" id="guess-form" autocomplete="off">
+            <div class="cg-autocomplete-wrap">
+              <label for="country-input" class="sr-only">Guess a country</label>
+              <input
+                id="country-input"
+                type="text"
+                placeholder="Search countries"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="country-dropdown"
+                aria-expanded="false"
+                spellcheck="false"
+              >
+              <button type="button" class="cg-clear-input" id="btn-clear-input" aria-label="Clear search" hidden>✕</button>
+              <ul class="cg-dropdown" id="country-dropdown" role="listbox" hidden></ul>
+            </div>
+            <button type="submit" class="cg-submit-btn" id="btn-submit-guess">Guess Country</button>
+          </form>
+          <div class="cg-quick-hint" id="guess-feedback" role="status"></div>
+        </div>
+
         <div class="cg-panel cg-clue-panel">
           <div class="cg-panel-head">
             <div>
@@ -96,28 +123,6 @@
           </div>
 
           <div class="cg-clues-grid" id="clues-grid" aria-live="polite"></div>
-        </div>
-
-        <!-- Guess Console -->
-        <div class="cg-panel cg-guess-panel" id="guess-panel">
-          <form class="cg-guess-form" id="guess-form" autocomplete="off">
-            <div class="cg-autocomplete-wrap">
-              <label for="country-input" class="sr-only">Guess a country</label>
-              <input
-                id="country-input"
-                type="text"
-                placeholder="Type a Top-100 country name (press / to focus)..."
-                aria-autocomplete="list"
-                aria-controls="country-dropdown"
-                aria-expanded="false"
-                spellcheck="false"
-              >
-              <button type="button" class="cg-clear-input" id="btn-clear-input" aria-label="Clear search" hidden>✕</button>
-              <ul class="cg-dropdown" id="country-dropdown" role="listbox" hidden></ul>
-            </div>
-            <button type="submit" class="cg-submit-btn" id="btn-submit-guess">Guess Country</button>
-          </form>
-          <div class="cg-quick-hint" id="guess-feedback" aria-live="polite"></div>
         </div>
 
         <!-- Post-Round Reveal Banner & Full 36-Dimension Explorer -->
@@ -140,7 +145,8 @@
             <button type="button" class="cg-btn-secondary" id="btn-next-challenge">🎲 New Practice Round</button>
             <button type="button" class="cg-btn-secondary" id="btn-open-ranks-after">🏆 View Leaderboard</button>
           </div>
-          <p class="cg-share-toast" id="share-toast" hidden></p>
+          <p class="cg-share-toast" id="share-toast" role="status" hidden></p>
+          <textarea id="share-copy" class="cg-share-copy" aria-label="Share result text" rows="6" readonly hidden></textarea>
 
           <div class="cg-full-almanac">
             <div class="cg-almanac-head">
@@ -169,11 +175,11 @@
           <div class="cg-map-stage">
             <canvas id="world-map-canvas" width="720" height="380" aria-label="Interactive vector world map showing guessed countries"></canvas>
             <div class="cg-map-tooltip" id="map-tooltip" hidden></div>
-            <div class="cg-map-legend">
-              <span><i class="dot dot-hot"></i>&lt;1,500 km</span>
-              <span><i class="dot dot-warm"></i>&lt;4,000 km</span>
-              <span><i class="dot dot-mid"></i>&lt;8,000 km</span>
-              <span><i class="dot dot-cold"></i>&gt;8,000 km</span>
+            <div class="cg-map-legend" id="map-legend">
+              <span><i class="dot dot-hot"></i><span>&lt;1,500 km</span></span>
+              <span><i class="dot dot-warm"></i><span>&lt;4,000 km</span></span>
+              <span><i class="dot dot-mid"></i><span>&lt;8,000 km</span></span>
+              <span><i class="dot dot-cold"></i><span>&gt;8,000 km</span></span>
             </div>
           </div>
         </div>
@@ -207,7 +213,7 @@
 
         <div class="cg-opt-group">
           <label>Country Pool / Set</label>
-          <p class="cg-opt-hint">Daily/Hourly/Weekly official leaderboards use <strong>Top 100 + Balanced 36</strong>, or pick any custom set below for its own seeded board!</p>
+          <p class="cg-opt-hint">Choose a pool for both answers and guesses. Ranked challenges compare runs with the same pool, deck and Purist setting.</p>
           <div class="cg-radio-grid" id="opt-country-sets"></div>
         </div>
 
@@ -257,7 +263,7 @@
         <div class="cg-lb-tabs" id="lb-tabs">
           <button type="button" class="cg-lb-tab is-active" data-lb="daily">Daily</button>
           <button type="button" class="cg-lb-tab" data-lb="hourly">Hourly</button>
-          <button type="button" class="cg-lb-tab" data-lb="weekly">Weekly 3x</button>
+          <button type="button" class="cg-lb-tab" data-lb="weekly">Weekly ×3</button>
           <button type="button" class="cg-lb-tab" data-lb="alltime">All-Time Best</button>
         </div>
         <p class="cg-opt-hint" id="lb-period-info"></p>
@@ -277,9 +283,9 @@
           </table>
         </div>
         <div class="cg-import-box">
-          <label for="lb-import-code">Compare with a Friend (Paste Share Token)</label>
+          <label for="lb-import-code">Compare with a friend</label>
           <div class="cg-import-row">
-            <input id="lb-import-code" type="text" placeholder="Paste CG1|... code from a friend's Share Result">
+            <textarea id="lb-import-code" rows="2" placeholder="Paste a shared result or token"></textarea>
             <button type="button" class="cg-btn-secondary" id="btn-import-score">Add to Board</button>
           </div>
           <small id="lb-import-msg"></small>
