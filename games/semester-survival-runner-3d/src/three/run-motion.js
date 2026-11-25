@@ -60,7 +60,19 @@ function copyTrackUntil(track, endTime) {
  * furthest root-motion key and (2) an endless run loop with horizontal root
  * translation locked at that exact pose. Skeletal limb motion remains intact.
  */
-export function prepareRunClips(clip, THREE) {
+export function prepareRunClips(clip, THREE, authoredInPlaceClip = null) {
+  if (authoredInPlaceClip) {
+    return {
+      approachClip: authoredInPlaceClip,
+      loopClip: authoredInPlaceClip,
+      rootMotionTrackNames: [],
+      endpointTime: authoredInPlaceClip.duration,
+      rootMotionFound: true,
+      usedFallback: false,
+      inPlaceAuthored: true
+    };
+  }
+
   if (!clip) {
     return { approachClip: clip, loopClip: clip, rootMotionTrackNames: [], endpointTime: 0, rootMotionFound: false };
   }

@@ -1,0 +1,68 @@
+name: Jay gameplay integration validation
+
+on:
+  push:
+    branches: [jay-gameplay-integration]
+    paths:
+      - 'games/semester-survival-runner-3d/src/three/jay-character.js'
+      - 'games/semester-survival-runner-3d/src/three/run-motion.js'
+      - 'games/semester-survival-runner-3d/src/three/runner-three-renderer.js'
+      - 'games/semester-survival-runner-3d/src/difficulty/**'
+      - 'games/semester-survival-runner-3d/src/three/ramp-vehicle.js'
+      - 'games/semester-survival-runner-3d/src/three/carry-vehicle.js'
+      - 'games/semester-survival-runner-3d/tests/difficulty-progression.test.mjs'
+      - 'games/semester-survival-runner-3d/tests/ramp-vehicle.test.mjs'
+      - 'games/semester-survival-runner-3d/tests/carry-vehicle.test.mjs'
+      - 'games/semester-survival-runner-3d/tests/jay-gameplay-integration.*'
+      - 'games/semester-survival-runner-3d/tests/run-motion.test.mjs'
+      - 'games/semester-survival-runner-3d/tests/jay-live-runner-e2e.mjs'
+      - 'games/semester-survival-runner-3d/package.json'
+      - '.github/workflows/jay-gameplay-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run runner module tests
+        run: |
+          cd games/semester-survival-runner-3d
+          npm run test:runner-modules
+      - name: Install browser test dependencies
+        run: |
+          npm install --prefix games/semester-survival-runner-3d/.ci-test three@0.180.0
+          npm install --prefix /tmp/jay-browser playwright@1.56.1
+          /tmp/jay-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Serve the gameplay fixture
+        run: |
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/jay-gameplay-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4174/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/jay-gameplay-server.log
+          exit 1
+      - name: Load Jay and exercise gameplay animation transitions in Chromium
+        env:
+          PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
+        run: |
+          node games/semester-survival-runner-3d/tests/jay-gameplay-integration.mjs
+      - name: Launch the complete runner and verify Jay in gameplay
+        env:
+          PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
+        run: |
+          node games/semester-survival-runner-3d/tests/jay-live-runner-e2e.mjs
+      - name: Upload real gameplay screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jay-live-runner-gameplay
+          path: /tmp/jay-live-runner-*.png
+          if-no-files-found: ignore
+          retention-days: 7

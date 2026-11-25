@@ -64,3 +64,19 @@ test("generic position channel fallback is reported instead of silently ignored"
   assert.equal(result.endpointTime, 1);
   assert.deepEqual(result.rootMotionTrackNames, ["Character.position"]);
 });
+
+
+test("validated authored in-place run clip bypasses the root-motion approach split", () => {
+  const rootMotionRun = new FakeClip("Run", 2, [
+    new FakeTrack("Armature.position", [0, 1, 2], [0,0,0, 2,0,0, 0,0,0])
+  ]);
+  const authoredLoop = new FakeClip("Run_InPlace", 0.6667, [
+    new FakeTrack("mixamorig:Hips.position", [0, .3333, .6667], [0,0,0, 0,0,0, 0,0,0])
+  ]);
+  const result = prepareRunClips(rootMotionRun, THREE, authoredLoop);
+  assert.equal(result.inPlaceAuthored, true);
+  assert.equal(result.approachClip, authoredLoop);
+  assert.equal(result.loopClip, authoredLoop);
+  assert.equal(result.endpointTime, authoredLoop.duration);
+  assert.deepEqual(result.rootMotionTrackNames, []);
+});

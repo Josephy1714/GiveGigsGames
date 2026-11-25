@@ -36,7 +36,7 @@ jobs:
         working-directory: games/semester-survival-runner-3d
         run: |
           npm install --prefix /tmp/semester-survival-browser playwright@1.56.1
-          /tmp/semester-survival-browser/node_modules/.bin/playwright install --with-deps chromium
+          /tmp/semester-survival-browser/node_modules/.bin/playwright install chromium
       - name: Start local game server
         working-directory: games/semester-survival-runner-3d
         run: |
@@ -66,7 +66,7 @@ jobs:
               raise SystemExit("3D package exceeds the strict 10 MB budget.")
           if any(p.suffix.lower() == ".fbx" for p in files):
               raise SystemExit("Merged FBX source files must not remain in the runtime package.")
-          glb = root / "assets/3d/jay/jay.glb"
+          glb = root / "assets/3d/jay/jay-unified.glb"
           portrait = root / "assets/3d/jay/jay-portrait.webp"
           if not glb.is_file() or not portrait.is_file():
               raise SystemExit("Final Jay GLB or UI portrait is missing.")
@@ -77,9 +77,9 @@ jobs:
               raise SystemExit("Jay asset is not a valid GLB 2.0 file.")
           doc = json.loads(data[20:20 + chunk_length].decode("utf-8").rstrip(" "))
           names = {a.get("name") for a in doc.get("animations", [])}
-          expected = {"Idle", "Run", "Jump", "Slide", "Fall"}
-          if names != expected or len(doc.get("animations", [])) != 5:
-              raise SystemExit(f"Expected exactly five Jay animations; found {sorted(names)}.")
+          expected = {"Idle", "Run", "Run_InPlace", "Jump", "Slide", "Fall"}
+          if names != expected or len(doc.get("animations", [])) != 6:
+              raise SystemExit(f"Expected the six unified Jay animations; found {sorted(names)}.")
           if not doc.get("skins") or not doc.get("meshes"):
               raise SystemExit("Jay GLB must contain a skinned mesh.")
           original = Path("games/semester-survival-runner/assets/processed/jay-runtime/jay-atlas.png")

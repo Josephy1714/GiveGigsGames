@@ -1,10 +1,11 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { prepareRunClips } from "./run-motion.js";
 
 const CLIP_ALIASES = Object.freeze({
   idle: ["idle", "breathing", "breathingidle", "stand"],
   run: ["run", "running", "jog", "sprint"],
+  runInPlace: ["run_in_place", "run-in-place", "runinplace"],
   jump: ["jump", "running_jump", "jump_running"],
   slide: ["slide", "sliding", "slide_loop", "runningslide"],
   slideStart: ["slide_start", "slide-start", "slideanticipation"],
@@ -141,7 +142,8 @@ export async function loadJayCharacter({
   // Split the authored run at its furthest forward root pose. The approach
   // plays once and stops there; the endless loop keeps the skeleton running
   // while the world supplies continuous forward travel.
-  const runMotion = prepareRunClips(resolved.run, THREE);
+  const runMotion = prepareRunClips(resolved.run, THREE, resolved.runInPlace);
+  delete resolved.runInPlace;
   resolved.run = runMotion.approachClip;
   const neutralizedMouthMorphs = neutralizeOpenMouthMorphs(root);
   // A reverse of the authored fall clip provides a grounded get-up transition
@@ -167,10 +169,8 @@ export async function loadJayCharacter({
     const action = mixer.clipAction(clip);
     action.enabled = true;
     action.clampWhenFinished = state !== "idle" && state !== "run";
-    action.setLoop(
-      state === "idle" ? THREE.LoopRepeat : THREE.LoopOnce,
-      state === "idle" ? Infinity : 1
-    );
+    const repeatsForever = state === "idle" || (state === "run" && runMotion.inPlaceAuthored);
+    action.setLoop(repeatsForever ? THREE.LoopRepeat : THREE.LoopOnce, repeatsForever ? Infinity : 1);
     actions[state] = action;
   }
 
@@ -182,7 +182,7 @@ export async function loadJayCharacter({
   runLoopAction.setLoop(THREE.LoopRepeat, Infinity);
 
   let activeState = null;
-  let runApproachCompleted = false;
+  let runApproachCompleted = Boolean(runMotion.inPlaceAuthored);
   let disposed = false;
 
   mixer.addEventListener("finished", event => {
@@ -241,6 +241,25 @@ export async function loadJayCharacter({
     return { ok: true, state, changed: true };
   }
 
+  function isFinished(state) {
+    const action = actions[state];
+    if (!action) return false;
+    const duration = action.getClip().duration;
+    return duration > 0 && action.paused && action.time >= duration - 1e-3;
+  }
+
+  function reset() {
+    if (disposed) return;
+    mixer.stopAllAction();
+    for (const action of Object.values(actions)) {
+      action.reset(); action.enabled = true; action.paused = false; action.setEffectiveWeight(1);
+    }
+    runLoopAction.reset(); runLoopAction.enabled = true; runLoopAction.paused = false;
+    runApproachCompleted = Boolean(runMotion.inPlaceAuthored);
+    activeState = null;
+    mixer.update(0);
+  }
+
   function update(deltaSeconds) {
     if (disposed) return;
     // Keep gameplay-owned placement (lane, jump height and hit response)
@@ -277,6 +296,9 @@ export async function loadJayCharacter({
     runMotionFound: runMotion.rootMotionFound,
     runMotionUsedFallback: Boolean(runMotion.usedFallback),
     play,
+    getClipDuration(state) { return actions[state]?.getClip()?.duration ?? 0; },
+    isFinished,
+    reset,
     update,
     dispose,
     get activeState() { return activeState; },
