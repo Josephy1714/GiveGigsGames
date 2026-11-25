@@ -36,7 +36,7 @@ jobs:
         working-directory: games/semester-survival-runner-3d
         run: |
           npm install --prefix /tmp/semester-survival-browser playwright@1.56.1
-          /tmp/semester-survival-browser/node_modules/.bin/playwright install --with-deps chromium
+          /tmp/semester-survival-browser/node_modules/.bin/playwright install chromium
       - name: Start local game server
         working-directory: games/semester-survival-runner-3d
         run: |
