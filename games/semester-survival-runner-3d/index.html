@@ -292,6 +292,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
  endRun:(distance=0)=>{if(g)g.d=distance;finish(true)},
  holdSafeRun:()=>{if(!g||!g.on)return false;g.spawn=999;g.obs=[];g.pick=[];g.bonus=[];g.inv=999;g.energy=100;g.hit=false;g.hitTimer=0;g.recoveryTimer=0;g.pendingFinish=null;return true;},
  forceVehicleFall:()=>{if(!g||!g.on)return null;g.energy=0;g.hit=true;g.hitVehicle=true;g.vehicleImpact=true;g.vehicleImpactType="front";g.vehicleImpactClip="fall";g.vehicleImpactDuration=Math.max(1.18,(threeRenderer?.getClipDuration?.("fall")||1.18)+.1);g.hitTimer=g.vehicleImpactDuration;g.pendingFinish="TEST VEHICLE";g.speed=0;g.inv=999;g.impactShakeScale=.34;return {duration:g.vehicleImpactDuration,clipDuration:threeRenderer?.getClipDuration?.("fall")||0};},
+ restart:()=>{start();return !!(g&&g.on)},
  state:()=>({active:!!(g&&g.on),paused:!!(g&&g.paused),distance:g?g.d:0,energy:g?g.energy:0,lane:g?g.lane:-1,jump:g?g.jump:0,slide:g?g.slide:0,slidePhase:g?g.slidePhase:null,animationClip:threeRenderer?.activeAnimation||animator?.snapshot().clip||null,runApproachCompleted:threeRenderer?.runApproachCompleted??null,pendingFinish:g?.pendingFinish||null,hitTimer:g?.hitTimer||0,fallFinished:threeRenderer?.isAnimationFinished?.("fall")||false,playerX:g?L[g.lane]:null,projectedLaneX:(lane,z)=>270+(lane-1)*((48+z*270)*2/3)}),
  probeCoin:({lane=1,coinLane=1}={})=>{
   if(!g||!g.on)return null;
