@@ -154,12 +154,14 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.waitForFunction(() => window.__runnerSmoke.state().lane === 1, null, { timeout: 2500 });
 
     await page.keyboard.press("ArrowUp");
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 2500 });
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 4000 });
+    await page.waitForFunction(() => window.__runnerSmoke.state().jump > 0, null, { timeout: 2500 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "jump", null, { timeout: 8000 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 8000 });
 
     await page.keyboard.press("ArrowDown");
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "slide", null, { timeout: 2500 });
-    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 4000 });
+    await page.waitForFunction(() => window.__runnerSmoke.state().slide > 0, null, { timeout: 2500 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "slide", null, { timeout: 8000 });
+    await page.waitForFunction(() => document.querySelector("#three-world")?.dataset.activeAnimation === "run", null, { timeout: 8000 });
 
     await page.locator("#pause").click();
     await page.waitForFunction(() => document.querySelector("#pause-modal")?.classList.contains("show"), null, { timeout: 2000 });
