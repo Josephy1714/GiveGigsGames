@@ -99,7 +99,8 @@
 
     byId("btn-tester-start").disabled = state.running && !state.paused;
     byId("btn-tester-pause").disabled = !state.running;
-    byId("btn-tester-pause").textContent = state.paused ? "▶ Resume" : "⏸ Pause";
+    const pauseLabel = byId("btn-tester-pause").querySelector(".btn-label");
+    if (pauseLabel) pauseLabel.textContent = state.paused ? "Resume" : "Pause";
     byId("btn-tester-stop").disabled = !state.running;
   }
 
@@ -201,7 +202,7 @@
       const emoji = document.createElement("span");
       emoji.className = "game-emoji";
       emoji.setAttribute("aria-hidden", "true");
-      emoji.textContent = game.emoji || "🎮";
+      emoji.innerHTML = '<svg class="icon icon-lg" aria-hidden="true"><use href="#i-gamepad"></use></svg>';
       top.append(emoji);
       if (game.featured) {
         const badge = document.createElement("span");
@@ -226,7 +227,7 @@
       }
       const play = document.createElement("span");
       play.className = "play-link";
-      play.textContent = "Launch & Auto-Test →";
+      play.textContent = "Auto-test";
       card.append(top, title, category, description, tags, play);
       card.addEventListener("click", () => openGame(game));
       grid.append(card);
@@ -310,7 +311,6 @@
     state.customUrl = "";
 
     byId("player-name").textContent = game.title;
-    byId("player-emoji").textContent = game.emoji || "🎮";
     byId("player-genre").textContent = game.genre;
     byId("player-description").textContent = game.description;
     byId("open-game").href = source;
@@ -361,7 +361,6 @@
     if (mode === "custom-url") {
       const cleanUrl = String(url || "").trim();
       byId("player-name").textContent = cleanUrl ? `Web Target: ${cleanUrl}` : "Arbitrary Web Game Debugger";
-      byId("player-emoji").textContent = "🌐";
       byId("player-genre").textContent = "EXTERNAL WEB GAME";
       byId("player-description").textContent =
         "Testing an arbitrary web game URL. Same-origin targets support full DOM/canvas inspection; cross-origin targets can also stream pixels via Screen Capture.";
@@ -377,7 +376,6 @@
       appendLog(`Opened Web Game URL target: ${cleanUrl || "(enter URL)"}`);
     } else if (mode === "display") {
       byId("player-name").textContent = "Arbitrary Game Program (Screen Capture)";
-      byId("player-emoji").textContent = "🖥️";
       byId("player-genre").textContent = "LIVE WINDOW / TAB CAPTURE";
       byId("player-description").textContent =
         "Stream any desktop game window, browser tab, or external game program using getDisplayMedia and analyze every frame with your AI key or offline heuristics.";
@@ -392,7 +390,6 @@
       appendLog("Opened Screen/Window Capture mode. Click 'Share Game Window/Tab' to start streaming.");
     } else if (mode === "bridge") {
       byId("player-name").textContent = "Local Desktop Game Bridge";
-      byId("player-emoji").textContent = "🔌";
       byId("player-genre").textContent = "NATIVE WIN32 BRIDGE";
       byId("player-description").textContent =
         "Connect to the local GiveGigsGames Companion Bridge (npm run tester:bridge) to capture native desktop windows, send real OS mouse/keyboard combos via input_sim.py, and run static source audits.";
@@ -727,7 +724,7 @@
       renderFoveaCrops(frameData.details || []);
       renderTimeline();
       renderBugList();
-      byId("live-reasoning-box").textContent = `[${decision.source || "agent"} · ${decision.status || "playing"}] ${decision.reasoning}\nAction: ${decision.action?.type} ${decision.action?.target || ""} -> ${execMsg}`;
+      byId("live-reasoning-box").textContent = `[${decision.source || "agent"}, ${decision.status || "playing"}] ${decision.reasoning}\nAction: ${decision.action?.type} ${decision.action?.target || ""} -> ${execMsg}`;
       appendLog(`Step #${state.stepCount} [${decision.source || "agent"}]: ${decision.action?.type}(${decision.action?.target || ""}) -> ${execMsg}`);
       updateStatusPills(decision.source || "agent");
 
@@ -901,7 +898,7 @@
       dot.className = "timeline-dot" + (hasCrit ? " crit" : hasWarn ? " warn" : "");
       const meta = document.createElement("span");
       meta.className = "timeline-meta";
-      meta.textContent = `#${item.step} · ${item.atSeconds}s${item.stuck ? " · STUCK" : ""}`;
+      meta.textContent = `#${item.step}, ${item.atSeconds}s${item.stuck ? ", STUCK" : ""}`;
       btn.append(img, dot, meta);
       btn.addEventListener("click", () => {
         state.selectedFrameId = item.id;
@@ -995,7 +992,7 @@
       const row = document.createElement("div");
       row.className = "checkpoint-row";
       const label = document.createElement("span");
-      label.textContent = `${ckpt.slug || "browser"} · ${ckpt.entries.length} keys · ${new Date(ckpt.createdAt).toLocaleTimeString()}`;
+      label.textContent = `${ckpt.slug || "browser"}, ${ckpt.entries.length} keys, ${new Date(ckpt.createdAt).toLocaleTimeString()}`;
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "tool-button";
@@ -1500,7 +1497,7 @@
           break;
         case "status":
           output.textContent = game
-            ? `Gold ${debug.getScore()} · HP ${debug.getHealth()} · God mode ${debug.godMode ? "ON" : "OFF"}`
+            ? `Gold ${debug.getScore()}, HP ${debug.getHealth()}, God mode ${debug.godMode ? "ON" : "OFF"}`
             : "Game is still loading.";
           break;
         default:
@@ -1563,4 +1560,6 @@
     byId("load-error").hidden = false;
     byId("load-error").textContent = `${error.message} Check that games/catalog-data.js is present.`;
   }
+
+  document.documentElement.classList.remove("is-booting");
 })();

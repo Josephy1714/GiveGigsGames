@@ -2,76 +2,140 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#08131f">
-    <meta name="description" content="Shared 3D model library for GiveGigsGames: procedural Three.js models, ships, enemies, weapons, and worlds ready to copy into your projects.">
-    <title>GiveGigsGames — 3D Model Library</title>
-    <link rel="stylesheet" href="/models/models.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0d10">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230c0d10'/%3E%3Ctext x='31' y='44' font-family='Verdana,Geneva,sans-serif' font-size='27' font-weight='700' text-anchor='middle' fill='%235865f2'%3EGG%3C/text%3E%3Ccircle cx='53' cy='13' r='5' fill='%232ebd6b'/%3E%3C/svg%3E">
+    <meta name="description" content="Procedural Three.js models from across GiveGigsGames. Inspect a model in 3D and copy its standalone code.">
+    <title>GiveGigsGames — 3D model library</title>
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk.woff2" crossorigin>
+    <link rel="stylesheet" href="/site.css">
   </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="/ggg/" aria-label="GiveGigsGames home">
-        <span class="brand-mark">GG</span>
-        <span>GiveGigs<span class="brand-light">Games</span></span>
-      </a>
-      <span class="host-label">3D MODEL LIBRARY</span>
-      <nav class="top-links">
-        <a class="top-link" href="/ggg/">Games Catalog</a>
-        <a class="top-link" href="/tester/">Tester ↗</a>
-      </nav>
-    </header>
+  <body class="page-models">
+    <div class="backdrop" aria-hidden="true">
+      <span class="shard shard-a"></span>
+      <span class="shard shard-b"></span>
+      <span class="shard shard-c"></span>
+      <span class="shard shard-d"></span>
+    </div>
 
-    <main class="container">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">PROCEDURAL THREE.JS ASSETS</p>
-          <h1>Shared 3D Model Library</h1>
-          <p class="hero-sub">
-            Every procedural Three.js model from across GiveGigsGames — ships, zombies, skeletons, weapons, 4D hyper-entities, and world props. Inspect in 3D and copy standalone code for your own projects.
-          </p>
+    <!-- Lucide icons, inlined as one SVG sprite. No icon font, no CDN. -->
+    <svg class="icon-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-logo" viewBox="0 0 32 32">
+        <path d="M23.4 11.2A9.3 9.3 0 1 0 23.4 20.8" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M19.9 16h3.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M11.9 12.7 17.1 16l-5.2 3.3Z" fill="#7ef0a8"/>
+      </symbol>
+      <symbol id="i-games" viewBox="0 0 24 24"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.66 6.9 7.6 4 12 4s8.34 2.9 9.94 7.65a1 1 0 0 1 0 .7C20.34 17.1 16.4 20 12 20s-8.34-2.9-9.94-7.65Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+      <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    </svg>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+        <nav class="side-nav" aria-label="Sections">
+          <a href="/ggg/"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+          <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+          <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recently played</a>
+          <a href="/models/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>3D Models</a>
+          <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+        </nav>
+        <div class="sidebar-foot">
+          <a href="https://github.com/mattyjacks/GiveGigsGames"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-github"></use></svg>Source code<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <span>Procedural Three.js assets, shared across the library.</span>
         </div>
-        <div id="model-count" class="stats-pill">Loading models…</div>
-      </section>
+      </aside>
 
-      <section class="controls" aria-label="Filter models">
-        <div class="search-wrap">
-          <input id="model-search" class="search-input" type="search" placeholder="Search models, games, or tags…" autocomplete="off">
-        </div>
-        <select id="game-filter" class="select-filter" aria-label="Filter by game">
-          <option value="all">All Games</option>
-        </select>
-      </section>
+      <div class="app-main">
+        <header class="topbar">
+          <a class="brand" href="/ggg/" aria-label="GiveGigsGames home"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span class="brand-name">GiveGigs<span class="brand-light">Games</span></span></a>
+          <label class="search">
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"></use></svg>
+            <span class="sr-only">Search models, games, or tags</span>
+            <input id="model-search" type="search" placeholder="Search models" autocomplete="off">
+          </label>
+          <div class="topbar-actions">
+            <a class="icon-btn icon-btn--raised" href="/ggg/" aria-label="Game library" data-tip="Game library"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg></a>
+          </div>
+        </header>
 
-      <div id="category-pills" class="category-pills" role="group" aria-label="Model categories"></div>
+        <main id="main" class="content">
+          <div class="page-head">
+            <div>
+              <h1>3D model library</h1>
+              <p>Ships, characters, weapons, and props built in code. Open a model to orbit it in 3D, or copy the standalone Three.js function into your own project.</p>
+            </div>
+            <div id="model-count" class="stats-pill" role="status" aria-live="polite">Loading models…</div>
+          </div>
 
-      <section id="model-grid" class="model-grid" aria-live="polite"></section>
-    </main>
+          <section class="model-controls" aria-label="Filter models">
+            <label class="select-wrap">Game
+              <select id="game-filter" class="model-select">
+                <option value="all">All games</option>
+              </select>
+            </label>
+          </section>
 
-    <!-- 3D Inspector & Code Modal -->
+          <div id="category-pills" class="category-pills" role="group" aria-label="Model categories"></div>
+
+          <section id="model-grid" class="model-grid" aria-live="polite"></section>
+        </main>
+
+        <footer class="footer">
+          <a class="brand" href="/ggg/"><span class="brand-mark" aria-hidden="true"><svg class="brand-glyph" viewBox="0 0 32 32"><use href="#i-logo"></use></svg></span><span>GiveGigs<span class="brand-light">Games</span></span></a>
+          <a href="/ggg/">Game library</a>
+          <a href="/tester/">Developer tools</a>
+          <a href="https://github.com/mattyjacks/GiveGigsGames">GitHub<svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"></use></svg></a>
+          <a href="/terms.html">Terms</a>
+          <a href="/privacy.html">Privacy</a>
+        </footer>
+      </div>
+    </div>
+
+    <nav class="tabbar" aria-label="Sections">
+      <a href="/ggg/"><svg class="icon" aria-hidden="true"><use href="#i-games"></use></svg>Games</a>
+      <a href="/ggg/#favorites"><svg class="icon" aria-hidden="true"><use href="#i-heart"></use></svg>Favorites</a>
+      <a href="/ggg/#recent"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg>Recent</a>
+      <a href="/models/" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-box"></use></svg>Models</a>
+      <a href="/ggg/#settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>Settings</a>
+    </nav>
+
+    <!-- 3D inspector and code panel -->
     <div id="inspector-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal">
         <div class="modal-header">
           <div>
-            <h2 id="modal-title" class="modal-title">Model Name</h2>
-            <div id="modal-meta" class="modal-meta">Game • Category</div>
+            <h2 id="modal-title" class="modal-title">Model</h2>
+            <div id="modal-meta" class="modal-meta"></div>
           </div>
-          <button id="modal-close" class="modal-close" type="button" aria-label="Close inspector">✕</button>
+          <button id="modal-close" class="icon-btn icon-btn--raised" type="button" aria-label="Close inspector" data-tip="Close"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
         </div>
         <div class="modal-body">
           <div id="modal-viewport" class="modal-viewport">
             <div class="viewport-toolbar">
-              <button id="toggle-rotate" class="tool-chip active" type="button">Auto-Rotate</button>
-              <button id="toggle-wireframe" class="tool-chip" type="button">Wireframe</button>
-              <button id="reset-camera" class="tool-chip" type="button">Reset View</button>
+              <button id="toggle-rotate" class="tool-chip active" type="button" aria-pressed="true">Auto-rotate</button>
+              <button id="toggle-wireframe" class="tool-chip" type="button" aria-pressed="false">Wireframe</button>
+              <button id="reset-camera" class="tool-chip" type="button">Reset view</button>
               <select id="anim-select" class="tool-chip" style="display:none;" aria-label="Animation"></select>
-              <button id="toggle-anim-play" class="tool-chip active" type="button" style="display:none;">Pause Anim</button>
+              <button id="toggle-anim-play" class="tool-chip active" type="button" style="display:none;">Pause animation</button>
               <button id="cycle-anim-speed" class="tool-chip" type="button" style="display:none;">1x</button>
             </div>
           </div>
           <div class="modal-code-pane">
             <div class="code-header">
-              <span>Standalone Three.js Function</span>
-              <button id="modal-copy-btn" class="btn btn-primary" type="button" style="flex:0 0 auto;padding:0.35rem 0.75rem;">Copy Code</button>
+              <span>Standalone Three.js function</span>
+              <button id="modal-copy-btn" class="btn btn-primary btn-sm" type="button"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-code"></use></svg><span class="btn-label">Copy code</span></button>
             </div>
             <pre id="modal-code" class="code-pre"></pre>
           </div>

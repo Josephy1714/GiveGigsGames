@@ -176,6 +176,19 @@ Set `NEXT_PUBLIC_GAMES_ORIGIN` in GiveGigs when hosting the game runtime on a se
 
 ---
 
+### Deploy, rollback and accounts
+
+- **Deploy**: Vercel builds every push to the `main` branch of [mattyjacks/GiveGigsGames](https://github.com/mattyjacks/GiveGigsGames) with `npm run catalog:build` as the build command ([`vercel.json`](vercel.json)). Pushing is the deploy; there is no manual upload step.
+- **Rollback**: In Vercel → Deployments, promote the last known-good deployment (Instant Rollback), or check out that commit and run `npx vercel --prod`.
+- **Secrets**: none in this repository. The arcade shell and the three showcase pages ship no keys; the Tester's BYOK provider keys stay in the visitor's own browser storage.
+- **Accounts**: the Vercel project, the `games.givegigs.com` domain and Vercel Web Analytics belong to the repository owner. Game saves live only in each visitor's browser — there is no database or server-side state to back up.
+
+### Showcase redesign (November 2026)
+
+The game library, the 3D model library and the devtools screens were rebuilt around bigger game art and far less interface chrome. Tokens and components are documented in [`docs/redesign/DESIGN.md`](docs/redesign/DESIGN.md); the audit, test plan and test report are in the same folder.
+
+---
+
 ## Contributing, privacy, analytics & licensing
 
 - **Contribute**: Read [CONTRIBUTING.md](CONTRIBUTING.md), copy [`templates/vanilla-game/`](templates/vanilla-game/), and [open a pull request](https://github.com/mattyjacks/GiveGigsGames/compare). Have a pitch or bug? [Open an issue](https://github.com/mattyjacks/GiveGigsGames/issues/new/choose).
