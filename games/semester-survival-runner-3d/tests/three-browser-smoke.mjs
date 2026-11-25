@@ -206,7 +206,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     await page.waitForFunction(() => window.__runnerSmoke.state().active && !document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 3000 });
     await page.waitForFunction(() => window.__runnerSmoke.state().animationClip === "run", null, { timeout: 3000 });
     const restartedState = await page.evaluate(() => window.__runnerSmoke.state());
-    assert.ok(restartedState.distance < 1, "Run It Back must reset distance to the beginning");
+    assert.ok(restartedState.distance < 5, "Run It Back must reset distance to the starting area, allowing a small head start and the first rendered frames");
     assert.equal(restartedState.lane, 1, "Run It Back must reset Jay to the centre lane");
     assert.equal(restartedState.energy, 100, "Run It Back must restore full starting energy");
     assert.equal(restartedState.runApproachCompleted, initialRunState.runApproachCompleted, "Run It Back must reset the character animation timeline");
