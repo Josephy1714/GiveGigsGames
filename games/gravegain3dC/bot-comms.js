@@ -1,6 +1,9 @@
 import { CALLOUT_CLIPS } from './callout-clips.js';
+import { Axis } from './vendor/babylon-arena.js';
 
 const VOICE_KEY = 'gravegain3dc_voice_v1';
+const isFiniteVector = ({ x, y, z }) =>
+    Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
 
 export function createBotComms(audio, camera, enabled) {
     try { enabled.checked = localStorage.getItem(VOICE_KEY) !== 'off'; } catch { /* Storage unavailable. */ }
@@ -44,10 +47,14 @@ export function createBotComms(audio, camera, enabled) {
         },
         update() {
             if (!active) return;
-            place(active.panner, active.bot.mesh.position);
-            place(audio.listener, camera.position);
-            const forward = camera.getDirection({ x: 0, y: 0, z: 1 });
-            const up = camera.getDirection({ x: 0, y: 1, z: 0 });
+            const sourcePosition = active.bot.mesh.position;
+            const listenerPosition = camera.position;
+            const forward = camera.getDirection(Axis.Z);
+            const up = camera.getDirection(Axis.Y);
+            if (!isFiniteVector(sourcePosition) || !isFiniteVector(listenerPosition) ||
+                !isFiniteVector(forward) || !isFiniteVector(up)) return;
+            place(active.panner, sourcePosition);
+            place(audio.listener, listenerPosition);
             audio.listener.setOrientation(forward.x, forward.y, -forward.z, up.x, up.y, -up.z);
         },
         say(event, bot, voiceIndex) {
