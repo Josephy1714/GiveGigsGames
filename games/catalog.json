@@ -1015,13 +1015,15 @@
       "slug": "neonracer",
       "title": "Neon Racer",
       "capsule": "images/capsules/neonracer.webp",
-      "description": "High-speed 3-lane cyberpunk highway dodger. Weave through traffic, thread near-misses for +15m bonuses, grab coins and 4 power-ups, and push your distance record.",
+      "description": "3D 1986 Miami synthwave highway racer. Carve down a palm-lined sunset causeway, chain near-miss combos, unlock 5 iconic 80s supercars in the Miami Garage, and trigger timed Shield, Magnet, Turbo, and Chill Wave power-ups.",
       "genre": "Racing",
       "tags": [
+        "3D",
+        "Synthwave",
         "Racing",
         "Arcade"
       ],
-      "emoji": "🏎️",
+      "emoji": "🌴",
       "featured": false,
       "recommended": false,
       "entrypoint": "neonracer/index.html",
@@ -1030,7 +1032,7 @@
         "touch",
         "keyboard"
       ],
-      "controls": "Left/Right or A/D switch lanes; Up/Down or W/S accelerate/brake; Space start/restart; P/Esc pause; M mute; F fullscreen. Touch: tap/drag lanes, Gas/Brake buttons, or optional Gyro Tilt.",
+      "controls": "Left/Right or A/D switch lanes; Up/Down or W/S accelerate/brake; C switch camera; Space start/restart; P/Esc pause; M mute synth audio; F fullscreen. Touch: tap/drag lanes, Gas/Brake pedals, Pause/Mute HUD buttons, or calibrated Gyro Tilt.",
       "modes": [
         "solo"
       ],

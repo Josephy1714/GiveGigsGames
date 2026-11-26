@@ -218,11 +218,11 @@ window.GIVEGIGSGAMES_ROADMAPS = {
     { title: "Support controller D-pad/trigger mapping natively", text: "Bind smooth analog horizontal movement and trigger autofire for gamepads." }
   ],
   neonracer: [
-    { title: "Turn Shield & Magnet into true timed buffs", text: "Make Shield absorb 1 traffic collision and Magnet pull nearby coins for several seconds instead of granting instant +100m / +5 coins." },
-    { title: "Add a Coin Garage & Car Skins shop", text: "Let players spend collected road coins on new neon car silhouettes, trail colors, or a starting Shield." },
-    { title: "Add lane-changing rivals & road hazards", text: "Introduce telegraphing lane-swappers, speed pads, and oil slicks past 500m to keep late runs exciting." },
-    { title: "Add Pause & Mute touch buttons", text: "Expose touch buttons for Pause and Mute alongside the steering and Gas/Brake pedals." },
-    { title: "Smooth Gyro Tilt deadzone & calibration", text: "Add a Zero/Calibrate button when enabling Tilt mode so players can hold their phone at any comfortable angle." }
+    { title: "Add curved coastal highway bends & elevation hills", text: "Introduce sweeping OutRun-style banking curves and Biscayne bridge crests to complement the straightaway causeway." },
+    { title: "Add 80s Synthwave Radio Station selector", text: "Let players switch between multiple procedural 80s synthwave tracks (Sunset Cruise, Vice Pursuit, Midnight Outrun) live during a run." },
+    { title: "Add Weather & Rain Reflections toggle", text: "Add optional Miami tropical midnight rain streaks and wet windshield droplets in Hood Cam mode." },
+    { title: "Add Time-Attack Checkpoint Gates mode", text: "Introduce classic arcade OutRun checkpoint arches where clearing gates extends a countdown clock." },
+    { title: "Add Local Ghost Replay silhouette", text: "Save your best-distance pacing curve so a translucent neon ghost car races alongside your personal record." }
   ],
   neonsnake: [
     { title: "Add a proper Victory screen for filling the 30×30 grid", text: "Celebrate a full 900-tile clear with a Victory overlay instead of routing through gameOver() in spawnFood()." },
