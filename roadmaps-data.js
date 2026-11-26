@@ -385,4 +385,11 @@ window.GIVEGIGSGAMES_ROADMAPS = {
     { title: "Add a Boss attack pattern indicator in the HUD", text: "Show clear lane telegraph icons before each Semester Boss (1,800m+) launches its 3 attacks." },
     { title: "Capture 3 featured gameplay screenshots", text: "Add portrait action, Semester Boss, and Graduation screen captures to games/images/screenshots/." }
   ]
+  "semester-survival-3d-playable": [
+    { title: "Complete the eight-semester campaign", text: "Build the full progression from first semester through graduation, with distinct academic and campus challenges that make each semester feel meaningfully different." },
+    { title: "Add proper semester endings and a graduation finale", text: "Replace the current preview-style run progression with clear semester completion screens, milestone summaries, and a satisfying final graduation sequence." },
+    { title: "Balance difficulty across the full university journey", text: "Tune traffic, obstacles, pickups, upgrades, and challenge pacing so difficulty rises fairly from early semesters to the final campaign." },
+    { title: "Expand campus locations and semester-specific events", text: "Give the eight-semester journey stronger visual and gameplay variety through recognizable university locations, events, and changing campus conditions." },
+    { title: "Polish mobile performance, controls, and progression saves", text: "Test on mid-range Android devices, refine touch gestures and frame pacing, and make campaign progress and unlocked upgrades persist reliably." }
+  ]
 };
