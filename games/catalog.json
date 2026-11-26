@@ -1731,6 +1731,36 @@
       ],
       "runtimeType": "static",
       "capsule": "images/capsules/country-generalizer.webp"
+    },
+    {
+      "slug": "semester-survival-3d-playable",
+      "title": "Semester Survival 3D: Playable Version",
+      "description": "Play a 3D Kenyan university campus runner as Jay. Dodge campus traffic and obstacles, collect coins and power-ups, unlock upgrades, and test the playable preview. The full eight-semester campaign and proper level endings are still in development.",
+      "genre": "Endless Runner",
+      "tags": [
+        "Endless Runner",
+        "3D",
+        "Three.js",
+        "University",
+        "Kenya",
+        "Mobile",
+        "WebGL",
+        "Preview"
+      ],
+      "emoji": "🏙️",
+      "featured": false,
+      "recommended": false,
+      "status": "preview",
+      "entrypoint": "semester-survival-3d-playable/index.html",
+      "inputs": [
+        "touch",
+        "keyboard"
+      ],
+      "controls": "Keyboard: Left/Right or A/D change lanes; Up/W/Space jump; Down/S slide; Escape pause. Touch: swipe left/right to change lanes, up to jump, down to slide.",
+      "modes": [
+        "solo"
+      ],
+      "runtimeType": "static"
     }
   ]
 }
