@@ -557,7 +557,9 @@
     const bySlug = new Map(games.map((game) => [game.slug, game]));
     const recent = state.recent.map((slug) => bySlug.get(slug)).filter(Boolean).slice(0, 8);
     const favorites = games.filter((game) => state.favorites.has(game.slug)).slice(0, 8);
-    const inProgress = games.filter((game) => game.status === "preview" || game.status === "experimental");
+    const inProgress = games
+      .filter((game) => game.status === "preview" || game.status === "experimental")
+      .sort((a, b) => Number(b.slug === "semester-survival-3d-playable") - Number(a.slug === "semester-survival-3d-playable"));
 
     const fill = (key, list, note) => {
       const hasItems = list.length > 0;
