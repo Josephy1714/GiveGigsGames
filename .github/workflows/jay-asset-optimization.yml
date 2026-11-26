@@ -34,7 +34,7 @@ jobs:
           TEXTURED=/tmp/jay-unified-webp.glb
           OUTPUT=/tmp/jay-unified-webp-meshopt.glb
           BEFORE=$(wc -c < "$INPUT")
-          npx --no-install gltf-transform textureCompress "$INPUT" "$TEXTURED" --targetFormat webp --quality 95
+          npx --no-install gltf-transform webp "$INPUT" "$TEXTURED" --quality 95
           npx --no-install gltf-transform meshopt "$TEXTURED" "$OUTPUT" --level medium
           AFTER=$(wc -c < "$OUTPUT")
           echo "Jay GLB before: $BEFORE bytes"
