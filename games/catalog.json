@@ -833,42 +833,6 @@
       "packageBytes": 114499
     },
     {
-      "slug": "semester-survival",
-      "title": "Semester Survival: Jay's University Adventure",
-      "capsule": "images/capsules/semester-survival.webp",
-      "description": "Explore Residence, Township, Campus, and City as Jay across 8 semesters in a 2.5D university-life adventure. Manage energy, hunger, stress, finances, 5 courses per term, and 8 NPC schedules.",
-      "genre": "Adventure",
-      "tags": [
-        "Adventure",
-        "Life Simulation",
-        "Anime",
-        "University",
-        "2.5D",
-        "Exploration"
-      ],
-      "emoji": "🎓",
-      "featured": false,
-      "recommended": false,
-      "entrypoint": "semester-survival/index.html",
-      "runtimeType": "static",
-      "inputs": [
-        "touch",
-        "keyboard"
-      ],
-      "controls": "WASD/Arrows move (I/K depth); Space/W jump; S/Down slide; Shift sprint; E/Enter interact; Tab Student Phone; Esc pause. Touch: swipe to move/jump/slide plus on-screen action buttons.",
-      "modes": [
-        "solo"
-      ],
-      "guideEntrypoint": "semester-survival/guide.html",
-      "featuredScreenshots": [
-        "games/images/screenshots/semester-survival-1.jpg",
-        "games/images/screenshots/semester-survival-2.jpg",
-        "games/images/screenshots/semester-survival-3.jpg"
-      ],
-      "mobilePriority": 52,
-      "packageBytes": 5368898
-    },
-    {
       "slug": "gravegain5dA",
       "title": "GraveGain5DA",
       "capsule": "images/capsules/gravegain5dA.webp",
@@ -1726,37 +1690,6 @@
       "packageBytes": 24431
     },
     {
-      "slug": "semester-survival-runner",
-      "title": "Semester Survival: The University Run",
-      "capsule": "images/capsules/semester-survival-runner.webp",
-      "description": "Survive 8 Kenyan university semesters (1,000m each) plus Graduation Endless Alumni Mode in a 2.5D 3-lane runner. Dodge 8 obstacle types, battle 8 Semester Bosses, collect 7 power-ups, and track GPA.",
-      "genre": "Endless Runner",
-      "tags": [
-        "Endless Runner",
-        "2D",
-        "2.5D",
-        "University",
-        "Kenya",
-        "Mobile"
-      ],
-      "emoji": "🎓",
-      "featured": false,
-      "recommended": false,
-      "entrypoint": "semester-survival-runner/index.html",
-      "inputs": [
-        "touch",
-        "keyboard"
-      ],
-      "controls": "A/D or Left/Right switch lanes; W/Up/Space jump; S/Down slide; Esc pause. Touch: swipe left/right to switch lanes, up to jump, down to slide.",
-      "modes": [
-        "solo"
-      ],
-      "runtimeType": "static",
-      "guideEntrypoint": "semester-survival-runner/guide.html",
-      "mobilePriority": 95,
-      "packageBytes": 6448472
-    },
-    {
       "slug": "country-generalizer",
       "title": "CountryGeneralizer",
       "description": "Deduce the mystery nation from the Top 100 most populous countries across 36 generalization dimensions—food, fauna, flora, exports, demographics, and geography—with Hourly, Daily, Weekly 3x, and Practice resets.",
@@ -1816,7 +1749,8 @@
         "solo"
       ],
       "runtimeType": "static",
-      "packageBytes": 2578295
+      "packageBytes": 2578295,
+      "capsule": "images/capsules/semester-survival-3d-playable.svg"
     }
   ]
 }
