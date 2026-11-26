@@ -1685,7 +1685,8 @@
       "modes": [
         "solo"
       ],
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "capsule": "images/capsules/country-generalizer.webp"
     }
   ]
 }
