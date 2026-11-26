@@ -37,7 +37,7 @@ export function advanceCampaign(state, accumulatedDistance) {
   const config = getSemesterConfig(state.semester);
   const distance = Math.max(state.distance, Math.min(config.finishDistance, Number(accumulatedDistance) || 0));
   let next = { ...state, distance };
-  if (!next.warningShown && distance >= config.warningDistance && distance < config.bossDistance) {
+  if (!next.warningShown && distance >= config.warningDistance) {
     next.warningShown = true;
     next.phase = CAMPAIGN_PHASES.WARNING;
     return next;
