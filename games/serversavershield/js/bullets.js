@@ -13,7 +13,9 @@ function spawnBullet() {
         const angle = (i - (weapon.bulletCount - 1) / 2) * weapon.spread;
         bullets.push({
             x: player.x,
-            y: player.y - 30,
+            y: player.y - (player.radius + 4),
+            previousX: player.x,
+            previousY: player.y - (player.radius + 4),
             vx: Math.sin(angle) * 2,
             vy: -weapon.speed,
             radius: weapon.radius,
@@ -27,7 +29,13 @@ function spawnBullet() {
 }
 
 function updateBullets() {
-    bullets.forEach(b => { b.x += b.vx; b.y += b.vy; b.life--; });
+    bullets.forEach(b => {
+        b.previousX = b.x;
+        b.previousY = b.y;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life--;
+    });
     bullets = bullets.filter(b => b.life > 0 && b.y > -20 && b.x > -30 && b.x < CANVAS_WIDTH + 30);
 }
 

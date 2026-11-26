@@ -4861,9 +4861,32 @@ h4,
 /* Center square artwork within card covers while preserving the full source image. */
 .row-track .game-card .gcard-cover,
 .game-grid:not(.list-view) .game-card .gcard-cover {
-  width: 69%;
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 69%) minmax(0, 31%);
+  align-items: stretch;
+  aspect-ratio: auto;
+  margin: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+.gcard-art {
+  position: relative;
+  width: 100%;
   aspect-ratio: 1;
-  margin-inline: auto;
+  overflow: hidden;
+  background: #101116;
+}
+
+.gcard-controls {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
 }
 
 .row-track .game-card .gcard-cover img,
@@ -4881,9 +4904,76 @@ h4,
   aspect-ratio: 1;
 }
 
+.gcard-play {
+  position: static;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.gcard-fav {
+  position: static;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.gcard-overlay-tags {
+  padding-right: 0;
+}
+
+.game-card:hover .gcard-overlay,
+.game-card:focus-within .gcard-overlay {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.gcard-art:hover .gcard-overlay,
+.gcard-art:focus-within .gcard-overlay {
+  opacity: 1;
+  transform: none;
+}
+
+.gcard-play:hover,
+.gcard-play:focus-visible {
+  background: var(--play);
+  border-color: transparent;
+  color: var(--play-ink);
+}
+
 .game-grid.list-view .gcard-cover {
+  display: grid;
   width: 100%;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  align-self: stretch;
+  height: auto;
+  aspect-ratio: auto;
   margin-inline: 0;
+}
+
+.game-grid.list-view .game-card {
+  grid-template-columns: 140px minmax(0, 1fr);
+}
+
+.game-grid.list-view .gcard-art {
+  aspect-ratio: 1;
+}
+
+.game-grid.list-view .gcard-controls {
+  gap: 6px;
+  padding: 4px 2px;
+}
+
+.game-grid.list-view .gcard-play {
+  flex-basis: 30px;
+  width: 30px;
+  height: 30px;
+}
+
+.game-grid.list-view .gcard-fav {
+  flex-basis: 30px;
+  width: 30px;
+  height: 30px;
 }
 
 @media (prefers-reduced-motion: reduce) {

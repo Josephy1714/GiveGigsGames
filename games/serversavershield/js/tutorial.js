@@ -8,7 +8,7 @@ const TUTORIAL_STEPS = [
     {
         element: '#gameCanvas',
         title: '🎮 Welcome!',
-        text: 'Move your mouse to control the shield. Click to toggle firing.',
+        text: 'Move your mouse to aim. Hold the left mouse button to fire; release it to stop. On touch, tap FIRE to toggle shooting.',
         position: 'bottom'
     },
     {
@@ -26,7 +26,7 @@ const TUTORIAL_STEPS = [
     {
         element: '.controls-hint',
         title: '⌨️ Controls',
-        text: 'Use WASD or Arrow keys to move. Press SPACE to toggle firing. P to pause.',
+        text: 'Use WASD or Arrow keys to move. Hold SPACE to fire. Press P to pause.',
         position: 'top'
     }
 ];

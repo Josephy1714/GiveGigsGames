@@ -1,204 +1,96 @@
-var matrixStreams = [];
 var outerMatrixCanvas = null;
 var outerMatrixCtx = null;
-var outerStreams = [];
-var outerInitialized = false;
 var _outerResizeHooked = false;
 
-function _outerStreamDensity() {
-    // Beautiful = dense rain; Fast = ~40% fewer columns, shorter trails.
-    const pretty = (typeof isBeautiful === 'function') && isBeautiful();
-    return pretty
-        ? { step: 18, maxLen: 20, maxLenVar: 10 }
-        : { step: 30, maxLen: 12, maxLenVar: 6 };
-}
-
-function _makeOuterStream(x, density) {
-    return {
-        x: x,
-        y: Math.random() * outerMatrixCanvas.height - outerMatrixCanvas.height,
-        speed: Math.random() * 2 + 1,
-        fontSize: Math.floor(Math.random() * 6) + 12,
-        opacity: Math.random() * 0.15 + 0.05,
-        chars: [],
-        maxLength: Math.floor(Math.random() * density.maxLenVar) + density.maxLen,
-        ticksSinceChange: 0,
-        changeInterval: Math.floor(Math.random() * 15) + 5
-    };
-}
-
 function initOuterMatrix() {
+    // The old full-page Matrix animation repainted hundreds of glyphs while
+    // the hidden game-only canvas was still being composited. Keep it static.
     outerMatrixCanvas = document.getElementById('TEMPLATE-4weird-starfield');
-    if (!outerMatrixCanvas) return;
-
-    outerMatrixCtx = outerMatrixCanvas.getContext('2d');
-    if (!outerMatrixCtx) return;
-
+    outerMatrixCtx = outerMatrixCanvas?.getContext('2d') || null;
+    if (!outerMatrixCanvas || !outerMatrixCtx) return;
     resizeOuterMatrix();
     if (!_outerResizeHooked) {
         window.addEventListener('resize', resizeOuterMatrix);
         _outerResizeHooked = true;
     }
-
-    const density = _outerStreamDensity();
-    outerStreams = [];
-    const columns = Math.floor(outerMatrixCanvas.width / density.step);
-    for (let i = 0; i < columns; i++) {
-        outerStreams.push(_makeOuterStream(i * density.step, density));
-    }
-    outerInitialized = true;
 }
 
 function resizeOuterMatrix() {
     if (!outerMatrixCanvas) return;
     outerMatrixCanvas.width = window.innerWidth;
     outerMatrixCanvas.height = window.innerHeight;
-
-    if (outerInitialized) {
-        const density = _outerStreamDensity();
-        const columns = Math.floor(outerMatrixCanvas.width / density.step);
-        const currentCount = outerStreams.length;
-        if (columns > currentCount) {
-            for (let i = currentCount; i < columns; i++) {
-                outerStreams.push(_makeOuterStream(i * density.step, density));
-            }
-        } else if (columns < currentCount) {
-            outerStreams.splice(columns);
-        }
+    if (!outerMatrixCtx) return;
+    const gradient = outerMatrixCtx.createLinearGradient(0, 0, 0, outerMatrixCanvas.height);
+    gradient.addColorStop(0, '#030b08');
+    gradient.addColorStop(1, '#020503');
+    outerMatrixCtx.fillStyle = gradient;
+    outerMatrixCtx.fillRect(0, 0, outerMatrixCanvas.width, outerMatrixCanvas.height);
+    outerMatrixCtx.strokeStyle = 'rgba(16,185,129,0.045)';
+    outerMatrixCtx.lineWidth = 1;
+    outerMatrixCtx.beginPath();
+    for (let x = 24; x < outerMatrixCanvas.width; x += 48) {
+        outerMatrixCtx.moveTo(x, 0);
+        outerMatrixCtx.lineTo(x, outerMatrixCanvas.height);
     }
+    for (let y = 24; y < outerMatrixCanvas.height; y += 48) {
+        outerMatrixCtx.moveTo(0, y);
+        outerMatrixCtx.lineTo(outerMatrixCanvas.width, y);
+    }
+    outerMatrixCtx.stroke();
 }
 
 function updateAndDrawOuterMatrix() {
-    if (!outerInitialized || !outerMatrixCtx) return;
-    
-    outerMatrixCtx.fillStyle = 'rgba(2, 5, 3, 0.08)'; // Deep dark green-black matching --bg-dark
-    outerMatrixCtx.fillRect(0, 0, outerMatrixCanvas.width, outerMatrixCanvas.height);
-    
-    outerStreams.forEach(stream => {
-        stream.y += stream.speed;
-        if (stream.y > outerMatrixCanvas.height + 200) {
-            stream.y = -Math.random() * 200;
-            stream.speed = Math.random() * 2 + 1;
-            stream.opacity = Math.random() * 0.15 + 0.05;
-            stream.maxLength = Math.floor(Math.random() * 20) + 10;
-            stream.chars = [];
-        }
-        
-        stream.ticksSinceChange++;
-        if (stream.ticksSinceChange > stream.changeInterval) {
-            stream.ticksSinceChange = 0;
-            const characters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*+-/\\";
-            const newChar = characters.charAt(Math.floor(Math.random() * characters.length));
-            stream.chars.unshift(newChar);
-            if (stream.chars.length > stream.maxLength) {
-                stream.chars.pop();
-            }
-        }
-        
-        outerMatrixCtx.font = `${stream.fontSize}px monospace`;
-        for (let i = 0; i < stream.chars.length; i++) {
-            const charY = stream.y - i * (stream.fontSize * 0.85);
-            if (charY < 0 || charY > outerMatrixCanvas.height) continue;
-            
-            let fillStyle;
-            if (i === 0) {
-                fillStyle = `rgba(168, 244, 190, ${stream.opacity * 2})`;
-            } else {
-                const fade = 1 - (i / stream.maxLength);
-                fillStyle = `rgba(16, 185, 129, ${stream.opacity * fade})`;
-            }
-            outerMatrixCtx.fillStyle = fillStyle;
-            outerMatrixCtx.fillText(stream.chars[i], stream.x, charY);
-        }
-    });
+    // Static backdrop is painted once by initOuterMatrix/resizeOuterMatrix.
 }
 
 function initStars() {
-    matrixStreams = [];
-    const pretty = (typeof isBeautiful === 'function') && isBeautiful();
-    const streamCount = pretty ? 40 : 22;
-    for (let i = 0; i < streamCount; i++) {
-        matrixStreams.push({
-            x: Math.random() * CANVAS_WIDTH,
-            y: Math.random() * CANVAS_HEIGHT - CANVAS_HEIGHT,
-            speed: Math.random() * 2.5 + 1.5,
-            fontSize: Math.floor(Math.random() * 6) + 10,
-            opacity: Math.random() * 0.4 + 0.2,
-            chars: [],
-            maxLength: pretty ? Math.floor(Math.random() * 12) + 6 : Math.floor(Math.random() * 8) + 4,
-            changeInterval: Math.floor(Math.random() * 10) + 4,
-            ticksSinceChange: 0
-        });
-    }
+    // No animated glyph state is needed for the cached backdrop.
 }
 
 function updateStars() {
-    matrixStreams.forEach(stream => {
-        stream.y += stream.speed;
-        if (stream.y > CANVAS_HEIGHT + 150) {
-            stream.y = -Math.random() * 150;
-            stream.x = Math.random() * CANVAS_WIDTH;
-            stream.speed = Math.random() * 2.5 + 1.5;
-            stream.fontSize = Math.floor(Math.random() * 6) + 10;
-            stream.opacity = Math.random() * 0.4 + 0.2;
-            stream.maxLength = Math.floor(Math.random() * 12) + 6;
-            stream.chars = [];
-        }
-
-        stream.ticksSinceChange++;
-        if (stream.ticksSinceChange > stream.changeInterval) {
-            stream.ticksSinceChange = 0;
-            const characters = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*+-/\\";
-            const newChar = characters.charAt(Math.floor(Math.random() * characters.length));
-            stream.chars.unshift(newChar);
-            if (stream.chars.length > stream.maxLength) {
-                stream.chars.pop();
-            }
-        }
-    });
+    // No per-frame glyph simulation; the cached circuit grid carries the theme.
 }
 
-var _bgGrad = null;
-var _bgGradHeight = 0;
+var _bgCanvas = null;
+var _bgCanvasWidth = 0;
+var _bgCanvasHeight = 0;
 function drawBackground() {
     const ctx = getContext();
-    // Cache the gradient: creating it every frame allocates + forces repaint.
-    if (!_bgGrad || _bgGradHeight !== CANVAS_HEIGHT) {
-        _bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-        _bgGrad.addColorStop(0, '#020503');
-        _bgGrad.addColorStop(0.5, '#051207');
-        _bgGrad.addColorStop(1, '#020803');
-        _bgGradHeight = CANVAS_HEIGHT;
+    if (!_bgCanvas || _bgCanvasWidth !== CANVAS_WIDTH || _bgCanvasHeight !== CANVAS_HEIGHT) {
+        _bgCanvas = document.createElement('canvas');
+        _bgCanvas.width = _bgCanvasWidth = CANVAS_WIDTH;
+        _bgCanvas.height = _bgCanvasHeight = CANVAS_HEIGHT;
+        const bg = _bgCanvas.getContext('2d');
+        const gradient = bg.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#04110d');
+        gradient.addColorStop(0.55, '#03100b');
+        gradient.addColorStop(1, '#020805');
+        bg.fillStyle = gradient;
+        bg.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        bg.strokeStyle = 'rgba(16,185,129,0.09)';
+        bg.lineWidth = 1;
+        bg.beginPath();
+        for (let x = 24; x < CANVAS_WIDTH; x += 48) {
+            bg.moveTo(x, 0);
+            bg.lineTo(x, CANVAS_HEIGHT);
+        }
+        for (let y = 24; y < CANVAS_HEIGHT; y += 48) {
+            bg.moveTo(0, y);
+            bg.lineTo(CANVAS_WIDTH, y);
+        }
+        bg.stroke();
+        bg.fillStyle = 'rgba(52,211,153,0.4)';
+        for (let x = 24; x < CANVAS_WIDTH; x += 96) {
+            for (let y = 24; y < CANVAS_HEIGHT; y += 96) {
+                bg.fillRect(x - 1, y - 1, 2, 2);
+            }
+        }
     }
-    ctx.fillStyle = _bgGrad;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.drawImage(_bgCanvas, 0, 0);
 }
 
 function drawStars() {
-    const ctx = getContext();
-    ctx.save();
-    
-    matrixStreams.forEach(stream => {
-        ctx.font = `${stream.fontSize}px monospace`;
-        
-        for (let i = 0; i < stream.chars.length; i++) {
-            const charY = stream.y - i * (stream.fontSize * 0.85);
-            if (charY < 0 || charY > CANVAS_HEIGHT) continue;
-            
-            let fillStyle;
-            if (i === 0) {
-                fillStyle = `rgba(200, 255, 210, ${stream.opacity * 1.5})`;
-            } else {
-                const fade = 1 - (i / stream.maxLength);
-                fillStyle = `rgba(16, 185, 129, ${stream.opacity * fade})`;
-            }
-            
-            ctx.fillStyle = fillStyle;
-            ctx.fillText(stream.chars[i], stream.x, charY);
-        }
-    });
-    
-    ctx.restore();
+    // Backdrop details are baked into _bgCanvas once.
 }
 
 function drawPowerups() {

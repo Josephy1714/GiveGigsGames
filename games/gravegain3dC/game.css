@@ -235,6 +235,85 @@ html, body {
     margin-top: 8px;
 }
 
+.campaign-intro {
+    max-width: 760px;
+    margin: 0 auto 14px;
+    color: #d8e8f5;
+    line-height: 1.55;
+}
+
+.campaign-btn {
+    flex-basis: 100%;
+    max-width: 440px;
+    background: linear-gradient(100deg, #73f7ff, #a8ffb7);
+    box-shadow: 0 0 24px #37e4d544;
+}
+
+.campaign-select {
+    width: min(900px, 100%);
+}
+
+.campaign-select h2 {
+    margin: 0 0 9px;
+    color: #9cf8ff;
+    font-size: 13px;
+    letter-spacing: .1em;
+}
+
+.campaign-mission-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.campaign-mission-btn {
+    display: grid;
+    gap: 5px;
+    min-height: 72px;
+    padding: 10px;
+    border: 1px solid #68e8ef66;
+    border-radius: 7px;
+    background: #0c1b29e8;
+    color: #e4faff;
+    text-align: left;
+    cursor: pointer;
+}
+
+.campaign-mission-btn:hover,
+.campaign-mission-btn:focus-visible {
+    border-color: #83f7ff;
+    background: #123043;
+    outline: 2px solid #83f7ff55;
+}
+
+.campaign-mission-name { color: #82f3ff; font-size: 11px; font-weight: 850; }
+.campaign-mission-brief { font-size: 11px; line-height: 1.35; opacity: .84; }
+.campaign-mission-count { color: #b5c9d5; font-size: 10px; letter-spacing: .04em; }
+
+#campaign-status {
+    position: fixed;
+    z-index: 4;
+    top: 58px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(580px, calc(100vw - 28px));
+    padding: 10px 14px;
+    display: grid;
+    gap: 3px;
+    border: 1px solid #72edff88;
+    border-radius: 8px;
+    background: #07121ddd;
+    color: #dffaff;
+    text-align: center;
+    pointer-events: none;
+    text-shadow: 0 1px 4px #000;
+}
+
+#campaign-status.hidden { display: none; }
+#campaign-title { color: #7cf4ff; letter-spacing: .08em; font-size: 12px; }
+#campaign-briefing { font-size: 14px; font-weight: 750; }
+#campaign-objective { font-size: 12px; opacity: .88; }
+
 .mode-btn, #next-run-btn {
     padding: 12px 22px;
     font-size: 14px;

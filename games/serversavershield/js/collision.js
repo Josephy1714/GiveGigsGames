@@ -13,12 +13,22 @@ function checkBulletEnemyCollisions() {
         for (let ei = 0; ei < enemies.length; ei++) {
             const e = enemies[ei];
             if (e.currentHp <= 0) continue;
-            const dx = b.x - e.x;
-            if (dx > 48 || dx < -48) continue;
-            const dy = b.y - e.y;
-            if (dy > 48 || dy < -48) continue;
             const rr = b.radius + e.radius;
-            if (dx * dx + dy * dy >= rr * rr) continue;
+            // Test the whole relative-motion segment so fast shots cannot pass
+            // between enemies between two simulation steps.
+            const startX = (b.previousX ?? b.x) - (e.previousX ?? e.x);
+            const startY = (b.previousY ?? b.y) - (e.previousY ?? e.y);
+            const endX = b.x - e.x;
+            const endY = b.y - e.y;
+            const moveX = endX - startX;
+            const moveY = endY - startY;
+            const moveLengthSq = moveX * moveX + moveY * moveY;
+            const t = moveLengthSq > 0
+                ? Math.max(0, Math.min(1, -(startX * moveX + startY * moveY) / moveLengthSq))
+                : 0;
+            const hitX = startX + moveX * t;
+            const hitY = startY + moveY * t;
+            if (hitX * hitX + hitY * hitY >= rr * rr) continue;
             b.life = 0;
             e.currentHp -= (b.damage || 1) * dmgMult;
             spawnParticles(b.x, b.y, e.color, 3);
@@ -43,6 +53,14 @@ function checkBulletEnemyCollisions() {
             break;
         }
     }
+
+    // Compact immediately: dead enemies cannot render, reach servers, or keep
+    // the final-wave state alive until they drift offscreen.
+    let write = 0;
+    for (let read = 0; read < enemies.length; read++) {
+        if (enemies[read].currentHp > 0) enemies[write++] = enemies[read];
+    }
+    enemies.length = write;
 }
 
 // Old server collision system - deprecated, use checkServerCollisions() in servers.js

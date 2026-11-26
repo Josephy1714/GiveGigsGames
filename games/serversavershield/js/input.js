@@ -58,8 +58,10 @@ function initInput() {
         inputY = p.y;
     });
 
-    gameCanvas.addEventListener('mousedown', (e) => {
+    gameCanvas.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
         e.preventDefault();
+        if (typeof initAudio === 'function') { try { initAudio(); } catch (_) {} }
         const p = _canvasToGame(gameCanvas, e.clientX, e.clientY);
         // Check if shop was clicked first; if so, do not toggle shooting
         if (typeof checkShopClick === 'function' && checkShopClick(p.x, p.y)) {
@@ -67,8 +69,18 @@ function initInput() {
             inputY = p.y;
             return;
         }
-        isShooting = !isShooting;
+        isShooting = true;
+        if (gameCanvas.setPointerCapture && e.pointerId !== undefined) {
+            try { gameCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+        }
     });
+
+    const stopPointerFire = (e) => {
+        if (e && e.pointerType === 'mouse') isShooting = false;
+    };
+    gameCanvas.addEventListener('pointerup', stopPointerFire);
+    gameCanvas.addEventListener('pointercancel', stopPointerFire);
+    gameCanvas.addEventListener('lostpointercapture', stopPointerFire);
 
     // --- Touch: relative drag-aim + tap detection (pinch-safe) ---
     gameCanvas.addEventListener('touchstart', (e) => {
@@ -152,6 +164,7 @@ function initInput() {
 
     window.addEventListener('keyup', (e) => {
         keysPressed[e.key.toLowerCase()] = false;
+        if (e.key === ' ') isShooting = false;
     });
 
     initThumbRail();

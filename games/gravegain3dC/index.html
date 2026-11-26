@@ -27,6 +27,11 @@
             <span id="speedometer">0 u/s</span>
             <span id="fps-counter">0 FPS</span>
         </div>
+        <section id="campaign-status" class="hidden" aria-live="polite">
+            <strong id="campaign-title">LUCKYSTARSHIP 420 · SIMULATION</strong>
+            <span id="campaign-briefing"></span>
+            <span id="campaign-objective"></span>
+        </section>
         <div id="rts-bar" class="hidden">
             <button id="rts-add-bot">+ ADD BOT (4)</button>
             <span id="rts-hint" role="status">Click or tap the floor to rally your squad</span>
@@ -43,12 +48,18 @@
 
     <div id="overlay">
         <h1>GRAVEGAIN 3DC</h1>
-        <p>Xonotic-style Arena FPS • Babylon.js</p>
+        <p>LUCKYSTARSHIP 420 · COLONY EXPEDITION TRAINING SIMULATOR</p>
+        <p class="campaign-intro">You are a human soldier aboard the LuckyStarShip420, the human colony ship crossing into the GraveGain universe. The destination surface is unknown. Train for hostile soldiers, unfamiliar terrain, and possible alien wildlife. In the simulator, wildlife appears as a wireframe threat model.</p>
         <div class="map-section">
             <div class="section-label">SELECT ARENA</div>
             <div id="map-selector" class="map-selector"></div>
         </div>
+        <section class="campaign-select" aria-labelledby="campaign-select-heading">
+            <h2 id="campaign-select-heading">SELECT TRAINING EXERCISE · ALL UNLOCKED</h2>
+            <div id="campaign-mission-selector" class="campaign-mission-selector"></div>
+        </section>
         <div class="mode-buttons">
+            <button class="mode-btn campaign-btn" data-mode="campaign">▶ BEGIN COLONY CAMPAIGN</button>
             <button class="mode-btn" data-mode="player">1. PLAYER CONTROL</button>
             <button class="mode-btn" data-mode="autobattler">2. AUTO-BATTLER (3 LIVES)</button>
             <button class="mode-btn" data-mode="rts">3. RTS SQUAD (4+ BOTS)</button>

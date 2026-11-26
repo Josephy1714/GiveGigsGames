@@ -351,9 +351,9 @@ window.GIVEGIGSGAMES_DETAILS = {
     platform: "Three.js 3D looter-shooter with Spell Wheel and 16-button mobile touch layout."
   },
   gravegain3dC: {
-    objective: "Dominate 4 Babylon.js 3D arenas using bunny-hop/rocket mobility, 4 arena weapons, and upgradable tactical squad bots.",
-    modes: "Player Control (FPS + 2 upgradable squad bots), Auto-Battler Roguelite (3 lives + 10 persistent scrap upgrades), and RTS Squad (top-down rally & bot spawning).",
-    systems: "4 arenas (Neon Courtyard, Void Spires, Magma Foundry, Cargo Shipment), 4 weapons (Devastator, Vortex, Shotgun, Electro), jump pads, and squad tactics AI.",
+    objective: "Train as a human soldier aboard the LuckyStarShip420, the human colony ship crossing into the GraveGain universe. Select any unlocked exercise and prepare for an unknown planet surface.",
+    modes: "Five selectable Colony Campaign exercises, each with two scripted pushes and mission-only route/cover geometry; Player Control, Auto-Battler Roguelite (3 lives + persistent scrap upgrades), and RTS Squad.",
+    systems: "29 campaign contacts across 4 arenas: Drop Zone (4 soldiers), Cargo Breach (3 soldiers + 2 wireframe fauna), Unknown Ecology (4 fauna), Foundry Raid (4 soldiers + 3 fauna), Colony Shield (5 soldiers + 4 fauna). Fauna are cyan wireframe simulator models. Four weapons, bunny-hop/rocket mobility, mission briefings, and two squad companions.",
     saves: "Browser localStorage: gravegain3dc_roguelite_v1 (Auto-Battler upgrades & scrap).",
     platform: "Babylon.js 3D arena FPS with pointer-lock aim and Player-mode touch controls."
   },

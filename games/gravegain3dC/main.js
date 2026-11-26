@@ -120,6 +120,38 @@ function createScene() {
 
     const weaponView = createWeaponView(scene, camera, WEAPONS);
     const buildBotModel = createBotModels(scene);
+    const alienMat = new BABYLON.StandardMaterial('simulated alien wireframe', scene);
+    alienMat.diffuseColor = new BABYLON.Color3(0.1, 0.9, 1);
+    alienMat.emissiveColor = new BABYLON.Color3(0.05, 0.8, 1);
+    alienMat.wireframe = true;
+    function buildAlienModel(root) {
+        const pieces = [];
+        const add = (mesh) => {
+            mesh.parent = root;
+            mesh.isPickable = false;
+            mesh.material = alienMat;
+            pieces.push(mesh);
+            return mesh;
+        };
+        const body = add(BABYLON.MeshBuilder.CreateSphere('wireframe fauna body', { diameter: 1, segments: 5 }, scene));
+        body.position.set(0, 0.05, 0);
+        body.scaling.set(0.63, 0.39, 0.98);
+        const head = add(BABYLON.MeshBuilder.CreatePolyhedron('wireframe fauna head', { type: 2, size: 0.47 }, scene));
+        head.position.set(0, 0.18, 0.86);
+        for (const side of [-1, 1]) {
+            const eye = add(BABYLON.MeshBuilder.CreateSphere('wireframe fauna eye', { diameter: 0.12, segments: 4 }, scene));
+            eye.position.set(side * 0.22, 0.28, 1.04);
+            for (const fore of [-1, 1]) {
+                const leg = add(BABYLON.MeshBuilder.CreateCylinder('wireframe fauna leg', { diameterTop: 0.08, diameterBottom: 0.13, height: 0.63, tessellation: 5 }, scene));
+                leg.position.set(side * 0.38, -0.34, fore * 0.51);
+                leg.rotation.z = side * -0.25;
+            }
+        }
+        const tail = add(BABYLON.MeshBuilder.CreateCylinder('wireframe fauna tail', { diameterTop: 0.035, diameterBottom: 0.18, height: 0.8, tessellation: 5 }, scene));
+        tail.position.set(0, 0.1, -0.82);
+        tail.rotation.x = Math.PI / 2;
+        return pieces;
+    }
     const voiceToggle = document.getElementById('voice-toggle');
     const comms = createBotComms(audioCtx, camera, voiceToggle);
     const statsDialog = document.getElementById('stats-dialog');
@@ -170,10 +202,10 @@ function createScene() {
         });
     }
 
-    function loadMap(mapId) {
+    function loadMap(mapId, extraBlocks = []) {
         const nextMap = MAPS[mapId] || MAP_LIST[0];
         selectedMapId = nextMap.id;
-        currentMap = nextMap;
+        currentMap = extraBlocks.length ? { ...nextMap, blocks: [...nextMap.blocks, ...extraBlocks] } : nextMap;
         try { localStorage.setItem(MAP_KEY, selectedMapId); } catch { /* ignore */ }
 
         while (mapMeshes.length) mapMeshes.pop().dispose();
@@ -250,6 +282,86 @@ function createScene() {
 
     // Game state
     let mode = 'menu'; // 'menu' | 'player' | 'autobattler' | 'rts'
+    let campaignActive = false;
+    let campaignMission = 0;
+    let campaignStartMission = 0;
+    let campaignWave = 0;
+    let campaignKillsLeft = 0;
+    let campaignAdvanceTimer = null;
+    const campaignMissions = [
+        {
+            title: '01 · DROP ZONE', map: 'cyber_courtyard',
+            briefing: 'Touchdown at Landing Zone Kilo. Secure the south approach, use the emergency pod shells as cover, and stop two hostile pushes before the beacon is overrun.',
+            objective: 'Clear the southern probe, then defeat the central-deck reinforcements.',
+            blocks: [
+                { x: -8, y: 1.05, z: -14, w: 5.4, h: 2.1, d: 1.1, style: 'trim' },
+                { x: 8, y: 1.05, z: -14, w: 5.4, h: 2.1, d: 1.1, style: 'trim' },
+                { x: -18, y: 2.4, z: -31, w: 1.1, h: 4.8, d: 1.1, style: 'pad' },
+                { x: 18, y: 2.4, z: -31, w: 1.1, h: 4.8, d: 1.1, style: 'pad' }
+            ],
+            waves: [
+                { soldiers: 2, wildlife: 0, cue: 'CONTACT · two riflemen are probing from the central deck. Close the distance through the pod-shell cover.', spawns: [[-24, 4, 0], [0, 4, 0]] },
+                { soldiers: 2, wildlife: 0, cue: 'REINFORCEMENTS · two soldiers are crossing the north lane. Use the side balconies to break their firing line.', spawns: [[24, 4, 0], [0, 0, 34]] }
+            ]
+        },
+        {
+            title: '02 · CARGO BREACH', map: 'cargo_shipment',
+            briefing: 'A hostile patrol has occupied the supply yard. Clear the ground lane first, then sweep the elevated freight stacks where unclassified fauna have appeared.',
+            objective: 'Break the ground patrol and clear both elevated fauna contacts.',
+            blocks: [
+                { x: 0, y: 2.25, z: 0, w: 3.2, h: 4.5, d: 3.2, style: 'trim' },
+                { x: -17, y: 1.2, z: 8, w: 5, h: 2.4, d: 1, style: 'primary' },
+                { x: 17, y: 1.2, z: -8, w: 5, h: 2.4, d: 1, style: 'primary' }
+            ],
+            waves: [
+                { soldiers: 3, wildlife: 0, cue: 'GROUND LANE · three soldiers are holding the container crossfire. Flank through the open freight corridors.', spawns: [[0, 0, 17], [-12, 0, 21], [12, 0, 21]] },
+                { soldiers: 0, wildlife: 2, cue: 'ROOF CONTACT · wireframe fauna have dropped onto the upper stacks. Use jump pads or the container ramps to meet them.', spawns: [[-22.5, 4.2, 0], [22.5, 4.2, 0]] }
+            ]
+        },
+        {
+            title: '03 · UNKNOWN ECOLOGY', map: 'void_spires',
+            briefing: 'The destination field guide has no match for these animals. Fight across separated platforms, watch your footing above the void, and observe how the pack changes its approach.',
+            objective: 'Survive the south-deck pack, then clear the central-spire pack.',
+            blocks: [
+                { x: -14, y: 2, z: -10, w: 8, h: 1, d: 7, style: 'platform' },
+                { x: 14, y: 2, z: 10, w: 8, h: 1, d: 7, style: 'platform' },
+                { x: 0, y: 3.5, z: 0, w: 7, h: 1, d: 7, style: 'trim' }
+            ],
+            waves: [
+                { soldiers: 0, wildlife: 2, cue: 'PACK A · two wireframe fauna are closing along the south deck. Keep to the platform and use the central jump route.', spawns: [[-6, 0, 29], [6, 0, 29]] },
+                { soldiers: 0, wildlife: 2, cue: 'PACK B · two more signatures entered from the high spires. Their approach crosses the exposed center; keep moving between cover points.', spawns: [[-28, 6, 0], [28, 6, 0]] }
+            ]
+        },
+        {
+            title: '04 · FOUNDRY RAID', map: 'magma_foundry',
+            briefing: 'Hostile troops and native fauna are converging on the colony relay. Lava trenches cut off the shortest route; take the raised catwalks and watch both flanks.',
+            objective: 'Defeat the relay-screening patrol and the mixed flank assault.',
+            blocks: [
+                { x: -8.5, y: 1.1, z: -10, w: 5.5, h: 2.2, d: 1.1, style: 'trim' },
+                { x: 8.5, y: 1.1, z: 10, w: 5.5, h: 2.2, d: 1.1, style: 'trim' },
+                { x: 0, y: 4.8, z: -18, w: 2.2, h: 2, d: 2.2, style: 'pad' }
+            ],
+            waves: [
+                { soldiers: 2, wildlife: 1, cue: 'RELAY APPROACH · two soldiers screen one fauna model. Break the firing lane from behind the furnace bunker.', spawns: [[-28, 5, 14], [28, 5, 14], [0, 0, 34]] },
+                { soldiers: 2, wildlife: 2, cue: 'FLANK ASSAULT · soldiers pressure the west catwalk as fauna rush the east. Choose which threat to intercept first.', spawns: [[-32, 0, 0], [-28, 5, -16], [32, 0, 0], [28, 5, -16]] }
+            ]
+        },
+        {
+            title: '05 · COLONY SHIELD', map: 'cyber_courtyard',
+            briefing: 'Final readiness test: a coordinated mixed force is attacking the colony shield corridor. Rally your two companions, control the center, and keep the approach lane open.',
+            objective: 'Clear the shield vanguard, then stop the converging final push.',
+            blocks: [
+                { x: -10, y: 1.1, z: -4, w: 1.2, h: 2.2, d: 6, style: 'trim' },
+                { x: 10, y: 1.1, z: 4, w: 1.2, h: 2.2, d: 6, style: 'trim' },
+                { x: -5, y: 1.6, z: 10, w: 4, h: 3.2, d: 1.2, style: 'platform' },
+                { x: 5, y: 1.6, z: -10, w: 4, h: 3.2, d: 1.2, style: 'platform' }
+            ],
+            waves: [
+                { soldiers: 3, wildlife: 2, cue: 'SHIELD VANGUARD · three soldiers establish crossfire while two fauna models rush the gaps. Use the new inner barricades to split the push.', spawns: [[-24, 4, 0], [24, 4, 0], [0, 4, 0], [-16, 0, 30], [16, 0, 30]] },
+                { soldiers: 2, wildlife: 2, cue: 'FINAL PUSH · four hostiles converge on the landing corridor from opposite sides. Break their formation before they surround the squad.', spawns: [[0, 0, 34], [-24, 4, 0], [16, 0, 30], [24, 4, 0]] }
+            ]
+        }
+    ];
     let menuAngle = 0;
     const rallyPoint = new BABYLON.Vector3(0, 0, 0);
     const autoUpgrade = (team, key) => (mode === 'autobattler' && team === 'friendly') ? upgrades[key] : 0;
@@ -365,15 +477,16 @@ function createScene() {
         return arr[idx !== null ? idx % arr.length : Math.floor(Math.random() * arr.length)];
     }
 
-    function createBot(team, spawnCoord, melee = false) {
+    function createBot(team, spawnCoord, melee = false, alien = false) {
         const [sx, sy, sz] = spawnCoord;
         const mesh = new BABYLON.TransformNode(team + (melee ? ' melee bot' : ' ranged bot'), scene);
         mesh.position.set(sx, sy + 1.1, sz);
         const maxHp = 100 + autoUpgrade(team, 'maxHp') * 25 - (team === 'friendly' ? 0 : 10);
         return {
             team,
+            alien,
             mesh,
-            voxels: buildBotModel(mesh, team, melee),
+            voxels: alien ? buildAlienModel(mesh) : buildBotModel(mesh, team, melee),
             melee,
             windup: 0,
             rank: 0,
@@ -401,8 +514,9 @@ function createScene() {
         const list = bot.team === 'friendly' ? currentMap.friendlySpawns : currentMap.enemySpawns;
         const [sx, sy, sz] = pickSpawn(list, mode === 'player' && bot.team === 'friendly' ? friendlies.indexOf(bot) + 1 : null);
         bot.hp = bot.maxHp;
+        bot.dead = false;
         bot.voxels.forEach(cell => cell.dispose());
-        bot.voxels = buildBotModel(bot.mesh, bot.team, bot.melee);
+        bot.voxels = bot.alien ? buildAlienModel(bot.mesh) : buildBotModel(bot.mesh, bot.team, bot.melee);
         bot.windup = 0;
         bot.cover = null;
         bot.coverTimer = bot.hurtTimer = 0;
@@ -460,9 +574,10 @@ function createScene() {
         projectiles.length = 0;
     }
 
-    function spawnEnemyWave(count = 5) {
+    function spawnEnemyWave(count = 5, aliens = 0, spawnPoints = null) {
         for (let i = 0; i < count; i++) {
-            enemies.push(createBot('enemy', pickSpawn(currentMap.enemySpawns, i), i % 3 === 1));
+            const alien = i >= count - aliens;
+            enemies.push(createBot('enemy', pickSpawn(spawnPoints || currentMap.enemySpawns, i), alien || i % 3 === 1, alien));
         }
     }
 
@@ -601,13 +716,62 @@ function createScene() {
     const livesBox = document.getElementById('lives-box');
     const mobileControls = document.getElementById('mobile-controls');
     const crosshair = document.getElementById('crosshair');
+    const campaignStatus = document.getElementById('campaign-status');
+    const campaignBriefingEl = document.getElementById('campaign-briefing');
+    const campaignObjectiveEl = document.getElementById('campaign-objective');
 
-    function startMode(newMode) {
+    function beginCampaignMission(index) {
+        campaignMission = index;
+        if (index >= campaignMissions.length) {
+            campaignActive = false;
+            campaignBriefingEl.textContent = 'Training sequence complete · LuckyStarShip420 simulator clear';
+            campaignObjectiveEl.textContent = `Exercise ${campaignStartMission + 1} through ${campaignMissions.length} complete. You are cleared for the unknown planetfall.`;
+            return;
+        }
+        const mission = campaignMissions[index];
+        loadMap(mission.map, mission.blocks);
+        clearEntities();
+        respawnPlayer();
+        friendlies.push(createBot('friendly', pickSpawn(currentMap.friendlySpawns, 1)));
+        friendlies.push(createBot('friendly', pickSpawn(currentMap.friendlySpawns, 2)));
+        campaignWave = 0;
+        document.getElementById('campaign-title').textContent = `LUCKYSTARSHIP 420 · SIM ${index + 1}/${campaignMissions.length} · ${mission.title}`;
+        campaignBriefingEl.textContent = mission.briefing;
+        campaignObjectiveEl.textContent = mission.objective;
+        document.getElementById('mode-label').textContent = `MODE: CAMPAIGN ${index + 1}/${campaignMissions.length}`;
+        player.score = 0;
+        window.setTimeout(() => {
+            if (campaignActive && mode === 'player' && campaignMission === index) beginCampaignWave(0);
+        }, 900);
+    }
+
+    function beginCampaignWave(index) {
+        const mission = campaignMissions[campaignMission];
+        if (!mission || index >= mission.waves.length) {
+            campaignObjectiveEl.textContent = 'Exercise clear · preparing the next simulator scenario…';
+            campaignAdvanceTimer = window.setTimeout(() => {
+                if (campaignActive && mode === 'player') beginCampaignMission(campaignMission + 1);
+            }, 1800);
+            return;
+        }
+        campaignWave = index;
+        const wave = mission.waves[index];
+        campaignKillsLeft = wave.soldiers + wave.wildlife;
+        campaignBriefingEl.textContent = wave.cue;
+        campaignObjectiveEl.textContent = `${mission.objective} · Push ${index + 1}/${mission.waves.length}`;
+        spawnEnemyWave(campaignKillsLeft, wave.wildlife, wave.spawns);
+    }
+
+    function startMode(newMode, startMission = 0) {
+        if (campaignAdvanceTimer) window.clearTimeout(campaignAdvanceTimer);
+        campaignAdvanceTimer = null;
+        const isCampaign = newMode === 'campaign';
+        campaignActive = isCampaign;
         loadMap(selectedMapId);
         clearHeldInput();
         comms.reset();
         if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
-        mode = newMode;
+        mode = isCampaign ? 'player' : newMode;
         weaponView.setVisible(mode === 'player');
         player.fireTimer = 0;
         scrap = 0;
@@ -624,11 +788,22 @@ function createScene() {
         document.getElementById('mode-label').textContent = `MODE: ${newMode.toUpperCase()}`;
         rtsBar.classList.toggle('hidden', newMode !== 'rts');
         livesBox.classList.toggle('hidden', newMode !== 'autobattler');
-        mobileControls.classList.toggle('active', newMode === 'player');
-        crosshair.classList.toggle('hidden', newMode !== 'player');
+        mobileControls.classList.toggle('active', isCampaign || newMode === 'player');
+        crosshair.classList.toggle('hidden', mode !== 'player');
         rallyMarker.isVisible = newMode === 'rts';
+        campaignStatus.classList.toggle('hidden', !isCampaign);
 
-        if (newMode === 'player') {
+        if (isCampaign) {
+            campaignStartMission = startMission;
+            campaignMission = startMission;
+            campaignStatus.classList.remove('hidden');
+            stats.start(currentMap.id);
+            comms.prepare();
+            camera.rotation.set(0, 0, 0);
+            camera.fov = 1.05;
+            beginCampaignMission(startMission);
+            lockPointer();
+        } else if (newMode === 'player') {
             stats.start(currentMap.id);
             comms.prepare();
             camera.rotation.set(0, 0, 0);
@@ -664,7 +839,21 @@ function createScene() {
         btn.addEventListener('click', () => startMode(btn.dataset.mode));
     });
 
+    const campaignMissionSelector = document.getElementById('campaign-mission-selector');
+    campaignMissions.forEach((mission, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'campaign-mission-btn';
+        const hostiles = mission.waves.reduce((total, wave) => total + wave.soldiers + wave.wildlife, 0);
+        button.innerHTML = `<span class="campaign-mission-name">SIM ${index + 1} · ${mission.title.slice(5)}</span><span class="campaign-mission-brief">${mission.objective}</span><span class="campaign-mission-count">${mission.waves.length} pushes · ${hostiles} contacts</span>`;
+        button.addEventListener('click', () => startMode('campaign', index));
+        campaignMissionSelector.appendChild(button);
+    });
+
     document.getElementById('menu-btn').addEventListener('click', () => {
+        campaignActive = false;
+        if (campaignAdvanceTimer) window.clearTimeout(campaignAdvanceTimer);
+        campaignAdvanceTimer = null;
         clearHeldInput();
         mode = 'menu';
         comms.reset();
@@ -676,6 +865,7 @@ function createScene() {
         crosshair.classList.add('hidden');
         mobileControls.classList.remove('active');
         rallyMarker.isVisible = false;
+        campaignStatus.classList.add('hidden');
         clearEntities();
         if (document.pointerLockElement === canvas) document.exitPointerLock?.();
         overlay.classList.remove('hidden');
@@ -948,6 +1138,8 @@ function createScene() {
     });
 
     function handleEnemyDeath(enemy, playerKill = false) {
+        if (enemy.dead) return;
+        enemy.dead = true;
         if (mode !== 'player' || playerKill) player.score++;
         if (mode === 'player') {
             if (playerKill) stats.record('kills');
@@ -958,6 +1150,21 @@ function createScene() {
         if (mode === 'autobattler') {
             upgrades.scrap += 1 + upgrades.scrapGain;
             saveUpgrades();
+        }
+        if (campaignActive) {
+            const defeatedIndex = enemies.indexOf(enemy);
+            if (defeatedIndex >= 0) enemies.splice(defeatedIndex, 1);
+            enemy.mesh.dispose();
+            campaignKillsLeft = Math.max(0, campaignKillsLeft - 1);
+            campaignObjectiveEl.textContent = campaignKillsLeft
+                ? `${campaignMissions[campaignMission].objective} · ${campaignKillsLeft} hostiles remain in push ${campaignWave + 1}/${campaignMissions[campaignMission].waves.length}`
+                : 'Push clear · stand by for the next simulator contact…';
+            if (!campaignKillsLeft) {
+                campaignAdvanceTimer = window.setTimeout(() => {
+                    if (campaignActive && mode === 'player') beginCampaignWave(campaignWave + 1);
+                }, 1400);
+            }
+            return;
         }
         respawnBot(enemy);
     }

@@ -1525,15 +1525,22 @@
     },
     {
       "slug": "gravegain3dC",
-      "title": "GraveGain 3D C: Arena FPS",
+      "title": "GraveGain 3D C: LuckyStarShip420 Campaign",
       "capsule": "images/capsules/gravegain3d-c.webp",
-      "description": "Xonotic-inspired Babylon.js 3D arena FPS across 4 arenas (Neon Courtyard, Void Spires, Magma Foundry, Cargo Shipment) and 3 modes: Player Control with upgradable squad bots, Auto-Battler Roguelite, and RTS Squad.",
+      "description": "Join the human colony ship LuckyStarShip420 as a soldier preparing for an unknown planetfall. Select any of five unlocked simulator exercises, each with two scripted enemy pushes and unique combat geometry, against hostile soldiers and cyan wireframe alien fauna. Then return to Arena FPS, Auto-Battler, and RTS Squad modes.",
       "genre": "Shooter",
       "tags": [
         "FPS",
-        "3D"
+        "3D",
+        "Campaign",
+        "Sci-Fi",
+        "Training Simulator",
+        "Wireframe Aliens"
       ],
       "emoji": "🎯",
+      "featured": true,
+      "featuredPriority": 1,
+      "recommended": true,
       "status": "experimental",
       "entrypoint": "gravegain3dC/index.html",
       "runtimeType": "static",
@@ -1541,7 +1548,7 @@
         "touch",
         "keyboard"
       ],
-      "controls": "WASD move/strafe; Mouse look (Pointer Lock); Space jump/bunny-hop; Shift dash; Left-Click fire; 1–4 or Wheel switch weapons; Q toggle companions Follow/Hold; E upgrade aimed companion; Esc release pointer. Touch pad supported in Player mode.",
+      "controls": "WASD move/strafe; Mouse look (Pointer Lock); Space jump/bunny-hop; Shift dash; Left-Click fire; 1–4 or Wheel switch weapons; Q toggle companions Follow/Hold; E upgrade aimed companion; Esc release pointer. Touch pad supported in Colony Campaign and Player Control.",
       "modes": [
         "solo"
       ],

@@ -52,6 +52,10 @@ function checkServerCollisions() {
     
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
+        if (enemy.currentHp <= 0) {
+            enemies.splice(i, 1);
+            continue;
+        }
         
         // Check if enemy reached server zone
         if (enemy.y > serverZoneY) {

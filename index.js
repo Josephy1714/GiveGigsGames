@@ -120,30 +120,56 @@
     return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(2)} MB` : `${Math.max(1, Math.round(value / 1000))} KB`;
   }
 
-  function withinOneEdit(word, candidate) {
-    if (Math.abs(word.length - candidate.length) > 1) return false;
-    if (word.length > candidate.length) return withinOneEdit(candidate, word);
-    let index = 0;
-    while (index < word.length && word[index] === candidate[index]) index += 1;
-    const suffix = word.slice(index + (word.length === candidate.length ? 1 : 0));
-    if (suffix === candidate.slice(index + 1)) return true;
-    return word.length === candidate.length &&
-      word[index] === candidate[index + 1] && word[index + 1] === candidate[index] &&
-      word.slice(index + 2) === candidate.slice(index + 2);
+  const searchTokens = (value) => String(value || "").toLowerCase().match(/[a-z0-9]+/g) || [];
+
+  function editDistanceWithin(word, candidate, limit) {
+    if (Math.abs(word.length - candidate.length) > limit) return false;
+    let previous = Array.from({ length: candidate.length + 1 }, (_, index) => index);
+    for (let row = 1; row <= word.length; row += 1) {
+      const current = [row];
+      let rowMinimum = row;
+      for (let column = 1; column <= candidate.length; column += 1) {
+        current[column] = Math.min(
+          current[column - 1] + 1,
+          previous[column] + 1,
+          previous[column - 1] + (word[row - 1] === candidate[column - 1] ? 0 : 1),
+        );
+        rowMinimum = Math.min(rowMinimum, current[column]);
+      }
+      if (rowMinimum > limit) return false;
+      previous = current;
+    }
+    return previous[candidate.length] <= limit;
+  }
+
+  function fuzzyTitleMatch(word, titleTokens) {
+    // Check single title words and short joined runs so searches like "2dc"
+    // can match titles displayed as "2D C".
+    for (let start = 0; start < titleTokens.length; start += 1) {
+      let candidate = "";
+      for (let end = start; end < Math.min(titleTokens.length, start + 3); end += 1) {
+        candidate += titleTokens[end];
+        const limit = word.length <= 2 ? 1 : Math.min(2, Math.floor(word.length / 4));
+        if (editDistanceWithin(word, candidate, limit)) return true;
+      }
+    }
+    return false;
   }
 
   function searchRank(game, query) {
     if (!query) return 0;
     const title = game.title.toLowerCase();
-    if (title === query) return 0;
-    if (title.startsWith(query)) return 1;
-    if (title.includes(query)) return 2;
+    const normalizedTitle = title.replace(/[^a-z0-9]/g, "");
+    const normalizedQuery = query.replace(/[^a-z0-9]/g, "");
+    if (title === query || normalizedTitle === normalizedQuery) return 0;
+    if (title.startsWith(query) || (normalizedQuery && normalizedTitle.startsWith(normalizedQuery))) return 1;
+    if (title.includes(query) || (normalizedQuery && normalizedTitle.includes(normalizedQuery))) return 2;
     const terms = [game.genre, game.description, ...normalizedTags(game)].join(" ").toLowerCase();
-    const words = query.split(/\s+/);
+    const words = searchTokens(query);
+    if (!words.length) return Infinity;
     if (words.every((word) => `${title} ${terms}`.includes(word))) return 3;
-    const titleWords = title.match(/[a-z0-9]+/gi) || [];
-    if (words.every((word) => title.includes(word) ||
-      (word.length >= 4 && titleWords.some((candidate) => withinOneEdit(word, candidate))))) return 4;
+    const titleWords = searchTokens(title);
+    if (words.every((word) => fuzzyTitleMatch(word, titleWords))) return 4;
     return Infinity;
   }
 
@@ -176,19 +202,23 @@
     return `
       <article class="game-card" data-slug="${escapeHTML(game.slug)}"${shots.length > 1 ? ` data-shots="${escapeHTML(JSON.stringify(shots))}"` : ""}>
         <div class="gcard-cover">
-          <span class="gcard-fallback">${icon("gamepad", "icon icon-xl")}</span>
-          ${cover}
-          ${shots.length > 1 ? '<img class="gcard-cover-next" alt="" loading="lazy" decoding="async" width="512" height="288">' : ""}
-          <a class="gcard-cover-link" href="${escapeHTML(playHref(game))}" data-launch="${escapeHTML(game.slug)}" aria-label="Play ${escapeHTML(game.title)}">
-            <span class="gcard-play" aria-hidden="true">${icon("play", "icon icon-sm")}</span>
-            <div class="gcard-overlay">
-              <p>${escapeHTML(game.description || "")}</p>
-              <div class="gcard-overlay-tags">${tags.map((tag) => `<span class="tag">${escapeHTML(tag)}</span>`).join("")}</div>
-            </div>
-          </a>
-          <button class="icon-btn icon-btn--raised gcard-fav${favorite ? " is-on" : ""}" type="button" data-fav="${escapeHTML(game.slug)}"
-            aria-pressed="${favorite}" aria-label="${favorite ? "Remove from favorites" : "Add to favorites"}: ${escapeHTML(game.title)}"
-            data-tip="${favorite ? "In favorites" : "Add to favorites"}">${icon("heart")}</button>
+          <div class="gcard-art">
+            <span class="gcard-fallback">${icon("gamepad", "icon icon-xl")}</span>
+            ${cover}
+            ${shots.length > 1 ? '<img class="gcard-cover-next" alt="" loading="lazy" decoding="async" width="512" height="288">' : ""}
+            <a class="gcard-cover-link" href="${escapeHTML(playHref(game))}" data-launch="${escapeHTML(game.slug)}" aria-label="Play ${escapeHTML(game.title)}">
+              <div class="gcard-overlay">
+                <p>${escapeHTML(game.description || "")}</p>
+                <div class="gcard-overlay-tags">${tags.map((tag) => `<span class="tag">${escapeHTML(tag)}</span>`).join("")}</div>
+              </div>
+            </a>
+          </div>
+          <div class="gcard-controls" role="group" aria-label="${escapeHTML(game.title)} controls">
+            <a class="gcard-play" href="${escapeHTML(playHref(game))}" data-launch="${escapeHTML(game.slug)}" aria-label="Play ${escapeHTML(game.title)}">${icon("play", "icon icon-sm")}</a>
+            <button class="icon-btn icon-btn--raised gcard-fav${favorite ? " is-on" : ""}" type="button" data-fav="${escapeHTML(game.slug)}"
+              aria-pressed="${favorite}" aria-label="${favorite ? "Remove from favorites" : "Add to favorites"}: ${escapeHTML(game.title)}"
+              data-tip="${favorite ? "In favorites" : "Add to favorites"}">${icon("heart")}</button>
+          </div>
         </div>
         <div class="gcard-body">
           <h3 class="gcard-title"><a href="/ggg/info/${encodeURIComponent(game.slug)}">${escapeHTML(game.title)}</a></h3>
@@ -313,7 +343,9 @@
   }
 
   function setupHero() {
-    featured = games.filter((game) => game.featured).slice(0, 6);
+    featured = games.filter((game) => game.featured)
+      .sort((a, b) => Number(b.featuredPriority || 0) - Number(a.featuredPriority || 0))
+      .slice(0, 6);
     if (!featured.length) featured = games.filter((game) => game.recommended).slice(0, 5);
     if (!featured.length) featured = games.slice(0, 3);
     hero.hidden = !featured.length;

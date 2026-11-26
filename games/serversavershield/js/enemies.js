@@ -38,13 +38,15 @@ function updateEnemies() {
     }
     
     enemies.forEach(e => {
+        e.previousX = e.x;
+        e.previousY = e.y;
         e.x += e.vx;
         e.y += e.vy;
         e.wobble += 0.05;
         if (e.behavior === 'evasive') e.x += Math.sin(e.wobble) * 2;
     });
     
-    enemies = enemies.filter(e => e.y < CANVAS_HEIGHT + 50);
+    enemies = enemies.filter(e => e.currentHp > 0 && e.y < CANVAS_HEIGHT + 50);
 }
 
 function getEnemies() {
