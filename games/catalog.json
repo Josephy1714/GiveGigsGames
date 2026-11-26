@@ -1760,7 +1760,8 @@
       "modes": [
         "solo"
       ],
-      "runtimeType": "static"
+      "runtimeType": "static",
+      "packageBytes": 2580648
     }
   ]
 }
