@@ -1065,7 +1065,7 @@
       }
       if (!catalog) catalog = window.GIVEGIGSGAMES_CATALOG;
       if (!catalog || !Array.isArray(catalog.games)) throw new Error("Catalog data is missing.");
-      games = catalog.games;
+      games = catalog.games.filter((game) => !game.hiddenFromCatalog);
       loaded = true;
       setupHero();
       setupTicker();
