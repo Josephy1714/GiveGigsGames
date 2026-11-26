@@ -31,14 +31,16 @@ jobs:
       - name: Compress Jay geometry and animation buffers with Meshopt
         run: |
           INPUT=games/semester-survival-runner-3d/assets/3d/jay/jay-unified.glb
-          OUTPUT=/tmp/jay-unified-meshopt.glb
+          TEXTURED=/tmp/jay-unified-webp.glb
+          OUTPUT=/tmp/jay-unified-webp-meshopt.glb
           BEFORE=$(wc -c < "$INPUT")
-          npx --no-install gltf-transform meshopt "$INPUT" "$OUTPUT" --level medium
+          npx --no-install gltf-transform textureCompress "$INPUT" "$TEXTURED" --targetFormat webp --quality 95
+          npx --no-install gltf-transform meshopt "$TEXTURED" "$OUTPUT" --level medium
           AFTER=$(wc -c < "$OUTPUT")
           echo "Jay GLB before: $BEFORE bytes"
-          echo "Jay GLB after:  $AFTER bytes"
+          echo "Jay GLB after WebP + Meshopt: $AFTER bytes"
           if [ "$AFTER" -ge "$BEFORE" ]; then
-            echo "Meshopt did not reduce the asset; retaining the original GLB."
+            echo "Combined compression did not reduce the asset; retaining the original GLB."
           else
             cp "$OUTPUT" "$INPUT"
           fi
@@ -63,6 +65,8 @@ jobs:
           extensions = set(doc.get("extensionsUsed", []))
           if "EXT_meshopt_compression" not in extensions:
               raise SystemExit("Meshopt compression extension is missing.")
+          if doc.get("images") and "EXT_texture_webp" not in extensions:
+              raise SystemExit("WebP texture compression extension is missing.")
           if not doc.get("materials"):
               raise SystemExit("Materials missing.")
           print(f"Validated {p.stat().st_size:,} byte GLB; clips={sorted(names)}; meshes={len(doc['meshes'])}; skins={len(doc['skins'])}; materials={len(doc['materials'])}")
@@ -85,6 +89,8 @@ jobs:
         env:
           PLAYWRIGHT_MODULE: /tmp/jay-browser/node_modules/playwright/index.mjs
         run: node games/semester-survival-runner-3d/tests/jay-gameplay-integration.mjs
+      - name: Remove temporary browser-test dependencies from the game folder
+        run: rm -rf games/semester-survival-runner-3d/.ci-test
       - name: Rebuild catalog and verify game package limits
         run: |
           node scripts/build-browser-catalog.mjs
