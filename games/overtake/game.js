@@ -58,9 +58,9 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     const ACCEL = 5800;
     const BRAKE = 7800;
     const DECEL = 3200;
-    const OFFROAD_DECEL = 5200;
+    const OFFROAD_DECEL = 3600;
     const ROAD_CURVATURE = 4 / SEGMENT_LENGTH ** 2;
-    const STEERING = 2.65;
+    const STEERING = 1.8;
     const REAR_DRAW_SEGMENTS = 13;
     const ROAD_MESH_SEGMENTS = DRAW_DISTANCE + REAR_DRAW_SEGMENTS;
     const RACE_STEP = 1 / 60;
@@ -844,7 +844,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         drifting: false,
         lateralSpeed: 0,
         heading: 0,
-        yawRate: 0,
+        impactYawRate: 0,
         bodyRoll: 0,
         driftCharge: 0,
         slipstream: 0,
@@ -2910,6 +2910,19 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
     function findSegment(position) {
         return segments[Math.floor(positiveModulo(position, trackLength) / SEGMENT_LENGTH) % segments.length];
     }
+    function getRoadTurn(position, advance) {
+        let segment = findSegment(position);
+        let segmentRemaining = SEGMENT_LENGTH * (1 - percentRemaining(position, SEGMENT_LENGTH));
+        let turn = 0;
+        while (advance > 0) {
+            const distance = Math.min(segmentRemaining, advance);
+            turn += segment.curve * distance;
+            advance -= distance;
+            segment = segments[(segment.index + 1) % segments.length];
+            segmentRemaining = SEGMENT_LENGTH;
+        }
+        return turn * ROAD_CURVATURE;
+    }
     function buildMiniMapPoints(track, map, direction) {
         if (track.length === 0) {
             return [];
@@ -3171,7 +3184,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         player.drifting = false;
         player.lateralSpeed = 0;
         player.heading = 0;
-        player.yawRate = 0;
+        player.impactYawRate = 0;
         player.bodyRoll = 0;
         player.driftCharge = 0;
         player.slipstream = 0;
@@ -4851,7 +4864,10 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             targetSteer = gamepadSteer;
         if (tiltEnabled && Math.abs(tiltSteerValue) > Math.abs(targetSteer))
             targetSteer = tiltSteerValue;
-        player.steerInput += (targetSteer - player.steerInput) * Math.min(1, dt * 14);
+        if (targetSteer * player.steerInput < 0)
+            player.steerInput = 0;
+        const steerResponse = targetSteer === 0 ? 24 : 12;
+        player.steerInput += (targetSteer - player.steerInput) * (1 - Math.exp(-steerResponse * dt));
         const unlimitedNitro = shouldUseUnlimitedNitro();
         if (unlimitedNitro) {
             player.nitro = NITRO_MAX;
@@ -4896,7 +4912,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         const handbrake = keys.has("c") || keys.has("control");
         const cornerLoad = Math.abs(segment.curve) * speedRatio ** 2;
         const wantsDrift = onRoad && (handbrake || (braking && cornerLoad > 0.22))
-            && Math.abs(player.steerInput) > 0.28 && speedRatio > 0.35 && player.stunTime <= 0;
+            && targetSteer !== 0 && Math.abs(player.steerInput) > 0.28 && speedRatio > 0.35 && player.stunTime <= 0;
         player.drifting = wantsDrift;
         if (player.drifting) {
             if (player.steerInput * segment.curve > 0 && cornerLoad > 0.22) {
@@ -4949,29 +4965,32 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         const speedLoad = (player.speed / currentMaxSpeed) ** 2;
         const boost = player.nitroActive ? NITRO_ACCEL * car.nitro : player.miniTurboTime > 0 ? 1.3 : 1;
         const poweredItem = player.mushroomTime > 0 || player.starTime > 0 || player.overdriveTime > 0;
-        const power = ACCEL * car.accel * driver.acceleration * boost * (poweredItem ? 1.35 : 1);
-        const drive = player.stunTime <= 0 && !braking && (accelerating || poweredItem || player.nitroActive || player.miniTurboTime > 0)
-            ? power * Math.max(0, 1 - 0.68 * speedLoad) : 0;
-        const rollingDrag = power * (0.07 + 0.25 * speedLoad);
+        const enginePower = ACCEL * car.accel * driver.acceleration;
+        const power = enginePower * boost * (poweredItem ? 1.35 : 1);
+        const driving = player.stunTime <= 0 && !braking && (accelerating || poweredItem || player.nitroActive || player.miniTurboTime > 0);
+        const drive = driving ? power * Math.max(0, 1 - 0.68 * speedLoad) : 0;
+        const rollingDrag = (driving ? power : enginePower) * (0.07 + 0.25 * speedLoad);
         const brakeForce = BRAKE * driver.brakes * surfaceGrip * (braking ? (player.drifting ? 0.67 : 1) : handbrake ? 0.22 : 0);
         const stunDrag = player.stunTime > 0 ? DECEL : 0;
         player.speed += (drive - rollingDrag - brakeForce - stunDrag + slopeForce) * dt;
         player.speed = Math.max(0, player.speed);
         const motionRatio = clamp(player.speed / maxSpeed, 0, 1.5);
         const grounded = player.airY <= 0 && player.airVy <= 0;
-        const turnInput = player.stunTime > 0 ? 0 : player.steerInput;
-        const steeringSpeed = Math.min(1, motionRatio * 3.4) / (1 + motionRatio ** 2 * 0.65);
-        const targetYaw = turnInput * STEERING * steeringSpeed * (player.drifting ? 1.3 : 1)
-            + (player.hazardSpinTime > 0 ? Math.sin(raceTime * 24) * 3.5 : 0);
-        const yawGrip = grounded ? (player.drifting ? 6 : 16) * traction : 0.6;
-        player.yawRate += (targetYaw - player.yawRate) * (1 - Math.exp(-yawGrip * dt));
-        // The road rotates beneath the car. With neutral steering its heading
-        // carries into the turn, so the player has to turn in and unwind the wheel.
-        const curve = interpolate(segment.curve, segments[(segment.index + 1) % segments.length].curve, percentRemaining(player.position, SEGMENT_LENGTH));
-        const forwardSpeed = player.speed * Math.cos(player.heading);
-        player.heading = clamp(player.heading + (player.yawRate - curve * ROAD_CURVATURE * forwardSpeed) * dt, -0.72, 0.72);
-        const tireTarget = player.speed * Math.sin(player.heading) / ROAD_WIDTH;
-        const tireGrip = grounded ? (player.drifting ? 3.2 : 11) * traction : 0;
+        const turnInput = player.stunTime <= 0 && targetSteer !== 0
+            ? interpolate(targetSteer, player.steerInput, 0.8) : 0;
+        const steeringSpeed = Math.min(1, motionRatio * 4) / (1 + motionRatio ** 2 * 0.35);
+        const steeringGrip = grounded ? clamp(traction, 0.65, 1.2) : 0.12;
+        const steeringYaw = turnInput * STEERING * steeringSpeed * steeringGrip * (player.drifting ? 1.25 : 1);
+        const hazardYaw = player.hazardSpinTime > 0 ? Math.sin(raceTime * 24) * 3.5 : 0;
+        const turn = (steeringYaw + hazardYaw + player.impactYawRate) * dt;
+        player.impactYawRate *= Math.exp(-dt * (grounded ? 12 * traction : 3));
+        // Heading is measured relative to the road tangent. Subtract the
+        // tangent's change so neutral steering preserves the car's world heading.
+        const advance = player.speed * Math.max(0, Math.cos(player.heading + turn * 0.5)) * dt;
+        const roadTurn = getRoadTurn(player.position, advance);
+        const tireTarget = player.speed * Math.sin(player.heading + (turn - roadTurn) * 0.5) / ROAD_WIDTH;
+        player.heading = positiveModulo(player.heading + turn - roadTurn + Math.PI, Math.PI * 2) - Math.PI;
+        const tireGrip = grounded ? (player.drifting ? 5 : 24) * traction : 0;
         const oldLateralSpeed = player.lateralSpeed;
         player.lateralSpeed += (tireTarget - player.lateralSpeed) * (1 - Math.exp(-tireGrip * dt));
         player.x += player.lateralSpeed * dt;
@@ -4980,7 +4999,8 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         player.bodyRoll += (targetBodyRoll - player.bodyRoll) * (1 - Math.exp(-9 * dt));
         if (gravel) {
             const shieldAssist = POWERUP_FLAGS.shield && player.shieldTime > 0 ? 0.35 : 1;
-            player.speed -= OFFROAD_DECEL * shieldAssist * (0.15 + 0.85 * motionRatio) * dt;
+            const gravelLoad = clamp((Math.abs(player.x) - 1) / 0.24, 0, 1);
+            player.speed -= OFFROAD_DECEL * gravelLoad * shieldAssist * (0.15 + 0.85 * motionRatio) * dt;
             if (player.speed > 900 && Math.random() < 0.7) {
                 const pRect = getPlayerCarRect(raceTime);
                 spawnParticle(pRect.x + Math.random() * pRect.width, pRect.y + pRect.height * 0.9, (Math.random() - 0.5) * 90, -45, 5, 0.35, map.palette.grass1, "dust");
@@ -4991,11 +5011,11 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             player.x = side * 1.44;
             const impact = Math.max(0, player.lateralSpeed * side);
             if (impact > 0) {
-                player.lateralSpeed = -side * impact * 0.25;
-                if (player.heading * side > 0)
-                    player.heading *= -0.18;
+                player.lateralSpeed = 0;
+                if (Math.sin(player.heading) * side > 0)
+                    player.heading *= 0.3;
             }
-            player.speed -= (impact * 360 + player.speed * dt * 0.7);
+            player.speed -= impact * 240;
             if (player.speed > 1200 && player.collisionCooldown <= 0) {
                 player.collisionCooldown = 0.22;
                 cameraShake = Math.max(cameraShake, 3);
@@ -5003,7 +5023,6 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
                 spawnBurst(player.x > 0 ? pRect.x + pRect.width : pRect.x, pRect.y + pRect.height * 0.65, 5, "#ffcf42", "spark", 180);
             }
         }
-        const advance = Math.max(0, player.speed) * Math.cos(player.heading) * dt;
         const landingSegment = findSegment(player.position + advance);
         const nextSlope = (landingSegment.p2.world.y - landingSegment.p1.world.y) / SEGMENT_LENGTH;
         if (grounded && landingSegment !== segment && slope > 0 && slope - nextSlope > 0.009 && speedRatio > 0.78) {
@@ -5033,7 +5052,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         }
         const targetPitch = clamp(-slope * 0.45, -0.35, 0.35);
         cameraPitch += (targetPitch - cameraPitch) * Math.min(1, dt * 6);
-        const targetRoll = clamp((-player.steerInput * 0.018 - segment.curve * 0.012) * speedRatio, -0.04, 0.04);
+        const targetRoll = -player.steerInput * 0.012 * speedRatio;
         cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 7);
         cameraShake = Math.max(0, cameraShake - dt * 16);
     }
@@ -5611,7 +5630,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
                     player.speed *= 0.98;
                     const impactSide = player.x >= car.offset ? 1 : -1;
                     player.lateralSpeed = impactSide * (0.35 + Math.abs(player.lateralSpeed) * 0.25);
-                    player.yawRate += impactSide * 0.65;
+                    player.impactYawRate += impactSide * 0.65;
                     cameraShake = Math.max(cameraShake, 4);
                     playCollisionSfx(0.55, false);
                     spawnBurst(pRect.x + pRect.width * 0.5, pRect.y + pRect.height * 0.5, 8, "#ffcf42", "spark", 200);
@@ -6502,10 +6521,9 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
         const height = width * (meta.height / meta.width);
         const speedRatio = clamp(player.speed / Math.max(1, maxSpeed), 0, 1);
         const rumbleBounce = Math.abs(player.x) > 0.92 ? Math.sin(time * 38) * 2.5 * speedRatio : 0;
-        const wobble = Math.sin(time * 18) * speedRatio * 2.2;
         const bottomGap = Math.max(18, renderHeight * 0.04) + renderHeight * NITRO_ZOOM_PLAYER_LIFT_RATIO * nitroZoomVisual + player.airY * 0.35;
         return {
-            x: renderWidth / 2 - width / 2 + visualPlayerX * renderWidth * 0.07 + wobble,
+            x: renderWidth / 2 - width / 2,
             y: renderHeight - height - bottomGap + rumbleBounce,
             width,
             height,
@@ -6657,7 +6675,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             return;
         }
         const axisX = activePad.axes[0] ?? 0;
-        gamepadSteer = Math.abs(axisX) > 0.16 ? clamp(axisX, -1, 1) : 0;
+        gamepadSteer = Math.sign(axisX) * clamp((Math.abs(axisX) - 0.16) / 0.84, 0, 1);
         gamepadThrottle = Boolean(activePad.buttons[7]?.pressed || activePad.buttons[0]?.pressed);
         gamepadBrake = Boolean(activePad.buttons[6]?.pressed || activePad.buttons[1]?.pressed);
         gamepadNitro = Boolean(activePad.buttons[2]?.pressed || activePad.buttons[5]?.pressed);
@@ -6682,7 +6700,7 @@ import * as BABYLON from "./vendor/babylon-overtake.js";
             tiltBaselineGamma = event.gamma;
         }
         const delta = clamp((event.gamma - tiltBaselineGamma) / 28, -1, 1);
-        tiltSteerValue = Math.abs(delta) < 0.08 ? 0 : delta;
+        tiltSteerValue = Math.sign(delta) * clamp((Math.abs(delta) - 0.08) / 0.92, 0, 1);
     }
     async function toggleTiltSteering() {
         if (tiltEnabled) {

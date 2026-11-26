@@ -308,6 +308,17 @@ p {
   color: #fff;
 }
 
+.sidebar-legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.sidebar-legal a {
+  min-height: 0;
+  font-size: 11px;
+}
+
 /* ---------- Top bar ---------- */
 
 .topbar {
@@ -4846,6 +4857,34 @@ h4,
 }
 
 /* ---------- Motion preferences ---------- */
+
+/* Center square artwork within card covers while preserving the full source image. */
+.row-track .game-card .gcard-cover,
+.game-grid:not(.list-view) .game-card .gcard-cover {
+  width: 69%;
+  aspect-ratio: 1;
+  margin-inline: auto;
+}
+
+.row-track .game-card .gcard-cover img,
+.game-grid:not(.list-view) .game-card .gcard-cover img {
+  object-fit: contain;
+}
+
+.row-track .game-card .gcard-cover::after,
+.game-grid:not(.list-view) .game-card .gcard-cover::after {
+  display: none;
+}
+
+.row-track .game-card .gcard-overlay,
+.game-grid:not(.list-view) .game-card .gcard-overlay {
+  aspect-ratio: 1;
+}
+
+.game-grid.list-view .gcard-cover {
+  width: 100%;
+  margin-inline: 0;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .shard {
