@@ -19,7 +19,7 @@ function asphaltTexture(renderer){
 function signTexture(label){
  const c=document.createElement("canvas");c.width=512;c.height=128;const x=c.getContext("2d");
  x.fillStyle="#183b39";x.fillRect(0,0,512,128);x.strokeStyle="#e3d5b7";x.lineWidth=6;x.strokeRect(4,4,504,120);
- x.fillStyle="#f6edda";x.font="800 34px system-ui";x.textAlign="center";x.textBaseline="middle";x.fillText(label,256,64,460);
+ x.fillStyle="#f6edda";x.font=label.length>22?"800 25px system-ui":"800 34px system-ui";x.textAlign="center";x.textBaseline="middle";x.fillText(label,256,64,460);
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.MeshStandardMaterial({map:t,roughness:.75});
 }
 function building(scene,side,z,i,m){
@@ -252,7 +252,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   vehicle.userData.baseLane=lane;vehicle.userData.trafficIndex=i;vehicle.visible=i<6;
   return vehicle;
  });
- const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);
+ const gate=new THREE.Group();gate.position.z=-14;world.add(gate);box(gate,.65,5.6,.8,m.stone,-7.5,2.8,0);box(gate,.65,5.6,.8,m.stone,7.5,2.8,0);box(gate,15.6,.7,1,m.dark,0,5.35,0);const board=new THREE.Mesh(new THREE.PlaneGeometry(8.6,.52),signTexture("CHIROMO CAMPUS"));board.position.set(0,5.38,.53);gate.add(board);let signSemester=null;
  for(let i=0;i<5;i++){const z=-32-i*48,s=i%2?1:-1,x=s*9.15;const bench=new THREE.Group();bench.position.set(x,0,z);world.add(bench);box(bench,1.55,.12,.42,m.warm,0,.56,0);box(bench,1.55,.12,.42,m.warm,0,.82,-.12);for(const dx of [-.58,.58])box(bench,.1,.58,.1,m.dark,dx,.3,0);const bin=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,.75,10),m.dark);bin.position.set(x+s*.75,.38,z);world.add(bin);}
  // A second 300-unit scenery segment follows the first so the road never runs out as the world scrolls.
  const repeatWorld=world.clone(true);repeatWorld.position.z=-300;scene.add(repeatWorld);
@@ -325,6 +325,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const ro=typeof ResizeObserver!=="undefined"?new ResizeObserver(resize):null;if(ro)ro.observe(mount);else addEventListener("resize",resize);
  function render(g){
   if(!g)return;
+  const semesterConfig=g.campaignConfig;if(semesterConfig&&signSemester!==semesterConfig.number){const nextSign=signTexture("SEMESTER "+semesterConfig.number+" · "+semesterConfig.name.toUpperCase());const previousMap=board.material.map;board.material.map=nextSign.map;board.material.needsUpdate=true;previousMap?.dispose();nextSign.dispose();signSemester=semesterConfig.number;}
   const dt=clamp(g.t-lastGameT,0,.05);lastGameT=g.t;
   // Obstacles advance 0.55 normalized units per second across a 46-unit depth span.
   // Scroll every piece of campus scenery at that exact same world-space speed.
