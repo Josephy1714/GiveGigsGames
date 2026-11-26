@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { prepareRunClips } from "./run-motion.js";
 
 const CLIP_ALIASES = Object.freeze({
@@ -107,6 +108,7 @@ export async function loadJayCharacter({
   }
 
   const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf = await new Promise((resolve, reject) => {
     loader.load(url, resolve, onProgress, reject);
   });
