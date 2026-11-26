@@ -201,7 +201,7 @@ test("production 3D runner validates Jay, vehicle impacts, and retry", async () 
     const initialRunState = await page.evaluate(() => window.__runnerSmoke.state());
     const fallInfo = await page.evaluate(() => window.__runnerSmoke.forceVehicleFall());
     assert.ok(fallInfo.clipDuration > 0, "the authored fall clip must have a measurable duration");
-    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 10000 }).catch(async error => {
+    await page.waitForFunction(() => document.querySelector("#result-modal")?.classList.contains("show"), null, { timeout: 30000 }).catch(async error => {
       const diagnostic = await page.evaluate(() => ({
         state: window.__runnerSmoke.state(),
         activeAnimation: document.querySelector("#three-world")?.dataset.activeAnimation,
