@@ -1,8 +1,9 @@
 export const CARRY_VEHICLE = Object.freeze({
-  approachStartZ: -18,
-  boardingTriggerZ: -6.2,
+  // Spawn behind Jay (+Z), then drive forward through his position and overtake him.
+  approachStartZ: 24,
+  boardingTriggerZ: -1.7,
   boardingEndZ: -1.7,
-  approachSpeed: 4.6,
+  approachSpeed: 12,
   boardingDurationSeconds: 0.9,
   rideDurationSeconds: 20,
   dismountDurationSeconds: 1.05,
@@ -36,9 +37,10 @@ export function getCarrySpeedScale(state) {
 export function getCarryPlayerHeight(state) {
   if (!state) return 0;
   if (state.phase === "boarding") {
-    const localZ = 2 - (Number(state.vehicleZ) || CARRY_VEHICLE.boardingTriggerZ);
-    const rampProgress = clamp((CARRY_VEHICLE.rampLowerZ - localZ) / (CARRY_VEHICLE.rampLowerZ - CARRY_VEHICLE.rampUpperZ), 0, 1);
-    return CARRY_VEHICLE.deckHeight * rampProgress + Math.sin(clamp(state.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1) * Math.PI) * 0.08;
+    // The hauler has overtaken Jay and is holding the deck beside him.
+    // Jay jumps up from the road and lands on the flatbed without clipping through it.
+    const progress = smoothstep(clamp(state.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1));
+    return CARRY_VEHICLE.deckHeight * progress + Math.sin(clamp(state.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1) * Math.PI) * 0.08;
   }
   if (state.phase === "riding" || state.phase === "clearing") return CARRY_VEHICLE.deckHeight;
   if (state.phase === "dismounting") {
@@ -53,16 +55,16 @@ export function advanceCarryEvent(state, dt, { dismountLane, clearanceReady = fa
   const delta = Math.max(0, Number(dt) || 0);
   const next = { ...state, lane: 1, vehicleLane: 1 };
   if (next.phase === "approaching") {
-    next.vehicleZ += CARRY_VEHICLE.approachSpeed * delta;
-    if (next.vehicleZ >= CARRY_VEHICLE.boardingTriggerZ) {
+    next.vehicleZ -= CARRY_VEHICLE.approachSpeed * delta;
+    if (next.vehicleZ <= CARRY_VEHICLE.boardingTriggerZ) {
       next.vehicleZ = CARRY_VEHICLE.boardingTriggerZ;
       next.phase = "boarding";
       next.elapsed = 0;
     }
   } else if (next.phase === "boarding") {
     next.elapsed += delta;
-    const boardingProgress = clamp(next.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1);
-    next.vehicleZ = CARRY_VEHICLE.boardingTriggerZ + (CARRY_VEHICLE.boardingEndZ - CARRY_VEHICLE.boardingTriggerZ) * boardingProgress;
+    // Hold the vehicle after it overtakes Jay while he jumps onto the deck.
+    next.vehicleZ = CARRY_VEHICLE.boardingEndZ;
     if (next.elapsed >= CARRY_VEHICLE.boardingDurationSeconds) {
       next.phase = "riding";
       next.elapsed = 0;
