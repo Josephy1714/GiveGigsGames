@@ -243,7 +243,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const campaignBoss=new THREE.Group();campaignBoss.visible=false;scene.add(campaignBoss);
  const bossParts={arms:[],rings:[],lights:[]};let bossSemester=-1,bossDefeatAt=-1;
  function buildCampaignBoss(semester){
-  while(campaignBoss.children.length){const child=campaignBoss.children.pop();campaignBoss.remove(child);}
+  while(campaignBoss.children.length)campaignBoss.remove(campaignBoss.children[0]);
   bossParts.arms=[];bossParts.rings=[];bossParts.lights=[];
   const [base,trim,glow]=bossPalette[(semester-1)%8],paint=mat(base,.36,.48),accent=mat(trim,.3,.55),emissive=new THREE.MeshStandardMaterial({color:glow,emissive:glow,emissiveIntensity:1.35,metalness:.35,roughness:.24}),rubber=mat(0x151b20,.9);
   const body=(w,h,d,y,z=0)=>box(campaignBoss,w,h,d,paint,0,y,z);
@@ -414,7 +414,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
   }
   for(let i=rampN;i<rampVehicles.length;i++){rampVehicles[i].visible=false;rampVehicles[i].userData.obstacle=null;}
-  const bossArena=!!g.bossActive;if(bossArena){carryVehicle.visible=false;for(const v of rampVehicles)v.visible=false;}const carrySurfaceY=getCarryPlayerHeight(g.carryState);let rampSurfaceY=0;
+  const bossArena=!!g.bossActive||(Number(g.bossDefeatTime)>=0&&g.t-Number(g.bossDefeatTime)<1.6);if(bossArena){carryVehicle.visible=false;for(const v of rampVehicles)v.visible=false;}const carrySurfaceY=getCarryPlayerHeight(g.carryState);let rampSurfaceY=0;
   if(g.rampState?.phase==="climbing"){
    rampSurfaceY=rampSurfaceHeightAtProgress(g.rampState.obstacle?.z??0);
    g.rampState.surfaceHeight=rampSurfaceY;
