@@ -1,12 +1,13 @@
 export const CARRY_VEHICLE = Object.freeze({
   approachStartZ: -18,
-  boardingTriggerZ: -3.2,
+  boardingTriggerZ: -4.0,
+  boardingEndZ: -3.2,
   approachSpeed: 4.6,
   boardingDurationSeconds: 0.72,
   rideDurationSeconds: 20,
   dismountDurationSeconds: 1.05,
   safeLaneCheckSeconds: 0.35,
-  exitSpeed: 7.5,
+  exitSpeed: 10.5,
   exitRecycleZ: 14,
   deckHeight: 1.05,
   deckCenterZ: 3.7,
@@ -40,7 +41,7 @@ export function getCarryPlayerHeight(state) {
   if (state.phase === "riding") return CARRY_VEHICLE.deckHeight;
   if (state.phase === "dismounting") {
     const t = clamp(state.elapsed / CARRY_VEHICLE.dismountDurationSeconds, 0, 1);
-    return CARRY_VEHICLE.deckHeight * (1 - t) + Math.sin(t * Math.PI) * 2.8;
+    return CARRY_VEHICLE.deckHeight * (1 - t) + Math.sin(t * Math.PI) * 3.5;
   }
   return 0;
 }
@@ -65,11 +66,12 @@ export function advanceCarryEvent(state, dt, { safeLane } = {}) {
     }
   } else if (next.phase === "boarding") {
     next.elapsed += delta;
+    next.vehicleZ = Math.min(CARRY_VEHICLE.boardingEndZ, next.vehicleZ + ((CARRY_VEHICLE.boardingEndZ - CARRY_VEHICLE.boardingTriggerZ) / CARRY_VEHICLE.boardingDurationSeconds) * delta);
     if (next.elapsed >= CARRY_VEHICLE.boardingDurationSeconds) {
       next.phase = "riding";
       next.elapsed = 0;
       next.rideElapsed = 0;
-      next.vehicleZ = CARRY_VEHICLE.boardingTriggerZ;
+      next.vehicleZ = CARRY_VEHICLE.boardingEndZ;
     }
   } else if (next.phase === "riding") {
     next.rideElapsed += delta;
