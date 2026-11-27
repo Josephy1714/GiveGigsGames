@@ -6,7 +6,7 @@ export const RAMP_VEHICLE = Object.freeze({
   deckHeight: 1.15,
   climbDurationSeconds: 1.7,
   dismountDurationSeconds: 0.68,
-  activeTravelScale: 0.15
+  activeTravelScale: 0
 });
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
