@@ -8,6 +8,14 @@ import { getTrafficSpawnLayout } from "../difficulty/difficulty-progression.js";
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), laneX=[-4.68,0,4.68];
 const mat=(c,r=.82,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 function box(p,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o;}
+function metalizeVehicle(group){
+ group.traverse(node=>{
+  if(!node.isMesh||!node.material)return;
+  const metalize=material=>{const metal=material.clone();metal.metalness=1;metal.roughness=.28;metal.needsUpdate=true;return metal;};
+  node.material=Array.isArray(node.material)?node.material.map(metalize):metalize(node.material);
+ });
+ return group;
+}
 function asphaltTexture(renderer){
  const canvas=document.createElement("canvas");canvas.width=512;canvas.height=512;const ctx=canvas.getContext("2d");
  ctx.fillStyle="#454d4d";ctx.fillRect(0,0,512,512);
@@ -141,7 +149,7 @@ function car(scene,x,z,color,m,kind="car"){
    const strip=new THREE.Mesh(new THREE.PlaneGeometry(length*.7,.16),signTexture("UNIVERSITY SERVICE"));strip.rotation.y=side*Math.PI/2;strip.position.set(side*(width*.507),baseY+.18,0);g.add(strip);
   }
  }
- return g;
+ return metalizeVehicle(g);
 }
 function createRampVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
@@ -175,7 +183,7 @@ function createRampVehicle(scene,m){
   const hub=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.235,12),m.gold);hub.rotation.z=Math.PI/2;wheel.add(hub);wheels.push(wheel);
  }
  group.userData.wheels=wheels;group.userData.obstacle=null;group.visible=false;
- return group;
+ return metalizeVehicle(group);
 }
 function createCarryVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
@@ -218,7 +226,7 @@ function createCarryVehicle(scene,m){
   const hub=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.235,12),m.gold);hub.rotation.z=Math.PI/2;wheel.add(hub);wheels.push(wheel);
  }
  group.userData.wheels=wheels;group.visible=false;
- return group;
+ return metalizeVehicle(group);
 }
 export async function createRunnerRenderer({mount,quality="High"}={}){
  if(!mount)throw new TypeError("Three.js mount missing");
@@ -483,16 +491,22 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=laneX[1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
    let carrySmashes=0;
-   if(carryVisible&&["boarding","riding","clearing","dismounting"].includes(carryPhaseNow)){
-    const ramZ=carryVehicle.position.z-4.18,ramX=carryVehicle.position.x,vehicleHalfWidth=1.46;
+   if(carryVisible&&["approaching","boarding","riding","clearing","dismounting"].includes(carryPhaseNow)){
+    const ramX=carryVehicle.position.x,vehicleHalfWidth=1.48;
+    const vehicleFrontZ=carryVehicle.position.z-4.25,vehicleRearZ=carryVehicle.position.z+4.25;
     for(const v of traffic){
      if(!v.visible||v.userData.smash)continue;
      const halfWidth=v.userData.collisionHalfWidth||1.1;
-     if(Math.abs(v.position.z-ramZ)<1.9&&Math.abs(v.position.x-ramX)<vehicleHalfWidth+halfWidth){
-       const side=v.position.x-ramX,direction=Math.abs(side)<.35?(v.userData.trafficIndex%2===0?-1:1):Math.sign(side);
-       v.userData.smash={life:2.15,vx:direction*(7.8+(v.userData.trafficIndex%3)*1.1),vz:.55,vy:2.7,gravity:8.2,spinY:direction*5.2,spinZ:direction*3.5,spinX:direction*2.1};
-       v.position.x=ramX+direction*(vehicleHalfWidth+halfWidth+.18);v.position.z=ramZ;v.position.y=.05;carrySmashes++;
-      }
+     const halfLength=(v.userData.collisionLength||3.8)/2;
+     const overlapsX=Math.abs(v.position.x-ramX)<vehicleHalfWidth+halfWidth;
+     const overlapsZ=v.position.z+halfLength>=vehicleFrontZ&&v.position.z-halfLength<=vehicleRearZ;
+     if(overlapsX&&overlapsZ){
+      const side=v.position.x-ramX,direction=Math.abs(side)<.35?(v.userData.trafficIndex%2===0?-1:1):Math.sign(side);
+      v.userData.smash={life:2.15,vx:direction*(7.8+(v.userData.trafficIndex%3)*1.1),vz:.55,vy:2.7,gravity:8.2,spinY:direction*5.2,spinZ:direction*3.5,spinX:direction*2.1};
+      v.position.x=ramX+direction*(vehicleHalfWidth+halfWidth+.18);
+      v.position.z=Math.max(vehicleFrontZ-halfLength-.12,Math.min(vehicleRearZ+halfLength+.12,v.position.z));
+      v.position.y=.05;carrySmashes++;
+     }
     }
    }
    mount.dataset.carryVehicleSmashes=String((Number(mount.dataset.carryVehicleSmashes)||0)+carrySmashes);
@@ -555,7 +569,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    mount.dataset.jayRampSurfaceHeight=rampSurfaceY.toFixed(3);mount.dataset.jayRampPhase=g.rampState?.phase||"inactive";mount.dataset.jayRampFeetAligned=String(!g.rampState||Math.abs(jayRig.root.position.y-(rigBaseY+rampSurfaceY))<.001);
    mount.dataset.jayVehicleThrow=String(!celebration&&airborneImpact);mount.dataset.jayVehicleThrowHeight=(celebration?0:vehicleThrowHeight).toFixed(4);mount.dataset.jayVehicleThrowZ=jayRig.root.position.z.toFixed(4);
    mount.dataset.jayLean=laneLean.toFixed(3);mount.dataset.jayImpact=impactPulse.toFixed(2);mount.dataset.jayLanding=landingPulse.toFixed(2);
-   const rigState=celebration?(celebrationTime<1.7&&jayRig.availableClips.includes("jump")?"jump":"idle"):carryPhase==="boarding"?"run":carryPhase==="dismounting"?"jump":carryPhase==="riding"?"idle":g.vehicleImpactType==="front"?"fall":g.vehicleImpactType==="airborne"?"jump":animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
+   const rigState=celebration?(celebrationTime<1.7&&jayRig.availableClips.includes("jump")?"jump":"idle"):carryPhase==="boarding"?"jump":carryPhase==="dismounting"?"jump":carryPhase==="riding"?"idle":g.vehicleImpactType==="front"?"fall":g.vehicleImpactType==="airborne"?"jump":animationState==="slide-start"?"slideStart":animationState==="slide-loop"?"slideLoop":animationState==="slide-recover"?"slideRecover":animationState==="jump-running"?"jump":animationState==="fall-accidental"?"fall":animationState==="get-up"?"getUp":animationState;
    const chosen=jayRig.availableClips.includes(rigState)?rigState:(rigState==="slideStart"||rigState==="slideLoop"||rigState==="slideRecover"?"slide":jayRig.availableClips.includes("run")?"run":"idle");
    mount.dataset.activeAnimation=chosen;mount.dataset.jayRunPhase=jayRig.runApproachCompleted?"loop":"approach";mount.dataset.jayVictoryTime=celebration?celebrationTime.toFixed(2):"inactive";
    const runTempo=clamp(.88+.42*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),1.15,1.9);const clipTempo=celebration?1:g.vehicleImpactType==="front"?1:g.vehicleImpactType==="airborne"?1.12:carryBoarding||carryDismounting?1.12:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1;
