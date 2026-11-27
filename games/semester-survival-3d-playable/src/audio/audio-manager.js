@@ -1,10 +1,11 @@
+import { createProceduralScore } from "./procedural-score.js";
 const STORAGE_KEY="semester-survival-audio-v1";
-const DEFAULTS={volumes:{master:.8,sfx:.75,ambience:.2,ui:.45},muted:{master:false,sfx:false}};
+const DEFAULTS={volumes:{master:.8,music:.58,sfx:.75,ambience:.2,ui:.45},muted:{master:false,music:false,sfx:false}};
 const CHANNELS=Object.keys(DEFAULTS.volumes);
 const clamp=value=>Math.max(0,Math.min(1,Number(value)||0));
 
 export function createAudioManager({legacySfxEnabled=()=>true}={}){
- let settings=loadSettings(),context=null,ambienceGain=null,ambienceSource=null,noiseBuffer=null;
+ let settings=loadSettings(),context=null,ambienceGain=null,ambienceSource=null,noiseBuffer=null,musicEngine=null;
  let runActive=false,runPaused=false,tabSuspended=false,unlocked=false,voices=0,currentBus="sfx";
  const effectBuses={};
  const activeEffects=new Set();
@@ -24,7 +25,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
  function masterLevel(){return settings.muted.master?0:settings.volumes.master}
  function effective(channel){
   if(!masterLevel())return 0;
-  if(channel==="sfx"&&!legacySfxEnabled())return 0;
+  if(channel==="sfx"&&!legacySfxEnabled())return 0;\n  if(channel==="music"&&(!runActive||runPaused||tabSuspended))return 0;
   if(settings.muted[channel])return 0;
   return clamp(masterLevel()*settings.volumes[channel]);
  }
@@ -76,10 +77,10 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   if(ambienceSource){try{ambienceSource.stop();ambienceSource.disconnect()}catch{}ambienceSource=null}
   if(ambienceGain){try{ambienceGain.disconnect()}catch{}ambienceGain=null}
  }
- function startRun(){runActive=true;runPaused=false;tabSuspended=false;unlock();startAmbience();applyVolumes()}
+ function startMusic(){\n  const ctx=ensureContext();if(!ctx)return;\n  const bus=ensureBus("music");if(!bus)return;\n  if(!musicEngine)musicEngine=createProceduralScore(ctx,bus);\n  musicEngine.start();\n }\n function stopMusic(){if(musicEngine)musicEngine.stop()}\n function startRun(){runActive=true;runPaused=false;tabSuspended=false;unlock();startAmbience();startMusic();applyVolumes()}
  function pauseRun(){if(!runActive)return;runPaused=true;applyVolumes()}
  function resumeRun(){if(!runActive)return;runPaused=false;unlock();applyVolumes()}
- function endRun(){runActive=false;runPaused=false;stopAmbience()}
+ function endRun(){runActive=false;runPaused=false;stopMusic();stopAmbience();applyVolumes()}
  function suspendForTab(){tabSuspended=true;applyVolumes()}
  function resumeAfterTab(){if(!runActive||runPaused)return;tabSuspended=false;unlock();applyVolumes()}
 
@@ -133,7 +134,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   endRun();activeEffects.forEach(effect=>{try{effect.stop()}catch{}});activeEffects.clear();
   Object.values(effectBuses).forEach(bus=>{try{bus.disconnect()}catch{}});
   Object.keys(effectBuses).forEach(key=>delete effectBuses[key]);
-  if(context)context.close().catch(()=>{});context=null;
+  if(musicEngine){musicEngine.destroy();musicEngine=null;}\n  if(context)context.close().catch(()=>{});context=null;
  }
  return {startRun,pauseRun,resumeRun,endRun,suspendForTab,resumeAfterTab,play,setVolume,setMuted,setLegacySfxEnabled,getSettings,destroy};
 }
