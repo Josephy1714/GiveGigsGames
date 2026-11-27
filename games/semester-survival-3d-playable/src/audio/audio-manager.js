@@ -83,7 +83,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   const ctx=ensureContext();if(!ctx)return;
   const bus=ensureBus("music");if(!bus)return;
   if(!musicEngine)musicEngine=createProceduralScore(ctx,bus);
-  musicEngine.start();
+  musicEngine.setIntensity(1);musicEngine.start();
  }
  function stopMusic(){if(musicEngine)musicEngine.stop()}
  function startRun(){runActive=true;runPaused=false;tabSuspended=false;unlock();startAmbience();startMusic();applyVolumes()}
