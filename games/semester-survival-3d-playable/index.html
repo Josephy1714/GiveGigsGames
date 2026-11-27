@@ -302,6 +302,9 @@ const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout
  function openBriefing(){
   // The briefing lives inside the full-screen game overlay, so reveal its parent first.
   overlay.classList.add("open");
+  $("#result-modal").classList.remove("show");
+  $("#pause-modal").classList.remove("show");
+  overlay.classList.remove("campaign-celebrating");
   const config=getSemesterConfig(save.semester);
   $("#briefing-kicker").textContent="SEMESTER "+String(config.number).padStart(2,"0")+" · MISSION BRIEFING";
   $("#briefing-title").textContent=config.name;
@@ -322,11 +325,11 @@ const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout
    if(g.campaignCelebrationElapsed>=12)finish(false,"CAMPAIGN CELEBRATION COMPLETE");
    return;
   }
-  if(g.campaignConfig&&g.bossWarningTime>0){g.bossWarningTime=Math.max(0,g.bossWarningTime-dt);if(g.bossWarningTime===0)$("#boss-warning").style.display="none";}
+  if(g.campaignConfig&&g.bossWarningTime>0){g.bossWarningTime=Math.max(0,g.bossWarningTime-dt);g.obs=[];g.pick=[];g.bonus=[];g.spawn=999;if(g.bossWarningTime===0)$("#boss-warning").style.display="none";}
   tickWithExistingSystems(dt);
   if(!g||!g.on||!g.campaignConfig)return;
   const config=g.campaignConfig;
-  if(!g.bossWarningShown&&g.d>=config.warningDistance){g.bossWarningShown=true;g.bossWarningTime=2.8;$("#boss-warning").style.display="block";g.spawn=999;}
+  if(!g.bossWarningShown&&g.d>=config.warningDistance){g.bossWarningShown=true;g.bossWarningTime=2.8;$("#boss-warning").style.display="block";g.spawn=999;g.obs=[];g.pick=[];g.bonus=[];}
   if(g.d>=config.finishDistance){
    g.d=config.finishDistance;g.speed=0;g.spawn=999;g.obs=[];g.pick=[];g.bonus=[];
    if(g.bossCleared){
@@ -617,22 +620,17 @@ finish=function(quit,why){
  if(wasRunning)audioManager.endRun();
 };
 const audioOriginalAct=act;
-act=function(action){
- const previousJump=g?.jump||0,previousSlide=g?.slide||0;
- audioOriginalAct(action);
- if(!g||!g.on||g.paused)return;
- if(action==="jump"&&previousJump<=0&&g.jump>0)audioManager.play("jump");
- if(action==="slide"&&previousSlide<=0&&g.slide>0)audioManager.play("slide");
-};
+act=function(action){audioOriginalAct(action);};
 let audioPreviousCollision=null;
 const audioOriginalTick=tick;
 tick=function(dt){
- const beforeJump=g?.jump||0,beforeCoins=g?.coins||0,beforePowerups=g?.runPowerups||0;
+ const warningWasShown=!!g?.bossWarningShown;
+ const beforeCoins=g?.coins||0,beforePowerups=g?.runPowerups||0;
  const passingVehicles=g?.obs?.filter(item=>item.vehicle&&!item.collided&&item.z>=1.08&&item.z<1.12)||[];
  audioOriginalTick(dt);
  if(!g)return;
- audioManager.setMusicIntensity(g.campaignCelebration?1.22:g.bossActive?1.12:1);
- if(beforeJump>0&&g.jump<=0)audioManager.play("landing");
+ if(!warningWasShown&&g.bossWarningShown)audioManager.play("bossWarning",{priority:9});
+ audioManager.setMusicIntensity(g.bossWarningTime>0||g.bossActive?1.48:1);
  if(g.coins>beforeCoins)audioManager.play("coin");
  if((g.runPowerups||0)>beforePowerups)audioManager.play("powerup");
  if(passingVehicles.some(item=>item.z>=1.12&&!g.obs.includes(item)))audioManager.play("passby",{priority:1});
