@@ -150,15 +150,16 @@ start = function(){
  oldStart();
  if(g){g.bonus=[];g.bossAt=1800;g.bossNumber=0;g.runPowerups=0;g.revived=false;g.shield=!!save.up.shield;g.rampState=null;g.carryState=null;g.nextCarryDistance=g.d+900;}
 };
+// Three attack phases per semester. Sweep attacks occupy all three lanes and require a timed jump.
 const bossRounds=[
- [["jump",0],["slide",2],["lane",1]],
- [["slide",1],["jump",2],["lane",0]],
- [["lane",2],["jump",0],["slide",1]],
- [["jump",1],["lane",0],["slide",2]],
- [["lane",1],["slide",0],["jump",2]],
- [["slide",2],["lane",1],["jump",0]],
- [["jump",0],["slide",1],["lane",2]],
- [["lane",2],["jump",1],["slide",0]]
+ [["jump",0],["slide",2],["lane",1],["lane",0],["jump",2],["slide",1],["jump",1],["lane",2],["slide",0]],
+ [["slide",1],["jump",2],["lane",0],["jump",0],["lane",2],["slide",1],["lane",1],["slide",0],["jump",2]],
+ [["lane",2],["jump",0],["slide",1],["slide",2],["lane",0],["jump",1],["jump",0],["slide",1],["lane",2]],
+ [["jump",1],["lane",0],["slide",2],["lane",2],["jump",0],["slide",1],["slide",0],["lane",1],["jump",2]],
+ [["lane",1],["slide",0],["jump",2],["jump",1],["lane",2],["slide",0],["slide",2],["jump",0],["lane",1]],
+ [["slide",2],["lane",1],["jump",0],["lane",0],["slide",2],["jump",1],["jump",2],["lane",0],["slide",1]],
+ [["jump",0],["slide",1],["lane",2],["slide",0],["jump",2],["lane",1],["lane",0],["slide",2],["jump",1]],
+ [["lane",2],["jump",1],["slide",0],["zigzag",2],["zigzag",0],["sweep",1],["lane",0],["sweep",2],["zigzag",1]]
 ];
 const bossNames=["FIRST CAT","MID-SEMESTER EXAMS","PROJECT PRESENTATION","MAJOR CAT WEEK","INDUSTRIAL ATTACHMENT","RESEARCH PROPOSAL","PROJECT DEFENSE","FINAL EXAMS"];
 const oldTick = tick;
@@ -227,14 +228,20 @@ tick = function(dt){
   g.bossLabel=bossNames[index];
   g.bossQueue=bossRounds[index].map(([action,lane])=>({action,lane,label:g.bossLabel,boss:true}));
   g.bossClock=.55;
-  g.bossHits=0;
+  g.bossHits=0;g.bossAttackIndex=0;g.bossPhase=1;
   g.spawn=1.3;
  }
  if(g.bossActive){
   g.bossClock-=dt;
   if(g.bossQueue.length&&g.bossClock<=0){
    const attack=g.bossQueue.shift();
-   g.obs.push({lane:attack.lane,z:.04,label:attack.label,action:attack.action,boss:true});
+   g.bossAttackIndex=(g.bossAttackIndex||0)+1;g.bossPhase=Math.min(3,Math.ceil(g.bossAttackIndex/3));
+   if(attack[0]==="sweep"){
+    for(let lane=0;lane<3;lane++)g.obs.push({lane,z:.04,label:g.bossLabel+" · FULL SWEEP",action:"jump",boss:true,sweep:true});
+   }else if(attack[0]==="zigzag"){
+    const lane=attack[1];g.obs.push({lane,z:.04,label:g.bossLabel+" · ZIGZAG",action:"lane",boss:true});
+    g.obs.push({lane:(lane+1)%3,z:.2,label:g.bossLabel+" · ZIGZAG",action:"lane",boss:true});
+   }else g.obs.push({lane:attack[1],z:.04,label:g.bossLabel,action:attack[0],boss:true});
    g.bossClock=1.05;
   }else if(!g.bossQueue.length&&!g.obs.some(o=>o.boss)){
    g.bossActive=false;
