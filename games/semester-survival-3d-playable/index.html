@@ -629,6 +629,7 @@ tick=function(dt){
  const passingVehicles=g?.obs?.filter(item=>item.vehicle&&!item.collided&&item.z>=1.08&&item.z<1.12)||[];
  audioOriginalTick(dt);
  if(!g)return;
+ audioManager.setMusicIntensity(g.campaignCelebration?1.22:g.bossActive?1.12:1);
  if(beforeJump>0&&g.jump<=0)audioManager.play("landing");
  if(g.coins>beforeCoins)audioManager.play("coin");
  if((g.runPowerups||0)>beforePowerups)audioManager.play("powerup");
