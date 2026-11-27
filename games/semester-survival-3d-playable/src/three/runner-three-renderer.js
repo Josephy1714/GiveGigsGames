@@ -457,7 +457,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    rampSurfaceY=(Number(g.rampState.startHeight)||0)*(1-progress)+Math.sin(progress*Math.PI)*.62;
   }
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
-  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
+  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryPhaseNow==="dismounting"?laneX[g.carryState.vehicleLane??g.carryState.lane??g.lane??1]:carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
    let carrySmashes=0;
    if(carryVisible&&["boarding","riding","dismounting"].includes(carryPhaseNow)){
     const ramZ=carryVehicle.position.z-4.18,ramX=carryVehicle.position.x,vehicleHalfWidth=1.46;
@@ -562,20 +562,19 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   fireworks.forEach((burst,index)=>{const age=celebrationTime-burst.start;const active=celebration&&age>=0&&age<1.45;burst.material.opacity=active?Math.max(0,1-age/1.45):0;burst.particles.forEach((dot,i)=>{dot.visible=active;if(!active)return;const angle=dot.userData.angle;const radius=.35+age*3.4;dot.position.set(burst.center.x+Math.cos(angle)*radius,burst.center.y+Math.sin(angle)*radius,burst.center.z+Math.sin(angle*2)*.35);dot.scale.setScalar(Math.max(.05,1-age*.58));});});
   renderer.render(scene,camera);
  }
- function chooseSafeCarryLane(currentLane=1,vehicleZ=-3.2,obstacles=[]){
+ function chooseSafeCarryLane(currentLane=1,vehicleZ=-3.2,obstacles=[],forDismount=false){
   const laneForX=x=>laneX.reduce((best,value,index)=>Math.abs(value-x)<Math.abs(laneX[best]-x)?index:best,0);
   const score=lane=>{
-   let risk=0;
+   let risk=forDismount&&lane===currentLane?1000:0;
+   const targetZones=forDismount?[-5.4,2]:[vehicleZ];
    for(const vehicle of traffic){
     if(!vehicle.visible||laneForX(vehicle.position.x)!==lane)continue;
-    const gap=vehicle.position.z-vehicleZ;
-    if(gap>-65&&gap<14)risk+=10/(Math.abs(gap)+1);
+    for(const targetZ of targetZones){const gap=vehicle.position.z-targetZ;if(gap>-65&&gap<14)risk+=10/(Math.abs(gap)+1);}
    }
    for(const obstacle of obstacles||[]){
     if(obstacle.lane!==lane||obstacle.collided)continue;
     const obstacleZ=-42+clamp(obstacle.z,0,1.12)*46+3.1;
-    const gap=obstacleZ-vehicleZ;
-    if(gap>-32&&gap<12)risk+=14/(Math.abs(gap)+1);
+    for(const targetZ of targetZones){const gap=obstacleZ-targetZ;if(gap>-32&&gap<12)risk+=14/(Math.abs(gap)+1);}
    }
    return risk;
   };
@@ -583,6 +582,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   for(let lane=0;lane<3;lane++){const risk=score(lane);if(risk<bestRisk-.001){best=lane;bestRisk=risk;}}
   return best;
  }
+
  return {render,resize,setQuality:applyQuality,chooseSafeCarryLane,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},get runApproachCompleted(){return jayRig.runApproachCompleted;},probeImpactCamera(g){
   if(!g)return null;
   const base=cameraBaseX,scale=Number.isFinite(Number(g.impactShakeScale))?Number(g.impactShakeScale):1;
