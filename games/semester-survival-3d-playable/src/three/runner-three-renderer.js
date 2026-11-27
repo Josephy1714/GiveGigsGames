@@ -502,7 +502,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const vehicleDuration=Math.max(1.18,Number(g.vehicleImpactDuration)||1.18);
    const vehicleElapsed=clamp(vehicleDuration-(Number(g.hitTimer)||0),0,vehicleDuration);
    const airborneImpact=g.vehicleImpactType==="airborne";
-   const carryPhase=g.carryState?.phase;const carryBoarding=carryPhase==="boarding",carryDismounting=carryPhase==="dismounting";const carryT=clamp((Number(g.carryState?.elapsed)||0)/(carryBoarding?CARRY_VEHICLE.boardingDurationSeconds:CARRY_VEHICLE.dismountDurationSeconds),0,1);const carryPoseActive=carryBoarding||carryPhase==="riding"||carryDismounting;const carryEase=carryT*carryT*(3-2*carryT);const carryPlayerZ=carryDismounting?2-7.4*carryEase:2;
+   const carryPhase=g.carryState?.phase;const carryBoarding=carryPhase==="boarding",carryDismounting=carryPhase==="dismounting";const carryT=clamp((Number(g.carryState?.elapsed)||0)/(carryBoarding?CARRY_VEHICLE.boardingDurationSeconds:CARRY_VEHICLE.dismountDurationSeconds),0,1);const carryPoseActive=carryBoarding||carryPhase==="riding"||carryDismounting;const carryEase=carryT*carryT*(3-2*carryT);const carryPlayerZ=2;
    const vehicleThrowHeight=airborneImpact?Math.max(0,7.8*vehicleElapsed-6.6*vehicleElapsed*vehicleElapsed):0;
    const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:g.vehicleImpactType==="front"?2:2+(impactPulse*.18);
    if(celebration){
@@ -519,10 +519,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    }else{
     jayRig.root.position.x=playerX+(airborneImpact?Math.sin(vehicleElapsed*7)*.48:0);
     jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:(carryActive?carrySurfaceY:g.rampState?rampSurfaceY:jumpY-landingPulse*.045));
-    jayRig.root.position.z=carryPoseActive?carryPlayerZ:vehicleThrowZ;mount.dataset.carryJayWorldZ=jayRig.root.position.z.toFixed(3);mount.dataset.carryDeckWorldZ=(carryVehicle.position.z+CARRY_VEHICLE.deckCenterZ).toFixed(3);mount.dataset.carryJayDeckDelta=(jayRig.root.position.z-(carryVehicle.position.z+CARRY_VEHICLE.deckCenterZ)).toFixed(3);
+    jayRig.root.position.z=carryPoseActive?carryPlayerZ:vehicleThrowZ;const carryDeckLocalZ=jayRig.root.position.z-carryVehicle.position.z;mount.dataset.carryJayWorldZ=jayRig.root.position.z.toFixed(3);mount.dataset.carryDeckWorldZ=(carryVehicle.position.z+CARRY_VEHICLE.deckCenterZ).toFixed(3);mount.dataset.carryJayDeckLocalZ=carryDeckLocalZ.toFixed(3);mount.dataset.carryJayOnDeck=String(carryPoseActive&&carryDeckLocalZ>=CARRY_VEHICLE.deckCenterZ-CARRY_VEHICLE.deckLength/2&&carryDeckLocalZ<=CARRY_VEHICLE.deckCenterZ+CARRY_VEHICLE.deckLength/2);
     jayRig.root.rotation.y=Math.PI+(airborneImpact?Math.sin(vehicleElapsed*5)*.42:0);
     jayRig.root.rotation.z=airborneImpact?Math.sin(vehicleElapsed*8)*1.15:laneLean+(carryBoarding||carryDismounting?Math.sin(carryT*Math.PI)*.055:0);
-    jayRig.root.rotation.x=airborneImpact?vehicleElapsed*7.8:carryBoarding?-.12*Math.sin(carryT*Math.PI):carryDismounting?.1*Math.sin(carryT*Math.PI):0;
+    jayRig.root.rotation.x=airborneImpact?vehicleElapsed*7.8:carryBoarding?-.12*Math.sin(carryT*Math.PI):carryDismounting?-.22:0;
     const slideScale=animationState.startsWith("slide-")?.94:1;
     jayRig.root.scale.set(rigBaseScaleX*(1+landingPulse*.035),rigBaseScaleY*slideScale*(1-landingPulse*.075),rigBaseScaleZ*(1+landingPulse*.035));
    }
