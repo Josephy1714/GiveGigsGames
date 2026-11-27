@@ -21,8 +21,8 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const smoothstep = value => value * value * (3 - 2 * value);
 const VALID_LANES = new Set([0, 1, 2]);
 
-export function createCarryState({ lane = 1 } = {}) {
-  return { phase: "approaching", lane: VALID_LANES.has(lane) ? lane : 1, vehicleZ: CARRY_VEHICLE.approachStartZ, elapsed: 0, rideElapsed: 0, nextLaneCheck: 0, speedScale: 1 };
+export function createCarryState() {
+  return { phase: "approaching", lane: 1, vehicleLane: 1, vehicleZ: CARRY_VEHICLE.approachStartZ, elapsed: 0, rideElapsed: 0, speedScale: 1 };
 }
 
 export function isCarryEventActive(state) {
