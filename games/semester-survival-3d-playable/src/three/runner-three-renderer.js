@@ -520,7 +520,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    }else{
     jayRig.root.position.x=playerX+(airborneImpact?Math.sin(vehicleElapsed*7)*.48:0);
     jayRig.root.position.y=rigBaseY+(airborneImpact?(Number(g.vehicleImpactStartHeight)||0)+vehicleThrowHeight:(carryActive?carrySurfaceY:g.rampState?rampSurfaceY:jumpY-landingPulse*.045));
-    jayRig.root.position.z=carryPoseActive?carryPlayerZ:vehicleThrowZ;
+    jayRig.root.position.z=carryPoseActive?carryPlayerZ:vehicleThrowZ;mount.dataset.carryJayWorldZ=jayRig.root.position.z.toFixed(3);mount.dataset.carryDeckWorldZ=(carryVehicle.position.z+CARRY_VEHICLE.deckCenterZ).toFixed(3);mount.dataset.carryJayDeckDelta=(jayRig.root.position.z-(carryVehicle.position.z+CARRY_VEHICLE.deckCenterZ)).toFixed(3);
     jayRig.root.rotation.y=Math.PI+(airborneImpact?Math.sin(vehicleElapsed*5)*.42:0);
     jayRig.root.rotation.z=airborneImpact?Math.sin(vehicleElapsed*8)*1.15:laneLean+(carryBoarding||carryDismounting?Math.sin(carryT*Math.PI)*.055:0);
     jayRig.root.rotation.x=airborneImpact?vehicleElapsed*7.8:carryBoarding?-.12*Math.sin(carryT*Math.PI):carryDismounting?.1*Math.sin(carryT*Math.PI):0;
