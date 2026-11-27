@@ -420,6 +420,12 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const difficulty=g.difficulty||{};const trafficLayout=getTrafficSpawnLayout(difficulty);const trafficApproach=clamp(Number(difficulty.trafficSpeedMultiplier)||1,1,2.05);const carryPhase=g.carryState?.phase;const independentTrafficDelta=dt*46*.55*(Number(g.baseSpeed)||367)/367;const trafficDelta=carryPhase==="stopped"||carryPhase==="dismounting"?independentTrafficDelta:carryPhase==="slowing_down"?Math.max(travelDelta,independentTrafficDelta*.45):travelDelta;trafficTravel+=trafficDelta*2*trafficApproach;mount.dataset.difficultyBand=difficulty.band||"Beginner";mount.dataset.difficultyProgress=String(Number(difficulty.progress)||0);mount.dataset.trafficApproachMultiplier=trafficApproach.toFixed(3);mount.dataset.trafficActiveCount=String(trafficLayout.activeVehicleCount);mount.dataset.trafficSpacing=trafficLayout.spacing.toFixed(3);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
+   if(v.userData.smash){
+    const hit=v.userData.smash;hit.life-=dt;v.visible=hit.life>0;
+    if(v.visible){v.position.x+=hit.vx*dt;v.position.z+=hit.vz*dt;v.rotation.y+=hit.spinY*dt;v.rotation.z+=hit.spinZ*dt;v.rotation.x+=hit.spinX*dt;for(const wheel of v.userData.wheels||[])wheel.rotation.x+=dt*18;}
+    else{v.userData.smash=null;v.rotation.set(0,0,0);}
+    return;
+   }
    if(g.campaignCelebration||g.bossActive||i>=trafficLayout.activeVehicleCount){v.visible=false;return;}
    v.visible=true;
    // Extra vehicles enter from far ahead as density grows; spacing stays validated and recycling remains behind Jay.
@@ -453,6 +459,20 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   }
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;if(!carryPhaseNow)carryAnchorTravel=null;else if(carryPhaseNow!=="approaching"&&carryAnchorTravel===null)carryAnchorTravel=worldTravel;const carryWorldOffset=carryAnchorTravel===null?0:(((worldTravel-carryAnchorTravel+150)%300)+300)%300-150;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,(Number(g.carryState.vehicleZ)||0)+carryWorldOffset);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
+   let carrySmashes=0;
+   if(carryVisible&&["boarding","riding","slowing_down"].includes(carryPhaseNow)){
+    const ramZ=carryVehicle.position.z-4.42,ramX=carryVehicle.position.x;
+    for(const v of traffic){
+     if(!v.visible||v.userData.smash)continue;
+     const halfWidth=v.userData.collisionHalfWidth||1.1;
+     if(Math.abs(v.position.z-ramZ)<2.8&&Math.abs(v.position.x-ramX)<4.35+halfWidth){
+      const side=v.position.x-ramX,direction=Math.abs(side)<.45?(v.userData.trafficIndex%2===0?-1:1):Math.sign(side);
+      v.userData.smash={life:2.6,vx:direction*(7.2+(v.userData.trafficIndex%3)*1.5),vz:1.8+(v.userData.trafficIndex%2)*1.1,spinY:direction*4.8,spinZ:direction*2.6,spinX:direction*1.7};
+      v.position.z=ramZ+1.1;carrySmashes++;
+     }
+    }
+   }
+   mount.dataset.carryVehicleSmashes=String((Number(mount.dataset.carryVehicleSmashes)||0)+carrySmashes);
   if(!g.campaignCelebration)collideWithTraffic(g);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
   const laneLean=clamp(-lateralSpeed*.035,-.14,.14);
