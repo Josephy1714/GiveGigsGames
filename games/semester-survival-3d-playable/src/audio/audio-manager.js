@@ -78,6 +78,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   if(ambienceSource){try{ambienceSource.stop();ambienceSource.disconnect()}catch{}ambienceSource=null}
   if(ambienceGain){try{ambienceGain.disconnect()}catch{}ambienceGain=null}
  }
+ function setMusicIntensity(value){if(musicEngine)musicEngine.setIntensity(value)}
  function startMusic(){
   const ctx=ensureContext();if(!ctx)return;
   const bus=ensureBus("music");if(!bus)return;
@@ -145,5 +146,5 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   if(musicEngine){musicEngine.destroy();musicEngine=null;}
   if(context)context.close().catch(()=>{});context=null;
  }
- return {startRun,pauseRun,resumeRun,endRun,suspendForTab,resumeAfterTab,play,setVolume,setMuted,setLegacySfxEnabled,getSettings,destroy};
+ return {startRun,pauseRun,resumeRun,endRun,suspendForTab,resumeAfterTab,play,setVolume,setMuted,setLegacySfxEnabled,setMusicIntensity,getSettings,destroy};
 }
