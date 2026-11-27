@@ -479,7 +479,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
     jayRig.root.position.x=dance?Math.sin(celebrationTime*2.05)*.16:0;
     jayRig.root.position.y=rigBaseY+jumpArc+(dance?Math.abs(Math.sin(celebrationTime*4.1))*.075:0);
     jayRig.root.position.z=2;
-    const spin=celebrationTime>1.6&&celebrationTime<3.5?Math.sin(clamp((celebrationTime-1.6)/1.9,0,1)*Math.PI)*Math.PI*2:0;
+    const spin=celebrationTime>1.6?clamp((celebrationTime-1.6)/1.9,0,1)*Math.PI*2:0;
     jayRig.root.rotation.y=Math.PI+spin+(dance?Math.sin(celebrationTime*2.05)*.12:0);
     jayRig.root.rotation.z=dance?Math.sin(celebrationTime*4.1)*.09:0;
     jayRig.root.rotation.x=0;
