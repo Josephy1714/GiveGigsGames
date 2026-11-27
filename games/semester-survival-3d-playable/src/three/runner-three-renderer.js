@@ -344,6 +344,16 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const bonuses=Array.from({length:16},()=>{const o=new THREE.Mesh(new THREE.OctahedronGeometry(.48,1),m.bonus);scene.add(o);o.visible=false;return o;});
  // Small pooled celebration effects; no particle dependency or per-frame allocations.
  const celebrationColors=[0xf6d46c,0x8ce6c5,0xf7f0d8,0x65e8ff,0xff7892];
+ const celebrationPalettes=[
+  [0xf6d46c,0x8ce6c5,0xf7f0d8,0x65e8ff,0xff7892],
+  [0xff5364,0x35d5e8,0xf6d46c,0xfff0d8,0x9d73ff],
+  [0x77bfff,0xeaf4ff,0xf6d46c,0x8ce6c5,0x5474c8],
+  [0xf2a93b,0x3c4b42,0xffd46b,0xf7f0d8,0x8ce6c5],
+  [0xff4dba,0x65e8ff,0x9d73ff,0xf6d46c,0xf7f0d8],
+  [0x7fffd4,0xe3f7ff,0x65a9d9,0xf6d46c,0xf7f0d8],
+  [0xa7d9f5,0xf7f0d8,0xf6d46c,0x7a9db8,0x8ce6c5],
+  [0x9d73ff,0xf6d46c,0xf7f0d8,0xffd6e8,0x65e8ff]
+ ];
  const confettiGeometry=new THREE.BoxGeometry(.09,.16,.035);
  const confettiMaterials=celebrationColors.map(color=>new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide}));
  const confetti=Array.from({length:42},(_,i)=>{const item=new THREE.Mesh(confettiGeometry,confettiMaterials[i%confettiMaterials.length]);item.userData.seed=i;item.visible=false;scene.add(item);return item;});
@@ -513,6 +523,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   n=0;for(const p of g.pick||[]){if(bossArena||n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
   n=0;for(const p of g.bonus||[]){if(bossArena||n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   const celebration=!!g.campaignCelebration,celebrationTime=Math.max(0,Number(g.campaignCelebrationElapsed)||0);
+  const celebrationSemester=clamp((Number(g.campaignConfig?.number)||1)-1,0,7);
+  if(celebration&&mount.dataset.celebrationSemester!==String(celebrationSemester+1)){const palette=celebrationPalettes[celebrationSemester];confettiMaterials.forEach((material,index)=>material.color.setHex(palette[index%palette.length]));fireworks.forEach((burst,index)=>burst.material.color.setHex(palette[(index+1)%palette.length]));mount.dataset.celebrationSemester=String(celebrationSemester+1);}
   confetti.forEach((piece,index)=>{piece.visible=celebration&&celebrationTime>2.5;if(!piece.visible)return;const seed=piece.userData.seed;const fall=(celebrationTime*1.8+seed*.73)%9;piece.position.set(Math.sin(seed*12.7+celebrationTime*.65)*7.2,9.5-fall,-5-(seed%6)*3.1);piece.rotation.set(celebrationTime*2.4+seed,celebrationTime*1.7+seed*.4,celebrationTime*2.1+seed*.7);});
   fireworks.forEach((burst,index)=>{const age=celebrationTime-burst.start;const active=celebration&&age>=0&&age<1.45;burst.material.opacity=active?Math.max(0,1-age/1.45):0;burst.particles.forEach((dot,i)=>{dot.visible=active;if(!active)return;const angle=dot.userData.angle;const radius=.35+age*3.4;dot.position.set(burst.center.x+Math.cos(angle)*radius,burst.center.y+Math.sin(angle)*radius,burst.center.z+Math.sin(angle*2)*.35);dot.scale.setScalar(Math.max(.05,1-age*.58));});});
   renderer.render(scene,camera);
@@ -549,7 +561,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   lastGameT=0;worldTravel=0;trafficTravel=0;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
   traffic.forEach((vehicle,index)=>{vehicle.position.set(laneX[vehicle.userData.baseLane],0,-36-index*43);vehicle.userData.previousCollisionZ=vehicle.position.z;for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});rampVehicles.forEach(vehicle=>{vehicle.visible=false;vehicle.userData.obstacle=null;for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});carryVehicle.visible=false;for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=0;
   jayRig.reset();jayRig.root.position.set(0,rigBaseY,2);jayRig.root.rotation.set(0,Math.PI,0);jayRig.root.scale.set(rigBaseScaleX,rigBaseScaleY,rigBaseScaleZ);jayRig.play("run",{fadeSeconds:0});
-  confetti.forEach(piece=>piece.visible=false);fireworks.forEach(burst=>{burst.material.opacity=0;burst.particles.forEach(dot=>dot.visible=false);});
+  confetti.forEach(piece=>piece.visible=false);fireworks.forEach(burst=>{burst.material.opacity=0;burst.particles.forEach(dot=>dot.visible=false);});mount.dataset.celebrationSemester="";
   camera.position.set(0,4.9,11.8);camera.fov=57;camera.updateProjectionMatrix();camera.lookAt(0,1.8,-9.5);impactRing.visible=false;impactRing.material.opacity=0;mount.dataset.trafficCollision="false";
  },probeTrafficCollision(g,{lane=1,jump=1,vehicleIndex=0}={}){
   if(!g)return null;
