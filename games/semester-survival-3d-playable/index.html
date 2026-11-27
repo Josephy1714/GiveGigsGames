@@ -475,7 +475,7 @@ if(new URLSearchParams(location.search).has("smoke"))window.__runnerSmoke={
   render(g);
   const recycled=snapshot();
   g=savedGame;render(g);
-  return {approach,boardingStart,boardingEnd,riding,rideDistance,dismounting,completed,recycled,boardingRampContact:boardingStart.onRamp||boardingEnd.onRamp,rideDeckContact:boardingEnd.onDeck&&riding.onDeck,dismountClearedDeck:!completed.onDeck&&completed.height<.02,controlsRestored,baseSpeed};
+  return {approach,boardingStart,boardingEnd,riding,rideDistance,dismounting,completed,recycled,boardingDeckContact:boardingStart.onDeck||boardingEnd.onDeck,rideDeckContact:boardingEnd.onDeck&&riding.onDeck,dismountClearedDeck:!completed.onDeck&&completed.height<.02,controlsRestored,baseSpeed};
  },
  probeCarryRestart:()=>{
   if(!g||!threeRenderer)return null;
