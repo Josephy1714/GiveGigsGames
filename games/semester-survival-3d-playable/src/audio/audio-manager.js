@@ -25,7 +25,8 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
  function masterLevel(){return settings.muted.master?0:settings.volumes.master}
  function effective(channel){
   if(!masterLevel())return 0;
-  if(channel==="sfx"&&!legacySfxEnabled())return 0;\n  if(channel==="music"&&(!runActive||runPaused||tabSuspended))return 0;
+  if(channel==="sfx"&&!legacySfxEnabled())return 0;
+  if(channel==="music"&&(!runActive||runPaused||tabSuspended))return 0;
   if(settings.muted[channel])return 0;
   return clamp(masterLevel()*settings.volumes[channel]);
  }
@@ -77,7 +78,14 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   if(ambienceSource){try{ambienceSource.stop();ambienceSource.disconnect()}catch{}ambienceSource=null}
   if(ambienceGain){try{ambienceGain.disconnect()}catch{}ambienceGain=null}
  }
- function startMusic(){\n  const ctx=ensureContext();if(!ctx)return;\n  const bus=ensureBus("music");if(!bus)return;\n  if(!musicEngine)musicEngine=createProceduralScore(ctx,bus);\n  musicEngine.start();\n }\n function stopMusic(){if(musicEngine)musicEngine.stop()}\n function startRun(){runActive=true;runPaused=false;tabSuspended=false;unlock();startAmbience();startMusic();applyVolumes()}
+ function startMusic(){
+  const ctx=ensureContext();if(!ctx)return;
+  const bus=ensureBus("music");if(!bus)return;
+  if(!musicEngine)musicEngine=createProceduralScore(ctx,bus);
+  musicEngine.start();
+ }
+ function stopMusic(){if(musicEngine)musicEngine.stop()}
+ function startRun(){runActive=true;runPaused=false;tabSuspended=false;unlock();startAmbience();startMusic();applyVolumes()}
  function pauseRun(){if(!runActive)return;runPaused=true;applyVolumes()}
  function resumeRun(){if(!runActive)return;runPaused=false;unlock();applyVolumes()}
  function endRun(){runActive=false;runPaused=false;stopMusic();stopAmbience();applyVolumes()}
@@ -134,7 +142,8 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   endRun();activeEffects.forEach(effect=>{try{effect.stop()}catch{}});activeEffects.clear();
   Object.values(effectBuses).forEach(bus=>{try{bus.disconnect()}catch{}});
   Object.keys(effectBuses).forEach(key=>delete effectBuses[key]);
-  if(musicEngine){musicEngine.destroy();musicEngine=null;}\n  if(context)context.close().catch(()=>{});context=null;
+  if(musicEngine){musicEngine.destroy();musicEngine=null;}
+  if(context)context.close().catch(()=>{});context=null;
  }
  return {startRun,pauseRun,resumeRun,endRun,suspendForTab,resumeAfterTab,play,setVolume,setMuted,setLegacySfxEnabled,getSettings,destroy};
 }
