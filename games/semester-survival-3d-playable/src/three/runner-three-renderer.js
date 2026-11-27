@@ -457,7 +457,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    rampSurfaceY=(Number(g.rampState.startHeight)||0)*(1-progress)+Math.sin(progress*Math.PI)*.62;
   }
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
-  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryPhaseNow==="dismounting"?laneX[g.carryState.vehicleLane??g.carryState.lane??g.lane??1]:carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
+  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=laneX[1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
    let carrySmashes=0;
    if(carryVisible&&["boarding","riding","clearing","dismounting"].includes(carryPhaseNow)){
     const ramZ=carryVehicle.position.z-4.18,ramX=carryVehicle.position.x,vehicleHalfWidth=1.46;
