@@ -15,7 +15,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
    const raw=JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY)||"null");
    return {
     volumes:Object.fromEntries(CHANNELS.map(channel=>[channel,clamp(raw?.volumes?.[channel]??DEFAULTS.volumes[channel])])),
-    muted:{master:!!raw?.muted?.master,sfx:!!raw?.muted?.sfx}
+    muted:{master:!!raw?.muted?.master,music:!!raw?.muted?.music,sfx:!!raw?.muted?.sfx}
    };
   }catch{
    return {volumes:{...DEFAULTS.volumes},muted:{...DEFAULTS.muted}};
