@@ -151,7 +151,7 @@ function createRampVehicle(scene,m){
  box(group,2.48,.12,5.3,m.dark,0,.98,-.15);
  // The rear-facing loading ramp joins the road to the elevated flatbed at the exact shared surface coordinates.
  const angle=Math.atan(RAMP_VEHICLE.deckHeight/(RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ));
- const ramp=new THREE.Mesh(new THREE.PlaneGeometry(2.62,RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ),rampMaterial);
+ const ramp=new THREE.Mesh(new THREE.BoxGeometry(2.62,.12,RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ),rampMaterial);
  ramp.rotation.x=-Math.PI/2+angle;ramp.position.set(0,RAMP_VEHICLE.deckHeight/2,(RAMP_VEHICLE.roadEdgeLocalZ+RAMP_VEHICLE.deckEdgeLocalZ)/2);ramp.receiveShadow=true;group.add(ramp);
  for(const side of [-1,1]){
   const rail=box(group,.09,.18,RAMP_VEHICLE.roadEdgeLocalZ-RAMP_VEHICLE.deckEdgeLocalZ,m.gold,side*1.34,RAMP_VEHICLE.deckHeight/2,(RAMP_VEHICLE.roadEdgeLocalZ+RAMP_VEHICLE.deckEdgeLocalZ)/2);rail.rotation.x=angle;
@@ -193,7 +193,7 @@ function createCarryVehicle(scene,m){
  }
  const rampLength=CARRY_VEHICLE.rampLowerZ-CARRY_VEHICLE.rampUpperZ;
  const rampAngle=Math.atan(CARRY_VEHICLE.deckHeight/rampLength);
- const rearRamp=new THREE.Mesh(new THREE.PlaneGeometry(2.56,rampLength),rampMaterial);
+ const rearRamp=new THREE.Mesh(new THREE.BoxGeometry(2.56,.12,rampLength),rampMaterial);
  rearRamp.rotation.x=-Math.PI/2+rampAngle;rearRamp.position.set(0,CARRY_VEHICLE.deckHeight/2,(CARRY_VEHICLE.rampLowerZ+CARRY_VEHICLE.rampUpperZ)/2);rearRamp.receiveShadow=true;group.add(rearRamp);
  for(const side of [-1,1]){
   box(group,.11,.22,CARRY_VEHICLE.deckLength,m.dark,side*1.38,1.24,CARRY_VEHICLE.deckCenterZ);
