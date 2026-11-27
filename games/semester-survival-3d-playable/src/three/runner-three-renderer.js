@@ -241,7 +241,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   [0x5c5146,0xd7c39a,0x9bb8c0],[0x493d70,0xf6d46c,0xf7f0d8]
  ];
  const campaignBoss=new THREE.Group();campaignBoss.visible=false;scene.add(campaignBoss);
- const bossParts={arms:[],rings:[],lights:[]};let bossSemester=-1,bossDefeatAt=-1;
+ const bossParts={arms:[],rings:[],lights:[]};let bossSemester=-1;
  function buildCampaignBoss(semester){
   const oldGeometries=new Set(),oldMaterials=new Set();campaignBoss.traverse(node=>{if(node.isMesh){if(node.geometry)oldGeometries.add(node.geometry);for(const material of (Array.isArray(node.material)?node.material:[node.material]))if(material)oldMaterials.add(material);}});oldGeometries.forEach(item=>item.dispose());oldMaterials.forEach(item=>item.dispose());while(campaignBoss.children.length)campaignBoss.remove(campaignBoss.children[0]);
   bossParts.arms=[];bossParts.rings=[];bossParts.lights=[];
@@ -477,10 +477,10 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const activeBossSemester=Number(g.campaignConfig?.number)||Number(g.semester)||1;
   if(g.bossActive){
    if(bossSemester!==activeBossSemester)buildCampaignBoss(activeBossSemester);
-   campaignBoss.visible=true;bossDefeatAt=-1;
+   campaignBoss.visible=true;
    const elapsed=Math.max(0,Number(g.t)-(Number(g.bossStartedAt)||Number(g.t)));
    const approach=clamp(elapsed/2.4,0,1);
-   campaignBoss.position.set(0,.12+Math.sin(g.t*2.2)*.12,-66+approach*42);
+   campaignBoss.position.set(0,.12+Math.sin(g.t*2.2)*.12,-48+approach*38);
    campaignBoss.rotation.y=Math.sin(g.t*.7)*.12;
    campaignBoss.scale.setScalar(.9+approach*.1);
    const phasePower=1+Math.max(0,(Number(g.bossPhase)||1)-1)*.28;bossParts.arms.forEach((arm,i)=>{arm.rotation.x=Math.sin(g.t*(2.5*phasePower)+i)*(.16*phasePower);arm.rotation.z=Math.sin(g.t*(1.7*phasePower)+i*2)*(.12*phasePower);});mount.dataset.campaignBossPhase=String(g.bossPhase||1);
