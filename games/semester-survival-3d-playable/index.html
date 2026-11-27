@@ -300,6 +300,8 @@ const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout
  const startImmediately=start;
  start=function(){briefingModal.classList.remove("show");startImmediately();if(g){g.campaignConfig=getSemesterConfig(save.semester);g.d=0;g.bossAt=g.campaignConfig.bossDistance;g.bossActive=false;g.bossCleared=false;g.bossWarningShown=false;g.bossWarningTime=0;g.campaignComplete=false;g.campaignCelebration=false;g.campaignCelebrationElapsed=0;g.spawn=2.1;$("#boss-warning").style.display="none";$("#run-sem").textContent=String(g.campaignConfig.number).padStart(2,"0");$("#district").textContent=g.campaignConfig.district;$("#distance").textContent="0 m";}};
  function openBriefing(){
+  // The briefing lives inside the full-screen game overlay, so reveal its parent first.
+  overlay.classList.add("open");
   const config=getSemesterConfig(save.semester);
   $("#briefing-kicker").textContent="SEMESTER "+String(config.number).padStart(2,"0")+" · MISSION BRIEFING";
   $("#briefing-title").textContent=config.name;
@@ -309,7 +311,7 @@ const finishWithRevive=finish;finish=function(quit,why){if(!quit&&why==="Burnout
   briefingModal.classList.add("show");
  }
  $("#briefing-start").onclick=()=>start();
- $("#briefing-cancel").onclick=()=>briefingModal.classList.remove("show");
+ $("#briefing-cancel").onclick=()=>{briefingModal.classList.remove("show");overlay.classList.remove("open");};
  // Campaign integration: exact per-semester distance, warning and boss-wave gate.
  const tickWithExistingSystems=tick;
  tick=function(dt){
