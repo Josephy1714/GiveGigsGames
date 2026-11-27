@@ -587,6 +587,7 @@ function syncAudioControls(){
   if(output)output.textContent=Math.round(state.volumes[channel]*100)+"%";
  });
  $("#audio-master-mute").checked=!!state.muted.master;
+ $("#audio-music-mute").checked=!!state.muted.music;
  $("#audio-sfx-mute").checked=!!state.muted.sfx;
 }
 audioControlIds.forEach(channel=>{
