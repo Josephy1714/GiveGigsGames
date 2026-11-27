@@ -145,7 +145,7 @@ function car(scene,x,z,color,m,kind="car"){
 }
 function createRampVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
- const paint=mat(0x355c70,.3,.94),deck=mat(0x737f82,.28,.98),rampMaterial=mat(0x9ba7a5,.3,.96);
+ const paint=mat(0x355c70,.32,1),deck=mat(0x737f82,.3,1),rampMaterial=mat(0x9ba7a5,.32,1);
  box(group,2.72,.82,7.8,paint,0,.72,-.05);
  box(group,2.82,.16,5.55,deck,0,1.07,-.15);
  box(group,2.48,.12,5.3,m.dark,0,.98,-.15);
@@ -179,7 +179,7 @@ function createRampVehicle(scene,m){
 }
 function createCarryVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
- const paint=mat(0x2f5e6c,.3,.94),deck=mat(0x68787b,.28,.98),rampMaterial=mat(0x9aa6a4,.3,.96);
+ const paint=mat(0x2f5e6c,.32,1),deck=mat(0x68787b,.3,1),rampMaterial=mat(0x9aa6a4,.32,1);
  box(group,2.82,.72,8.4,paint,0,.64,-.1);
  box(group,2.84,.16,CARRY_VEHICLE.deckLength,deck,0,.97,CARRY_VEHICLE.deckCenterZ);
  box(group,2.52,.08,CARRY_VEHICLE.deckLength-.18,m.dark,0,.86,CARRY_VEHICLE.deckCenterZ);
