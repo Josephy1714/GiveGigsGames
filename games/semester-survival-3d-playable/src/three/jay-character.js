@@ -165,6 +165,24 @@ export async function loadJayCharacter({
   const fit = fitCharacterToHeight(root, targetHeight);
   scene.add(root);
 
+  // Cache the real GLB skeleton so celebration choreography layers onto Jay's authored rig.
+  const victoryBones = [];
+  root.traverse(node => {
+    if (!node.isBone) return;
+    const name = normaliseClipName(node.name);
+    let role = null;
+    if (name.includes("leftforearm")) role = "leftForearm";
+    else if (name.includes("rightforearm")) role = "rightForearm";
+    else if (name.includes("leftarm") || name.includes("leftupperarm")) role = "leftArm";
+    else if (name.includes("rightarm") || name.includes("rightupperarm")) role = "rightArm";
+    else if (name.includes("lefthand")) role = "leftHand";
+    else if (name.includes("righthand")) role = "rightHand";
+    else if (name.includes("leftupleg") || name.includes("leftthigh")) role = "leftLeg";
+    else if (name.includes("rightupleg") || name.includes("rightthigh")) role = "rightLeg";
+    else if (name.includes("spine") || name.includes("chest")) role = "torso";
+    if (role) victoryBones.push({ bone: node, role, base: node.quaternion.clone() });
+  });
+
   const mixer = new THREE.AnimationMixer(root);
   const actions = {};
   for (const [state, clip] of Object.entries(resolved)) {
@@ -262,13 +280,40 @@ export async function loadJayCharacter({
     mixer.update(0);
   }
 
-  function update(deltaSeconds) {
+  function update(deltaSeconds, options = {}) {
     if (disposed) return;
-    // Keep gameplay-owned placement (lane, jump height and hit response)
-    // independent from any residual FBX/GLTF root translation channel.
+    // Restore the skeleton before each mixer step, then layer the victory pose
+    // over the current authored clip. This prevents procedural offsets drifting.
+    for (const item of victoryBones) item.bone.quaternion.copy(item.base);
     const gameplayPosition = root.position.clone();
     mixer.update(Math.min(Math.max(deltaSeconds || 0, 0), 0.05));
     root.position.copy(gameplayPosition);
+    const victoryTime = Number(options.victoryTime);
+    if (Number.isFinite(victoryTime) && victoryTime >= 0) {
+      const t = victoryTime;
+      const smooth = value => { const x = Math.max(0, Math.min(1, value)); return x * x * (3 - 2 * x); };
+      const lift = smooth(t / 1.65);
+      const dancing = t >= 1.65 && t < 9.2;
+      const beat = dancing ? Math.sin((t - 1.65) * 4.1) : 0;
+      const champion = smooth((t - 8.7) / 1.15);
+      for (const item of victoryBones) {
+        let x = 0, y = 0, z = 0;
+        switch (item.role) {
+          case "leftArm": z = 1.48 * lift + (dancing ? .28 * beat : 0); x = dancing ? .22 * Math.cos(t * 4.1) : 0; break;
+          case "rightArm": z = -1.48 * lift - (dancing ? .28 * beat : 0); x = dancing ? -.22 * Math.cos(t * 4.1) : 0; break;
+          case "leftForeArm": z = .48 * lift + (dancing ? .48 + .22 * beat : 0); break;
+          case "rightForeArm": z = -.48 * lift - (dancing ? .48 + .22 * beat : 0); break;
+          case "leftHand": z = dancing ? .2 * beat : 0; break;
+          case "rightHand": z = dancing ? -.2 * beat : 0; break;
+          case "leftLeg": x = dancing ? .34 * Math.sin(t * 4.1) : 0; break;
+          case "rightLeg": x = dancing ? -.34 * Math.sin(t * 4.1) : 0; break;
+          case "torso": y = dancing ? .12 * beat : 0; z = dancing ? .08 * Math.sin(t * 2.05) : 0; break;
+        }
+        const championLift = champion * (item.role === "leftArm" ? .22 : item.role === "rightArm" ? -.22 : 0);
+        const offset = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z + championLift));
+        item.bone.quaternion.multiply(offset);
+      }
+    }
   }
 
   function dispose() {
