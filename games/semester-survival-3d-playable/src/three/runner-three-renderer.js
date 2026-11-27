@@ -526,7 +526,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const cameraShakeX=Math.sin(g.t*48)*impact*.035;
   const cameraShakeY=Math.sin(g.t*36)*impact*.025;
   camera.position.x=cameraBaseX+cameraShakeX;
-  camera.position.y=4.9+cameraShakeY;
+  camera.position.y=4.9+cameraShakeY;camera.position.z=carryPhaseNow==="approaching"?16:11.8;
   mount.dataset.cameraTrackX=cameraTrackX.toFixed(5);
   mount.dataset.cameraBaseX=cameraBaseX.toFixed(5);
   mount.dataset.cameraShakeX=cameraShakeX.toFixed(5);
