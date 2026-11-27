@@ -119,6 +119,7 @@ export function createAudioManager({legacySfxEnabled=()=>true}={}){
   powerup:()=>{tone(420,0,.24,"sine",.075,620);tone(630,.09,.25,"triangle",.055,560)},
   passby:()=>{noiseBurst(0,.3,.02,"bandpass",850);tone(280,0,.28,"sine",.012,-180)},
   gameover:()=>{tone(310,0,.25,"triangle",.08,-120);tone(190,.18,.42,"sine",.055,-75)},
+  bossWarning:()=>{tone(880,0,.16,"square",.075,-360);tone(620,.2,.2,"square",.085,-250);noiseBurst(.02,.22,.055,"bandpass",1450)},
   ui:()=>{tone(720,0,.045,"sine",.035,-90)}
  };
  const cooldowns=new Map();
