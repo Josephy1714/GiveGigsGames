@@ -58,10 +58,32 @@ export function getDifficultyProfile(distance, config = DEFAULT_DIFFICULTY_CONFI
   });
 }
 
+export function getCampaignDifficultyProfile(semester, distance, finishDistance) {
+  const sem = clamp(Math.trunc(Number(semester) || 1), 1, 8);
+  const finish = Math.max(1, Number(finishDistance) || 1000);
+  const progress = smoothstep(clamp((Number(distance) || 0) / finish, 0, 1));
+  const semesterRamp = (sem - 1) / 7;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  return Object.freeze({
+    distance: Math.max(0, Number(distance) || 0),
+    band: progress < .25 ? "Intermediate" : progress < .5 ? "Advanced" : progress < .78 ? "Expert" : "Master",
+    progress,
+    playerSpeedMultiplier: lerp(lerp(1.18, 1.48, semesterRamp), lerp(1.68, 2.08, semesterRamp), progress),
+    trafficSpeedMultiplier: lerp(lerp(1.12, 1.34, semesterRamp), lerp(1.58, 1.92, semesterRamp), progress),
+    trafficFrequencyMultiplier: lerp(lerp(1.12, 1.28, semesterRamp), lerp(1.38, 1.5, semesterRamp), progress),
+    trafficDensityMultiplier: lerp(lerp(1.04, 1.16, semesterRamp), lerp(1.28, 1.42, semesterRamp), progress),
+    spawnIntervalSeconds: lerp(lerp(2.05, 1.55, semesterRamp), lerp(1.02, .62, semesterRamp), progress),
+    obstacleChance: lerp(lerp(.3, .42, semesterRamp), lerp(.7, .86, semesterRamp), progress),
+    vehicleChance: lerp(.2, .25, semesterRamp) + progress * lerp(.08, .16, semesterRamp),
+    multiLanePatternChance: lerp(.06, .18, semesterRamp) + progress * lerp(.22, .34, semesterRamp),
+    rampVehicleChance: lerp(.025, .05, semesterRamp) + progress * lerp(.055, .09, semesterRamp)
+  });
+}
+
 export function getTrafficSpawnLayout(profile = {}) {
   const progress = clamp(Number(profile.progress) || 0, 0, 1);
-  const frequency = clamp(Number(profile.trafficFrequencyMultiplier) || 1, 1, 1.12);
-  const density = clamp(Number(profile.trafficDensityMultiplier) || 1, 1, 1.12);
+  const frequency = clamp(Number(profile.trafficFrequencyMultiplier) || 1, 1, 1.55);
+  const density = clamp(Number(profile.trafficDensityMultiplier) || 1, 1, 1.45);
   const activeVehicleCount = 6 + Number(progress >= 0.4) + Number(progress >= 0.7);
   return Object.freeze({ activeVehicleCount, spacing: 43 / (frequency * density) });
 }
