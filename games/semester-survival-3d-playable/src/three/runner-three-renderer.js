@@ -180,22 +180,31 @@ function createRampVehicle(scene,m){
 function createCarryVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
  const paint=mat(0x2f5e6c,.38,.24),deck=mat(0x68787b,.62,.22),rampMaterial=mat(0x9aa6a4,.62,.2);
- box(group,2.82,.72,8.4,paint,0,.64,-.1);
- box(group,2.84,.16,CARRY_VEHICLE.deckLength,deck,0,.97,CARRY_VEHICLE.deckCenterZ);
- box(group,2.52,.08,CARRY_VEHICLE.deckLength-.18,m.dark,0,.86,CARRY_VEHICLE.deckCenterZ);
+ // Wide reinforced hauler deck with a heavy front impact ram.
+ box(group,8.15,.9,8.65,paint,0,.72,-.1);
+ box(group,8.25,.18,CARRY_VEHICLE.deckLength,deck,0,1.08,CARRY_VEHICLE.deckCenterZ);
+ box(group,7.85,.09,CARRY_VEHICLE.deckLength-.18,m.dark,0,.96,CARRY_VEHICLE.deckCenterZ);
+ box(group,8.45,.72,.5,paint,0,1.22,-4.03);
+ box(group,8.6,.18,.62,m.gold,0,.82,-4.02);
+ box(group,7.95,.12,.2,m.dark,0,1.64,-3.82);
+ for(let i=0;i<11;i++)box(group,.16,.46,.18,m.gold,-3.8+i*.76,1.28,-4.34);
+ for(const side of [-1,1]){
+  box(group,.2,.62,6.9,m.gold,side*4.02,1.34,.05);
+  const beacon=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),new THREE.MeshStandardMaterial({color:0xffc64b,emissive:0x9b4b00,emissiveIntensity:1.2}));beacon.position.set(side*3.75,2.02,-3.15);group.add(beacon);
+ }
  const rampLength=CARRY_VEHICLE.rampLowerZ-CARRY_VEHICLE.rampUpperZ;
  const rampAngle=Math.atan(CARRY_VEHICLE.deckHeight/rampLength);
- const rearRamp=new THREE.Mesh(new THREE.PlaneGeometry(2.56,rampLength),rampMaterial);
+ const rearRamp=new THREE.Mesh(new THREE.PlaneGeometry(7.75,rampLength),rampMaterial);
  rearRamp.rotation.x=-Math.PI/2+rampAngle;rearRamp.position.set(0,CARRY_VEHICLE.deckHeight/2,(CARRY_VEHICLE.rampLowerZ+CARRY_VEHICLE.rampUpperZ)/2);rearRamp.receiveShadow=true;group.add(rearRamp);
  for(const side of [-1,1]){
-  box(group,.11,.22,CARRY_VEHICLE.deckLength,m.dark,side*1.38,1.24,CARRY_VEHICLE.deckCenterZ);
-  const rail=box(group,.09,.16,rampLength,m.gold,side*1.31,CARRY_VEHICLE.deckHeight/2,(CARRY_VEHICLE.rampLowerZ+CARRY_VEHICLE.rampUpperZ)/2);rail.rotation.x=rampAngle;
-  box(group,.13,.2,1.7,m.gold,side*1.34,1.22,3.55);
+  box(group,.11,.22,CARRY_VEHICLE.deckLength,m.dark,side*4.02,1.32,CARRY_VEHICLE.deckCenterZ);
+  const rail=box(group,.09,.16,rampLength,m.gold,side*3.88,CARRY_VEHICLE.deckHeight/2,(CARRY_VEHICLE.rampLowerZ+CARRY_VEHICLE.rampUpperZ)/2);rail.rotation.x=rampAngle;
+  box(group,.13,.2,1.7,m.gold,side*3.95,1.28,3.55);
  }
  // Forward-facing cab and rear loading platform make this a distinct campus logistics flatbed.
- box(group,2.35,1.62,2.05,paint,0,1.12,-2.72);
- box(group,2.15,.9,.08,m.glass,0,1.42,-3.78);
- box(group,2.42,.16,2.12,m.dark,0,1.99,-2.72);
+ box(group,3.35,1.82,2.35,paint,0,1.28,-2.72);
+ box(group,3.08,1.02,.1,m.glass,0,1.58,-3.94);
+ box(group,3.48,.2,2.38,m.dark,0,2.2,-2.72);
  for(const side of [-1,1]){
   box(group,.1,.7,1.15,m.glass,side*1.19,1.42,-2.72);
   box(group,.23,.18,.08,m.lamp,side*.82,1.0,-3.78);
@@ -205,7 +214,7 @@ function createCarryVehicle(scene,m){
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.45,.28),signTexture("CAMPUS EXPRESS"));sign.rotation.y=Math.PI/2;sign.position.set(1.425,1.52,3.55);group.add(sign);
  const wheels=[];
  for(const side of [-1,1])for(const z of [-2.8,2.8]){
-  const wheel=new THREE.Group();wheel.position.set(side*1.42,.42,z);group.add(wheel);
+  const wheel=new THREE.Group();wheel.position.set(side*3.82,.46,z);group.add(wheel);
   const tire=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.22,16),m.tire);tire.rotation.z=Math.PI/2;tire.castShadow=true;wheel.add(tire);
   const hub=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.235,12),m.gold);hub.rotation.z=Math.PI/2;wheel.add(hub);wheels.push(wheel);
  }
