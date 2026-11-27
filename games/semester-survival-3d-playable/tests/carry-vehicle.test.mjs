@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CARRY_VEHICLE, advanceCarryEvent, createCarryState, getCarryPlayerHeight, getCarrySpeedScale, isCarryEventActive } from "../src/three/carry-vehicle.js";
 
-function reachRiding(lane = 1) {
-  let state = createCarryState({ lane });
+function reachRiding() {
+  let state = createCarryState();
   state = advanceCarryEvent(state, 4);
   assert.equal(state.phase, "boarding");
   state = advanceCarryEvent(state, CARRY_VEHICLE.boardingDurationSeconds);
@@ -11,10 +11,10 @@ function reachRiding(lane = 1) {
   return state;
 }
 
-test("carry vehicle approaches, boards Jay, and begins its timed ride", () => {
+test("hauler approaches in the middle lane and boards Jay", () => {
   let state = createCarryState({ lane: 2 });
   assert.equal(state.phase, "approaching");
-  assert.equal(state.lane, 2);
+  assert.equal(state.lane, 1);
   state = advanceCarryEvent(state, 3.3);
   assert.equal(state.phase, "boarding");
   assert.equal(state.vehicleZ, CARRY_VEHICLE.boardingTriggerZ);
@@ -22,65 +22,51 @@ test("carry vehicle approaches, boards Jay, and begins its timed ride", () => {
   state = advanceCarryEvent(state, CARRY_VEHICLE.boardingDurationSeconds);
   assert.equal(state.phase, "riding");
   assert.equal(state.rideElapsed, 0);
+  assert.equal(getCarrySpeedScale(state), CARRY_VEHICLE.rideSpeedScale);
 });
 
-test("riding lasts approximately twenty simulation seconds", () => {
-  let state = reachRiding();
-  state = advanceCarryEvent(state, 19.9);
-  assert.equal(state.phase, "riding");
-  state = advanceCarryEvent(state, 0.1);
-  assert.equal(state.phase, "slowing_down");
-  assert.equal(state.rideElapsed, 20);
-});
-
-test("carry vehicle decelerates smoothly, stops, and dismounts", () => {
+test("ride ends in a clearance hold instead of jumping immediately", () => {
   let state = reachRiding();
   state = advanceCarryEvent(state, CARRY_VEHICLE.rideDurationSeconds);
-  const startScale = getCarrySpeedScale(state);
-  state = advanceCarryEvent(state, 1);
-  const middleScale = getCarrySpeedScale(state);
-  assert.ok(middleScale < startScale && middleScale > 0);
-  state = advanceCarryEvent(state, 1);
-  assert.equal(state.phase, "stopped");
-  assert.equal(getCarrySpeedScale(state), 0);
+  assert.equal(state.phase, "clearing");
   assert.equal(getCarryPlayerHeight(state), CARRY_VEHICLE.deckHeight);
-  state = advanceCarryEvent(state, CARRY_VEHICLE.stoppedDurationSeconds);
+  assert.equal(getCarrySpeedScale(state), CARRY_VEHICLE.rideSpeedScale);
+  state = advanceCarryEvent(state, 1.2, { dismountLane: 0, clearanceReady: false });
+  assert.equal(state.phase, "clearing");
+  assert.equal(state.lane, 1, "hauler stays in the middle lane until Jay exits");
+  state = advanceCarryEvent(state, CARRY_VEHICLE.clearanceMinimumSeconds, { dismountLane: 0, clearanceReady: true });
   assert.equal(state.phase, "dismounting");
-  assert.ok(getCarryPlayerHeight(state) >= CARRY_VEHICLE.deckHeight);
+  assert.equal(state.lane, 0, "Jay exits only after the landing lane is clear");
+});
+
+test("hauler pulls forward at high speed while Jay dismounts", () => {
+  let state = reachRiding();
+  state = advanceCarryEvent(state, CARRY_VEHICLE.rideDurationSeconds);
+  const beforeClearance = state.vehicleZ;
+  state = advanceCarryEvent(state, CARRY_VEHICLE.clearanceMinimumSeconds, { dismountLane: 2, clearanceReady: true });
+  assert.equal(state.phase, "dismounting");
   state = advanceCarryEvent(state, CARRY_VEHICLE.dismountDurationSeconds);
   assert.equal(state.phase, "completed");
+  assert.ok(state.vehicleZ < beforeClearance, "negative Z moves the hauler forward");
   assert.equal(getCarryPlayerHeight(state), 0);
   assert.equal(getCarrySpeedScale(state), 1);
-});
-
-test("safe lane decisions update only at controlled intervals", () => {
-  let state = createCarryState({ lane: 1 });
-  state = advanceCarryEvent(state, 0.01, { safeLane: 2 });
-  assert.equal(state.lane, 2);
-  state = advanceCarryEvent(state, 0.2, { safeLane: 0 });
-  assert.equal(state.lane, 2);
-  state = advanceCarryEvent(state, CARRY_VEHICLE.safeLaneCheckSeconds, { safeLane: 0 });
-  assert.equal(state.lane, 0);
-});
-
-test("safe lane checks continue while the vehicle is slowing to its stop", () => {
-  let state = reachRiding();
-  state = advanceCarryEvent(state, CARRY_VEHICLE.rideDurationSeconds);
-  assert.equal(state.phase, "slowing_down");
-  state = advanceCarryEvent(state, 0.01, { safeLane: 0 });
-  assert.equal(state.lane, 0);
-});
-
-test("completed vehicle leaves the gameplay area and is recycled", () => {
-  let state = reachRiding();
-  state = advanceCarryEvent(state, 20);
-  state = advanceCarryEvent(state, 2);
-  state = advanceCarryEvent(state, CARRY_VEHICLE.stoppedDurationSeconds);
-  state = advanceCarryEvent(state, CARRY_VEHICLE.dismountDurationSeconds);
-  assert.equal(state.phase, "completed");
   assert.equal(isCarryEventActive(state), false);
   state = advanceCarryEvent(state, 3);
   assert.equal(state, null);
+});
+
+test("the hauler never changes out of the middle lane", () => {
+  let state = createCarryState();
+  state = advanceCarryEvent(state, 0.01, { dismountLane: 2 });
+  assert.equal(state.lane, 1);
+  state = reachRiding();
+  state = advanceCarryEvent(state, CARRY_VEHICLE.rideDurationSeconds);
+  state = advanceCarryEvent(state, 0.6, { dismountLane: 2, clearanceReady: false });
+  assert.equal(state.lane, 1);
+  state = advanceCarryEvent(state, 0.6, { dismountLane: 2, clearanceReady: true });
+  assert.equal(state.phase, "dismounting");
+  assert.equal(state.vehicleLane, 1);
+  assert.equal(state.lane, 2);
 });
 
 test("state transitions are immutable and restart can start a fresh event", () => {
