@@ -286,8 +286,12 @@ export async function loadJayCharacter({
     // over the current authored clip. This prevents procedural offsets drifting.
     for (const item of victoryBones) item.bone.quaternion.copy(item.base);
     const gameplayPosition = root.position.clone();
+    const gameplayRotation = root.quaternion.clone();
+    const gameplayScale = root.scale.clone();
     mixer.update(Math.min(Math.max(deltaSeconds || 0, 0), 0.05));
     root.position.copy(gameplayPosition);
+    root.quaternion.copy(gameplayRotation);
+    root.scale.copy(gameplayScale);
     const victoryTime = Number(options.victoryTime);
     if (Number.isFinite(victoryTime) && victoryTime >= 0) {
       const t = victoryTime;
