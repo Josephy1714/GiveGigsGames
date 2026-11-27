@@ -46,9 +46,9 @@ test("audio settings safely recover from malformed stored preferences",()=>{
  manager.destroy();delete globalThis.localStorage;
 });
 
-test("original soundtrack is an eight-bar, 116 BPM sample-free score",()=>{
- assert.equal(PROCEDURAL_SCORE.bpm,116);
+test("original soundtrack is an eight-bar, 122 BPM sample-free score",()=>{
+ assert.equal(PROCEDURAL_SCORE.bpm,122);
  assert.equal(PROCEDURAL_SCORE.bars,8);
- assert.ok(PROCEDURAL_SCORE.loopSeconds>16&&PROCEDURAL_SCORE.loopSeconds<17);
+ assert.ok(PROCEDURAL_SCORE.loopSeconds>15&&PROCEDURAL_SCORE.loopSeconds<16);
  assert.equal(PROCEDURAL_SCORE.style,"original-afro-futurist-arcade");
 });
