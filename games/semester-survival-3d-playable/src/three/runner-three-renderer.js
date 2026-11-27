@@ -373,7 +373,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  function collideWithTraffic(g){
   if(!g||g.vehicleImpact||g.pendingFinish)return false;
   if(g.rampState?.phase==="climbing")return false;
-  if(g.carryState&&isCarryEventActive(g.carryState)&&["boarding","riding","slowing_down","stopped","dismounting"].includes(g.carryState.phase))return false;
+  if(g.carryState&&isCarryEventActive(g.carryState)&&["boarding","riding","clearing","slowing_down","stopped","dismounting"].includes(g.carryState.phase))return false;
   if(new URLSearchParams(location.search).has("smoke")&&!g.forceTrafficCollision)return false;
   for(const vehicle of traffic){
    if(!vehicle.visible)continue;
@@ -459,7 +459,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
   if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryPhaseNow==="dismounting"?laneX[g.carryState.vehicleLane??g.carryState.lane??g.lane??1]:carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
    let carrySmashes=0;
-   if(carryVisible&&["boarding","riding","dismounting"].includes(carryPhaseNow)){
+   if(carryVisible&&["boarding","riding","clearing","dismounting"].includes(carryPhaseNow)){
     const ramZ=carryVehicle.position.z-4.18,ramX=carryVehicle.position.x,vehicleHalfWidth=1.46;
     for(const v of traffic){
      if(!v.visible||v.userData.smash)continue;
@@ -502,7 +502,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    const vehicleDuration=Math.max(1.18,Number(g.vehicleImpactDuration)||1.18);
    const vehicleElapsed=clamp(vehicleDuration-(Number(g.hitTimer)||0),0,vehicleDuration);
    const airborneImpact=g.vehicleImpactType==="airborne";
-   const carryPhase=g.carryState?.phase;const carryBoarding=carryPhase==="boarding",carryDismounting=carryPhase==="dismounting";const carryT=clamp((Number(g.carryState?.elapsed)||0)/(carryBoarding?CARRY_VEHICLE.boardingDurationSeconds:CARRY_VEHICLE.dismountDurationSeconds),0,1);const carryPoseActive=carryBoarding||carryPhase==="riding"||carryDismounting;const carryEase=carryT*carryT*(3-2*carryT);const carryPlayerZ=2;
+   const carryPhase=g.carryState?.phase;const carryBoarding=carryPhase==="boarding",carryDismounting=carryPhase==="dismounting";const carryT=clamp((Number(g.carryState?.elapsed)||0)/(carryBoarding?CARRY_VEHICLE.boardingDurationSeconds:CARRY_VEHICLE.dismountDurationSeconds),0,1);const carryPoseActive=carryBoarding||carryPhase==="riding"||carryPhase==="clearing"||carryDismounting;const carryEase=carryT*carryT*(3-2*carryT);const carryPlayerZ=2;
    const vehicleThrowHeight=airborneImpact?Math.max(0,7.8*vehicleElapsed-6.6*vehicleElapsed*vehicleElapsed):0;
    const vehicleThrowZ=airborneImpact?2+vehicleElapsed*3.6:g.vehicleImpactType==="front"?2:2+(impactPulse*.18);
    if(celebration){
@@ -562,6 +562,20 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   fireworks.forEach((burst,index)=>{const age=celebrationTime-burst.start;const active=celebration&&age>=0&&age<1.45;burst.material.opacity=active?Math.max(0,1-age/1.45):0;burst.particles.forEach((dot,i)=>{dot.visible=active;if(!active)return;const angle=dot.userData.angle;const radius=.35+age*3.4;dot.position.set(burst.center.x+Math.cos(angle)*radius,burst.center.y+Math.sin(angle)*radius,burst.center.z+Math.sin(angle*2)*.35);dot.scale.setScalar(Math.max(.05,1-age*.58));});});
   renderer.render(scene,camera);
  }
+ function isCarryDismountClear(lane=1,obstacles=[]){
+  const laneForX=x=>laneX.reduce((best,value,index)=>Math.abs(value-x)<Math.abs(laneX[best]-x)?index:best,0);
+  const targetZ=2,trafficClearance=11,obstacleClearance=10;
+  for(const vehicle of traffic){
+   if(!vehicle.visible||vehicle.userData.smash||laneForX(vehicle.position.x)!==lane)continue;
+   if(Math.abs(vehicle.position.z-targetZ)<trafficClearance)return false;
+  }
+  for(const obstacle of obstacles||[]){
+   if(obstacle.lane!==lane||obstacle.collided||obstacle.rampActive)continue;
+   const obstacleZ=-42+clamp(obstacle.z,0,1.12)*46+3.1;
+   if(Math.abs(obstacleZ-targetZ)<obstacleClearance)return false;
+  }
+  return true;
+ }
  function chooseSafeCarryLane(currentLane=1,vehicleZ=-3.2,obstacles=[],forDismount=false){
   const laneForX=x=>laneX.reduce((best,value,index)=>Math.abs(value-x)<Math.abs(laneX[best]-x)?index:best,0);
   const score=lane=>{
@@ -583,7 +597,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   return best;
  }
 
- return {render,resize,setQuality:applyQuality,chooseSafeCarryLane,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},get runApproachCompleted(){return jayRig.runApproachCompleted;},probeImpactCamera(g){
+ return {render,resize,setQuality:applyQuality,chooseSafeCarryLane,isCarryDismountClear,get quality(){return quality;},getClipDuration:state=>jayRig.getClipDuration(state),isAnimationFinished:state=>jayRig.isFinished(state),get activeAnimation(){return jayRig.activeState;},get runApproachCompleted(){return jayRig.runApproachCompleted;},probeImpactCamera(g){
   if(!g)return null;
   const base=cameraBaseX,scale=Number.isFinite(Number(g.impactShakeScale))?Number(g.impactShakeScale):1;
   const sample=(hitTimer,time)=>{const impact=clamp(hitTimer/.62,0,1)*scale;const shakeX=Math.sin(time*48)*impact*.035,shakeY=Math.sin(time*36)*impact*.025;return {base,world:base+shakeX,shakeX,shakeY};};
