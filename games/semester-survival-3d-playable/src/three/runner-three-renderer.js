@@ -243,7 +243,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const campaignBoss=new THREE.Group();campaignBoss.visible=false;scene.add(campaignBoss);
  const bossParts={arms:[],rings:[],lights:[]};let bossSemester=-1,bossDefeatAt=-1;
  function buildCampaignBoss(semester){
-  while(campaignBoss.children.length)campaignBoss.remove(campaignBoss.children[0]);
+  const oldGeometries=new Set(),oldMaterials=new Set();campaignBoss.traverse(node=>{if(node.isMesh){if(node.geometry)oldGeometries.add(node.geometry);for(const material of (Array.isArray(node.material)?node.material:[node.material]))if(material)oldMaterials.add(material);}});oldGeometries.forEach(item=>item.dispose());oldMaterials.forEach(item=>item.dispose());while(campaignBoss.children.length)campaignBoss.remove(campaignBoss.children[0]);
   bossParts.arms=[];bossParts.rings=[];bossParts.lights=[];
   const [base,trim,glow]=bossPalette[(semester-1)%8],paint=mat(base,.36,.48),accent=mat(trim,.3,.55),emissive=new THREE.MeshStandardMaterial({color:glow,emissive:glow,emissiveIntensity:1.35,metalness:.35,roughness:.24}),rubber=mat(0x151b20,.9);
   const body=(w,h,d,y,z=0)=>box(campaignBoss,w,h,d,paint,0,y,z);
@@ -483,7 +483,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    campaignBoss.position.set(0,.12+Math.sin(g.t*2.2)*.12,-66+approach*42);
    campaignBoss.rotation.y=Math.sin(g.t*.7)*.12;
    campaignBoss.scale.setScalar(.9+approach*.1);
-   bossParts.arms.forEach((arm,i)=>{arm.rotation.x=Math.sin(g.t*2.5+i)*.16;arm.rotation.z=Math.sin(g.t*1.7+i*2)*.12;});
+   const phasePower=1+Math.max(0,(Number(g.bossPhase)||1)-1)*.28;bossParts.arms.forEach((arm,i)=>{arm.rotation.x=Math.sin(g.t*(2.5*phasePower)+i)*(.16*phasePower);arm.rotation.z=Math.sin(g.t*(1.7*phasePower)+i*2)*(.12*phasePower);});mount.dataset.campaignBossPhase=String(g.bossPhase||1);
    bossParts.rings.forEach((ring,i)=>{ring.rotation.y+=dt*(i%2?-.55:.7);});
    mount.dataset.campaignBoss="semester-"+activeBossSemester;
   }else if(campaignBoss.visible&&g.bossDefeatTime!==undefined&&g.bossDefeatTime>=0&&g.t-g.bossDefeatTime<1.6){
