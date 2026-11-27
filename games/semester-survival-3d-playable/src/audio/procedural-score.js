@@ -1,7 +1,7 @@
 // Original, sample-free arcade score for Semester Survival 3D.
 // Afro-futurist arcade energy: warm log-drum-inspired bass, bright mallet plucks,
 // crisp syncopated percussion and wide cinematic synth chords.
-const BPM=116,BEAT=60/BPM,BAR=BEAT*4,LOOP_BARS=8,LOOP_SECONDS=BAR*LOOP_BARS;
+const BPM=122,BEAT=60/BPM,BAR=BEAT*4,LOOP_BARS=8,LOOP_SECONDS=BAR*LOOP_BARS;
 const PROGRESSION=[[50,53,57,60],[46,50,53,57],[41,45,48,52],[48,52,55,58]];
 const LEAD=[0,3,5,7,10,7,5,3, 0,3,5,10,7,5,3,0];
 const MIDI=m=>440*Math.pow(2,(m-69)/12);
