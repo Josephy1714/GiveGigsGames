@@ -318,6 +318,20 @@ export async function loadJayCharacter({
         item.bone.quaternion.multiply(offset);
       }
     }
+    const dismountTime = Number(options.dismountTime);
+    if (Number.isFinite(dismountTime) && dismountTime >= 0) {
+      const t = Math.max(0, Math.min(1, dismountTime));
+      const beat = Math.sin(t * Math.PI);
+      for (const item of victoryBones) {
+        let x = 0, y = 0, z = 0;
+        if (item.role === "leftArm") { z = .9 + .24 * beat; x = -.25; }
+        if (item.role === "rightArm") { z = -.9 - .24 * beat; x = -.25; }
+        if (item.role === "leftForeArm") z = .38;
+        if (item.role === "rightForeArm") z = -.38;
+        if (item.role === "torso") x = -.16;
+        item.bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z)));
+      }
+    }
     const rideTime = Number(options.rideTime);
     if (Number.isFinite(rideTime) && rideTime >= 0) {
       const phase = rideTime % 8.4;
