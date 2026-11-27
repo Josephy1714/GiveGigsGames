@@ -32,7 +32,8 @@ test("semester cannot complete until boss is defeated and freezes at exact dista
   let state = advanceCampaign(startCampaignRun(createCampaignState(1)), 800);
   state = advanceCampaign(state, 1000);
   assert.equal(state.phase, CAMPAIGN_PHASES.FAILED);
-  let win = advanceCampaign(startCampaignRun(createCampaignState(1)), 800);
+  let win = advanceCampaign(startCampaignRun(createCampaignState(1)), 750);
+  win = advanceCampaign(win, 800);
   win = damageCampaignBoss(win, 100);
   assert.equal(win.bossDefeated, true);
   win = advanceCampaign(win, 1000);
@@ -43,7 +44,8 @@ test("semester cannot complete until boss is defeated and freezes at exact dista
 });
 
 test("victory cinematic is a locked, ordered state transition", () => {
-  let state = advanceCampaign(startCampaignRun(createCampaignState(8)), 2400);
+  let state = advanceCampaign(startCampaignRun(createCampaignState(8)), 2250);
+  state = advanceCampaign(state, 2400);
   state = damageCampaignBoss(state, 100);
   state = advanceCampaign(state, 3000);
   assert.equal(state.phase, CAMPAIGN_PHASES.VICTORY);
