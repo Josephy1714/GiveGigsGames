@@ -1,9 +1,9 @@
 export const CARRY_VEHICLE = Object.freeze({
   // Spawn behind Jay (+Z), then drive forward through his position and overtake him.
-  approachStartZ: 24,
+  approachStartZ: 10.5,
   boardingTriggerZ: -1.7,
   boardingEndZ: -1.7,
-  approachSpeed: 12,
+  approachSpeed: 7.5,
   boardingDurationSeconds: 0.9,
   rideDurationSeconds: 20,
   dismountDurationSeconds: 1.05,
