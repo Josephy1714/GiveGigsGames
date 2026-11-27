@@ -1,15 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run catalog:build",
-  "redirects": [
-    { "source": "/ggg", "destination": "/ggg/", "permanent": false }
-  ],
-  "rewrites": [
-    { "source": "/ggg/", "destination": "/index.html" },
-    { "source": "/ggg/test/:game", "destination": "/tester/index.html?game=:game" },
-    { "source": "/ggg/play/:game", "destination": "/play.html?game=:game" },
-    { "source": "/ggg/info/:game", "destination": "/game.html?game=:game" },
-    { "source": "/ggg/guide/:game", "destination": "/ggg-guide.html" },
-    { "source": "/ggg/roadmap/:game", "destination": "/roadmap.html" }
-  ]
+  "buildCommand": "echo 'Serving standalone Semester Survival 3D build'",
+  "outputDirectory": "games/semester-survival-3d-playable"
 }
