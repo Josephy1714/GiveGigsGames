@@ -11,17 +11,26 @@ function reachRiding() {
   return state;
 }
 
-test("hauler approaches in the middle lane and boards Jay", () => {
+test("hauler approaches from behind, overtakes Jay, then he jumps onto its deck", () => {
   let state = createCarryState({ lane: 2 });
   assert.equal(state.phase, "approaching");
   assert.equal(state.lane, 1);
-  state = advanceCarryEvent(state, 3.3);
+  assert.ok(state.vehicleZ > 2, "the hauler starts behind Jay");
+  const startZ = state.vehicleZ;
+  state = advanceCarryEvent(state, 0.5);
+  assert.ok(state.vehicleZ < startZ, "the hauler moves forward toward and past Jay");
+  state = advanceCarryEvent(state, 2.5);
   assert.equal(state.phase, "boarding");
   assert.equal(state.vehicleZ, CARRY_VEHICLE.boardingTriggerZ);
-  assert.ok(getCarryPlayerHeight(state) >= 0);
-  state = advanceCarryEvent(state, CARRY_VEHICLE.boardingDurationSeconds);
+  assert.equal(getCarryPlayerHeight(state), 0, "Jay starts at road height");
+  const heldZ = state.vehicleZ;
+  state = advanceCarryEvent(state, CARRY_VEHICLE.boardingDurationSeconds / 2);
+  assert.equal(state.vehicleZ, heldZ, "the hauler holds position while Jay boards");
+  assert.ok(getCarryPlayerHeight(state) > 0);
+  state = advanceCarryEvent(state, CARRY_VEHICLE.boardingDurationSeconds / 2);
   assert.equal(state.phase, "riding");
   assert.equal(state.rideElapsed, 0);
+  assert.equal(getCarryPlayerHeight(state), CARRY_VEHICLE.deckHeight);
   assert.equal(getCarrySpeedScale(state), CARRY_VEHICLE.rideSpeedScale);
 });
 
