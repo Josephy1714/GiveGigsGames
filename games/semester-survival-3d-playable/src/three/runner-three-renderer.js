@@ -145,7 +145,7 @@ function car(scene,x,z,color,m,kind="car"){
 }
 function createRampVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
- const paint=mat(0x355c70,.38,.24),deck=mat(0x737f82,.58,.24),rampMaterial=mat(0x9ba7a5,.62,.18);
+ const paint=mat(0x355c70,.3,.94),deck=mat(0x737f82,.28,.98),rampMaterial=mat(0x9ba7a5,.3,.96);
  box(group,2.72,.82,7.8,paint,0,.72,-.05);
  box(group,2.82,.16,5.55,deck,0,1.07,-.15);
  box(group,2.48,.12,5.3,m.dark,0,.98,-.15);
@@ -179,7 +179,7 @@ function createRampVehicle(scene,m){
 }
 function createCarryVehicle(scene,m){
  const group=new THREE.Group();scene.add(group);
- const paint=mat(0x2f5e6c,.38,.24),deck=mat(0x68787b,.62,.22),rampMaterial=mat(0x9aa6a4,.62,.2);
+ const paint=mat(0x2f5e6c,.3,.94),deck=mat(0x68787b,.28,.98),rampMaterial=mat(0x9aa6a4,.3,.96);
  box(group,2.82,.72,8.4,paint,0,.64,-.1);
  box(group,2.84,.16,CARRY_VEHICLE.deckLength,deck,0,.97,CARRY_VEHICLE.deckCenterZ);
  box(group,2.52,.08,CARRY_VEHICLE.deckLength-.18,m.dark,0,.86,CARRY_VEHICLE.deckCenterZ);
@@ -370,6 +370,30 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const crowdMaterials=[0x375c72,0x9a4c39,0x557c54,0x8b7b9a,0xc1a65e].map(color=>new THREE.MeshStandardMaterial({color,roughness:.85}));
  const crowdBodyGeometry=new THREE.CylinderGeometry(.17,.23,.72,7),crowdHeadGeometry=new THREE.SphereGeometry(.18,8,6),crowdArmGeometry=new THREE.CylinderGeometry(.065,.085,.62,6),crowdLegGeometry=new THREE.CylinderGeometry(.075,.09,.48,6);
  const crowd=Array.from({length:12},(_,i)=>{const group=new THREE.Group(),material=crowdMaterials[i%crowdMaterials.length];const body=new THREE.Mesh(crowdBodyGeometry,material);body.position.y=.82;group.add(body);const head=new THREE.Mesh(crowdHeadGeometry,crowdMaterials[(i+2)%crowdMaterials.length]);head.position.y=1.35;group.add(head);for(const side of [-1,1]){const leg=new THREE.Mesh(crowdLegGeometry,material);leg.position.set(side*.12,.25,0);group.add(leg);}const leftArm=new THREE.Group(),rightArm=new THREE.Group();leftArm.position.set(-.24,1.12,0);rightArm.position.set(.24,1.12,0);const leftMesh=new THREE.Mesh(crowdArmGeometry,material),rightMesh=new THREE.Mesh(crowdArmGeometry,material);leftMesh.position.y=.27;rightMesh.position.y=.27;leftArm.add(leftMesh);rightArm.add(rightMesh);leftArm.rotation.z=.68;rightArm.rotation.z=-.68;group.add(leftArm,rightArm);const side=i%2===0?-1:1,row=Math.floor(i/2);group.position.set(side*(6.1+(row%2)*.55),0,-4-row*3.25);group.scale.setScalar(.78+(row%3)*.045);group.visible=false;scene.add(group);return {group,leftArm,rightArm,seed:i};});
+ function smashTrafficAgainstRampVehicles(){
+  let smashed=0;
+  for(const ramp of rampVehicles){
+   if(!ramp.visible)continue;
+   // Continuous steel envelope from the cab through the road-contact end of the ramp.
+   const rampHalfWidth=1.48,rampFrontZ=ramp.position.z-3.95,rampRearZ=ramp.position.z+5.9;
+   for(const vehicle of traffic){
+    if(!vehicle.visible||vehicle.userData.smash)continue;
+    const halfLength=(vehicle.userData.collisionLength||3.8)/2;
+    const halfWidth=vehicle.userData.collisionHalfWidth||1.1;
+    const overlapsX=Math.abs(vehicle.position.x-ramp.position.x)<rampHalfWidth+halfWidth;
+    const overlapsZ=vehicle.position.z+halfLength>=rampFrontZ&&vehicle.position.z-halfLength<=rampRearZ;
+    if(!overlapsX||!overlapsZ)continue;
+    const side=vehicle.position.x-ramp.position.x;
+    const direction=Math.abs(side)<.25?(vehicle.userData.trafficIndex%2===0?-1:1):Math.sign(side);
+    vehicle.userData.smash={life:2.15,vx:direction*(8.5+(vehicle.userData.trafficIndex%3)*1.2),vz:.8,vy:2.9,gravity:8.2,spinY:direction*5.8,spinZ:direction*3.8,spinX:direction*2.4};
+    vehicle.position.x=ramp.position.x+direction*(rampHalfWidth+halfWidth+.22);
+    vehicle.position.z=Math.max(rampFrontZ-halfLength-.12,Math.min(rampRearZ+halfLength+.12,vehicle.position.z));
+    vehicle.position.y=.05;smashed++;
+   }
+  }
+  mount.dataset.rampVehicleSmashes=String((Number(mount.dataset.rampVehicleSmashes)||0)+smashed);
+  return smashed;
+ }
  function collideWithTraffic(g){
   if(!g||g.vehicleImpact||g.pendingFinish)return false;
   if(g.rampState?.phase==="climbing")return false;
@@ -472,6 +496,8 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
     }
    }
    mount.dataset.carryVehicleSmashes=String((Number(mount.dataset.carryVehicleSmashes)||0)+carrySmashes);
+  // Resolve ramp-loader impacts before any traffic-versus-Jay collision check.
+  smashTrafficAgainstRampVehicles();
   if(!g.campaignCelebration)collideWithTraffic(g);
   const lateralSpeed=dt>0?(playerX-previousPlayerX)/dt:0;previousPlayerX=playerX;
   const laneLean=clamp(-lateralSpeed*.035,-.14,.14);
