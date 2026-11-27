@@ -180,8 +180,10 @@ tick = function(dt){
   if(g.carryState){
    const previousPhase=g.carryState.phase;
    const shouldCheckLane=["approaching","riding","slowing_down"].includes(previousPhase)&&g.carryState.nextLaneCheck<=dt;
+   const dismountStarting=previousPhase==="riding"&&g.carryState.rideElapsed+dt>=CARRY_VEHICLE.rideDurationSeconds;
    const safeLane=shouldCheckLane?threeRenderer?.chooseSafeCarryLane?.(g.carryState.lane,g.carryState.vehicleZ,g.obs):undefined;
-   g.carryState=advanceCarryEvent(g.carryState,dt,{safeLane});
+   const dismountLane=dismountStarting?threeRenderer?.chooseSafeCarryLane?.(safeLane??g.carryState.lane,-5.4,g.obs,true):undefined;
+   g.carryState=advanceCarryEvent(g.carryState,dt,{safeLane,dismountLane});
    if(g.carryState&&g.carryState.phase!=="completed")g.lane=g.carryState.lane;
    if(previousPhase!=="boarding"&&g.carryState?.phase==="boarding")g.jump=1;
    if(previousPhase!=="dismounting"&&g.carryState?.phase==="dismounting")g.jump=1;
