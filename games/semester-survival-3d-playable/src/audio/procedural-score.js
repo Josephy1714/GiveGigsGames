@@ -9,7 +9,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const PROCEDURAL_SCORE={bpm:BPM,bars:LOOP_BARS,loopSeconds:LOOP_SECONDS,style:"original-afro-futurist-arcade"};
 export function createProceduralScore(context,output){
  let timer=null,playing=false,level=1,nextStart=0,noise=null,active=new Set();
- const master=context.createGain();master.gain.value=0;master.connect(output);
+ const master=context.createGain();master.gain.value=0;
  const compressor=context.createDynamicsCompressor();compressor.threshold.value=-18;compressor.knee.value=18;compressor.ratio.value=3;compressor.attack.value=.008;compressor.release.value=.22;
  master.connect(compressor);compressor.connect(output);
  function noiseBuffer(){
