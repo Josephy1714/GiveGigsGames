@@ -232,6 +232,62 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  }
  applyQuality(quality);
  const m={asphalt:new THREE.MeshStandardMaterial({color:0xb8b8b0,map:asphaltTexture(renderer),roughness:.96}),grass:mat(0x536e4d),concrete:mat(0xbab8aa),curb:mat(0xe2dac8),warm:mat(0xcbb99a),stone:mat(0x9b9c91),sand:mat(0xd6c9ad),trim:mat(0xe4dac5),dark:mat(0x26373c),glass:mat(0x294b5a,.25,.2),tank:mat(0x6d8581),bark:mat(0x69503a),leaves:mat(0x557c54),lamp:mat(0xffe3a8,.3),tire:mat(0x171b1e),red:mat(0x9d3c34),white:mat(0xf3ecd9),gold:mat(0xf4c95d,.2,.65),obstacle:mat(0x805a45),warning:mat(0xe5b957),bonus:new THREE.MeshStandardMaterial({color:0x8ce6c5,emissive:0x164c40,metalness:.3,roughness:.25})};
+ 
+ // Eight distinct lightweight procedural 3D semester bosses. Shared geometry keeps mobile cost low.
+ const bossPalette=[
+  [0x355d70,0xe0b65e,0x8ce6c5],[0x8c3542,0xf4c95d,0x57c9d0],
+  [0x354d83,0xb8d7ff,0x9bd6f1],[0x596b3e,0xd9a34d,0xf0d2a0],
+  [0x252b49,0xff4d72,0x65e8ff],[0x354b55,0x7fffd4,0xe3f7ff],
+  [0x5c5146,0xd7c39a,0x9bb8c0],[0x493d70,0xf6d46c,0xf7f0d8]
+ ];
+ const campaignBoss=new THREE.Group();campaignBoss.visible=false;scene.add(campaignBoss);
+ const bossParts={arms:[],rings:[],lights:[]};let bossSemester=-1,bossDefeatAt=-1;
+ function buildCampaignBoss(semester){
+  while(campaignBoss.children.length){const child=campaignBoss.children.pop();campaignBoss.remove(child);}
+  bossParts.arms=[];bossParts.rings=[];bossParts.lights=[];
+  const [base,trim,glow]=bossPalette[(semester-1)%8],paint=mat(base,.36,.48),accent=mat(trim,.3,.55),emissive=new THREE.MeshStandardMaterial({color:glow,emissive:glow,emissiveIntensity:1.35,metalness:.35,roughness:.24}),rubber=mat(0x151b20,.9);
+  const body=(w,h,d,y,z=0)=>box(campaignBoss,w,h,d,paint,0,y,z);
+  const wheel=(x,y,z,r=.55)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,.34,14),rubber);o.rotation.z=Math.PI/2;o.position.set(x,y,z);o.castShadow=true;campaignBoss.add(o);return o;};
+  if(semester===1){
+   body(5.6,1.65,3.8,1.35);body(4.8,1.25,2.2,2.55,-.25);box(campaignBoss,5.9,.22,4.1,accent,0,.55,0);
+   for(const x of [-2.25,2.25]){wheel(x,.55,1.05);const arm=new THREE.Group();arm.position.set(x*1.05,2.1,0);box(arm,.42,2.1,.55,accent,0,-.55,0);box(arm,1.05,.35,.85,emissive,x*.12,-1.55,0);campaignBoss.add(arm);bossParts.arms.push(arm);}
+   box(campaignBoss,1.25,.22,.16,emissive,0,3.28,1.75);
+  }else if(semester===2){
+   body(6.2,1.45,3.6,1.3);body(5.2,1.4,2.35,2.55,-.15);box(campaignBoss,6.45,.28,3.85,accent,0,.52,0);
+   for(const x of [-2.5,-.85,.85,2.5]){wheel(x,.52,1.12,.48);box(campaignBoss,.15,1.7,.16,emissive,x,2.55,1.28);}
+   for(const x of [-2.7,2.7]){const arm=new THREE.Group();arm.position.set(x,1.9,0);const blade=new THREE.Mesh(new THREE.ConeGeometry(.72,1.8,5),accent);blade.position.y=-.9;blade.rotation.z=x<0?.3:-.3;arm.add(blade);campaignBoss.add(arm);bossParts.arms.push(arm);}
+   box(campaignBoss,2.3,.45,.2,emissive,0,2.6,1.38);
+  }else if(semester===3){
+   const orb=new THREE.Mesh(new THREE.IcosahedronGeometry(2.15,1),paint);orb.position.y=2.15;campaignBoss.add(orb);
+   for(let i=0;i<3;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(2.65+i*.34,.09,8,48),i%2?accent:emissive);ring.position.y=2.15;ring.rotation.set(.4+i*.55,.25*i,.2*i);campaignBoss.add(ring);bossParts.rings.push(ring);}
+   for(const x of [-2.8,2.8]){const arm=new THREE.Group();arm.position.set(x,2,0);const book=box(arm,1.15,.34,1.5,accent,0,0,0);book.rotation.z=x<0?-.35:.35;campaignBoss.add(arm);bossParts.arms.push(arm);}
+   for(let i=0;i<4;i++)box(campaignBoss,.32,.8,.32,emissive,-1.8+i*1.2,.4,0);
+  }else if(semester===4){
+   body(5.6,1.2,4.4,1.05);for(const x of [-2.25,2.25]){box(campaignBoss,1.1,.95,4.5,rubber,x,.55,0);for(let z=-1.5;z<=1.6;z+=1)wheel(x,.52,z,.43);}
+   const boom=new THREE.Group();boom.position.set(-.6,2.0,-.4);box(boom,.75,3.1,.75,accent,0,1.3,0);box(boom,.62,2.3,.62,paint,.2,3.55,0);const claw=box(boom,1.5,.35,.7,emissive,.35,4.65,0);claw.rotation.z=-.35;campaignBoss.add(boom);bossParts.arms.push(boom);
+   box(campaignBoss,2.1,.9,1.5,paint,0,2.05,1.25);
+  }else if(semester===5){
+   body(4.9,.72,6.4,.82);const canopy=new THREE.Mesh(new THREE.SphereGeometry(1.25,16,10),emissive);canopy.scale.set(1.5,.65,1.35);canopy.position.set(0,1.75,-.25);campaignBoss.add(canopy);
+   for(const x of [-2.5,2.5]){const fin=box(campaignBoss,.25,1.1,4,accent,x,1.0,-.25);fin.rotation.z=x<0?-.3:.3;wheel(x,.42,1.7,.5);}
+   for(const z of [-2.4,2.5])box(campaignBoss,4.4,.18,.32,emissive,0,1.0,z);
+  }else if(semester===6){
+   const core=new THREE.Mesh(new THREE.OctahedronGeometry(1.9,1),paint);core.position.y=2.5;campaignBoss.add(core);
+   for(let i=0;i<4;i++){const a=i*Math.PI/2,x=Math.cos(a)*2.65,z=Math.sin(a)*2.65;const limb=new THREE.Group();limb.position.set(x,2.2,z);const rod=new THREE.Mesh(new THREE.CylinderGeometry(.2,.32,2.4,8),accent);rod.position.y=-.9;limb.add(rod);const foot=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),emissive);foot.position.y=-2.1;limb.add(foot);campaignBoss.add(limb);bossParts.arms.push(limb);}
+   const halo=new THREE.Mesh(new THREE.TorusGeometry(2.5,.1,8,40),emissive);halo.position.y=3.6;halo.rotation.x=Math.PI/2;campaignBoss.add(halo);bossParts.rings.push(halo);
+  }else if(semester===7){
+   body(5.8,1.5,5.2,1.15);for(const x of [-2.2,0,2.2])wheel(x,.58,1.8,.58);
+   for(const x of [-2.4,2.4]){const shield=box(campaignBoss,1.05,2.1,1.1,accent,x,2.35,-.35);shield.rotation.z=x<0?-.18:.18;}
+   for(const x of [-2.1,2.1]){const arm=new THREE.Group();arm.position.set(x,2.1,-.4);box(arm,.62,2.1,.72,paint,0,-.7,0);const fist=new THREE.Mesh(new THREE.DodecahedronGeometry(.85),emissive);fist.position.y=-1.85;arm.add(fist);campaignBoss.add(arm);bossParts.arms.push(arm);}
+   box(campaignBoss,1.4,.3,.18,emissive,0,2.45,2.55);
+  }else{
+   body(4.4,2.2,3.1,2.0);const head=new THREE.Mesh(new THREE.IcosahedronGeometry(1.15,1),accent);head.position.y=3.85;campaignBoss.add(head);
+   for(const x of [-1.65,1.65]){const leg=box(campaignBoss,.85,2.1,1.0,paint,x,.75,0);leg.rotation.z=x<0?-.08:.08;const arm=new THREE.Group();arm.position.set(x*1.3,2.8,0);box(arm,.8,2.4,.85,accent,0,-.7,0);const gauntlet=new THREE.Mesh(new THREE.DodecahedronGeometry(.8),emissive);gauntlet.position.y=-1.9;arm.add(gauntlet);campaignBoss.add(arm);bossParts.arms.push(arm);}
+   for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.ConeGeometry(.28,1.2,6),emissive);spike.position.set(-1.6+i*.8,5.0,-.2);campaignBoss.add(spike);}
+   const crest=box(campaignBoss,3.8,.2,.28,emissive,0,4.65,.4);
+  }
+  bossSemester=semester;campaignBoss.userData.built=true;
+ }
+
  const world=new THREE.Group();scene.add(world);
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(190,300),m.grass);ground.rotation.x=-Math.PI/2;ground.position.set(0,-.16,-112);ground.receiveShadow=true;world.add(ground);
  const road=new THREE.Mesh(new THREE.PlaneGeometry(14,300),m.asphalt);road.rotation.x=-Math.PI/2;road.position.set(0,0,-112);road.receiveShadow=true;world.add(road);
@@ -335,7 +391,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   const difficulty=g.difficulty||{};const trafficLayout=getTrafficSpawnLayout(difficulty);const trafficApproach=clamp(Number(difficulty.trafficSpeedMultiplier)||1,1,1.18);const carryPhase=g.carryState?.phase;const independentTrafficDelta=dt*46*.55*(Number(g.baseSpeed)||367)/367;const trafficDelta=carryPhase==="stopped"||carryPhase==="dismounting"?independentTrafficDelta:carryPhase==="slowing_down"?Math.max(travelDelta,independentTrafficDelta*.45):travelDelta;trafficTravel+=trafficDelta*2*trafficApproach;mount.dataset.difficultyBand=difficulty.band||"Beginner";mount.dataset.difficultyProgress=String(Number(difficulty.progress)||0);mount.dataset.trafficApproachMultiplier=trafficApproach.toFixed(3);mount.dataset.trafficActiveCount=String(trafficLayout.activeVehicleCount);mount.dataset.trafficSpacing=trafficLayout.spacing.toFixed(3);
   world.position.z=worldTravel%300;repeatWorld.position.z=world.position.z-300;
   traffic.forEach((v,i)=>{
-   if(i>=trafficLayout.activeVehicleCount){v.visible=false;return;}
+   if(g.bossActive||i>=trafficLayout.activeVehicleCount){v.visible=false;return;}
    v.visible=true;
    // Extra vehicles enter from far ahead as density grows; spacing stays validated and recycling remains behind Jay.
    // Traffic approaches at an oncoming relative speed and only recycles after clearing the follow camera.
@@ -358,7 +414,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;
   }
   for(let i=rampN;i<rampVehicles.length;i++){rampVehicles[i].visible=false;rampVehicles[i].userData.obstacle=null;}
-  const carrySurfaceY=getCarryPlayerHeight(g.carryState);let rampSurfaceY=0;
+  const bossArena=!!g.bossActive;if(bossArena){carryVehicle.visible=false;for(const v of rampVehicles)v.visible=false;}const carrySurfaceY=getCarryPlayerHeight(g.carryState);let rampSurfaceY=0;
   if(g.rampState?.phase==="climbing"){
    rampSurfaceY=rampSurfaceHeightAtProgress(g.rampState.obstacle?.z??0);
    g.rampState.surfaceHeight=rampSurfaceY;
@@ -416,8 +472,24 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    mount.dataset.jayRunPhase=jayRig.runApproachCompleted?"loop":"approach";
    const runTempo=clamp(.82+.18*((Number(g.speed)||345)/(Number(g.baseSpeed)||345)),.82,1.12);const clipTempo=g.vehicleImpactType==="front"?1:g.vehicleImpactType==="airborne"?1.12:chosen==="run"?runTempo:animationState==="fall-accidental"?1.45:animationState==="get-up"?1.08:1;jayRig.play(chosen,{timeScale:clipTempo});jayRig.update(dt);
   }
-  let n=0,busN=0;for(const o of g.obs||[]){if(o.ramp)continue;if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+3.1);const scale=o.boss?1.25:1;v.scale.setScalar(scale);v.userData.slide.visible=o.action==="slide";v.userData.jump.visible=o.action!=="slide";}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);mount.dataset.activeRampVehicles=String(rampVehicles.filter(v=>v.visible).length);mount.dataset.carryEventPhase=g.carryState?.phase||"inactive";mount.dataset.carryVehicleVisible=String(carryVehicle.visible);mount.dataset.carryVehicleLane=String(g.carryState?.lane??-1);mount.dataset.worldTravel=worldTravel.toFixed(3);mount.dataset.trafficTravel=trafficTravel.toFixed(3);
-  n=0;for(const p of g.pick||[]){if(n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
+  let n=0,busN=0;for(const o of g.obs||[]){if(o.ramp||bossArena&&!o.boss)continue;if(/(?:late bus|matatu|campus shuttle)/i.test(o.label||"")&&busN<lateBuses.length){const bus=lateBuses[busN++];bus.visible=true;bus.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+1.65);bus.scale.setScalar(.82);for(const wheel of bus.userData.wheels||[])wheel.rotation.x=worldTravel/.35;continue;}if(n>=obstacles.length)break;const v=obstacles[n++];v.visible=true;v.position.set(laneX[o.lane??1],0,-42+clamp(o.z,0,1.12)*46+3.1);const scale=o.boss?1.25:1;v.scale.setScalar(scale);v.userData.slide.visible=o.action==="slide";v.userData.jump.visible=o.action!=="slide";}for(let i=n;i<obstacles.length;i++)obstacles[i].visible=false;for(let i=busN;i<lateBuses.length;i++)lateBuses[i].visible=false;mount.dataset.activeVehicleObstacles=String(lateBuses.filter(v=>v.visible).length);mount.dataset.activeRampVehicles=String(rampVehicles.filter(v=>v.visible).length);mount.dataset.carryEventPhase=g.carryState?.phase||"inactive";mount.dataset.carryVehicleVisible=String(carryVehicle.visible);mount.dataset.carryVehicleLane=String(g.carryState?.lane??-1);mount.dataset.worldTravel=worldTravel.toFixed(3);mount.dataset.trafficTravel=trafficTravel.toFixed(3);
+  // Show the semester's own 3D boss; its silhouette is built once and reused on retries.
+  const activeBossSemester=Number(g.campaignConfig?.number)||Number(g.semester)||1;
+  if(g.bossActive){
+   if(bossSemester!==activeBossSemester)buildCampaignBoss(activeBossSemester);
+   campaignBoss.visible=true;bossDefeatAt=-1;
+   const elapsed=Math.max(0,Number(g.t)-(Number(g.bossStartedAt)||Number(g.t)));
+   const approach=clamp(elapsed/2.4,0,1);
+   campaignBoss.position.set(0,.12+Math.sin(g.t*2.2)*.12,-66+approach*42);
+   campaignBoss.rotation.y=Math.sin(g.t*.7)*.12;
+   campaignBoss.scale.setScalar(.9+approach*.1);
+   bossParts.arms.forEach((arm,i)=>{arm.rotation.x=Math.sin(g.t*2.5+i)*.16;arm.rotation.z=Math.sin(g.t*1.7+i*2)*.12;});
+   bossParts.rings.forEach((ring,i)=>{ring.rotation.y+=dt*(i%2?-.55:.7);});
+   mount.dataset.campaignBoss="semester-"+activeBossSemester;
+  }else if(campaignBoss.visible&&g.bossDefeatTime!==undefined&&g.bossDefeatTime>=0&&g.t-g.bossDefeatTime<1.6){
+   campaignBoss.visible=true;const fade=1-clamp((g.t-g.bossDefeatTime)/1.6,0,1);campaignBoss.scale.setScalar(Math.max(.01,fade));campaignBoss.position.y=.12+(1-fade)*2.2;campaignBoss.rotation.z=(1-fade)*.8;
+  }else{campaignBoss.visible=false;campaignBoss.scale.setScalar(1);campaignBoss.rotation.set(0,0,0);mount.dataset.campaignBoss="inactive";}
+  n=0;for(const p of g.pick||[]){if(bossArena||n>=coins.length)break;const v=coins[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.15,-42+clamp(p.z,0,1.1)*46);v.rotation.y=g.t*1.8;}for(let i=n;i<coins.length;i++)coins[i].visible=false;
   n=0;for(const p of g.bonus||[]){if(n>=bonuses.length)break;const v=bonuses[n++];v.visible=true;v.position.set(laneX[p.lane??1],1.35,-42+clamp(p.z,0,1.1)*46);v.rotation.set(g.t*.8,g.t*1.5,0);}for(let i=n;i<bonuses.length;i++)bonuses[i].visible=false;
   renderer.render(scene,camera);
  }
