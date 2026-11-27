@@ -47,7 +47,7 @@ export function getCarryPlayerHeight(state) {
   return 0;
 }
 
-export function advanceCarryEvent(state, dt, { safeLane } = {}) {
+export function advanceCarryEvent(state, dt, { safeLane, dismountLane } = {}) {
   if (!state) return null;
   const delta = Math.max(0, Number(dt) || 0);
   const next = { ...state };
@@ -81,6 +81,9 @@ export function advanceCarryEvent(state, dt, { safeLane } = {}) {
       next.phase = "dismounting";
       next.elapsed = 0;
       next.speedScale = 1;
+      next.vehicleLane = next.lane;
+      next.exitLane = VALID_LANES.has(dismountLane) && dismountLane !== next.lane ? dismountLane : next.lane;
+      next.lane = next.exitLane;
     }
   } else if (next.phase === "dismounting") {
     next.elapsed += delta;
