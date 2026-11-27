@@ -227,7 +227,7 @@ tick = function(dt){
   g.bossStartedAt=g.t;g.bossDefeatTime=-1;g.obs=(g.obs||[]).filter(o=>o.boss);g.pick=[];g.bonus=[];g.spawn=999;
   g.bossLabel=bossNames[index];
   g.bossQueue=bossRounds[index].map(([action,lane])=>({action,lane,label:g.bossLabel,boss:true}));
-  g.bossClock=.55;
+  g.bossClock=Math.max(.38,.55-(save.semester-1)*.02);
   g.bossHits=0;g.bossAttackIndex=0;g.bossPhase=1;
   g.spawn=999;
  }
@@ -242,7 +242,7 @@ tick = function(dt){
     const lane=attack.lane;g.obs.push({lane,z:.04,label:g.bossLabel+" · ZIGZAG",action:"lane",boss:true});
     g.obs.push({lane:(lane+1)%3,z:.2,label:g.bossLabel+" · ZIGZAG",action:"lane",boss:true});
    }else g.obs.push({lane:attack.lane,z:.04,label:g.bossLabel,action:attack.action,boss:true});
-   g.bossClock=1.05;
+   g.bossClock=Math.max(.52,1.0-(save.semester-1)*.045-(g.bossPhase-1)*.045);
   }else if(!g.bossQueue.length&&!g.obs.some(o=>o.boss)){
    g.bossActive=false;
    g.bossDefeatTime=g.t;g.bossCleared=(g.bossCleared||0)+1;
