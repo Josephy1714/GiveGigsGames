@@ -324,7 +324,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
  const jayShadow=new THREE.Mesh(new THREE.CircleGeometry(.68,28),new THREE.MeshBasicMaterial({color:0x101816,transparent:true,opacity:.23,depthWrite:false}));jayShadow.rotation.x=-Math.PI/2;jayShadow.position.set(0,.024,2.06);jayShadow.renderOrder=2;scene.add(jayShadow);
  const impactRing=new THREE.Mesh(new THREE.TorusGeometry(.56,.055,8,36),new THREE.MeshBasicMaterial({color:0xffd28b,transparent:true,opacity:0,depthWrite:false}));
  impactRing.rotation.x=-Math.PI/2;impactRing.position.set(0,.035,2.06);impactRing.visible=false;impactRing.renderOrder=3;scene.add(impactRing);
- let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,cameraBaseX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0,trafficTravel=0,carryAnchorTravel=null;
+ let jayRig=null,rigBaseY=0,rigBaseScaleX=1,rigBaseScaleY=1,rigBaseScaleZ=1,lastGameT=0,playerX=0,previousPlayerX=0,cameraBaseX=0,impactPulse=0,wasHit=false,landingPulse=0,previousJump=0,worldTravel=0,trafficTravel=0;
  jayRig=await loadJayCharacter({url:new URL("../../assets/3d/jay/jay-unified.glb",import.meta.url).href,scene,targetHeight:1.78,strictClips:false});
  rigBaseY=jayRig.root.position.y;rigBaseScaleX=jayRig.root.scale.x;rigBaseScaleY=jayRig.root.scale.y;rigBaseScaleZ=jayRig.root.scale.z;
  console.info("Jay unified gameplay rig loaded",jayRig.availableClips);
@@ -458,7 +458,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
    rampSurfaceY=(Number(g.rampState.startHeight)||0)*(1-progress)+Math.sin(progress*Math.PI)*.62;
   }
   const jumpY=g.jump>0?Math.sin((1-g.jump)*Math.PI)*1.12:0;
-  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;if(!carryPhaseNow)carryAnchorTravel=null;else if(carryPhaseNow!=="approaching"&&carryAnchorTravel===null)carryAnchorTravel=worldTravel;const carryWorldOffset=carryAnchorTravel===null?0:(((worldTravel-carryAnchorTravel+150)%300)+300)%300-150;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,(Number(g.carryState.vehicleZ)||0)+carryWorldOffset);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
+  if(g.vehicleImpact)playerX=Number.isFinite(Number(g.impactPlayerX))?Number(g.impactPlayerX):laneX[g.lane??1];else playerX=THREE.MathUtils.damp(playerX,laneX[g.lane??1],13,dt);const carryPhaseNow=g.carryState?.phase;const carryVisible=!bossArena&&!g.campaignCelebration&&!!g.carryState;const carryActive=!!(g.carryState&&isCarryEventActive(g.carryState));carryVehicle.visible=carryVisible;if(carryVisible){const carryX=carryActive?playerX:laneX[g.carryState.lane??g.lane??1];carryVehicle.position.set(carryX,0,Number(g.carryState.vehicleZ)||0);for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=worldTravel/.35;}
    let carrySmashes=0;
    if(carryVisible&&["boarding","riding","slowing_down"].includes(carryPhaseNow)){
     const ramZ=carryVehicle.position.z-4.42,ramX=carryVehicle.position.x;
@@ -592,7 +592,7 @@ export async function createRunnerRenderer({mount,quality="High"}={}){
   for(let i=0;i<24;i++){const candidate=g.t+.001+i*.035;const score=Math.abs(Math.sin(candidate*48))+.7*Math.abs(Math.sin(candidate*36));if(score>best){best=score;impactTime=candidate;}}
   return {impact:sample(.62,impactTime),recovered:sample(0,impactTime+.031)};
  },resetRun(){
-  lastGameT=0;worldTravel=0;trafficTravel=0;carryAnchorTravel=null;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
+  lastGameT=0;worldTravel=0;trafficTravel=0;playerX=0;previousPlayerX=0;cameraBaseX=0;impactPulse=0;wasHit=false;landingPulse=0;previousJump=0;
   traffic.forEach((vehicle,index)=>{vehicle.position.set(laneX[vehicle.userData.baseLane],0,-36-index*43);vehicle.userData.previousCollisionZ=vehicle.position.z;vehicle.userData.smash=null;vehicle.rotation.set(0,0,0);for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});rampVehicles.forEach(vehicle=>{vehicle.visible=false;vehicle.userData.obstacle=null;for(const wheel of vehicle.userData.wheels||[])wheel.rotation.x=0;});carryVehicle.visible=false;for(const wheel of carryVehicle.userData.wheels||[])wheel.rotation.x=0;
   jayRig.reset();jayRig.root.position.set(0,rigBaseY,2);jayRig.root.rotation.set(0,Math.PI,0);jayRig.root.scale.set(rigBaseScaleX,rigBaseScaleY,rigBaseScaleZ);jayRig.play("run",{fadeSeconds:0});
   crowd.forEach(person=>{person.group.visible=false;person.group.position.y=0;});confetti.forEach(piece=>piece.visible=false);fireworks.forEach(burst=>{burst.material.opacity=0;burst.particles.forEach(dot=>dot.visible=false);});mount.dataset.celebrationSemester="";
