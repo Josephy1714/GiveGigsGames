@@ -1,10 +1,9 @@
 export const CARRY_VEHICLE = Object.freeze({
   approachStartZ: -18,
-  boardingTriggerZ: -4.0,
-  boardingEndZ: -3.2,
+  boardingTriggerZ: -6.2,
+  boardingEndZ: -1.7,
   approachSpeed: 4.6,
-  boardingDurationSeconds: 0.72,
-  boardingRiseSeconds: 0.2,
+  boardingDurationSeconds: 0.9,
   rideDurationSeconds: 20,
   dismountDurationSeconds: 1.05,
   safeLaneCheckSeconds: 0.35,
@@ -36,8 +35,9 @@ export function getCarrySpeedScale(state) {
 export function getCarryPlayerHeight(state) {
   if (!state) return 0;
   if (state.phase === "boarding") {
-    const t = clamp(state.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1);
-    return CARRY_VEHICLE.deckHeight * smoothstep(clamp(t / CARRY_VEHICLE.boardingRiseSeconds, 0, 1)) + Math.sin(t * Math.PI) * 0.12;
+    const localZ = 2 - (Number(state.vehicleZ) || CARRY_VEHICLE.boardingTriggerZ);
+    const rampProgress = clamp((CARRY_VEHICLE.rampLowerZ - localZ) / (CARRY_VEHICLE.rampLowerZ - CARRY_VEHICLE.rampUpperZ), 0, 1);
+    return CARRY_VEHICLE.deckHeight * rampProgress + Math.sin(clamp(state.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1) * Math.PI) * 0.08;
   }
   if (state.phase === "riding") return CARRY_VEHICLE.deckHeight;
   if (state.phase === "dismounting") {
@@ -67,8 +67,7 @@ export function advanceCarryEvent(state, dt, { safeLane } = {}) {
     }
   } else if (next.phase === "boarding") {
     next.elapsed += delta;
-    const boardingTravelTime = Math.max(0, CARRY_VEHICLE.boardingDurationSeconds - CARRY_VEHICLE.boardingRiseSeconds);
-    const boardingProgress = clamp((next.elapsed - CARRY_VEHICLE.boardingRiseSeconds) / boardingTravelTime, 0, 1);
+    const boardingProgress = clamp(next.elapsed / CARRY_VEHICLE.boardingDurationSeconds, 0, 1);
     next.vehicleZ = CARRY_VEHICLE.boardingTriggerZ + (CARRY_VEHICLE.boardingEndZ - CARRY_VEHICLE.boardingTriggerZ) * boardingProgress;
     if (next.elapsed >= CARRY_VEHICLE.boardingDurationSeconds) {
       next.phase = "riding";
