@@ -35,7 +35,7 @@ export function createProceduralScore(context,output){
   if(!playing)return;
   const osc=context.createOscillator(),gain=context.createGain();osc.type="sine";
   osc.frequency.setValueAtTime(125,at);osc.frequency.exponentialRampToValueAtTime(43,at+.16);
-  envelope(gain,at,.2,.24*level*velocity,.004);osc.connect(gain);gain.connect(master);track(osc);osc.start(at);osc.stop(at+.23);
+  envelope(gain,at,.2,.34*level*velocity,.004);osc.connect(gain);gain.connect(master);track(osc);osc.start(at);osc.stop(at+.23);
  }
  function noiseHit(at,duration,peak,cutoff,pan=0){
   if(!playing)return;
@@ -45,8 +45,9 @@ export function createProceduralScore(context,output){
   src.connect(filter);filter.connect(gain);gain.connect(p);p.connect(master);track(src);src.start(at);src.stop(at+duration+.02);
  }
  function bass(note,at,duration,accent=1){
-  synth(MIDI(note),at,duration,{type:"triangle",peak:.15*accent,filter:520,attack:.012,pan:-.08});
-  synth(MIDI(note-12),at,duration*.72,{type:"sine",peak:.09*accent,filter:180,attack:.01,pan:-.08});
+  synth(MIDI(note),at,duration,{type:"triangle",peak:.23*accent,filter:360,attack:.012,pan:-.08});
+  synth(MIDI(note-12),at,duration*.78,{type:"sine",peak:.15*accent,filter:125,attack:.01,pan:-.08});
+  synth(MIDI(note+12),at,duration*.62,{type:"sawtooth",peak:.085*accent,filter:340,attack:.008,pan:-.06});
  }
  function pluck(note,at,accent=1,pan=0){
   synth(MIDI(note),at,.22,{type:"triangle",peak:.105*accent,filter:4200,attack:.003,pan});
@@ -108,7 +109,7 @@ export function createProceduralScore(context,output){
   const now=context.currentTime;master.gain.cancelScheduledValues(now);master.gain.setTargetAtTime(0,now,.18);
   active.forEach(node=>{try{node.stop(now+.65)}catch{}});active.clear();
  }
- function setIntensity(value){level=clamp(Number(value)||0,.25,1.25)}
+ function setIntensity(value){level=clamp(Number(value)||0,.25,1.55)}
  function destroy(){stop();try{master.disconnect();compressor.disconnect()}catch{}}
  return {start,stop,setIntensity,destroy};
 }
