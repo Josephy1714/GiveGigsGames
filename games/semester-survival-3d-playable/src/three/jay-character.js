@@ -318,6 +318,30 @@ export async function loadJayCharacter({
         item.bone.quaternion.multiply(offset);
       }
     }
+    const rideTime = Number(options.rideTime);
+    if (Number.isFinite(rideTime) && rideTime >= 0) {
+      const phase = rideTime % 8.4;
+      const beat = Math.sin(rideTime * 3.1);
+      const brace = phase < 2.1;
+      const pointing = phase >= 2.1 && phase < 4.2;
+      const cheering = phase >= 4.2 && phase < 5.8;
+      const wave = phase >= 5.8;
+      for (const item of victoryBones) {
+        let x = 0, y = 0, z = 0;
+        switch (item.role) {
+          case "leftArm": z = brace ? 0.42 : pointing ? 0.18 : cheering ? 1.42 : 0.22 + (wave ? .32 * beat : 0); x = brace ? -.42 : cheering ? -.2 : 0; break;
+          case "rightArm": z = brace ? -0.42 : pointing ? -1.12 : cheering ? -1.42 : -0.22 - (wave ? .32 * beat : 0); x = brace ? -.42 : cheering ? -.2 : 0; break;
+          case "leftForeArm": z = brace ? .3 : pointing ? .12 : cheering ? .55 : wave ? .4 + .22 * beat : 0; break;
+          case "rightForeArm": z = brace ? -.3 : pointing ? -.48 : cheering ? -.55 : wave ? -.4 - .22 * beat : 0; break;
+          case "leftHand": z = wave ? .18 * beat : 0; break;
+          case "rightHand": z = wave ? -.18 * beat : 0; break;
+          case "leftLeg": x = brace ? -.12 : cheering ? .2 * beat : 0; break;
+          case "rightLeg": x = brace ? -.12 : cheering ? -.2 * beat : 0; break;
+          case "torso": x = brace ? -.08 : pointing ? .04 : cheering ? .08 * beat : .025 * beat; z = pointing ? -.08 : .035 * Math.sin(rideTime * 1.55); break;
+        }
+        item.bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z)));
+      }
+    }
   }
 
   function dispose() {
